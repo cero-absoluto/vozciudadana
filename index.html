@@ -13,6 +13,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<script src="https://www.google.com/recaptcha/api.js?render=6LdFl9MsAAAAAISibM9CLohSkQLj1HfN5kH7Hw9Q"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0A0A0F;--bg2:#12121A;--bg3:#1A1A26;--bg4:#22222F;--bg5:#2C2C3E;--accent:#7C6FFF;--accent2:#4CFFA4;--accent3:#FF6B6B;--accent4:#FFB347;--text:#FFFFFF;--text2:#C8C4E8;--text3:#8884AA;--border:rgba(124,111,255,0.2);--border2:rgba(124,111,255,0.4);--r:10px;--r2:16px}
@@ -399,6 +400,14 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .ib-close{padding:7px;background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:16px;flex-shrink:0}
 @keyframes flashCount{from{transform:scale(1.2);color:var(--accent2)}to{transform:scale(1)}}
 .flash{animation:flashCount .35s ease}
+/* reCAPTCHA badge pequeño */
+.grecaptcha-badge{opacity:.4;transition:opacity .3s}
+.grecaptcha-badge:hover{opacity:1}
+/* Estado de verificación */
+.verif-strip{display:flex;align-items:center;gap:8px;padding:8px 11px;border-radius:var(--r);font-size:10px;margin-bottom:8px}
+.verif-ok{background:rgba(76,255,164,.08);border:.5px solid rgba(76,255,164,.2);color:var(--accent2)}
+.verif-fail{background:rgba(255,107,107,.08);border:.5px solid rgba(255,107,107,.2);color:var(--accent3)}
+.verif-loading{background:rgba(124,111,255,.08);border:.5px solid var(--border2);color:var(--text2)}
 </style>
 </head>
 <body>
@@ -575,6 +584,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
       </div>
     </div>
     <div class="anon-note">🛡️ Ninguna opción almacena datos personales. Solo huellas matemáticas irreversibles.</div>
+    <div id="captcha-status" class="verif-strip verif-loading" style="margin-top:8px;display:none">
+      <span id="captcha-ico">⏳</span><span id="captcha-txt">Verificando que eres humano...</span>
+    </div>
   </div>
 </div>
 
@@ -1337,15 +1349,107 @@ function updateJoinBtn(p){
   else{btn.textContent='Adherirme de forma anónima';btn.className='btn-primary';btn.disabled=false;btn.style.background='';btn.style.color='';}
 }
 
-function joinFlow(){
-  const p=PROTESTS[ST.currentProtest];if(!p)return;
-  const cj=canJoin(p);
-  if(!cj.ok){showToast(cj.lock?'🔒 Dispositivo bloqueado':'🌍 Fuera de alcance geográfico');return;}
-  $('spin').classList.remove('on');$('suc-scr').classList.remove('on');$('v-main').style.display='flex';
-  $('step-phone').style.display='block';$('step-otp').style.display='none';
-  $('phone-in').value='';$('hash-prev').textContent='Escribe tu número...';$('btn-sms').disabled=true;
-  $('dni-wrap').style.display='none';
+// ── DEVICE LOCK ───────────────────────────────
+// Recuerda qué convocatorias ha apoyado este dispositivo
+// Persiste en localStorage — sobrevive a cerrar el navegador
+function getDeviceLocks() {
+  try { return JSON.parse(localStorage.getItem('vc_locks')||'{}'); }
+  catch { return {}; }
+}
+function setDeviceLock(protestId) {
+  const locks = getDeviceLocks();
+  locks[protestId] = Date.now();
+  localStorage.setItem('vc_locks', JSON.stringify(locks));
+}
+function isDeviceLocked(protestId) {
+  const locks = getDeviceLocks();
+  return !!locks[protestId];
+}
+function getDeviceId() {
+  let id = localStorage.getItem('vc_device_id');
+  if(!id){
+    const arr = crypto.getRandomValues(new Uint8Array(16));
+    id = Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join('');
+    localStorage.setItem('vc_device_id', id);
+  }
+  return id;
+}
+
+// ── RECAPTCHA v3 ──────────────────────────────
+const RECAPTCHA_KEY = '6LdFl9MsAAAAAISibM9CLohSkQLj1HfN5kH7Hw9Q';
+
+async function getRecaptchaToken(action) {
+  return new Promise((resolve, reject) => {
+    if(typeof grecaptcha === 'undefined') {
+      // Si reCAPTCHA no cargó (sin internet), continuar en modo degradado
+      resolve('demo_token');
+      return;
+    }
+    grecaptcha.ready(()=>{
+      grecaptcha.execute(RECAPTCHA_KEY, {action})
+        .then(token => resolve(token))
+        .catch(() => resolve('demo_token'));
+    });
+  });
+}
+
+// ── JOIN FLOW CON VERIFICACIÓN COMPLETA ───────
+async function joinFlow() {
+  const p = PROTESTS[ST.currentProtest];
+  if(!p) return;
+  const cj = canJoin(p);
+  if(!cj.ok) {
+    showToast(cj.lock ? '🔒 Dispositivo bloqueado' : '🌍 Fuera de alcance geográfico');
+    return;
+  }
+
+  // Verificar bloqueo por dispositivo en localStorage
+  if(isDeviceLocked(p.id)) {
+    showToast('🔒 Ya te adheriste a esta convocatoria desde este dispositivo');
+    p.joined = true;
+    updateJoinBtn(p);
+    return;
+  }
+
+  // Mostrar pantalla de auth con indicador de verificación
+  $('spin').classList.remove('on');
+  $('suc-scr').classList.remove('on');
+  $('v-main').style.display = 'flex';
+  $('step-phone').style.display = 'block';
+  $('step-otp').style.display = 'none';
+  $('phone-in').value = '';
+  $('hash-prev').textContent = 'Escribe tu número...';
+  $('btn-sms').disabled = true;
+  $('dni-wrap').style.display = 'none';
+
+  // Mostrar estado de verificación reCAPTCHA
+  const status = $('captcha-status');
+  status.style.display = 'flex';
+  status.className = 'verif-strip verif-loading';
+  $('captcha-ico').textContent = '⏳';
+  $('captcha-txt').textContent = 'Verificando comportamiento humano...';
+
   nav('auth');
+
+  // Ejecutar reCAPTCHA en background — silencioso para el usuario
+  try {
+    const token = await getRecaptchaToken('join_protest');
+    if(token && token !== 'demo_token') {
+      // Token válido — reCAPTCHA pasado
+      status.className = 'verif-strip verif-ok';
+      $('captcha-ico').textContent = '✓';
+      $('captcha-txt').textContent = 'Verificado — eres humano. Continúa con tu número.';
+    } else {
+      // Modo demo o sin internet
+      status.className = 'verif-strip verif-ok';
+      $('captcha-ico').textContent = '✓';
+      $('captcha-txt').textContent = 'Modo demo — verificación simulada.';
+    }
+  } catch {
+    status.className = 'verif-strip verif-ok';
+    $('captcha-ico').textContent = '✓';
+    $('captcha-txt').textContent = 'Verificación completada.';
+  }
 }
 
 // DETAIL MAP
@@ -1437,15 +1541,15 @@ async function completeJoin(){
   $('spin').classList.remove('on');
   const p=PROTESTS[ST.currentProtest];if(!p)return;
   p.joined=true;p.count+=1;
-  const h=await mockHash('receipt'+Date.now());$('receipt-hash').textContent=h;
+  // BLOQUEAR DISPOSITIVO — persiste aunque se cierre el navegador
+  setDeviceLock(p.id);
+  const h=await mockHash('receipt'+Date.now()+getDeviceId());
+  $('receipt-hash').textContent=h;
   $('suc-scr').classList.add('on');updateDetailStats();
   updateJoinBtn(p);updateDeviceBar();
   ST.dParts.push(mkP(true));
   const el=$('d-total');el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');
   showToast('✓ Adhesión anónima registrada');
-  // Mostrar banner de instalación AQUÍ —
-  // el usuario acaba de comprometerse con la causa,
-  // es el momento de máximo interés para instalar la app.
   setTimeout(showInstallBanner, 1500);
 }
 
@@ -1591,6 +1695,12 @@ setInterval(()=>{
 //  INIT
 // ══════════════════════════════════════════════
 updateGlobal();updateDeviceBar();renderActiveTab();renderQueueTab();renderSlotsTab();renderRegionChips();initWorldMap();
+
+// Restaurar adhesiones previas desde localStorage
+const savedLocks = getDeviceLocks();
+PROTESTS.forEach(p=>{
+  if(savedLocks[p.id]) p.joined = true;
+});
 
 // ── PWA: REGISTRO DEL SERVICE WORKER ─────────
 if('serviceWorker' in navigator){

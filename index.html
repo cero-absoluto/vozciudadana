@@ -559,34 +559,84 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   </div>
 </div>
 
-<!-- AUTH -->
+<!-- AUTH — Flujo directo, sin menú de opciones -->
 <div class="screen" id="s-auth">
   <div class="auth-wrap">
-    <div class="auth-ico">🔐</div>
-    <div class="auth-h">Verificación anónima</div>
-    <div class="auth-p">Confirmamos que eres una persona real. Tu identidad nunca se almacena. Solo huellas matemáticas irreversibles.</div>
-    <div class="auth-opts">
-      <div class="auth-opt" onclick="startVerify('sms')">
-        <div class="ao-ico" style="background:rgba(76,255,164,.08)">📱</div>
-        <div><div class="ao-title">SMS anónimo<span class="ao-badge badge-rec">Recomendado</span></div><div class="ao-desc">Hash SHA-256 local. Tu número nunca sale en texto claro. Una SIM = una adhesión.</div></div>
-      </div>
-      <div class="auth-opt" onclick="startVerify('sms_dni')">
-        <div class="ao-ico" style="background:rgba(255,179,71,.08)">🪪</div>
-        <div><div class="ao-title">SMS + DNI/Pasaporte<span class="ao-badge badge-vol">Voluntario</span></div><div class="ao-desc">Doble verificación. Documento hasheado en tu dispositivo. Aumenta la confianza geográfica al 100%.</div></div>
-      </div>
-      <div class="auth-opt" onclick="startVerify('worldid')">
-        <div class="ao-ico" style="background:rgba(124,111,255,.08)">🌐</div>
-        <div><div class="ao-title">World ID<span class="ao-badge badge-max">Máximo anonimato</span></div><div class="ao-desc">Zero-Knowledge Proof. Prueba de humanidad única e irrepetible.</div></div>
-      </div>
-      <div class="auth-opt" onclick="startVerify('zk')">
-        <div class="ao-ico" style="background:rgba(255,107,107,.08)">🕵️</div>
-        <div><div class="ao-title">Modo alto riesgo</div><div class="ao-desc">Tor + ZK-proof. Para países donde protestar es peligroso.</div></div>
-      </div>
-    </div>
-    <div class="anon-note">🛡️ Ninguna opción almacena datos personales. Solo huellas matemáticas irreversibles.</div>
-    <div id="captcha-status" class="verif-strip verif-loading" style="margin-top:8px;display:none">
+    <div class="auth-ico">📱</div>
+    <div class="auth-h">Tu número de teléfono</div>
+    <div class="auth-p">Te enviamos un código de 6 dígitos. Tu número se transforma en una huella matemática en tu dispositivo — nunca lo vemos en texto claro.</div>
+
+    <!-- ESTADO RECAPTCHA -->
+    <div id="captcha-status" class="verif-strip verif-loading" style="width:100%;margin-bottom:10px">
       <span id="captcha-ico">⏳</span><span id="captcha-txt">Verificando que eres humano...</span>
     </div>
+
+    <!-- FORMULARIO DIRECTO -->
+    <div style="width:100%">
+      <div class="phone-wrap">
+        <select class="cc-sel" id="cc">
+          <option value="+34">🇪🇸 +34</option>
+          <option value="+52">🇲🇽 +52</option>
+          <option value="+54">🇦🇷 +54</option>
+          <option value="+58">🇻🇪 +58</option>
+          <option value="+53">🇨🇺 +53</option>
+          <option value="+7">🇷🇺 +7</option>
+          <option value="+98">🇮🇷 +98</option>
+          <option value="+375">🇧🇾 +375</option>
+          <option value="+1">🇺🇸 +1</option>
+          <option value="+44">🇬🇧 +44</option>
+          <option value="+33">🇫🇷 +33</option>
+          <option value="+49">🇩🇪 +49</option>
+          <option value="+86">🇨🇳 +86</option>
+          <option value="+55">🇧🇷 +55</option>
+          <option value="+57">🇨🇴 +57</option>
+          <option value="+51">🇵🇪 +51</option>
+          <option value="+56">🇨🇱 +56</option>
+        </select>
+        <input class="phone-in" type="tel" id="phone-in" placeholder="600 000 000" maxlength="12" oninput="onPhoneInput()">
+      </div>
+      <div class="input-hint">Tu número se transforma en una huella irreversible en tu dispositivo antes de enviarse.</div>
+      <div class="hash-label">Huella generada en tiempo real</div>
+      <div class="hash-prev" id="hash-prev">Escribe tu número...</div>
+      <button class="btn-primary" id="btn-sms" style="width:100%;margin-top:8px" onclick="sendSMS()" disabled>Enviar código →</button>
+    </div>
+
+    <!-- OTP — oculto hasta enviar -->
+    <div id="step-otp" style="display:none;width:100%;margin-top:12px">
+      <div style="font-size:10px;color:var(--text2);margin-bottom:12px;line-height:1.7;text-align:center">
+        Código de 6 dígitos enviado. Expira en 5 minutos.
+      </div>
+      <div class="otp-row" id="otp-row"></div>
+      <div style="font-size:9px;color:var(--text3);margin-bottom:10px;text-align:center">
+        ¿No lo recibiste? <span style="color:var(--accent);cursor:pointer" onclick="showToast('Código reenviado')">Reenviar</span>
+      </div>
+      <button class="btn-primary" style="width:100%" onclick="verifyOTP()">Verificar →</button>
+    </div>
+
+    <!-- OPCIONES AVANZADAS — colapsadas por defecto -->
+    <div style="width:100%;margin-top:14px">
+      <button onclick="toggleAdvanced()" style="width:100%;padding:8px;background:transparent;border:.5px solid var(--border);border-radius:var(--r);font-size:10px;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px" id="adv-btn">
+        ⚙️ Opciones avanzadas <span id="adv-arrow">▼</span>
+      </button>
+      <div id="adv-panel" style="display:none;margin-top:8px;display:none">
+        <div class="auth-opts">
+          <div class="auth-opt" onclick="startVerify('sms_dni')">
+            <div class="ao-ico" style="background:rgba(255,179,71,.08)">🪪</div>
+            <div><div class="ao-title">SMS + DNI/Pasaporte<span class="ao-badge badge-vol">Voluntario</span></div><div class="ao-desc">Documento hasheado localmente. Máxima credibilidad geográfica.</div></div>
+          </div>
+          <div class="auth-opt" onclick="startVerify('worldid')">
+            <div class="ao-ico" style="background:rgba(124,111,255,.08)">🌐</div>
+            <div><div class="ao-title">World ID<span class="ao-badge badge-max">Máximo anonimato</span></div><div class="ao-desc">Zero-Knowledge Proof. Prueba de humanidad única e irrepetible.</div></div>
+          </div>
+          <div class="auth-opt" onclick="startVerify('zk')">
+            <div class="ao-ico" style="background:rgba(255,107,107,.08)">🕵️</div>
+            <div><div class="ao-title">Modo alto riesgo</div><div class="ao-desc">Tor + ZK-proof. Para países donde protestar es peligroso.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="anon-note" style="margin-top:10px">🛡️ Tu identidad nunca se almacena. Solo huellas matemáticas irreversibles.</div>
   </div>
 </div>
 
@@ -1402,53 +1452,40 @@ async function joinFlow() {
     showToast(cj.lock ? '🔒 Dispositivo bloqueado' : '🌍 Fuera de alcance geográfico');
     return;
   }
-
-  // Verificar bloqueo por dispositivo en localStorage
   if(isDeviceLocked(p.id)) {
-    showToast('🔒 Ya te adheriste a esta convocatoria desde este dispositivo');
-    p.joined = true;
-    updateJoinBtn(p);
-    return;
+    showToast('🔒 Ya te adheriste desde este dispositivo');
+    p.joined = true; updateJoinBtn(p); return;
   }
 
-  // Mostrar pantalla de auth con indicador de verificación
-  $('spin').classList.remove('on');
-  $('suc-scr').classList.remove('on');
-  $('v-main').style.display = 'flex';
-  $('step-phone').style.display = 'block';
-  $('step-otp').style.display = 'none';
-  $('phone-in').value = '';
-  $('hash-prev').textContent = 'Escribe tu número...';
-  $('btn-sms').disabled = true;
-  $('dni-wrap').style.display = 'none';
+  // Reset form state
+  $('phone-in').value='';
+  $('hash-prev').textContent='Escribe tu número...';
+  $('btn-sms').disabled=true;
+  $('step-otp').style.display='none';
+  $('adv-panel').style.display='none';
+  $('adv-arrow').textContent='▼';
 
-  // Mostrar estado de verificación reCAPTCHA
-  const status = $('captcha-status');
-  status.style.display = 'flex';
-  status.className = 'verif-strip verif-loading';
-  $('captcha-ico').textContent = '⏳';
-  $('captcha-txt').textContent = 'Verificando comportamiento humano...';
+  // Show captcha checking
+  const status=$('captcha-status');
+  status.style.display='flex';
+  status.className='verif-strip verif-loading';
+  $('captcha-ico').textContent='⏳';
+  $('captcha-txt').textContent='Verificando comportamiento humano...';
 
   nav('auth');
 
-  // Ejecutar reCAPTCHA en background — silencioso para el usuario
+  // Run reCAPTCHA silently
   try {
     const token = await getRecaptchaToken('join_protest');
-    if(token && token !== 'demo_token') {
-      // Token válido — reCAPTCHA pasado
-      status.className = 'verif-strip verif-ok';
-      $('captcha-ico').textContent = '✓';
-      $('captcha-txt').textContent = 'Verificado — eres humano. Continúa con tu número.';
-    } else {
-      // Modo demo o sin internet
-      status.className = 'verif-strip verif-ok';
-      $('captcha-ico').textContent = '✓';
-      $('captcha-txt').textContent = 'Modo demo — verificación simulada.';
-    }
+    status.className='verif-strip verif-ok';
+    $('captcha-ico').textContent='✓';
+    $('captcha-txt').textContent = token && token!=='demo_token'
+      ? 'Verificado — eres humano. Introduce tu número.'
+      : 'Modo demo — introduce tu número.';
   } catch {
-    status.className = 'verif-strip verif-ok';
-    $('captcha-ico').textContent = '✓';
-    $('captcha-txt').textContent = 'Verificación completada.';
+    status.className='verif-strip verif-ok';
+    $('captcha-ico').textContent='✓';
+    $('captcha-txt').textContent='Introduce tu número para continuar.';
   }
 }
 
@@ -1478,18 +1515,48 @@ function drawDMap(){
 // ══════════════════════════════════════════════
 //  AUTH & VERIFY
 // ══════════════════════════════════════════════
+function toggleAdvanced(){
+  const panel=$('adv-panel');
+  const visible=panel.style.display==='block';
+  panel.style.display=visible?'none':'block';
+  $('adv-arrow').textContent=visible?'▼':'▲';
+}
+
 function startVerify(method){
   ST.authMethod=method;
-  $('spin').classList.remove('on');$('suc-scr').classList.remove('on');$('v-main').style.display='flex';
-  $('step-phone').style.display='block';$('step-otp').style.display='none';
-  $('dni-wrap').style.display=method==='sms_dni'?'block':'none';
   if(method==='worldid'||method==='zk'){
-    nav('verify');$('v-main').style.display='none';$('spin').classList.add('on');
-    const msgs=method==='zk'?['Inicializando Tor...','Generando ZK-proof...','Registrando adhesión anónima...']:['Conectando con World ID...','Verificando prueba de humanidad...','Registrando adhesión anónima...'];
-    let i=0;$('spin-txt').textContent=msgs[0];const iv=setInterval(()=>{i++;if(i<msgs.length)$('spin-txt').textContent=msgs[i];else{clearInterval(iv);completeJoin();}},1000);
-    return;
+    nav('verify');
+    $('v-main').style.display='none';
+    $('spin').classList.add('on');
+    const msgs=method==='zk'
+      ?['Inicializando Tor...','Generando ZK-proof...','Registrando adhesión...']
+      :['Conectando World ID...','Verificando prueba...','Registrando adhesión...'];
+    let i=0;$('spin-txt').textContent=msgs[0];
+    const iv=setInterval(()=>{i++;if(i<msgs.length)$('spin-txt').textContent=msgs[i];else{clearInterval(iv);completeJoin();}},1000);
   }
-  nav('verify');
+}
+
+function sendSMS(){
+  $('btn-sms').disabled=true;
+  $('btn-sms').textContent='Enviando...';
+  setTimeout(()=>{
+    $('btn-sms').style.display='none';
+    const row=$('otp-row');row.innerHTML='';
+    const demoCode='123456';
+    for(let i=0;i<6;i++){
+      const inp=document.createElement('input');
+      inp.className='otp-box';inp.maxLength=1;inp.type='tel';
+      inp.value=demoCode[i];
+      inp.style.color='var(--accent2)';
+      inp.addEventListener('input',e=>{if(e.target.value&&inp.nextSibling)inp.nextSibling.focus();});
+      row.appendChild(inp);
+    }
+    const hint=document.createElement('div');
+    hint.style.cssText='font-size:9px;color:var(--accent4);background:rgba(255,179,71,.08);border:.5px solid rgba(255,179,71,.2);border-radius:6px;padding:6px 9px;margin-bottom:8px;text-align:center;width:100%';
+    hint.textContent='DEMO · Código prellenado · Pulsa Verificar';
+    row.parentNode.insertBefore(hint,row);
+    $('step-otp').style.display='block';
+  },1200);
 }
 async function onPhoneInput(){
   const v=$('phone-in').value.replace(/\D/g,'');
@@ -1528,14 +1595,15 @@ function sendSMS(){
 }
 function verifyOTP(){
   if([...$('otp-row').querySelectorAll('.otp-box')].map(b=>b.value).join('').length<6){showToast('Introduce los 6 dígitos');return;}
-  $('step-otp').style.display='none';$('spin').classList.add('on');
-  // If DNI was provided, update device confidence
-  if(ST.authMethod==='sms_dni'&&$('dni-in').value.trim().length>=4){
-    DEVICE.docCountry=DEVICE.simCountry;
-    updateDeviceBar();$('dot-doc').style.background='var(--accent2)';
-  }
+  $('step-otp').style.display='none';
+  // Show spinner on verify screen
+  nav('verify');
+  $('v-main').style.display='none';
+  $('suc-scr').classList.remove('on');
+  $('spin').classList.add('on');
   const msgs=['Verificando código...','Registrando en blockchain...','Generando comprobante anónimo...'];
-  let i=0;$('spin-txt').textContent=msgs[0];const iv=setInterval(()=>{i++;if(i<msgs.length)$('spin-txt').textContent=msgs[i];else{clearInterval(iv);completeJoin();}},850);
+  let i=0;$('spin-txt').textContent=msgs[0];
+  const iv=setInterval(()=>{i++;if(i<msgs.length)$('spin-txt').textContent=msgs[i];else{clearInterval(iv);completeJoin();}},850);
 }
 async function completeJoin(){
   $('spin').classList.remove('on');

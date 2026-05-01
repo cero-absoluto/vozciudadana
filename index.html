@@ -86,10 +86,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 /* BOTTOM NAV */
 .bottom-nav{display:flex;border-top:1px solid var(--border);flex-shrink:0;background:var(--bg2)}
-.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px;cursor:pointer;font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;transition:color .2s;border:none;background:none}
-.nav-item.active{color:var(--accent)}
-.nav-item:hover{color:var(--text2)}
-.nav-item svg{width:19px;height:19px}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:11px 4px;cursor:pointer;font-size:10px;font-weight:700;color:#8884AA;text-transform:uppercase;letter-spacing:.5px;transition:color .2s;border:none;background:none}
+.nav-item.active{color:#FFFFFF}
+.nav-item:hover{color:var(--accent2)}
+.nav-item svg{width:22px;height:22px;stroke-width:2}
 .scroll{flex:1;overflow-y:auto}
 .scroll::-webkit-scrollbar{width:3px}
 .scroll::-webkit-scrollbar-thumb{background:var(--bg5);border-radius:2px}
@@ -1398,13 +1398,29 @@ async function onDniInput(){
   if(v.length>=4){const h=await mockHash('DOC:'+v);$('hash-prev').textContent='📱+🪪 '+h.substring(0,50)+'...';}
 }
 function sendSMS(){
-  $('step-phone').style.display='none';$('spin').classList.add('on');$('spin-txt').textContent='Cifrando y enviando...';
+  $('step-phone').style.display='none';
+  $('spin').classList.add('on');
+  $('spin-txt').textContent='Enviando código...';
   setTimeout(()=>{
     $('spin').classList.remove('on');
     const row=$('otp-row');row.innerHTML='';
-    for(let i=0;i<6;i++){const inp=document.createElement('input');inp.className='otp-box';inp.maxLength=1;inp.type='tel';inp.addEventListener('input',e=>{if(e.target.value&&inp.nextSibling)inp.nextSibling.focus();});row.appendChild(inp);}
-    $('step-otp').style.display='block';row.firstChild?.focus();
-  },1300);
+    // MODO DEMO: rellenar el código automáticamente con 123456
+    const demoCode='123456';
+    for(let i=0;i<6;i++){
+      const inp=document.createElement('input');
+      inp.className='otp-box';inp.maxLength=1;inp.type='tel';
+      inp.value=demoCode[i]; // prerelleno
+      inp.style.color='var(--accent2)';
+      inp.addEventListener('input',e=>{if(e.target.value&&inp.nextSibling)inp.nextSibling.focus();});
+      row.appendChild(inp);
+    }
+    $('step-otp').style.display='block';
+    // Mostrar aviso de demo
+    const hint=document.createElement('div');
+    hint.style.cssText='font-size:9px;color:var(--accent4);background:rgba(255,179,71,.08);border:.5px solid rgba(255,179,71,.2);border-radius:6px;padding:6px 9px;margin-bottom:8px;text-align:center';
+    hint.textContent='DEMO · Código prellenado automáticamente · Pulsa Verificar';
+    row.parentNode.insertBefore(hint, row);
+  },1200);
 }
 function verifyOTP(){
   if([...$('otp-row').querySelectorAll('.otp-box')].map(b=>b.value).join('').length<6){showToast('Introduce los 6 dígitos');return;}
@@ -1442,7 +1458,7 @@ function closeShareModal(){$('share-modal').classList.remove('open');}
 function buildPuebloMsg(){
   const p=ST.currentProtest!==null?PROTESTS[ST.currentProtest]:null;
   const count=p?fmt(p.count):'miles de';
-  const url=`https://vozcuidadana.org/c/${p?p.id:'demo'}`;
+  const url=`https://cero-absoluto.github.io/vozciudadana`;
   return `EL PUEBLO MANDA.\n${count} voces. Sin violencia. Sin miedo.\nSolo ciudadanos recordándoles quién tiene el poder real.\nSúmate: ${url}\n#VozCiudadana #ElPuebloManda`;
 }
 function openShareModal(){
@@ -1469,7 +1485,7 @@ function shareWA(){
 }
 function shareTG(){
   const p=ST.currentProtest!==null?PROTESTS[ST.currentProtest]:null;
-  const url=encodeURIComponent(`https://vozcuidadana.org/c/${p?p.id:'demo'}`);
+  const url=encodeURIComponent(`https://cero-absoluto.github.io/vozciudadana`);
   const msg=encodeURIComponent(buildPuebloMsg());
   window.open(`https://t.me/share/url?url=${url}&text=${msg}`,'_blank');
   incrementViralCount();closeShareModal();

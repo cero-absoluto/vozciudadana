@@ -107,7 +107,7 @@ const captchaStatusClass = ref('verif-loading');
 const captchaIco         = ref('⏳');
 const captchaTxt         = ref('Verificando que eres humano...');
 
-const RECAPTCHA_KEY = '6LdFl9MsAAAAAISibM9CLohSkQLj1HfN5kH7Hw9Q';
+const RECAPTCHA_KEY = import.meta.env.VITE_RECAPTCHA_KEY;
 
 async function getRecaptchaToken(action) {
   return new Promise(resolve => {

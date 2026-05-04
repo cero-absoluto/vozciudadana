@@ -30,6 +30,8 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          VITE_RECAPTCHA_KEY: ${{ vars.VITE_RECAPTCHA_KEY }}
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

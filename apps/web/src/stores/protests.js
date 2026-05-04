@@ -1,0 +1,144 @@
+import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
+import { REGIONS, inRegion, fmtTime } from '@/constants.js';
+import { useDeviceStore } from './device.js';
+
+const INITIAL_PROTESTS = [
+  {id:1,title:'Contra la corrupción del gobierno',country:'ES',countryName:'España',scope:'national',region:null,count:187432,heat:95,timer:6840,color:'#ff2020',cities:284,desc:'Denunciamos la corrupción sistémica. Exigimos transparencia total y fin de la impunidad.',demands:'Que dimita el presidente · Que se abra una investigación independiente · Que se publiquen todos los contratos públicos · Fin de la impunidad.',joined:false,viralCount:0},
+  {id:2,title:'Reforma del Parlamento Europeo',country:'EU',countryName:'Unión Europea',scope:'regional',region:'eu',count:412000,heat:88,timer:5400,color:'#4A6FFF',cities:890,desc:'Exigimos mayor representación ciudadana y transparencia en las instituciones europeas.',demands:'Que se tomen medidas inmediatas en respuesta a esta convocatoria ciudadana.',joined:false,viralCount:0},
+  {id:3,title:'Libertad para presos políticos',country:null,countryName:'Global',scope:'global',region:null,count:211000,heat:98,timer:3600,color:'#4CFFA4',cities:521,desc:'Más de 250 personas detenidas arbitrariamente. Exigimos su liberación inmediata.',demands:'Liberación inmediata e incondicional · Sanciones internacionales · Acceso a observadores independientes de DDHH.',joined:false,viralCount:0},
+  {id:4,title:'Por la sanidad pública española',country:'ES',countryName:'España',scope:'national',region:null,count:54000,heat:72,timer:7200,color:'#e8a020',cities:143,desc:'Los recortes deterioran la atención primaria. Exigimos un pacto de estado por la sanidad.',demands:'Que se tomen medidas inmediatas.',joined:false,viralCount:0},
+  {id:5,title:'Crisis climática — Acuerdo de París',country:null,countryName:'Global',scope:'global',region:null,count:890000,heat:76,timer:86400,color:'#4CFFA4',cities:1240,desc:'Los compromisos del Acuerdo de París no se están cumpliendo.',demands:'Que se tomen medidas urgentes.',joined:false,viralCount:0},
+  {id:6,title:'Política agraria común de la UE',country:'EU',countryName:'Unión Europea',scope:'regional',region:'eu',count:128000,heat:65,timer:9000,color:'#4A6FFF',cities:340,desc:'La PAC actual no protege a los pequeños agricultores ni a la biodiversidad.',demands:'Que se reforme la PAC.',joined:false,viralCount:0},
+  {id:7,title:'Internet libre en Irán',country:'IR',countryName:'Irán',scope:'national',region:null,count:89234,heat:90,timer:4100,color:'#e84020',cities:198,desc:'El régimen ha bloqueado más de 15.000 sitios.',demands:'Que se desbloqueen todas las plataformas · Que cese la vigilancia · Que se libere a todos los periodistas presos.',joined:false,viralCount:0},
+  {id:8,title:'Transparencia en contratos públicos',country:'MX',countryName:'México',scope:'national',region:null,count:41230,heat:65,timer:7200,color:'#e8a020',cities:97,desc:'Contratos millonarios adjudicados sin concurso público.',demands:'Que se abran licitaciones.',joined:false,viralCount:0},
+];
+
+const INITIAL_QUEUE = [
+  {id:20,title:'Contra la comercialización de carne',country:'ES',countryName:'España',scope:'national',votes:1240},
+  {id:21,title:'Por el transporte público gratuito',country:'FR',countryName:'Francia',scope:'national',votes:8900},
+  {id:22,title:'Por el salario mínimo digno',country:'ES',countryName:'España',scope:'national',votes:15600},
+  {id:23,title:'Acceso universal a medicamentos',country:null,countryName:'Global',scope:'global',votes:22100},
+];
+
+export const useProtestsStore = defineStore('protests', () => {
+  const protests = ref(INITIAL_PROTESTS.map(p => ({ ...p })));
+  const queue    = ref(INITIAL_QUEUE.map(q => ({ ...q })));
+  const filter        = ref('all');   // 'all' | 'national' | 'regional' | 'global'
+  const countryFilter = ref(null);    // ISO alpha-2 or null
+
+  // ── Getters ────────────────────────────────────────────────────────────────
+  const globalCount = computed(() => protests.value.reduce((s, p) => s + p.count, 0));
+
+  const filteredProtests = computed(() => {
+    let list = filter.value === 'all' ? protests.value : protests.value.filter(p => p.scope === filter.value);
+    if (countryFilter.value) {
+      const byCountry = list.filter(p => p.country === countryFilter.value);
+      if (byCountry.length) list = byCountry;
+    }
+    return [...list].sort((a, b) => b.heat - a.heat);
+  });
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function canJoin(p) {
+    if (p.joined) return { ok: false, joined: true };
+    const device = useDeviceStore();
+
+    if (p.scope === 'national') {
+      const active = protests.value.find(x => x.scope === 'national' && x.joined && x.id !== p.id);
+      if (active) return { ok: false, lock: true, msg: `Tu dispositivo ya está adherido a "${active.title}" (${fmtTime(active.timer)} restante).` };
+    }
+    if (p.scope === 'regional') {
+      const active = protests.value.find(x => x.scope === 'regional' && x.region === p.region && x.joined && x.id !== p.id);
+      if (active) return { ok: false, lock: true, msg: `Tu dispositivo ya está adherido a una convocatoria del bloque ${REGIONS[p.region]?.name}.` };
+    }
+    if (p.scope === 'global') {
+      const active = protests.value.find(x => x.scope === 'global' && x.joined && x.id !== p.id);
+      if (active) return { ok: false, lock: true, msg: `Tu dispositivo ya está adherido a una convocatoria global: "${active.title}".` };
+    }
+
+    if (p.scope === 'national') {
+      if (device.simCountry !== p.country) return { ok: false, geo: true, msg: `Esta convocatoria es exclusivamente para ciudadanos de ${p.countryName}.` };
+      if (device.confidence < 60) return { ok: false, geo: true, msg: `Confianza geográfica insuficiente (${device.confidence}%). Aporta tu documento de identidad.` };
+    }
+    if (p.scope === 'regional') {
+      if (!inRegion(p.region, device.simCountry)) return { ok: false, geo: true, msg: `Esta convocatoria es para miembros de ${REGIONS[p.region]?.name}.` };
+      if (device.confidence < 40) return { ok: false, geo: true, msg: `Confianza geográfica insuficiente (${device.confidence}%).` };
+    }
+    return { ok: true };
+  }
+
+  function scopeBadge(p) {
+    if (p.scope === 'national') return `<span class="scope-badge sb-national">🏛️ ${p.countryName}</span>`;
+    if (p.scope === 'regional') return `<span class="scope-badge sb-regional">🌐 ${REGIONS[p.region]?.name || 'Regional'}</span>`;
+    return `<span class="scope-badge sb-global">🌍 Global</span>`;
+  }
+
+  // ── Actions ────────────────────────────────────────────────────────────────
+  function joinProtest(id) {
+    const p = protests.value.find(x => x.id === id);
+    if (!p) return;
+    p.joined = true;
+    p.count += 1;
+    p.viralCount = p.viralCount || Math.floor(p.count * 0.022);
+    useDeviceStore().setLock(id);
+  }
+
+  function incrementViral(id) {
+    const p = protests.value.find(x => x.id === id);
+    if (!p) return;
+    p.viralCount = (p.viralCount || 0) + 1;
+  }
+
+  function boostQueue(id) {
+    const q = queue.value.find(x => x.id === id);
+    if (q) q.votes += 1;
+  }
+
+  function createProtest(data) {
+    const device = useDeviceStore();
+    const dur = parseInt(data.duration_h) || 2;
+    protests.value.push({
+      id: Date.now(),
+      title:       data.title,
+      country:     data.scope === 'national' ? device.simCountry : null,
+      countryName: data.scope === 'national' ? device.simName : data.scope === 'regional' ? (REGIONS[data.region]?.name || 'Regional') : 'Global',
+      scope:       data.scope,
+      region:      data.region || null,
+      count:       0,
+      heat:        5,
+      timer:       dur * 3600,
+      color:       data.scope === 'national' ? '#7C6FFF' : data.scope === 'regional' ? '#FFB347' : '#4CFFA4',
+      cities:      1,
+      desc:        data.description,
+      demands:     data.demands,
+      joined:      false,
+      viralCount:  0,
+      isDemo:      true,
+    });
+  }
+
+  function tickTimers() {
+    protests.value.forEach(p => {
+      if (p.timer > 0) {
+        p.timer--;
+        if (Math.random() < 0.4) p.count += Math.floor(Math.random() * 4 + 1);
+      }
+    });
+  }
+
+  // Restore joined state from localStorage on init
+  function restoreFromStorage() {
+    const locks = useDeviceStore().getLocks();
+    protests.value.forEach(p => {
+      if (locks[p.id]) p.joined = true;
+    });
+  }
+
+  return {
+    protests, queue, filter, countryFilter,
+    globalCount, filteredProtests,
+    canJoin, scopeBadge,
+    joinProtest, incrementViral, boostQueue, createProtest, tickTimers, restoreFromStorage,
+  };
+});

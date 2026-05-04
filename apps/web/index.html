@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es" id="html-root">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Voz Ciudadana</title>
+<meta name="description" content="Plataforma de expresión ciudadana anónima y verificada. El pueblo manda.">
+<meta name="theme-color" content="#0A0A0F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Voz Ciudadana">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<script src="https://www.google.com/recaptcha/api.js?render=6LdFl9MsAAAAAISibM9CLohSkQLj1HfN5kH7Hw9Q"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+<div id="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-mark"><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zM10 16.5v-9l6 4.5-6 4.5z"/></svg></div>
+    Voz Ciudadana
+  </div>
+  <div class="topbar-right">
+    <div class="lang-switcher">
+      <button class="lang-btn active" onclick="setLang('es',this)">ES</button>
+      <button class="lang-btn" onclick="setLang('en',this)">EN</button>
+      <button class="lang-btn" onclick="setLang('fr',this)">FR</button>
+      <button class="lang-btn" onclick="setLang('zh',this)">中文</button>
+    </div>
+    <div class="badge-anon"><div class="pulse"></div><span id="anon-label">Anónimo</span></div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div class="screen active" id="s-home">
+  <div id="home-left">
+    <!-- Device status bar -->
+    <div class="device-bar">
+      <div class="dev-flag" id="dev-flag">🇪🇸</div>
+      <div class="dev-info">
+        <div class="dev-country" id="dev-country">España · UE</div>
+        <div class="dev-conf">Confianza geográfica: <span id="dev-conf-val">75%</span></div>
+      </div>
+      <div class="dev-dots">
+        <div class="dev-dot" id="dot-sim" style="background:var(--accent2)" title="SIM"></div>
+        <div class="dev-dot" id="dot-ip" style="background:var(--accent2)" title="IP"></div>
+        <div class="dev-dot" id="dot-doc" style="background:var(--accent4)" title="Documento"></div>
+      </div>
+    </div>
+    <div class="map-topbar">
+      <div class="filter-row">
+        <button class="pill active" onclick="setFilter('all',this)">Todas</button>
+        <button class="pill" onclick="setFilter('national',this)">🏛️ Nacional</button>
+        <button class="pill" onclick="setFilter('regional',this)">🌐 Regional</button>
+        <button class="pill" onclick="setFilter('global',this)">🌍 Global</button>
+      </div>
+      <div class="global-chip"><div class="red-dot"></div><span id="g-count">—</span></div>
+    </div>
+    <div class="map-wrap" style="height:220px;flex:1">
+      <canvas id="world-canvas"></canvas>
+      <div class="map-hint" id="map-hint">Clic en un país para filtrar · rueda para zoom</div>
+      <div class="map-ctrl">
+        <button class="mc" onclick="zoomIn()">+</button>
+        <button class="mc" onclick="zoomOut()">−</button>
+        <button class="mc" onclick="resetView()" style="font-size:9px">⊙</button>
+      </div>
+      <div class="map-legend">
+        <div class="ml-title">Temperatura</div>
+        <div class="ml-row"><div class="ml-sq" style="background:#1a3a5c"></div>Sin actividad</div>
+        <div class="ml-row"><div class="ml-sq" style="background:#2d5a8e"></div>Baja</div>
+        <div class="ml-row"><div class="ml-sq" style="background:#e8a020"></div>Media</div>
+        <div class="ml-row"><div class="ml-sq" style="background:#ff2020"></div>Alta/Crítica</div>
+      </div>
+      <div class="mtt" id="mtt"></div>
+    </div>
+  </div>
+
+  <div id="home-right">
+    <div class="panel-tabs">
+      <button class="ptab active" onclick="homeTab('active',this)">Activas</button>
+      <button class="ptab" onclick="homeTab('queue',this)">Cola</button>
+      <button class="ptab" onclick="homeTab('slots',this)">Slots</button>
+    </div>
+    <div class="panel-body">
+      <div id="tab-active"></div>
+      <div id="tab-queue" style="display:none"></div>
+      <div id="tab-slots" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL -->
+<div class="screen" id="s-detail">
+  <div class="detail-hdr">
+    <button class="back" onclick="nav('home')">← Volver al mapa</button>
+    <div class="d-title" id="d-title">—</div>
+    <div class="d-loc" id="d-loc"></div>
+  </div>
+  <div class="detail-map"><canvas id="map-canvas"></canvas>
+    <div class="d-hud">
+      <div class="hud-pill"><div class="pulse" style="background:var(--accent3)"></div>En curso</div>
+      <div class="hud-pill">👥 <span id="hud-ct">0</span></div>
+    </div>
+  </div>
+  <div class="d-scroll">
+    <div class="stats-row">
+      <div class="sc"><div class="sc-n" id="d-total" style="color:var(--accent)">0</div><div class="sc-l">Adheridos</div></div>
+      <div class="sc"><div class="sc-n" id="d-cities" style="color:var(--accent2)">0</div><div class="sc-l">Ciudades</div></div>
+      <div class="sc"><div class="sc-n" id="d-timer" style="color:var(--accent3)">—</div><div class="sc-l">Restante</div></div>
+    </div>
+    <!-- GEO VALIDATION -->
+    <div class="geo-validation" id="geo-validation">
+      <div class="gv-title">Validación geográfica</div>
+      <div class="gv-row"><div class="gv-dot" id="gv-dot-sim" style="background:var(--accent2)"></div><div class="gv-label">SIM / Prefijo</div><div class="gv-val gv-ok" id="gv-sim">—</div></div>
+      <div class="gv-row"><div class="gv-dot" id="gv-dot-ip" style="background:var(--accent2)"></div><div class="gv-label">IP / Ubicación</div><div class="gv-val gv-ok" id="gv-ip">—</div></div>
+      <div class="gv-row"><div class="gv-dot" id="gv-dot-doc" style="background:var(--accent4)"></div><div class="gv-label">Documento (voluntario)</div><div class="gv-val gv-warn" id="gv-doc">No aportado</div></div>
+      <div class="conf-bar"><div class="conf-fill" id="gv-conf-fill" style="width:75%;background:var(--accent2)"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:3px"><div style="font-size:7px;color:var(--text3)">Confianza geográfica</div><div style="font-size:8px;font-weight:600" id="gv-conf-pct">75%</div></div>
+    </div>
+    <div id="lock-msg-detail"></div>
+    <div class="block">
+      <div class="block-title">Garantías de seguridad</div>
+      <div class="sec-row"><div class="sec-ico" style="background:rgba(76,255,164,.08)">🔒</div><div style="flex:1"><div class="sec-lbl">Hash SHA-256 local</div><div class="sec-sub">Tu número nunca sale de tu dispositivo en texto claro.</div></div><div class="check"><svg viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg></div></div>
+      <div class="sec-row"><div class="sec-ico" style="background:rgba(255,179,71,.08)">🪪</div><div style="flex:1"><div class="sec-lbl">Doble verificación (SMS + DNI voluntario)</div><div class="sec-sub">El documento se hashea localmente. Añade credibilidad sin comprometer el anonimato.</div></div><div class="check"><svg viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg></div></div>
+      <div class="sec-row"><div class="sec-ico" style="background:rgba(124,111,255,.08)">🧅</div><div style="flex:1"><div class="sec-lbl">Tor en regímenes de riesgo</div><div class="sec-sub">Tu IP nunca llega a nuestros servidores.</div></div><div class="check"><svg viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg></div></div>
+      <div class="sec-row"><div class="sec-ico" style="background:rgba(255,107,107,.08)">🗳️</div><div style="flex:1"><div class="sec-lbl">Un dispositivo · una adhesión por alcance</div><div class="sec-sub">No puedes participar en dos convocatorias del mismo alcance simultáneamente.</div></div><div class="check"><svg viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg></div></div>
+      <div class="sec-row"><div class="sec-ico" style="background:rgba(255,179,71,.08)">⛓️</div><div style="flex:1"><div class="sec-lbl">Blockchain público</div><div class="sec-sub">Conteos inmutables. Ningún gobierno puede alterarlos.</div></div><div class="check"><svg viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg></div></div>
+    </div>
+    <div class="block"><div class="block-title">Sobre esta convocatoria</div><div class="d-desc" id="d-desc">—</div></div>
+    <div class="block" id="d-demands-block" style="display:none">
+      <div class="block-title" style="color:var(--accent3)">⚡ Qué exigimos</div>
+      <div class="d-desc" id="d-demands" style="color:var(--text);font-weight:500;line-height:1.9">—</div>
+    </div>
+  </div>
+  <div class="join-footer">
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-join" onclick="joinFlow()">Adherirme de forma anónima</button>
+      <div class="viral-wrap">
+        <button class="btn-viral" id="btn-viral" onclick="openShareModal()">
+          <div class="bv-inner">
+            <div class="bv-left">
+              <span class="bv-fire">🔥</span>
+              <div class="bv-text">
+                <div class="bv-title">VIRAL</div>
+                <div class="bv-sub">Hazlo viral</div>
+              </div>
+            </div>
+            <div class="bv-right">
+              <div class="bv-count" id="viral-count">0</div>
+              <div class="bv-clabel">compartieron</div>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+    <div id="share-counter-strip" style="display:none;align-items:center;gap:6px;margin-top:7px;padding:6px 9px;background:rgba(184,65,14,.08);border:.5px solid rgba(232,93,36,.22);border-radius:var(--r)">
+      <span style="font-size:11px">🔥</span>
+      <span style="font-size:9px;color:rgba(255,140,80,.9)"><strong id="scs-count" style="color:#e85d24">0</strong> personas ya han hecho VIRAL esta convocatoria</span>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH — Flujo directo, sin menú de opciones -->
+<div class="screen" id="s-auth">
+  <div class="auth-wrap">
+    <div class="auth-ico">📱</div>
+    <div class="auth-h">Tu número de teléfono</div>
+    <div class="auth-p">Te enviamos un código de 6 dígitos. Tu número se transforma en una huella matemática en tu dispositivo — nunca lo vemos en texto claro.</div>
+
+    <!-- ESTADO RECAPTCHA -->
+    <div id="captcha-status" class="verif-strip verif-loading" style="width:100%;margin-bottom:10px">
+      <span id="captcha-ico">⏳</span><span id="captcha-txt">Verificando que eres humano...</span>
+    </div>
+
+    <!-- FORMULARIO DIRECTO -->
+    <div style="width:100%">
+      <div class="phone-wrap">
+        <select class="cc-sel" id="cc">
+          <option value="+34">🇪🇸 +34</option>
+          <option value="+52">🇲🇽 +52</option>
+          <option value="+54">🇦🇷 +54</option>
+          <option value="+58">🇻🇪 +58</option>
+          <option value="+53">🇨🇺 +53</option>
+          <option value="+7">🇷🇺 +7</option>
+          <option value="+98">🇮🇷 +98</option>
+          <option value="+375">🇧🇾 +375</option>
+          <option value="+1">🇺🇸 +1</option>
+          <option value="+44">🇬🇧 +44</option>
+          <option value="+33">🇫🇷 +33</option>
+          <option value="+49">🇩🇪 +49</option>
+          <option value="+86">🇨🇳 +86</option>
+          <option value="+55">🇧🇷 +55</option>
+          <option value="+57">🇨🇴 +57</option>
+          <option value="+51">🇵🇪 +51</option>
+          <option value="+56">🇨🇱 +56</option>
+        </select>
+        <input class="phone-in" type="tel" id="phone-in" placeholder="600 000 000" maxlength="12" oninput="onPhoneInput()">
+      </div>
+      <div class="input-hint">Tu número se transforma en una huella irreversible en tu dispositivo antes de enviarse.</div>
+      <div class="hash-label">Huella generada en tiempo real</div>
+      <div class="hash-prev" id="hash-prev">Escribe tu número...</div>
+      <button class="btn-primary" id="btn-sms" style="width:100%;margin-top:8px" onclick="sendSMS()" disabled>Enviar código →</button>
+    </div>
+
+    <!-- OTP — oculto hasta enviar -->
+    <div id="step-otp" style="display:none;width:100%;margin-top:12px">
+      <div style="font-size:10px;color:var(--text2);margin-bottom:12px;line-height:1.7;text-align:center">
+        Código de 6 dígitos enviado. Expira en 5 minutos.
+      </div>
+      <div class="otp-row" id="otp-row"></div>
+      <div style="font-size:9px;color:var(--text3);margin-bottom:10px;text-align:center">
+        ¿No lo recibiste? <span style="color:var(--accent);cursor:pointer" onclick="showToast('Código reenviado')">Reenviar</span>
+      </div>
+      <button class="btn-primary" style="width:100%" onclick="verifyOTP()">Verificar →</button>
+    </div>
+
+    <!-- OPCIONES AVANZADAS — colapsadas por defecto -->
+    <div style="width:100%;margin-top:14px">
+      <button onclick="toggleAdvanced()" style="width:100%;padding:8px;background:transparent;border:.5px solid var(--border);border-radius:var(--r);font-size:10px;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px" id="adv-btn">
+        ⚙️ Opciones avanzadas <span id="adv-arrow">▼</span>
+      </button>
+      <div id="adv-panel" style="display:none;margin-top:8px;display:none">
+        <div class="auth-opts">
+          <div class="auth-opt" onclick="startVerify('sms_dni')">
+            <div class="ao-ico" style="background:rgba(255,179,71,.08)">🪪</div>
+            <div><div class="ao-title">SMS + DNI/Pasaporte<span class="ao-badge badge-vol">Voluntario</span></div><div class="ao-desc">Documento hasheado localmente. Máxima credibilidad geográfica.</div></div>
+          </div>
+          <div class="auth-opt" onclick="startVerify('worldid')">
+            <div class="ao-ico" style="background:rgba(124,111,255,.08)">🌐</div>
+            <div><div class="ao-title">World ID<span class="ao-badge badge-max">Máximo anonimato</span></div><div class="ao-desc">Zero-Knowledge Proof. Prueba de humanidad única e irrepetible.</div></div>
+          </div>
+          <div class="auth-opt" onclick="startVerify('zk')">
+            <div class="ao-ico" style="background:rgba(255,107,107,.08)">🕵️</div>
+            <div><div class="ao-title">Modo alto riesgo</div><div class="ao-desc">Tor + ZK-proof. Para países donde protestar es peligroso.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="anon-note" style="margin-top:10px">🛡️ Tu identidad nunca se almacena. Solo huellas matemáticas irreversibles.</div>
+  </div>
+</div>
+
+<!-- VERIFY -->
+<div class="screen" id="s-verify">
+  <div class="verify-wrap" id="v-main">
+    <div class="psteps"><div class="pstep done"></div><div class="pstep curr"></div><div class="pstep"></div><div class="pstep"></div></div>
+    <div class="v-step-l">Paso 1 de 3 — Introduce tu número</div>
+    <div class="v-h">Tu número de teléfono</div>
+    <div class="v-p">Hash SHA-256 generado en tu dispositivo antes de enviarse. Tu número nunca sale en texto claro.</div>
+    <div id="step-phone">
+      <div class="phone-wrap">
+        <select class="cc-sel" id="cc"><option value="+34">🇪🇸+34</option><option value="+52">🇲🇽+52</option><option value="+54">🇦🇷+54</option><option value="+58">🇻🇪+58</option><option value="+53">🇨🇺+53</option><option value="+7">🇷🇺+7</option><option value="+98">🇮🇷+98</option><option value="+375">🇧🇾+375</option><option value="+1">🇺🇸+1</option><option value="+44">🇬🇧+44</option><option value="+33">🇫🇷+33</option><option value="+49">🇩🇪+49</option><option value="+86">🇨🇳+86</option></select>
+        <input class="phone-in" type="tel" id="phone-in" placeholder="600 000 000" maxlength="12" oninput="onPhoneInput()">
+      </div>
+      <div class="input-hint">Tu número se transforma en una huella irreversible en tu dispositivo.</div>
+      <div class="hash-label">Hash generado en tiempo real</div>
+      <div class="hash-prev" id="hash-prev">Escribe tu número...</div>
+      <div class="dni-wrap" id="dni-wrap" style="display:none">
+        <div class="dni-label">Número de documento <span class="dni-badge">Voluntario</span></div>
+        <input class="dni-in" type="text" id="dni-in" placeholder="DNI / NIE / Pasaporte / National ID" maxlength="20" oninput="onDniInput()">
+        <div class="dni-hint">🔒 Hasheado localmente. Nunca almacenado. Eleva la confianza geográfica al 100%.</div>
+      </div>
+      <button class="btn-primary" id="btn-sms" style="width:100%;margin-top:8px" onclick="sendSMS()" disabled>Enviar código →</button>
+    </div>
+    <div id="step-otp" style="display:none">
+      <div style="font-size:10px;color:var(--text2);margin-bottom:12px;line-height:1.7">Código de 6 dígitos enviado. Expira en 5 minutos.</div>
+      <div class="otp-row" id="otp-row"></div>
+      <div style="font-size:8px;color:var(--text3);margin-bottom:10px;text-align:center">¿No lo recibiste? <span style="color:var(--accent);cursor:pointer" onclick="showToast('Código reenviado')">Reenviar</span></div>
+      <button class="btn-primary" style="width:100%" onclick="verifyOTP()">Verificar →</button>
+    </div>
+  </div>
+  <div class="spinner" id="spin"><div class="spin-ring"></div><div class="spin-txt" id="spin-txt">Procesando...</div></div>
+  <div class="success-scr" id="suc-scr">
+    <div class="suc-ico">✓</div>
+    <div class="suc-h">¡Adhesión registrada!</div>
+    <div class="suc-p">Tu voz ha sido contada de forma anónima y verificada.</div>
+    <div class="suc-hash"><span style="color:var(--text3)">Comprobante:</span><br><span id="receipt-hash"></span></div>
+    <button class="suc-share" onclick="openShareModal()">🔥 VIRAL — Hazlo viral ahora</button>
+    <button class="btn-primary" style="width:100%;margin-bottom:7px" onclick="nav('detail')">← Ver la convocatoria</button>
+    <button style="width:100%;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);font-size:10px;color:var(--text2);cursor:pointer" onclick="nav('home')">Ir al mapa mundial</button>
+  </div>
+</div>
+
+<!-- CREATE -->
+<div class="screen" id="s-create">
+  <div class="create-scroll">
+    <div class="form-h">Nueva convocatoria</div>
+    <div class="form-sub">Define el alcance geográfico. Es irreversible una vez publicada. La ciudadanía decide qué sube al mapa con sus impulsos.</div>
+    <div class="fg"><label>Título *</label><input type="text" id="f-title" maxlength="120" placeholder="Ej: Contra la corrupción del gobierno"><div class="char-c" id="cc-t">0/120</div></div>
+    <div class="fg"><label>Descripción *</label><textarea id="f-desc" rows="3" maxlength="500" placeholder="Explica el motivo con hechos concretos. Sin insultos ni incitación a la violencia."></textarea><div class="char-c" id="cc-d">0/500</div></div>
+    <div class="fg"><label>Qué exigimos *</label><textarea id="f-demands" rows="3" maxlength="300" placeholder="Ej: Que dimita el presidente · Que se retire la ley · Que se abra una investigación independiente · Que se libere a los presos políticos"></textarea><div class="char-c" id="cc-dem">0/300</div></div>
+    <div class="fg"><label>Punto focal *</label><input type="text" id="f-loc" placeholder="Ej: Congreso de los Diputados, Madrid"></div>
+    <div class="fg"><label>Categoría</label>
+      <select id="f-cat"><option value="corruption">Corrupción</option><option value="rights">Derechos humanos</option><option value="political">Política y democracia</option><option value="environment">Medio ambiente</option><option value="social">Social y laboral</option></select>
+    </div>
+
+    <!-- SCOPE SELECTOR -->
+    <div class="scope-section">
+      <div class="scope-section-title">Alcance geográfico *</div>
+      <div class="scope-opts">
+        <div class="scope-opt sel" id="so-national" onclick="selectScope('national')">
+          <div class="so-ico" style="background:rgba(124,111,255,.08)">🏛️</div>
+          <div class="so-txt"><div class="so-title">Nacional <span class="scope-badge sb-national">Solo ciudadanos del país</span></div><div class="so-desc">Solo participan dispositivos cuya SIM + IP correspondan al país de la convocatoria.</div></div>
+          <div class="so-radio on" id="sr-national"></div>
+        </div>
+        <div class="scope-opt" id="so-regional" onclick="selectScope('regional')">
+          <div class="so-ico" style="background:rgba(255,179,71,.08)">🌐</div>
+          <div class="so-txt"><div class="so-title">Regional <span class="scope-badge sb-regional">Bloque definido</span></div><div class="so-desc">Abierto a todos los países miembros del bloque. Ej: UE, MERCOSUR, ASEAN.</div></div>
+          <div class="so-radio" id="sr-regional"></div>
+        </div>
+        <div class="scope-opt" id="so-global" onclick="selectScope('global')">
+          <div class="so-ico" style="background:rgba(76,255,164,.08)">🌍</div>
+          <div class="so-txt"><div class="so-title">Global <span class="scope-badge sb-global">Cualquier ciudadano</span></div><div class="so-desc">Sin restricción geográfica. Para causas de alcance universal.</div></div>
+          <div class="so-radio" id="sr-global"></div>
+        </div>
+      </div>
+      <div class="region-picker" id="region-picker">
+        <div class="rp-label">Selecciona el bloque regional</div>
+        <div class="region-chips" id="rchips"></div>
+      </div>
+    </div>
+
+    <div class="fg"><label>Duración</label>
+      <select id="f-dur"><option value="2">2 horas (estándar)</option><option value="6">6 horas</option><option value="24">24 horas</option><option value="48">48 horas (internacional)</option></select>
+    </div>
+    <div class="schedule-box">
+      <div class="sch-head">📅 Programar convocatoria</div>
+      <div class="fg" style="margin-bottom:5px"><label>Fecha y hora de inicio</label>
+        <div class="sc-row"><input type="date" id="f-date"><input type="time" id="f-time" value="20:00" style="flex:0 0 85px"></div>
+      </div>
+      <div class="fg" style="margin-bottom:0"><label>Recordatorios automáticos</label>
+        <select id="f-reminders"><option value="all">24h antes + 2h antes + en el momento</option><option value="2h">Solo 2h antes + en el momento</option><option value="now">Solo en el momento</option><option value="none">Sin recordatorios</option></select>
+      </div>
+    </div>
+    <div class="fg"><label>Nivel de riesgo</label>
+      <select id="f-risk" onchange="checkRisk()"><option value="low">Bajo — democracia plena</option><option value="med">Medio — restricciones</option><option value="high">Alto — régimen autoritario</option><option value="critical">Crítico — represión activa</option></select>
+    </div>
+    <div class="risk-warn" id="risk-warn" style="display:none">⚠️ Se activará Tor + cifrado adicional automáticamente para todos los participantes.</div>
+    <div class="mod-box">
+      <div class="mod-h">⚖️ Proceso de moderación independiente</div>
+      <div class="mod-steps">
+        <div class="mstep"><div class="mn">1</div>Panel de ciudadanos voluntarios sin afiliación política</div>
+        <div class="mstep"><div class="mn">2</div>Verificación: sin incitación al odio ni datos falsos</div>
+        <div class="mstep"><div class="mn">3</div>Si se aprueba, entra en cola de impulso de su país</div>
+        <div class="mstep"><div class="mn">4</div>La ciudadanía impulsa. La más impulsada sube al mapa.</div>
+      </div>
+    </div>
+    <button class="btn-primary" style="width:100%;margin-bottom:18px" onclick="submitCreate()">Crear convocatoria (modo demo) →</button>
+  </div>
+</div>
+
+<!-- ABOUT -->
+<div class="screen" id="s-about">
+  <div class="scroll">
+    <div class="about-hero">
+      <div class="about-h">La herramienta. Sin trampa.</div>
+      <div class="about-p">Voz Ciudadana no tiene ideología. Es infraestructura neutral de expresión democrática, accesible desde cualquier lugar, sin riesgo físico.</div>
+    </div>
+    <div class="manifesto"><strong>Principio fundamental:</strong> "Una manifestación en la calle mide quién puede desplazarse ese día. Nosotros medimos el apoyo real, con garantías matemáticas de que cada adhesión es una persona real del país correcto."</div>
+    <div class="section-head">Alcance geográfico — cómo funciona</div>
+    <div class="tech-grid">
+      <div class="tcard"><div class="tcard-ico">🏛️</div><div class="tcard-h">Nacional</div><div class="tcard-p">Solo ciudadanos del país. SIM + IP verificados. Un francés no puede votar en una convocatoria española.</div></div>
+      <div class="tcard"><div class="tcard-ico">🌐</div><div class="tcard-h">Regional</div><div class="tcard-p">Bloques como UE, MERCOSUR, ASEAN. Todos los miembros del bloque pueden participar.</div></div>
+      <div class="tcard"><div class="tcard-ico">🌍</div><div class="tcard-h">Global</div><div class="tcard-p">Sin restricción geográfica. Derechos humanos, libertad de prensa, crisis climática.</div></div>
+      <div class="tcard"><div class="tcard-ico">📱</div><div class="tcard-h">1 por alcance</div><div class="tcard-p">Un dispositivo puede estar en una nacional + una regional + una global al mismo tiempo. No en dos nacionales.</div></div>
+      <div class="tcard"><div class="tcard-ico">🔒</div><div class="tcard-h">Confianza geográfica</div><div class="tcard-p">SIM (40%) + IP (35%) + Documento (25%). Mínimo 60% para nacionales, 40% para regionales.</div></div>
+      <div class="tcard"><div class="tcard-ico">⏳</div><div class="tcard-h">Bloqueo temporal</div><div class="tcard-p">Al unirte a una convocatoria nacional, tu dispositivo espera a que termine antes de poder unirse a otra del mismo tipo.</div></div>
+    </div>
+    <div class="section-head">Seguridad</div>
+    <div class="tech-grid">
+      <div class="tcard"><div class="tcard-ico">🔒</div><div class="tcard-h">Hash local</div><div class="tcard-p">SHA-256 en tu dispositivo. El número nunca sale en texto claro.</div></div>
+      <div class="tcard"><div class="tcard-ico">🧅</div><div class="tcard-h">Tor integrado</div><div class="tcard-p">Para países de alto riesgo. Tu IP es invisible.</div></div>
+      <div class="tcard"><div class="tcard-ico">🔮</div><div class="tcard-h">Zero-Knowledge</div><div class="tcard-p">Prueba de humanidad única. Imposible falsificar.</div></div>
+      <div class="tcard"><div class="tcard-ico">⛓️</div><div class="tcard-h">Blockchain</div><div class="tcard-p">Conteos inmutables. Ningún gobierno puede borrarlos.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="nav-item active" id="nav-home" onclick="nav('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>Mapa</button>
+  <button class="nav-item" id="nav-create" onclick="nav('create')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Convocar</button>
+  <button class="nav-item" id="nav-about" onclick="nav('about')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="8.5" stroke-linecap="round"/><line x1="12" y1="12" x2="12" y2="16"/></svg>Cómo funciona</button>
+</div>
+</div>
+
+<!-- SHARE MODAL -->
+<div class="modal-overlay" id="share-modal">
+  <div class="modal">
+
+    <!-- Mensaje EL PUEBLO MANDA -->
+    <div style="background:rgba(184,65,14,.08);border:.5px solid rgba(232,93,36,.25);border-radius:var(--r2);padding:12px 13px;margin-bottom:14px">
+      <div style="font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:rgba(232,93,36,.8);margin-bottom:6px">🔥 Mensaje que se enviará</div>
+      <div style="font-size:12px;color:var(--text);line-height:1.7;font-style:italic" id="modal-msg-preview">—</div>
+    </div>
+
+    <!-- 3 BOTONES — nada más -->
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+
+      <!-- WhatsApp — grande, el más importante -->
+      <button onclick="shareWA()" style="display:flex;align-items:center;gap:12px;padding:13px 14px;background:#075E54;border:none;border-radius:var(--r2);cursor:pointer;transition:all .2s;width:100%">
+        <div style="width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">💬</div>
+        <div style="text-align:left;flex:1">
+          <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:white">WhatsApp</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.7);margin-top:1px">Envía el mensaje a tus contactos y grupos</div>
+        </div>
+        <div style="font-size:18px;color:rgba(255,255,255,.6)">→</div>
+      </button>
+
+      <!-- Telegram -->
+      <button onclick="shareTG()" style="display:flex;align-items:center;gap:12px;padding:13px 14px;background:#2CA5E0;border:none;border-radius:var(--r2);cursor:pointer;transition:all .2s;width:100%">
+        <div style="width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">✈️</div>
+        <div style="text-align:left;flex:1">
+          <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:white">Telegram</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.7);margin-top:1px">Difunde en canales y grupos</div>
+        </div>
+        <div style="font-size:18px;color:rgba(255,255,255,.6)">→</div>
+      </button>
+
+      <!-- Copiar enlace + mensaje — ocupa todo el ancho -->
+      <button onclick="copyLink()" style="display:flex;align-items:center;gap:12px;padding:13px 14px;background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r2);cursor:pointer;transition:all .2s;width:100%">
+        <div style="width:32px;height:32px;border-radius:9px;background:rgba(124,111,255,.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🔗</div>
+        <div style="text-align:left;flex:1">
+          <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text)">Copiar enlace + mensaje</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:1px">Para TikTok, Instagram, X, Facebook o donde quieras</div>
+        </div>
+        <div style="font-size:16px;color:var(--accent)">📋</div>
+      </button>
+
+    </div>
+
+    <button class="modal-close" onclick="closeShareModal()">Cerrar</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- PWA INSTALL BANNER -->
+<div id="install-banner">
+  <div class="ib-icon">🔥</div>
+  <div class="ib-text">
+    <div class="ib-title">Instalar Voz Ciudadana</div>
+    <div class="ib-sub">Sigue el resultado en tiempo real · Sin App Store · Sin permisos de nadie</div>
+  </div>
+  <button class="ib-btn" onclick="installPWA()">Instalar</button>
+  <button class="ib-close" onclick="dismissInstall()">✕</button>
+</div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
+

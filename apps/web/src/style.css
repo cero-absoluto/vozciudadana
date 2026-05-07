@@ -393,4 +393,24 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .verif-ok{background:rgba(76,255,164,.08);border:.5px solid rgba(76,255,164,.2);color:var(--accent2)}
 .verif-fail{background:rgba(255,107,107,.08);border:.5px solid rgba(255,107,107,.2);color:var(--accent3)}
 .verif-loading{background:rgba(124,111,255,.08);border:.5px solid var(--border2);color:var(--text2)}
-
+/* ── MOBILE FONT SIZE IMPROVEMENTS ── */
+@media(max-width:899px){
+  html,body{font-size:16px}
+  .pi-title{font-size:13px}
+  .pi-count{font-size:13px}
+  .d-title{font-size:16px}
+  .d-desc{font-size:12px}
+  .auth-h{font-size:18px}
+  .auth-p{font-size:12px}
+  .ao-title{font-size:13px}
+  .ao-desc{font-size:10px}
+  .sec-lbl{font-size:12px}
+  .sec-sub{font-size:10px}
+  .sc-n{font-size:17px}
+  .suc-h{font-size:18px}
+  .form-h{font-size:16px}
+  .panel-info{font-size:11px}
+  .v-h{font-size:15px}
+  .v-p{font-size:11px}
+  .phone-in{font-size:14px}
+}

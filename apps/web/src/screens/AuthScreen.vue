@@ -16,6 +16,7 @@
         <div class="phone-wrap">
           <label for="cc-sel" class="sr-only">Prefijo del país</label>
           <select id="cc-sel" class="cc-sel" v-model="countryCode">
+            <option value="+356">🇲🇹 +356</option>
             <option value="+34">🇪🇸 +34</option>
             <option value="+52">🇲🇽 +52</option>
             <option value="+54">🇦🇷 +54</option>

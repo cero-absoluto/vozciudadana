@@ -29,10 +29,10 @@ function normalizeProtest(p) {
 }
 
 const FALLBACK_PROTESTS = [
-  {id:'local-1',title:'Contra la corrupción del gobierno',country:'ES',countryName:'España',scope:'national',region:null,count:187432,heat:95,timer:6840,color:'#ff2020',cities:284,desc:'Denunciamos la corrupción sistémica. Exigimos transparencia total y fin de la impunidad.',demands:'Que dimita el presidente · Que se abra una investigación independiente · Que se publiquen todos los contratos públicos · Fin de la impunidad.',joined:false,viralCount:0},
-  {id:'local-2',title:'Reforma del Parlamento Europeo',country:null,countryName:'Unión Europea',scope:'regional',region:'eu',count:412000,heat:88,timer:5400,color:'#4A6FFF',cities:890,desc:'Exigimos mayor representación ciudadana y transparencia en las instituciones europeas.',demands:'Que se tomen medidas inmediatas en respuesta a esta convocatoria ciudadana.',joined:false,viralCount:0},
-  {id:'local-3',title:'Libertad para presos políticos',country:null,countryName:'Global',scope:'global',region:null,count:211000,heat:98,timer:3600,color:'#4CFFA4',cities:521,desc:'Más de 250 personas detenidas arbitrariamente. Exigimos su liberación inmediata.',demands:'Liberación inmediata e incondicional · Sanciones internacionales · Acceso a observadores independientes de DDHH.',joined:false,viralCount:0},
-  {id:4,title:'Por la sanidad pública española',country:'ES',countryName:'España',scope:'national',region:null,count:54000,heat:72,timer:7200,color:'#e8a020',cities:143,desc:'Los recortes deterioran la atención primaria. Exigimos un pacto de estado por la sanidad.',demands:'Que se tomen medidas inmediatas.',joined:false,viralCount:0},
+  {id:1,title:'Acceso a la vivienda para jóvenes',country:'ES',countryName:'España',scope:'national',region:null,count:0,heat:5,timer:172800,color:'#7C6FFF',cities:1,desc:'Los jóvenes españoles necesitan entre 8 y 12 años de ahorro íntegro para reunir el 20% de entrada exigido por los bancos. La tasa de emancipación juvenil en España (15,9%) es la más baja de la UE (media 31,4%).',demands:'Que el Gobierno derogue la obligación del 20% de entrada para primera vivienda habitual de menores de 35 años · Que establezca un sistema de garantías públicas · Que publique un plan de acceso a vivienda para jóvenes',joined:false,viralCount:0},
+  {id:2,title:'Reforma del Parlamento Europeo',country:'EU',countryName:'Unión Europea',scope:'regional',region:'eu',count:412000,heat:88,timer:5400,color:'#4A6FFF',cities:890,desc:'Exigimos mayor representación ciudadana y transparencia en las instituciones europeas.',demands:'Que se reforme el sistema electoral europeo · Que los ciudadanos puedan proponer leyes directamente · Que las sesiones sean íntegramente públicas',joined:false,viralCount:0},
+  {id:3,title:'Libertad para presos políticos',country:null,countryName:'Global',scope:'global',region:null,count:211000,heat:98,timer:3600,color:'#4CFFA4',cities:521,desc:'Más de 250 personas detenidas arbitrariamente. Exigimos su liberación inmediata.',demands:'Liberación inmediata e incondicional · Sanciones internacionales · Acceso a observadores independientes de DDHH.',joined:false,viralCount:0},
+  {id:4,title:'Contra la corrupción del gobierno',country:'ES',countryName:'España',scope:'national',region:null,count:187432,heat:95,timer:6840,color:'#ff2020',cities:284,desc:'Denunciamos la corrupción sistémica. Exigimos transparencia total y fin de la impunidad.',demands:'Que dimita el presidente · Que se abra una investigación independiente · Que se publiquen todos los contratos públicos · Fin de la impunidad.',joined:false,viralCount:0},
   {id:5,title:'Crisis climática — Acuerdo de París',country:null,countryName:'Global',scope:'global',region:null,count:890000,heat:76,timer:86400,color:'#4CFFA4',cities:1240,desc:'Los compromisos del Acuerdo de París no se están cumpliendo.',demands:'Que se tomen medidas urgentes.',joined:false,viralCount:0},
   {id:6,title:'Política agraria común de la UE',country:'EU',countryName:'Unión Europea',scope:'regional',region:'eu',count:128000,heat:65,timer:9000,color:'#4A6FFF',cities:340,desc:'La PAC actual no protege a los pequeños agricultores ni a la biodiversidad.',demands:'Que se reforme la PAC.',joined:false,viralCount:0},
   {id:7,title:'Internet libre en Irán',country:'IR',countryName:'Irán',scope:'national',region:null,count:89234,heat:90,timer:4100,color:'#e84020',cities:198,desc:'El régimen ha bloqueado más de 15.000 sitios.',demands:'Que se desbloqueen todas las plataformas · Que cese la vigilancia · Que se libere a todos los periodistas presos.',joined:false,viralCount:0},
@@ -58,12 +58,32 @@ export const useProtestsStore = defineStore('protests', () => {
   const globalCount = computed(() => protests.value.reduce((s, p) => s + p.count, 0));
 
   const filteredProtests = computed(() => {
+    const device = useDeviceStore();
     let list = filter.value === 'all' ? protests.value : protests.value.filter(p => p.scope === filter.value);
     if (countryFilter.value) {
       const byCountry = list.filter(p => p.country === countryFilter.value);
       if (byCountry.length) list = byCountry;
     }
-    return [...list].sort((a, b) => b.heat - a.heat);
+    const sorted = [...list].sort((a, b) => b.heat - a.heat);
+debugger;
+    // En modo 'all' sin filtro de país: mostrar 1 nacional del dispositivo + 1 global
+    if (filter.value === 'all' && !countryFilter.value) {
+      const national = sorted.filter(p => p.scope === 'national' && p.country === device.simCountry);
+      const global   = sorted.filter(p => p.scope === 'global');
+      const regional = sorted.filter(p => p.scope === 'regional');
+      const others   = sorted.filter(p => p.scope === 'national' && p.country !== device.simCountry);
+      // 1 nacional propio + 1 global + resto ordenado por heat
+      const top = [
+        ...(national.length ? [national[0]] : []),
+        ...(global.length   ? [global[0]]   : []),
+        ...(regional.slice(0, 1)),
+        ...others.slice(0, 2),
+      ];
+      // Deduplicar
+      const seen = new Set();
+      return top.filter(p => { if (seen.has(p.id)) return false; seen.add(p.id); return true; });
+    }
+    return sorted;
   });
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -160,25 +180,25 @@ export const useProtestsStore = defineStore('protests', () => {
       return created;
     } catch (err) {
       // Optimistic local insert so the UI doesn't freeze if the API is down
-      protests.value.push({
-        id:          `local-${Date.now()}`,
-        title:       data.title,
-        country:     data.scope === 'national' ? device.simCountry : null,
+    protests.value.push({
+      id: Date.now(),
+      title:       data.title,
+      country:     data.scope === 'national' ? device.simCountry : null,
         countryName: data.scope === 'national' ? device.simName
                    : data.scope === 'regional' ? (REGIONS[data.region]?.name || 'Regional')
                    : 'Global',
-        scope:       data.scope,
-        region:      data.region || null,
-        count:       0,
-        heat:        5,
-        timer:       dur * 3600,
+      scope:       data.scope,
+      region:      data.region || null,
+      count:       0,
+      heat:        5,
+      timer:       dur * 3600,
         color:       SCOPE_COLOR[data.scope] ?? '#7C6FFF',
-        cities:      1,
-        desc:        data.description,
-        demands:     data.demands,
-        joined:      false,
-        viralCount:  0,
-      });
+      cities:      1,
+      desc:        data.description,
+      demands:     data.demands,
+      joined:      false,
+      viralCount:  0,
+    });
       throw err;
     }
   }

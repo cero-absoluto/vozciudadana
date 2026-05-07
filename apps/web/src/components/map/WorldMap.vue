@@ -174,6 +174,65 @@ function setupEvents() {
     zoom = Math.min(10, Math.max(0.7, zoom * (e.deltaY > 0 ? 0.82 : 1.2)));
     buildProj();
   }, { passive: false });
+
+  // ── TOUCH EVENTS (móvil) ──────────────────────────────
+  let lastTouchDist = 0;
+  let touchStartX = 0, touchStartY = 0, touchOx = 0, touchOy = 0;
+
+  c.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (e.touches.length === 1) {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      touchOx = offX; touchOy = offY;
+      drag = false;
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastTouchDist = Math.sqrt(dx * dx + dy * dy);
+    }
+  }, { passive: false });
+
+  c.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (e.touches.length === 1) {
+      const dx = e.touches[0].clientX - touchStartX;
+      const dy = e.touches[0].clientY - touchStartY;
+      if (Math.sqrt(dx*dx+dy*dy) > 4) drag = true;
+      if (drag) { offX = touchOx + dx; offY = touchOy + dy; buildProj(); }
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (lastTouchDist > 0) {
+        const ratio = dist / lastTouchDist;
+        zoom = Math.min(10, Math.max(0.7, zoom * ratio));
+        buildProj();
+      }
+      lastTouchDist = dist;
+    }
+  }, { passive: false });
+
+  c.addEventListener('touchend', e => {
+    e.preventDefault();
+    if (e.changedTouches.length === 1 && !drag) {
+      const touch = e.changedTouches[0];
+      const fakeEvent = { clientX: touch.clientX, clientY: touch.clientY };
+      const geo = cssToGeo(fakeEvent);
+      if (geo) {
+        const found = topojson.feature(worldData, worldData.objects.countries).features
+          .find(f => d3.geoContains(f, geo));
+        if (found) {
+          const iso = found.id ? String(found.id).padStart(3, '0') : null;
+          const name = found.properties?.name || iso;
+          const a2 = ISO_NUM_TO_A2[iso] || iso;
+          emit('country-click', a2, name);
+        }
+      }
+    }
+    lastTouchDist = 0;
+    setTimeout(() => { drag = false; }, 50);
+  }, { passive: false });
 }
 
 function zoomIn()    { zoom = Math.min(10, zoom * 1.3); buildProj(); }

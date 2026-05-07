@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, shallowRef } from 'vue';
 
 export const useUiStore = defineStore('ui', () => {
   const toastMsg           = ref('');
@@ -7,8 +7,8 @@ export const useUiStore = defineStore('ui', () => {
   const showShareModal     = ref(false);
   const showInstallBanner  = ref(false);
   const lang               = ref('es');
+  const deferredPrompt     = shallowRef(null);
   let   _toastTimer        = null;
-  let   _deferredPrompt    = null;
 
   function showToast(msg) {
     toastMsg.value = msg;
@@ -17,10 +17,10 @@ export const useUiStore = defineStore('ui', () => {
     _toastTimer = setTimeout(() => { toastVisible.value = false; }, 2800);
   }
 
-  function setDeferredPrompt(e) { _deferredPrompt = e; }
+  function setDeferredPrompt(e) { deferredPrompt.value = e; }
 
   function revealInstallBanner() {
-    if (!_deferredPrompt) return;
+    if (!deferredPrompt.value) return;
     if (window.navigator.standalone) return;
     if (window.matchMedia('(display-mode: standalone)').matches) return;
     showInstallBanner.value = true;
@@ -28,15 +28,15 @@ export const useUiStore = defineStore('ui', () => {
 
   function dismissInstallBanner() {
     showInstallBanner.value = false;
-    _deferredPrompt = null;
+    deferredPrompt.value = null;
   }
 
   async function installPWA() {
-    if (!_deferredPrompt) return;
-    _deferredPrompt.prompt();
-    const { outcome } = await _deferredPrompt.userChoice;
+    if (!deferredPrompt.value) return;
+    deferredPrompt.value.prompt();
+    const { outcome } = await deferredPrompt.value.userChoice;
     if (outcome === 'accepted') showToast('✓ Voz Ciudadana instalada. ¡El pueblo manda!');
-    _deferredPrompt = null;
+    deferredPrompt.value = null;
     showInstallBanner.value = false;
   }
 

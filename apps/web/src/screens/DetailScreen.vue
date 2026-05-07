@@ -5,7 +5,7 @@
       <button class="back" @click="$router.back()">← Volver al mapa</button>
       <div class="d-title">{{ protest.title }}</div>
       <div class="d-loc">
-        <span v-html="store.scopeBadge(protest)"></span>
+        <span class="scope-badge" :class="store.scopeBadge(protest).cls">{{ store.scopeBadge(protest).icon }} {{ store.scopeBadge(protest).label }}</span>
         <span style="font-size:9px;color:var(--text2)">📍 {{ protest.countryName }}</span>
       </div>
     </div>
@@ -119,7 +119,7 @@ const store    = useProtestsStore();
 const device   = useDeviceStore();
 const ui       = useUiStore();
 
-const protest = computed(() => store.protests.find(p => p.id === Number(route.params.id)));
+const protest = computed(() => store.protests.find(p => String(p.id) === route.params.id));
 const cj      = computed(() => protest.value ? store.canJoin(protest.value) : { ok: false });
 
 const simOk = computed(() => {

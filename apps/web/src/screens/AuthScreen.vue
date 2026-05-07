@@ -14,7 +14,8 @@
       <!-- Phone input -->
       <div style="width:100%" v-if="!otpVisible">
         <div class="phone-wrap">
-          <select class="cc-sel" v-model="countryCode">
+          <label for="cc-sel" class="sr-only">Prefijo del país</label>
+          <select id="cc-sel" class="cc-sel" v-model="countryCode">
             <option value="+34">🇪🇸 +34</option>
             <option value="+52">🇲🇽 +52</option>
             <option value="+54">🇦🇷 +54</option>
@@ -30,7 +31,8 @@
             <option value="+86">🇨🇳 +86</option>
             <option value="+55">🇧🇷 +55</option>
           </select>
-          <input class="phone-in" type="tel" v-model="phone" placeholder="600 000 000" maxlength="12">
+          <label for="phone-in" class="sr-only">Número de teléfono</label>
+          <input id="phone-in" class="phone-in" type="tel" v-model="phone" placeholder="600 000 000" maxlength="12" aria-label="Número de teléfono">
         </div>
         <div class="input-hint">Tu número se transforma en una huella irreversible en tu dispositivo antes de enviarse.</div>
         <div class="hash-label">Huella generada en tiempo real</div>
@@ -45,15 +47,12 @@
         <div style="font-size:10px;color:var(--text2);margin-bottom:12px;line-height:1.7;text-align:center">
           Código de 6 dígitos enviado. Expira en 5 minutos.
         </div>
-        <div style="background:rgba(255,179,71,.08);border:.5px solid rgba(255,179,71,.2);border-radius:6px;padding:6px 9px;margin-bottom:8px;text-align:center;font-size:9px;color:var(--accent4)">
-          DEMO · Código prellenado · Pulsa Verificar
-        </div>
         <div class="otp-row">
           <input v-for="(_, i) in 6" :key="i" class="otp-box" type="tel" maxlength="1"
             :ref="el => { if (el) otpRefs[i] = el }"
             v-model="otpDigits[i]"
             @input="onOtpInput(i)"
-            style="color:var(--accent2)">
+            :aria-label="`Dígito ${i + 1} del código`">
         </div>
         <div style="font-size:9px;color:var(--text3);margin-bottom:10px;text-align:center">
           ¿No lo recibiste? <span style="color:var(--accent);cursor:pointer" @click="ui.showToast('Código reenviado')">Reenviar</span>
@@ -110,57 +109,91 @@ const captchaTxt         = ref('Verificando que eres humano...');
 const RECAPTCHA_KEY = import.meta.env.VITE_RECAPTCHA_KEY;
 
 async function getRecaptchaToken(action) {
-  return new Promise(resolve => {
-    if (typeof window.grecaptcha === 'undefined') { resolve('demo_token'); return; }
+  return new Promise((resolve, reject) => {
+    if (typeof window.grecaptcha === 'undefined' || !RECAPTCHA_KEY) {
+      reject(new Error('reCAPTCHA no disponible'));
+      return;
+    }
     window.grecaptcha.ready(() => {
       window.grecaptcha.execute(RECAPTCHA_KEY, { action })
         .then(t => resolve(t))
-        .catch(() => resolve('demo_token'));
+        .catch(err => reject(err));
     });
   });
 }
 
 onMounted(async () => {
   try {
-    const token = await getRecaptchaToken('join_protest');
+    await getRecaptchaToken('load');
     captchaStatusClass.value = 'verif-ok';
     captchaIco.value  = '✓';
-    captchaTxt.value  = token && token !== 'demo_token'
-      ? 'Verificado — eres humano. Introduce tu número.'
-      : 'Modo demo — introduce tu número.';
+    captchaTxt.value  = 'Verificado — eres humano. Introduce tu número.';
   } catch {
-    captchaStatusClass.value = 'verif-ok';
-    captchaIco.value = '✓';
-    captchaTxt.value = 'Introduce tu número para continuar.';
+    captchaStatusClass.value = 'verif-error';
+    captchaIco.value = '⚠️';
+    captchaTxt.value = 'No se pudo verificar reCAPTCHA. Continúa si estás en desarrollo.';
   }
 });
 
-async function mockHash(s) {
-  const c = '0123456789abcdef'; let h = 'sha256:';
-  for (let i = 0; i < 64; i++) h += c[Math.floor(Math.random() * 16)];
-  return h;
+/** Real SHA-256 hash using the Web Crypto API. */
+async function sha256(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 const hashDisplay = ref('Escribe tu número...');
 watch([countryCode, phone], async () => {
   const v = phone.value.replace(/\D/g, '');
-  hashDisplay.value = v.length >= 4 ? await mockHash(countryCode.value + v) : 'Escribe tu número...';
+  if (v.length >= 4) {
+    const h = await sha256(countryCode.value + v);
+    hashDisplay.value = 'sha256:' + h;
+  } else {
+    hashDisplay.value = 'Escribe tu número...';
+  }
 });
 
-function sendSMS() {
+import * as api from '@/services/api.js';
+import { useDeviceStore } from '@/stores/device.js';
+const device = useDeviceStore();
+
+async function sendSMS() {
+  const v = phone.value.replace(/\D/g, '');
+  if (v.length < 6) return;
   sending.value = true;
-  setTimeout(() => {
-    sending.value = false;
+  try {
+    let token = '';
+    try { token = await getRecaptchaToken('request_otp'); } catch { /* dev mode */ }
+    const phoneHash = await sha256(countryCode.value + v);
+    await api.requestOtp({ phone_hash: phoneHash, recaptcha_token: token || 'dev' });
+    otpDigits.value = ['', '', '', '', '', ''];
     otpVisible.value = true;
-  }, 1200);
+  } catch (err) {
+    ui.showToast('Error al enviar el código: ' + err.message);
+  } finally {
+    sending.value = false;
+  }
 }
 
 function onOtpInput(i) {
   if (otpDigits.value[i] && i < 5) otpRefs.value[i + 1]?.focus();
 }
 
-function verifyOTP() {
-  if (otpDigits.value.join('').length < 6) { ui.showToast('Introduce los 6 dígitos'); return; }
-  router.push('/verify');
+async function verifyOTP() {
+  const code = otpDigits.value.join('');
+  if (code.length < 6) { ui.showToast('Introduce los 6 dígitos'); return; }
+  sending.value = true;
+  try {
+    const v = phone.value.replace(/\D/g, '');
+    const phoneHash = await sha256(countryCode.value + v);
+    const deviceId  = device.getDeviceId();
+    sessionStorage.setItem('vc_phone_hash', phoneHash);
+    sessionStorage.setItem('vc_device_id',  deviceId);
+    await api.verifyOtp({ phone_hash: phoneHash, otp: code, device_id: deviceId });
+    router.push('/verify');
+  } catch (err) {
+    ui.showToast('Código incorrecto o expirado: ' + err.message);
+  } finally {
+    sending.value = false;
+  }
 }
 </script>

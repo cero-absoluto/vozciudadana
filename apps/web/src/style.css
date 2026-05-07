@@ -1,5 +1,7 @@
 
 :root{--bg:#0A0A0F;--bg2:#12121A;--bg3:#1A1A26;--bg4:#22222F;--bg5:#2C2C3E;--accent:#7C6FFF;--accent2:#4CFFA4;--accent3:#FF6B6B;--accent4:#FFB347;--text:#FFFFFF;--text2:#C8C4E8;--text3:#8884AA;--border:rgba(124,111,255,0.2);--border2:rgba(124,111,255,0.4);--r:10px;--r2:16px}
+/* Visually hidden — accessible to screen readers */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow:hidden}
 #app{height:100vh;display:flex;flex-direction:column;overflow:hidden;max-width:520px;margin:0 auto;border-left:1px solid var(--border);border-right:1px solid var(--border)}

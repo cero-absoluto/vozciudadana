@@ -2,11 +2,36 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { REGIONS, inRegion, fmtTime } from '@/constants.js';
 import { useDeviceStore } from './device.js';
+import * as api from '@/services/api.js';
 
-const INITIAL_PROTESTS = [
-  {id:1,title:'Contra la corrupción del gobierno',country:'ES',countryName:'España',scope:'national',region:null,count:187432,heat:95,timer:6840,color:'#ff2020',cities:284,desc:'Denunciamos la corrupción sistémica. Exigimos transparencia total y fin de la impunidad.',demands:'Que dimita el presidente · Que se abra una investigación independiente · Que se publiquen todos los contratos públicos · Fin de la impunidad.',joined:false,viralCount:0},
-  {id:2,title:'Reforma del Parlamento Europeo',country:'EU',countryName:'Unión Europea',scope:'regional',region:'eu',count:412000,heat:88,timer:5400,color:'#4A6FFF',cities:890,desc:'Exigimos mayor representación ciudadana y transparencia en las instituciones europeas.',demands:'Que se tomen medidas inmediatas en respuesta a esta convocatoria ciudadana.',joined:false,viralCount:0},
-  {id:3,title:'Libertad para presos políticos',country:null,countryName:'Global',scope:'global',region:null,count:211000,heat:98,timer:3600,color:'#4CFFA4',cities:521,desc:'Más de 250 personas detenidas arbitrariamente. Exigimos su liberación inmediata.',demands:'Liberación inmediata e incondicional · Sanciones internacionales · Acceso a observadores independientes de DDHH.',joined:false,viralCount:0},
+const SCOPE_COLOR = { national: '#7C6FFF', regional: '#FFB347', global: '#4CFFA4' };
+
+/** Map an API protest record to the shape the UI expects. */
+function normalizeProtest(p) {
+  const endsAt = new Date(p.ends_at).getTime();
+  return {
+    id:          p.id,
+    title:       p.title,
+    country:     p.country ?? null,
+    countryName: p.country_name,
+    scope:       p.scope,
+    region:      p.region ?? null,
+    count:       p.count ?? 0,
+    heat:        p.heat ?? 5,
+    timer:       Math.max(0, Math.floor((endsAt - Date.now()) / 1000)),
+    color:       SCOPE_COLOR[p.scope] ?? '#7C6FFF',
+    cities:      p.cities ?? 1,
+    desc:        p.description,
+    demands:     p.demands ?? '',
+    joined:      false,
+    viralCount:  p.viral_count ?? 0,
+  };
+}
+
+const FALLBACK_PROTESTS = [
+  {id:'local-1',title:'Contra la corrupción del gobierno',country:'ES',countryName:'España',scope:'national',region:null,count:187432,heat:95,timer:6840,color:'#ff2020',cities:284,desc:'Denunciamos la corrupción sistémica. Exigimos transparencia total y fin de la impunidad.',demands:'Que dimita el presidente · Que se abra una investigación independiente · Que se publiquen todos los contratos públicos · Fin de la impunidad.',joined:false,viralCount:0},
+  {id:'local-2',title:'Reforma del Parlamento Europeo',country:null,countryName:'Unión Europea',scope:'regional',region:'eu',count:412000,heat:88,timer:5400,color:'#4A6FFF',cities:890,desc:'Exigimos mayor representación ciudadana y transparencia en las instituciones europeas.',demands:'Que se tomen medidas inmediatas en respuesta a esta convocatoria ciudadana.',joined:false,viralCount:0},
+  {id:'local-3',title:'Libertad para presos políticos',country:null,countryName:'Global',scope:'global',region:null,count:211000,heat:98,timer:3600,color:'#4CFFA4',cities:521,desc:'Más de 250 personas detenidas arbitrariamente. Exigimos su liberación inmediata.',demands:'Liberación inmediata e incondicional · Sanciones internacionales · Acceso a observadores independientes de DDHH.',joined:false,viralCount:0},
   {id:4,title:'Por la sanidad pública española',country:'ES',countryName:'España',scope:'national',region:null,count:54000,heat:72,timer:7200,color:'#e8a020',cities:143,desc:'Los recortes deterioran la atención primaria. Exigimos un pacto de estado por la sanidad.',demands:'Que se tomen medidas inmediatas.',joined:false,viralCount:0},
   {id:5,title:'Crisis climática — Acuerdo de París',country:null,countryName:'Global',scope:'global',region:null,count:890000,heat:76,timer:86400,color:'#4CFFA4',cities:1240,desc:'Los compromisos del Acuerdo de París no se están cumpliendo.',demands:'Que se tomen medidas urgentes.',joined:false,viralCount:0},
   {id:6,title:'Política agraria común de la UE',country:'EU',countryName:'Unión Europea',scope:'regional',region:'eu',count:128000,heat:65,timer:9000,color:'#4A6FFF',cities:340,desc:'La PAC actual no protege a los pequeños agricultores ni a la biodiversidad.',demands:'Que se reforme la PAC.',joined:false,viralCount:0},
@@ -22,8 +47,10 @@ const INITIAL_QUEUE = [
 ];
 
 export const useProtestsStore = defineStore('protests', () => {
-  const protests = ref(INITIAL_PROTESTS.map(p => ({ ...p })));
-  const queue    = ref(INITIAL_QUEUE.map(q => ({ ...q })));
+  const protests      = ref(FALLBACK_PROTESTS.map(p => ({ ...p })));
+  const queue         = ref(INITIAL_QUEUE.map(q => ({ ...q })));
+  const loading       = ref(false);
+  const error         = ref(null);
   const filter        = ref('all');   // 'all' | 'national' | 'regional' | 'global'
   const countryFilter = ref(null);    // ISO alpha-2 or null
 
@@ -69,12 +96,34 @@ export const useProtestsStore = defineStore('protests', () => {
   }
 
   function scopeBadge(p) {
-    if (p.scope === 'national') return `<span class="scope-badge sb-national">🏛️ ${p.countryName}</span>`;
-    if (p.scope === 'regional') return `<span class="scope-badge sb-regional">🌐 ${REGIONS[p.region]?.name || 'Regional'}</span>`;
-    return `<span class="scope-badge sb-global">🌍 Global</span>`;
+    if (p.scope === 'national') return { cls: 'sb-national', icon: '🏛️', label: p.countryName };
+    if (p.scope === 'regional') return { cls: 'sb-regional', icon: '🌐', label: REGIONS[p.region]?.name || 'Regional' };
+    return { cls: 'sb-global', icon: '🌍', label: 'Global' };
   }
 
   // ── Actions ────────────────────────────────────────────────────────────────
+  async function loadProtests(filters = {}) {
+    loading.value = true;
+    error.value = null;
+    try {
+      const data = await api.fetchProtests(filters);
+      const locks = useDeviceStore().getLocks();
+      protests.value = data.map(p => {
+        const n = normalizeProtest(p);
+        if (locks[n.id]) n.joined = true;
+        return n;
+      });
+    } catch (err) {
+      error.value = err.message;
+      // Fall back to demo data so the UI stays usable offline
+      if (!protests.value.length) {
+        protests.value = FALLBACK_PROTESTS.map(p => ({ ...p }));
+      }
+    } finally {
+      loading.value = false;
+    }
+  }
+
   function joinProtest(id) {
     const p = protests.value.find(x => x.id === id);
     if (!p) return;
@@ -95,27 +144,43 @@ export const useProtestsStore = defineStore('protests', () => {
     if (q) q.votes += 1;
   }
 
-  function createProtest(data) {
+  async function createProtest(data) {
     const device = useDeviceStore();
-    const dur = parseInt(data.duration_h) || 2;
-    protests.value.push({
-      id: Date.now(),
-      title:       data.title,
-      country:     data.scope === 'national' ? device.simCountry : null,
-      countryName: data.scope === 'national' ? device.simName : data.scope === 'regional' ? (REGIONS[data.region]?.name || 'Regional') : 'Global',
-      scope:       data.scope,
-      region:      data.region || null,
-      count:       0,
-      heat:        5,
-      timer:       dur * 3600,
-      color:       data.scope === 'national' ? '#7C6FFF' : data.scope === 'regional' ? '#FFB347' : '#4CFFA4',
-      cities:      1,
-      desc:        data.description,
-      demands:     data.demands,
-      joined:      false,
-      viralCount:  0,
-      isDemo:      true,
-    });
+    const dur = parseFloat(data.duration_h) || 2;
+    try {
+      const created = await api.createProtest({
+        ...data,
+        duration_h: dur,
+        country:    data.scope === 'national' ? device.simCountry : null,
+        country_name: data.scope === 'national' ? device.simName
+                    : data.scope === 'regional' ? (REGIONS[data.region]?.name || 'Regional')
+                    : 'Global',
+      });
+      protests.value.push(normalizeProtest(created));
+      return created;
+    } catch (err) {
+      // Optimistic local insert so the UI doesn't freeze if the API is down
+      protests.value.push({
+        id:          `local-${Date.now()}`,
+        title:       data.title,
+        country:     data.scope === 'national' ? device.simCountry : null,
+        countryName: data.scope === 'national' ? device.simName
+                   : data.scope === 'regional' ? (REGIONS[data.region]?.name || 'Regional')
+                   : 'Global',
+        scope:       data.scope,
+        region:      data.region || null,
+        count:       0,
+        heat:        5,
+        timer:       dur * 3600,
+        color:       SCOPE_COLOR[data.scope] ?? '#7C6FFF',
+        cities:      1,
+        desc:        data.description,
+        demands:     data.demands,
+        joined:      false,
+        viralCount:  0,
+      });
+      throw err;
+    }
   }
 
   function tickTimers() {
@@ -127,18 +192,19 @@ export const useProtestsStore = defineStore('protests', () => {
     });
   }
 
-  // Restore joined state from localStorage on init
-  function restoreFromStorage() {
+  // Restore joined state from localStorage on init, then load from API
+  async function restoreFromStorage() {
     const locks = useDeviceStore().getLocks();
     protests.value.forEach(p => {
       if (locks[p.id]) p.joined = true;
     });
+    await loadProtests();
   }
 
   return {
-    protests, queue, filter, countryFilter,
+    protests, queue, filter, countryFilter, loading, error,
     globalCount, filteredProtests,
     canJoin, scopeBadge,
-    joinProtest, incrementViral, boostQueue, createProtest, tickTimers, restoreFromStorage,
+    loadProtests, joinProtest, incrementViral, boostQueue, createProtest, tickTimers, restoreFromStorage,
   };
 });

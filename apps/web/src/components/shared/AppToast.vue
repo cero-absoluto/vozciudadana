@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div id="toast" :class="{show: ui.toastVisible}">{{ ui.toastMsg }}</div>
+    <div id="toast" role="alert" aria-live="polite" aria-atomic="true" :class="{show: ui.toastVisible}">{{ ui.toastMsg }}</div>
   </Teleport>
 </template>
 <script setup>

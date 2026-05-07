@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <div class="modal-overlay" :class="{open: ui.showShareModal}" @click.self="ui.showShareModal = false">
-      <div class="modal">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Compartir convocatoria">
         <div style="background:rgba(184,65,14,.08);border:.5px solid rgba(232,93,36,.25);border-radius:var(--r2);padding:12px 13px;margin-bottom:14px">
           <div style="font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:rgba(232,93,36,.8);margin-bottom:6px">🔥 Mensaje que se enviará</div>
           <div style="font-size:12px;color:var(--text);line-height:1.7;font-style:italic">{{ previewMsg }}</div>

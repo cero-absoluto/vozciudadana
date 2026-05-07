@@ -93,7 +93,9 @@ function drawFrame() {
     if (!co) return;
     const [x, y] = proj(co);
     if (x < -10 || x > W + 10 || y < -10 || y > H + 10) return;
-    const pulse = 0.4 + Math.sin(t / 500 + p.id) * 0.3;
+    const idSeed = typeof p.id === 'number' ? p.id
+      : String(p.id).split('').reduce((n, c) => ((n << 5) - n + c.charCodeAt(0)) | 0, 0);
+    const pulse = 0.4 + Math.sin(t / 500 + idSeed) * 0.3;
     const r = 3 + (p.heat / 100) * 5;
     ctx.beginPath(); ctx.arc(x, y, r * 2.5, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(255,80,80,${pulse * 0.2})`; ctx.fill();
@@ -192,6 +194,16 @@ onMounted(() => {
 
   setupEvents();
 
+  const handleVisibility = () => {
+    if (document.hidden) {
+      cancelAnimationFrame(raf);
+    } else if (worldData) {
+      drawFrame();
+    }
+  };
+  document.addEventListener('visibilitychange', handleVisibility);
+  c._visibilityHandler = handleVisibility;
+
   const ro = new ResizeObserver(() => {
     W = c.width  = c.parentElement.clientWidth  || window.innerWidth;
     H = c.height = c.parentElement.clientHeight || props.height;
@@ -204,5 +216,8 @@ onMounted(() => {
 onUnmounted(() => {
   cancelAnimationFrame(raf);
   canvasEl.value?._ro?.disconnect();
+  if (canvasEl.value?._visibilityHandler) {
+    document.removeEventListener('visibilitychange', canvasEl.value._visibilityHandler);
+  }
 });
 </script>

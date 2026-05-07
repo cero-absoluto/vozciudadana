@@ -1,27 +1,52 @@
 import { supabase } from '../services/supabase.js';
 
+const VALID_SCOPES    = ['national', 'regional', 'global'];
+const VALID_REGIONS   = ['eu', 'mercosur', 'asean', 'latam', 'g20'];
+const VALID_RISK      = ['low', 'med', 'high', 'critical'];
+const COUNTRY_RE      = /^[A-Z]{2}$/;
+
 /** @param {import('fastify').FastifyInstance} app */
 export default async function protestRoutes(app) {
   // GET /api/protests — list active protests (optionally filter by scope/country)
-  app.get('/', async (req, reply) => {
+  app.get('/', {
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          scope:   { type: 'string', enum: VALID_SCOPES },
+          country: { type: 'string', minLength: 2, maxLength: 2 },
+        },
+        additionalProperties: false,
+      },
+    },
+  }, async (req, reply) => {
     const { scope, country } = req.query;
 
     let query = supabase
       .from('protests')
       .select('*')
       .gt('ends_at', new Date().toISOString())
-      .order('heat', { ascending: false });
+      .order('heat', { ascending: false })
+      .limit(100);
 
     if (scope)   query = query.eq('scope', scope);
-    if (country) query = query.eq('country', country);
+    if (country) query = query.eq('country', country.toUpperCase());
 
     const { data, error } = await query;
-    if (error) return reply.internalServerError(error.message);
+    if (error) throw error;
     return data;
   });
 
   // GET /api/protests/:id
-  app.get('/:id', async (req, reply) => {
+  app.get('/:id', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string', format: 'uuid' } },
+        required: ['id'],
+      },
+    },
+  }, async (req, reply) => {
     const { data, error } = await supabase
       .from('protests')
       .select('*')
@@ -33,28 +58,78 @@ export default async function protestRoutes(app) {
   });
 
   // POST /api/protests — create a new protest
-  app.post('/', async (req, reply) => {
+  app.post('/', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['title', 'country_name', 'scope', 'duration_h'],
+        properties: {
+          title:        { type: 'string', minLength: 1, maxLength: 255 },
+          description:  { type: 'string', maxLength: 5000 },
+          demands:      { type: 'string', maxLength: 2000 },
+          country:      { type: 'string', minLength: 2, maxLength: 2, nullable: true },
+          country_name: { type: 'string', minLength: 1, maxLength: 120 },
+          scope:        { type: 'string', enum: VALID_SCOPES },
+          region:       { type: 'string', enum: VALID_REGIONS, nullable: true },
+          focal_point:  { type: 'string', maxLength: 500, nullable: true },
+          category:     { type: 'string', maxLength: 120, nullable: true },
+          duration_h:   { type: 'number', minimum: 0.5, maximum: 720 },
+          starts_at:    { type: 'string', format: 'date-time', nullable: true },
+          risk_level:   { type: 'string', enum: VALID_RISK },
+        },
+        additionalProperties: false,
+      },
+    },
+  }, async (req, reply) => {
     const { title, description, demands, country, country_name, scope, region,
             focal_point, category, duration_h, starts_at, risk_level } = req.body;
 
     const ends_at = new Date(
-      new Date(starts_at || Date.now()).getTime() + duration_h * 3_600_000
+      new Date(starts_at ?? Date.now()).getTime() + duration_h * 3_600_000
     ).toISOString();
 
     const { data, error } = await supabase
       .from('protests')
-      .insert({ title, description, demands, country, country_name, scope,
-                region, focal_point, category, risk_level, starts_at, ends_at })
+      .insert({ title, description, demands,
+                country: country ? country.toUpperCase() : null,
+                country_name, scope, region: region ?? null,
+                focal_point: focal_point ?? null,
+                category: category ?? null,
+                risk_level: risk_level ?? 'low',
+                starts_at: starts_at ?? new Date().toISOString(),
+                ends_at })
       .select()
       .single();
 
-    if (error) return reply.internalServerError(error.message);
+    if (error) throw error;
     return reply.code(201).send(data);
   });
 
   // POST /api/protests/:id/join — anonymous adhesion
-  app.post('/:id/join', async (req, reply) => {
+  app.post('/:id/join', {
+    config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string', format: 'uuid' } },
+        required: ['id'],
+      },
+      body: {
+        type: 'object',
+        required: ['phone_hash', 'device_id', 'recaptcha_token'],
+        properties: {
+          phone_hash:      { type: 'string', minLength: 64, maxLength: 64 },
+          doc_hash:        { type: 'string', minLength: 64, maxLength: 64, nullable: true },
+          device_id:       { type: 'string', minLength: 8, maxLength: 128 },
+          recaptcha_token: { type: 'string', minLength: 1 },
+        },
+        additionalProperties: false,
+      },
+    },
+  }, async (req, reply) => {
     const { phone_hash, doc_hash, device_id, recaptcha_token } = req.body;
+
+    await verifyRecaptcha(recaptcha_token, 'join_protest', reply);
 
     // Idempotency: one device per protest
     const { data: existing } = await supabase
@@ -68,21 +143,53 @@ export default async function protestRoutes(app) {
 
     const { data, error } = await supabase
       .from('adhesions')
-      .insert({ protest_id: req.params.id, phone_hash, doc_hash, device_id })
+      .insert({ protest_id: req.params.id, phone_hash, doc_hash: doc_hash ?? null, device_id })
       .select()
       .single();
 
-    if (error) return reply.internalServerError(error.message);
+    if (error) throw error;
 
-    // Increment counter (handled by DB trigger in production)
-    await supabase.rpc('increment_protest_count', { protest_id: req.params.id });
+    const { error: rpcErr } = await supabase.rpc('increment_protest_count', { protest_id: req.params.id });
+    if (rpcErr) req.log.error({ rpcErr }, 'increment_protest_count failed');
 
     return reply.code(201).send({ receipt: data.id });
   });
 
   // POST /api/protests/:id/viral — record a share
-  app.post('/:id/viral', async (req, reply) => {
-    await supabase.rpc('increment_viral_count', { protest_id: req.params.id });
+  app.post('/:id/viral', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string', format: 'uuid' } },
+        required: ['id'],
+      },
+    },
+  }, async (req, reply) => {
+    const { error } = await supabase.rpc('increment_viral_count', { protest_id: req.params.id });
+    if (error) req.log.error({ error }, 'increment_viral_count failed');
     return { ok: true };
   });
+}
+
+/**
+ * Verify a reCAPTCHA v3 token server-side.
+ * Throws a 400 error if the token is missing or the score is too low.
+ * @param {string} token
+ * @param {string} expectedAction
+ * @param {import('fastify').FastifyReply} reply
+ */
+async function verifyRecaptcha(token, expectedAction, reply) {
+  const secret = process.env.RECAPTCHA_SECRET;
+  if (!secret) return; // Skip in dev when secret is not configured
+
+  const res = await fetch(
+    `https://www.google.com/recaptcha/api/siteverify?secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}`,
+    { method: 'POST' }
+  );
+  const json = await res.json();
+
+  if (!json.success || json.action !== expectedAction || json.score < 0.5) {
+    reply.badRequest('reCAPTCHA verification failed');
+    throw new Error('recaptcha');
+  }
 }

@@ -80,11 +80,26 @@ onMounted(() => {
   H = c.height = 155;
   initParticles();
   drawFrame();
+
+  const handleVisibility = () => {
+    if (document.hidden) {
+      cancelAnimationFrame(raf);
+    } else {
+      drawFrame();
+    }
+  };
+  document.addEventListener('visibilitychange', handleVisibility);
+  c._visibilityHandler = handleVisibility;
 });
 
 watch(() => [props.participantCount, props.joined], () => {
   initParticles();
 });
 
-onUnmounted(() => cancelAnimationFrame(raf));
+onUnmounted(() => {
+  cancelAnimationFrame(raf);
+  if (canvasEl.value?._visibilityHandler) {
+    document.removeEventListener('visibilitychange', canvasEl.value._visibilityHandler);
+  }
+});
 </script>

@@ -17,7 +17,7 @@
         <div class="pi-info">
           <div class="pi-title">{{ p.title }}</div>
           <div class="pi-meta">
-            <span v-html="store.scopeBadge(p)"></span>
+            <span class="scope-badge" :class="store.scopeBadge(p).cls">{{ store.scopeBadge(p).icon }} {{ store.scopeBadge(p).label }}</span>
             <span>{{ p.countryName }}</span>
             <span>{{ fmtTime(p.timer) }}</span>
           </div>

@@ -1,14 +1,12 @@
+import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
-import { config } from 'dotenv';
 
 import protestRoutes from './routes/protests.js';
 import userRoutes from './routes/users.js';
-
-config();
 
 const app = Fastify({
   logger: true,

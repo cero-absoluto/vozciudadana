@@ -23,7 +23,12 @@ npm run dev:web
 
 # Run API dev server        (http://localhost:3000)
 npm run dev:api
+
+# Run API dev server + Web dev server
+dev: npm run dev:api + npm run dev:web desde la raíz.
+
 ```
+
 
 ## Web (`apps/web`)
 

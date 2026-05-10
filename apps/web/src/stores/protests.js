@@ -65,7 +65,7 @@ export const useProtestsStore = defineStore('protests', () => {
       if (byCountry.length) list = byCountry;
     }
     const sorted = [...list].sort((a, b) => b.heat - a.heat);
-debugger;
+
     // En modo 'all' sin filtro de país: mostrar 1 nacional del dispositivo + 1 global
     if (filter.value === 'all' && !countryFilter.value) {
       const national = sorted.filter(p => p.scope === 'national' && p.country === device.simCountry);

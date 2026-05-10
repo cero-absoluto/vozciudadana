@@ -4,3 +4,4 @@ apps/api/.env
 apps/web/.env
 .env
 *.local
+supabase/.temp/

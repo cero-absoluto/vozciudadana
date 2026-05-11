@@ -207,7 +207,6 @@ export const useProtestsStore = defineStore('protests', () => {
     protests.value.forEach(p => {
       if (p.timer > 0) {
         p.timer--;
-        if (Math.random() < 0.4) p.count += Math.floor(Math.random() * 4 + 1);
       }
     });
   }

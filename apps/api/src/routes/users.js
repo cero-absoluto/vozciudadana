@@ -1,4 +1,11 @@
+import { createHash } from 'node:crypto';
 import { supabase } from '../services/supabase.js';
+import { sendOtp, verifyOtp } from '../services/twilio.js';
+
+/** Hash a phone number to avoid storing it in plain text. */
+function hashPhone(phoneE164) {
+  return createHash('sha256').update(phoneE164).digest('hex');
+}
 
 /** @param {import('fastify').FastifyInstance} app */
 export default async function userRoutes(app) {
@@ -8,18 +15,20 @@ export default async function userRoutes(app) {
     schema: {
       body: {
         type: 'object',
-        required: ['phone_hash', 'recaptcha_token'],
+        required: ['phone', 'recaptcha_token'],
         properties: {
-          phone_hash:      { type: 'string', minLength: 64, maxLength: 64 },
+          phone:           { type: 'string', minLength: 8, maxLength: 16, pattern: '^\\+[1-9]\\d{7,14}$' },
           recaptcha_token: { type: 'string', minLength: 1 },
         },
         additionalProperties: false,
       },
     },
   }, async (req, reply) => {
-    const { phone_hash, recaptcha_token } = req.body;
+    const { phone, recaptcha_token } = req.body;
 
     await verifyRecaptcha(recaptcha_token, 'request_otp', req, reply);
+
+    const phone_hash = hashPhone(phone);
 
     const { error } = await supabase
       .from('otp_requests')
@@ -27,8 +36,7 @@ export default async function userRoutes(app) {
 
     if (error) throw error;
 
-    // TODO: send SMS via Twilio Verify or similar:
-    //   await twilioVerify.services(VERIFY_SID).verifications.create({ to: phoneE164, channel: 'sms' });
+    await sendOtp(phone);
     return { sent: true };
   });
 
@@ -38,24 +46,22 @@ export default async function userRoutes(app) {
     schema: {
       body: {
         type: 'object',
-        required: ['phone_hash', 'otp', 'device_id'],
+        required: ['phone', 'otp', 'device_id'],
         properties: {
-          phone_hash: { type: 'string', minLength: 64, maxLength: 64 },
-          otp:        { type: 'string', minLength: 6, maxLength: 6, pattern: '^[0-9]{6}$' },
-          device_id:  { type: 'string', minLength: 8, maxLength: 128 },
+          phone:     { type: 'string', minLength: 8, maxLength: 16, pattern: '^\\+[1-9]\\d{7,14}$' },
+          otp:       { type: 'string', minLength: 6, maxLength: 6, pattern: '^[0-9]{6}$' },
+          device_id: { type: 'string', minLength: 8, maxLength: 128 },
         },
         additionalProperties: false,
       },
     },
   }, async (req, reply) => {
-    const { phone_hash, otp, device_id } = req.body;
+    const { phone, otp, device_id } = req.body;
 
-    // TODO: validate OTP against SMS provider before upserting:
-    //   const check = await twilioVerify.services(VERIFY_SID).verificationChecks.create({ to: phoneE164, code: otp });
-    //   if (check.status !== 'approved') return reply.unauthorized('OTP inválido o expirado');
-    if (process.env.NODE_ENV === 'production') {
-      return reply.notImplemented('OTP verification not yet configured');
-    }
+    const approved = await verifyOtp(phone, otp);
+    if (!approved) return reply.unauthorized('OTP inválido o expirado');
+
+    const phone_hash = hashPhone(phone);
 
     const { data, error } = await supabase
       .from('devices')

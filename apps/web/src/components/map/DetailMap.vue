@@ -34,7 +34,7 @@ function mkP(isMe) {
 }
 
 function initParticles() {
-  const n = Math.min(props.participantCount || 200, 260);
+  const n = Math.min(props.participantCount ?? 0, 260);
   parts = [];
   for (let i = 0; i < n; i++) parts.push(mkP(false));
   if (props.joined) parts.push(mkP(true));

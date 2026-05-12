@@ -81,8 +81,10 @@ html, body { height: 100%; overflow: hidden; }
 @media (min-width: 900px) {
   body { background: var(--bg2); }
   #app-shell {
-    max-width: 100%;
+    max-width: 100% !important;
+    width: 100% !important;
     border: none;
+    margin: 0 !important;
   }
   #s-home {
     flex-direction: row;

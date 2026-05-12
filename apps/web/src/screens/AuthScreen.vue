@@ -158,6 +158,7 @@ import { useDeviceStore } from '@/stores/device.js';
 const device = useDeviceStore();
 
 async function sendSMS() {
+  if (sending.value) return;
   const v = phone.value.replace(/\D/g, '');
   if (v.length < 6) return;
   sending.value = true;

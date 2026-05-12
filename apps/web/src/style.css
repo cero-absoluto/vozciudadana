@@ -125,11 +125,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .p-item.joined-item{border-left:3px solid var(--accent2)}
 .pi-heat{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
 .pi-info{flex:1;min-width:0}
-.pi-title{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.pi-title{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
 .pi-meta{font-size:8px;color:var(--text3);margin-bottom:2px;display:flex;gap:8px;flex-wrap:wrap}
 .pi-bar{height:2px;border-radius:2px;margin-bottom:3px}
 .pi-right{text-align:right;flex-shrink:0}
-.pi-count{font-size:11px;font-weight:600;color:var(--accent)}
+.pi-count{font-size:14px;font-weight:600;color:var(--accent)}
 .pi-timer{font-size:8px;color:var(--text3);margin-top:1px}
 .pi-lock{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px}
 /* LOCK / GEO MESSAGES */

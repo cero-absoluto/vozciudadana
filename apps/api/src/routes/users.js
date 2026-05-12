@@ -110,9 +110,16 @@ async function verifyRecaptcha(token, expectedAction, req, reply) {
   );
   const json = await res.json();
 
-  if (!json.success || json.action !== expectedAction || json.score < 0.5) {
-    req.log.warn({ json }, 'recaptcha verification failed');
-    reply.badRequest('reCAPTCHA verification failed');
-    throw new Error('recaptcha');
+  if (!json.success) {
+    req.log.warn({ errorCodes: json['error-codes'] }, 'recaptcha: token invalid');
+    throw reply.badRequest('reCAPTCHA verification failed');
+  }
+  if (json.action !== expectedAction) {
+    req.log.warn({ actual: json.action, expected: expectedAction }, 'recaptcha: action mismatch');
+    throw reply.badRequest('reCAPTCHA verification failed');
+  }
+  if (json.score < 0.5) {
+    req.log.warn({ score: json.score }, 'recaptcha: score too low');
+    throw reply.badRequest('reCAPTCHA verification failed');
   }
 }

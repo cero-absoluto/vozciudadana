@@ -5,7 +5,7 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow:hidden}
 #app{height:100vh;display:flex;flex-direction:column;overflow:hidden;max-width:520px;margin:0 auto;border-left:1px solid var(--border);border-right:1px solid var(--border)}
-
+@media(min-width:900px){#app{max-width:100%;width:100%;margin:0;border:none}}
 /* ── DESKTOP RESPONSIVE ── */
 @media(min-width:900px){
   body{background:var(--bg2)}

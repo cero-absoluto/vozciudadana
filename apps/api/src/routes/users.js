@@ -110,7 +110,7 @@ async function verifyRecaptcha(token, expectedAction, req, reply) {
   );
   const json = await res.json();
 
-  if (!json.success || json.action !== expectedAction || json.score < 0.5) {
+  if (!json.success ||  json.score < 0.5) {
     req.log.warn({ json }, 'recaptcha verification failed');
     reply.badRequest('reCAPTCHA verification failed');
     throw new Error('recaptcha');

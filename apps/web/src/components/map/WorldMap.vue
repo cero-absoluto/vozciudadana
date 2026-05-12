@@ -246,7 +246,7 @@ onMounted(() => {
   H = c.height = c.parentElement.clientHeight || props.height;
   buildProj();
 
-  d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(data => {
+  d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json').then(data => {
     worldData = data;
     drawFrame();
   });

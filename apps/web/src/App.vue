@@ -50,7 +50,7 @@ onMounted(() => {
 html, body { height: 100%; overflow: hidden; }
 
 #app-shell {
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;

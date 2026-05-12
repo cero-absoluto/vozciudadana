@@ -80,6 +80,26 @@ function drawFrame() {
 
   const t = Date.now();
   const vis = props.filter === 'all' ? props.protests : props.protests.filter(p => p.scope === props.filter);
+  // ── Malta — punto fijo siempre visible ──
+  if (zoom > 3) {
+    const maltaCoords = proj([14.5, 35.9]);
+    if (maltaCoords) {
+      const [mx, my] = maltaCoords;
+      ctx.beginPath();
+      ctx.arc(mx, my, 3, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+      if (zoom > 6) {
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = '8px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Malta', mx, my - 6);
+      }
+    }
+  }
   vis.forEach(p => {
     let co;
     if (p.scope === 'national') {

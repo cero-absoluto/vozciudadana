@@ -98,7 +98,8 @@ html, body { height: 100%; overflow: hidden; }
     overflow: hidden;
   }
   #home-right {
-    width: 450px;
+    flex: 1;
+    width: auto;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;

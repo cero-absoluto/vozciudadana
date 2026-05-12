@@ -171,7 +171,7 @@ function setupEvents() {
 
   c.addEventListener('wheel', e => {
     e.preventDefault();
-    zoom = Math.min(20, Math.max(0.7, zoom * (e.deltaY > 0 ? 0.82 : 1.2)));
+    zoom = Math.min(50, Math.max(0.7, zoom * (e.deltaY > 0 ? 0.82 : 1.4)));
     buildProj();
   }, { passive: false });
 

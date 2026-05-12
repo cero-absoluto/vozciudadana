@@ -84,7 +84,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 /* MAP TOPBAR */
 .map-topbar{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--border);flex-shrink:0;gap:6px;flex-wrap:wrap}
 .filter-row{display:flex;gap:4px;flex-wrap:wrap}
-.pill{padding:3px 8px;border-radius:20px;font-size:9px;font-weight:500;cursor:pointer;border:.5px solid var(--border2);background:transparent;color:var(--text2);transition:all .15s}
+.pill{padding:3px 8px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:.5px solid var(--border2);background:transparent;color:var(--text2);transition:all .15s}
 .pill.active{background:var(--accent);color:white;border-color:var(--accent)}
 .pill:hover:not(.active){background:var(--bg3);color:var(--text)}
 .global-chip{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text2)}
@@ -148,8 +148,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .device-bar{display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg2);border-bottom:.5px solid var(--border);font-size:9px;flex-shrink:0}
 .dev-flag{font-size:13px}
 .dev-info{flex:1}
-.dev-country{font-weight:500;color:var(--text)}
-.dev-conf{color:var(--text3)}
+.dev-country{font-weight:500;color:var(--text);font-size:13px}
+.dev-conf{color:var(--text3);font-size:12px}}
 .dev-conf span{font-weight:600}
 .dev-dots{display:flex;gap:3px;align-items:center}
 .dev-dot{width:6px;height:6px;border-radius:50%}

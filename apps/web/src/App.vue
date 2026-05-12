@@ -91,7 +91,7 @@ html, body { height: 100%; overflow: hidden; }
     overflow: hidden;
   }
   #home-left {
-    flex: 1;
+    flex: 1.5;
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--border);

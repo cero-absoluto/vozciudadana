@@ -125,7 +125,8 @@ function submit() {
   if (!form.demands.trim())     { ui.showToast('Indica qué exigís'); return; }
   if (!form.focal_point.trim()) { ui.showToast('El punto focal es obligatorio'); return; }
   if (form.scope === 'regional' && !form.region) { ui.showToast('Selecciona el bloque regional'); return; }
-
+const confirmMsg = `¿Confirmas que quieres publicar esta convocatoria?\n\n"${form.title}"\n\nUna vez publicada no podrá editarse ni eliminarse.`;
+  if (!window.confirm(confirmMsg)) return;
   protests.createProtest({ ...form });
   ui.showToast('✓ Convocatoria creada — ya aparece en el mapa');
   router.push('/');

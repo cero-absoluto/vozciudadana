@@ -164,8 +164,7 @@ async function sendSMS() {
   try {
     let token = '';
     try { token = await getRecaptchaToken('request_otp'); } catch { /* dev mode */ }
-    const phoneHash = await sha256(countryCode.value + v);
-    await api.requestOtp({ phone_hash: phoneHash, recaptcha_token: token || 'dev' });
+    await api.requestOtp({ phone: countryCode.value + v, recaptcha_token: token || 'dev' });
     otpDigits.value = ['', '', '', '', '', ''];
     otpVisible.value = true;
   } catch (err) {
@@ -189,7 +188,7 @@ async function verifyOTP() {
     const deviceId  = device.getDeviceId();
     sessionStorage.setItem('vc_phone_hash', phoneHash);
     sessionStorage.setItem('vc_device_id',  deviceId);
-    await api.verifyOtp({ phone_hash: phoneHash, otp: code, device_id: deviceId });
+    await api.verifyOtp({ phone: countryCode.value + v, otp: code, device_id: deviceId });
     router.push('/verify');
   } catch (err) {
     ui.showToast('Código incorrecto o expirado: ' + err.message);

@@ -91,8 +91,8 @@ export function incrementViral(protestId) {
 // ── Users / OTP ───────────────────────────────────────────────────────────────
 
 /**
- * Request an OTP SMS for the given phone hash.
- * @param {{ phone_hash: string, recaptcha_token: string }} payload
+ * Request an OTP SMS for the given phone number.
+ * @param {{ phone: string, recaptcha_token: string }} payload
  * @returns {Promise<{ sent: boolean }>}
  *
  * Replaces: sendSMS() fake timeout in AuthScreen.vue
@@ -103,7 +103,7 @@ export function requestOtp(payload) {
 
 /**
  * Verify the OTP and register the device.
- * @param {{ phone_hash: string, otp: string, device_id: string }} payload
+ * @param {{ phone: string, otp: string, device_id: string }} payload
  * @returns {Promise<{ verified: boolean, device_id: string }>}
  *
  * Replaces: verifyOTP() fake navigation in AuthScreen.vue

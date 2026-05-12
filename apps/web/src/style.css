@@ -112,7 +112,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .sb-global{background:rgba(76,255,164,.12);color:var(--accent2);border:.5px solid rgba(76,255,164,.2)}
 /* PANEL TABS */
 .panel-tabs{display:flex;flex-shrink:0;border-bottom:1px solid var(--border)}
-.ptab{flex:1;padding:7px 4px;font-size:9px;font-weight:500;text-align:center;cursor:pointer;color:var(--text3);border:none;background:none;border-bottom:2px solid transparent;transition:all .15s;text-transform:uppercase;letter-spacing:.5px}
+.ptab{flex:1;padding:7px 4px;font-size:13px;font-weight:500;text-align:center;cursor:pointer;color:var(--text3);border:none;background:none;border-bottom:2px solid transparent;transition:all .15s;text-transform:uppercase;letter-spacing:.5px}
 .ptab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .panel-body{flex:1;overflow-y:auto}
 .panel-body::-webkit-scrollbar{width:3px}

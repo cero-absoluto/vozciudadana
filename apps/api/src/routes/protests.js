@@ -70,7 +70,7 @@ export default async function protestRoutes(app) {
           country:      { type: 'string', minLength: 2, maxLength: 2, nullable: true },
           country_name: { type: 'string', minLength: 1, maxLength: 120 },
           scope:        { type: 'string', enum: VALID_SCOPES },
-          region:       { type: 'string', enum: VALID_REGIONS, nullable: true },
+          region:       { anyOf: [{ type: 'string', enum: VALID_REGIONS }, { type: 'null' }] },
           focal_point:  { type: 'string', maxLength: 500, nullable: true },
           category:     { type: 'string', maxLength: 120, nullable: true },
           duration_h:   { type: 'number', minimum: 0.5, maximum: 720 },

@@ -49,6 +49,21 @@ onMounted(async () => {
   // Find the protest the user was viewing (the first joinable one for demo)
   const target = protests.protests.find(p => !p.joined && protests.canJoin(p).ok);
   if (target) {
+    try {
+      const phoneHash = sessionStorage.getItem('vc_phone_hash');
+      const deviceId  = sessionStorage.getItem('vc_device_id');
+      let token = '';
+      try {
+        token = await window.grecaptcha.execute(import.meta.env.VITE_RECAPTCHA_KEY, { action: 'join_protest' });
+      } catch { /* dev */ }
+      await import('@/services/api.js').then(api =>
+        api.joinProtest(target.id, {
+          phone_hash:      phoneHash,
+          device_id:       deviceId,
+          recaptcha_token: token || 'dev',
+        })
+      );
+    } catch (e) { /* silencioso */ }
     protests.joinProtest(target.id);
     sessionStorage.setItem('vc_last_joined', String(target.id));
   }

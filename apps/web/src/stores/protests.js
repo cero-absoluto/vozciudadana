@@ -181,7 +181,7 @@ export const useProtestsStore = defineStore('protests', () => {
                    : data.scope === 'regional' ? (REGIONS[data.region]?.name || 'Regional')
                    : 'Global',
       scope:       data.scope,
-      region:      data.region || null,
+      region:      data.region || undefined,
       count:       0,
       heat:        5,
       timer:       dur * 3600,

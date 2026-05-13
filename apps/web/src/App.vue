@@ -53,7 +53,7 @@ html, body { height: 100%; overflow: hidden; }
   height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow: visible;
+  overflow: hidden;
   max-width: 520px;
   margin: 0 auto;
   border-left: 1px solid var(--border);

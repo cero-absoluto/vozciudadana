@@ -159,6 +159,17 @@ const device = useDeviceStore();
 
 async function sendSMS() {
   if (sending.value) return;
+
+  // Si el dispositivo ya está verificado, saltar OTP
+const existingDevice = await api.fetchDeviceLocks(device.getDeviceId());
+if (existingDevice && existingDevice.length >= 0) {
+  const v = phone.value.replace(/\D/g, '');
+  const phoneHash = await sha256(countryCode.value + v);
+  sessionStorage.setItem('vc_phone_hash', phoneHash);
+  sessionStorage.setItem('vc_device_id', device.getDeviceId());
+  router.push('/verify');
+  return;
+}
   const v = phone.value.replace(/\D/g, '');
   if (v.length < 6) return;
   sending.value = true;

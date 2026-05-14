@@ -11,7 +11,7 @@
       <div class="section-head">Alcance geográfico — cómo funciona</div>
       <div class="tech-grid">
         <div class="tcard"><div class="tcard-ico">🏛️</div><div class="tcard-h">Nacional</div><div class="tcard-p">Solo ciudadanos del país. SIM + IP verificados.</div></div>
-        <div class="tcard"><div class="tcard-ico">🌐</div><div class="tcard-h">Regional</div><div class="tcard-p">Bloques como UE, MERCOSUR, ASEAN.</div></div>
+        <div class="tcard"><div class="tcard-ico">🌐</div><div class="tcard-h">Local</div><div class="tcard-p">Región, provincia, ciudad, distrito o institución.</div></div>
         <div class="tcard"><div class="tcard-ico">🌍</div><div class="tcard-h">Global</div><div class="tcard-p">Sin restricción geográfica.</div></div>
         <div class="tcard"><div class="tcard-ico">📱</div><div class="tcard-h">1 por alcance</div><div class="tcard-p">Un dispositivo puede estar en una nacional + una regional + una global al mismo tiempo.</div></div>
         <div class="tcard"><div class="tcard-ico">🔒</div><div class="tcard-h">Confianza geográfica</div><div class="tcard-p">SIM (40%) + IP (35%) + Documento (25%). Mínimo 60% para nacionales.</div></div>

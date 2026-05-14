@@ -8,11 +8,11 @@
       <div class="char-c">{{ form.title.length }}/120</div>
     </div>
     <div class="fg"><label>Descripción *</label>
-      <textarea v-model="form.description" rows="3" maxlength="500" placeholder="Explica el motivo con hechos concretos."></textarea>
+      <textarea v-model="form.description" rows="2" maxlength="500" placeholder="Explica el motivo con hechos concretos."></textarea>
       <div class="char-c">{{ form.description.length }}/500</div>
     </div>
     <div class="fg"><label>Qué exigimos *</label>
-      <textarea v-model="form.demands" rows="3" maxlength="300" placeholder="Ej: Que dimita el presidente · Que se retire la ley"></textarea>
+      <textarea v-model="form.demands" rows="2" maxlength="300" placeholder="Ej: Que dimita el presidente · Que se retire la ley"></textarea>
       <div class="char-c">{{ form.demands.length }}/300</div>
     </div>
     <div class="fg"><label>Punto focal *</label>

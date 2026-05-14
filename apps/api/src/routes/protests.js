@@ -26,6 +26,7 @@ export default async function protestRoutes(app) {
       .from('protests')
       .select('*')
       .gt('ends_at', new Date().toISOString())
+      .or(`starts_at.gt.${new Date().toISOString()}`)
       .order('heat', { ascending: false })
       .limit(100);
 

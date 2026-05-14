@@ -74,7 +74,6 @@
         <option value="med">Medio — restricciones</option>
         <option value="high">Alto — régimen autoritario</option>
         <option value="critical">Crítico — represión activa</option>
-      </select>
     </div>
     <div v-if="form.risk_level === 'high' || form.risk_level === 'critical'" class="risk-warn" style="display:flex">
       ⚠️ Se activará Tor + cifrado adicional automáticamente.

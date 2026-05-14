@@ -127,7 +127,9 @@ function submit() {
   if (form.scope === 'regional' && !form.region) { ui.showToast('Selecciona el bloque regional'); return; }
 const confirmMsg = `¿Confirmas que quieres publicar esta convocatoria?\n\n"${form.title}"\n\nUna vez publicada no podrá editarse ni eliminarse.`;
   if (!window.confirm(confirmMsg)) return;
-  protests.createProtest({ ...form });
+  protests.createProtest({
+    ...form,
+  starts_at: form.starts_at ? form.starts_at + 'T08:00:00.000Z' : null});
   ui.showToast('✓ Convocatoria creada — ya aparece en el mapa');
   router.push('/');
 }

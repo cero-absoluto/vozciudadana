@@ -1,10 +1,10 @@
 // ── Shared constants ────────────────────────────────────────────────────────
 export const REGIONS = {
-  eu:      {name:'Unión Europea',   icon:'🇪🇺', members:['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE']},
-  mercosur:{name:'MERCOSUR',        icon:'🌎', members:['AR','BR','PY','UY','VE','BO']},
-  asean:   {name:'ASEAN',           icon:'🌏', members:['BN','KH','ID','LA','MY','MM','PH','SG','TH','VN']},
-  latam:   {name:'América Latina',  icon:'🌎', members:['MX','CO','PE','CL','EC','VE','CU','GT','HN','SV','NI','CR','PA','BO','PY','UY','AR','BR']},
-  g20:     {name:'G20',             icon:'🌐', members:['AR','AU','BR','CA','CN','FR','DE','IN','ID','IT','JP','KR','MX','RU','SA','ZA','TR','GB','US']},
+  region:      {name:'Región',       icon:'🌍', members:[]},
+  provincia:   {name:'Provincia',    icon:'🏙️', members:[]},
+  ciudad:      {name:'Ciudad',       icon:'🌆', members:[]},
+  distrito:    {name:'Distrito',     icon:'🏘️', members:[]},
+  institucion: {name:'Institución',  icon:'🎓', members:[]},
 };
 
 export const ISO_NUM_TO_A2 = {

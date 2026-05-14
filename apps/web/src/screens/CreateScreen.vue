@@ -56,10 +56,19 @@
         </div>
       </div>
     </div>
-    <div class="fg"><label>Fecha del evento *</label>
-      <input type="date" v-model="form.starts_at" :min="minDate">
+    <div style="display:flex;gap:12px">
+      <div class="fg" style="flex:1"><label>Fecha del evento *</label>
+        <input type="date" v-model="form.starts_at" :min="minDate">
+      </div>
+      <div class="fg" style="flex:1"><label>Nivel de riesgo</label>
+        <select v-model="form.risk_level">
+          <option value="low">Bajo — democracia plena</option>
+          <option value="med">Medio — restricciones</option>
+          <option value="high">Alto — régimen autoritario</option>
+          <option value="critical">Crítico — represión activa</option>
+        </select>
+      </div>
     </div>
-    <div class="fg"><label>Nivel de riesgo</label>
       <select v-model="form.risk_level">
         <option value="low">Bajo — democracia plena</option>
         <option value="med">Medio — restricciones</option>

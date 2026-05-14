@@ -3,9 +3,7 @@
     <div class="create-scroll">
   <!-- COLUMNA IZQUIERDA -->
   <div>
-    <div class="form-h">Nueva convocatoria</div>
-    <div class="form-sub">Define el alcance geográfico. Es irreversible una vez publicada.</div>
-    <div class="fg"><label>Título *</label>
+        <div class="fg"><label>Título *</label>
       <input type="text" v-model="form.title" maxlength="120" placeholder="Ej: Contra la corrupción del gobierno">
       <div class="char-c">{{ form.title.length }}/120</div>
     </div>

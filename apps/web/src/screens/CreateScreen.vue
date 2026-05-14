@@ -110,7 +110,7 @@ const form = reactive({
 
 const scopes = [
   { key:'national', icon:'🏛️', label:'Nacional', badgeClass:'sb-national', badgeLabel:'Solo ciudadanos del país', bg:'rgba(124,111,255,.08)', desc:'Solo participan dispositivos cuya SIM + IP correspondan al país de la convocatoria.' },
-  { key:'regional', icon:'🌐', label:'Regional',  badgeClass:'sb-regional', badgeLabel:'Bloque definido',          bg:'rgba(255,179,71,.08)',   desc:'Abierto a todos los países miembros del bloque. Ej: UE, MERCOSUR, ASEAN.' },
+  { key:'regional', icon:'🌐', label:'Local',  badgeClass:'sb-regional', badgeLabel:'Ámbito local',          bg:'rgba(255,179,71,.08)',   desc:'Abierto a todos los países miembros del bloque. Ej: UE, MERCOSUR, ASEAN.' },
   { key:'global',   icon:'🌍', label:'Global',    badgeClass:'sb-global',   badgeLabel:'Cualquier ciudadano',      bg:'rgba(76,255,164,.08)',   desc:'Sin restricción geográfica.' },
 ];
 

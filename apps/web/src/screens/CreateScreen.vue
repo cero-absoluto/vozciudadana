@@ -123,6 +123,7 @@ function submit() {
   if (!form.description.trim()) { ui.showToast('La descripción es obligatoria'); return; }
   if (!form.demands.trim())     { ui.showToast('Indica qué exigís'); return; }
   if (!form.focal_point.trim()) { ui.showToast('El punto focal es obligatorio'); return; }
+  if (!form.starts_at) { ui.showToast('La fecha del evento es obligatoria'); return; }
   if (form.scope === 'regional' && !form.region) { ui.showToast('Selecciona el bloque regional'); return; }
 const confirmMsg = `¿Confirmas que quieres publicar esta convocatoria?\n\n"${form.title}"\n\nUna vez publicada no podrá editarse ni eliminarse.`;
   if (!window.confirm(confirmMsg)) return;

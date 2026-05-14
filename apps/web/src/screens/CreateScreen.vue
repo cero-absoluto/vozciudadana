@@ -97,10 +97,11 @@ const router   = useRouter();
 const protests = useProtestsStore();
 const ui       = useUiStore();
 
+  const minDate = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 const form = reactive({
   title: '', description: '', demands: '', focal_point: '',
   category: 'corruption', scope: 'national', region: null,
-  duration_h: '36', risk_level: 'low',
+  duration_h: 36, risk_level: 'low', starts_at: '',
 });
 
 const scopes = [

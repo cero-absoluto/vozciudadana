@@ -123,6 +123,7 @@ html, body { height: 100%; overflow: hidden; }
     gap: 24px;
     padding: 24px;
     align-items: start;
+     width: 100%;
   }
   #s-detail { max-width: 860px; }
   .topbar { max-width: 100%; border-bottom: 1px solid var(--border); padding: 12px 24px; }

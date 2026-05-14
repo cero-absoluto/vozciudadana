@@ -294,15 +294,15 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .create-scroll{flex:1;overflow-y:auto;padding:13px}
 .create-scroll::-webkit-scrollbar{width:3px}
 .create-scroll::-webkit-scrollbar-thumb{background:var(--bg5)}
-.form-h{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;letter-spacing:-.4px;margin-bottom:3px}
-.form-sub{font-size:10px;color:var(--text2);line-height:1.7;margin-bottom:12px}
+.form-h{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.4px;margin-bottom:3px}
+.form-sub{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px}
 .fg{display:flex;flex-direction:column;gap:4px;margin-bottom:9px}
-.fg label{font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3)}
-.fg input,.fg textarea,.fg select{padding:9px 10px;background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;transition:border-color .2s;resize:none}
+.fg label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3)}
+.fg input,.fg textarea,.fg select{padding:9px 10px;background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;transition:border-color .2s;resize:none}
 .fg input:focus,.fg textarea:focus,.fg select:focus{border-color:var(--accent)}
 .fg input::placeholder,.fg textarea::placeholder{color:var(--text3)}
 .fg select option{background:var(--bg2)}
-.char-c{font-size:8px;color:var(--text3);text-align:right}
+.char-c{font-size:11px;color:var(--text3);text-align:right}
 /* SCOPE SELECTOR */
 .scope-section{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r2);padding:10px;margin-bottom:9px}
 .scope-section-title{font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px}

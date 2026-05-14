@@ -106,11 +106,23 @@ html, body { height: 100%; overflow: hidden; }
     overflow: hidden;
   }
   .panel-body { flex: 1; overflow-y: auto; }
-  #s-detail, #s-auth, #s-verify, #s-create, #s-about {
+  #s-detail, #s-auth, #s-verify, #s-about {
     max-width: 680px;
     margin: 0 auto;
     border-left: 1px solid var(--border);
     border-right: 1px solid var(--border);
+  }
+  #s-create {
+    max-width: 100%;
+    margin: 0;
+    border: none;
+  }
+  .create-scroll {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    padding: 24px;
+    align-items: start;
   }
   #s-detail { max-width: 860px; }
   .topbar { max-width: 100%; border-bottom: 1px solid var(--border); padding: 12px 24px; }

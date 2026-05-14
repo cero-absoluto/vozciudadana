@@ -22,7 +22,7 @@
         <div class="filter-row">
           <button class="pill" :class="{active: protests.filter==='all'}"      @click="setFilter('all')">Todas</button>
           <button class="pill" :class="{active: protests.filter==='national'}" @click="setFilter('national')">🏛️ Nacional</button>
-          <button class="pill" :class="{active: protests.filter==='regional'}" @click="setFilter('regional')">🌐 Regional</button>
+          <button class="pill" :class="{active: protests.filter==='regional'}" @click="setFilter('regional')">🌐 Local</button>
           <button class="pill" :class="{active: protests.filter==='global'}"   @click="setFilter('global')">🌍 Global</button>
         </div>
         <div class="global-chip">

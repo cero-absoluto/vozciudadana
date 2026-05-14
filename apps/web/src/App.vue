@@ -130,5 +130,33 @@ html, body { height: 100%; overflow: hidden; }
   .topbar { max-width: 100%; border-bottom: 1px solid var(--border); padding: 12px 24px; }
   .bottom-nav { max-width: 100%; padding: 0 24px; }
   .modal { max-width: 480px; }
+  #s-about {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    border: none !important;
+  }
+  #s-about .tech-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+    padding: 0 24px;
+    gap: 12px;
+  }
+  #s-about .about-hero {
+    padding: 24px;
+  }
+  #s-about .about-h {
+    font-size: 28px;
+  }
+  #s-about .about-p {
+    font-size: 14px;
+  }
+  #s-about .section-head {
+    font-size: 13px;
+    padding: 12px 24px 8px;
+  }
+  #s-about .manifesto {
+    font-size: 13px;
+    margin: 16px 24px;
+  }
 }
 </style>

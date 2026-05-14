@@ -32,12 +32,7 @@ const FALLBACK_PROTESTS = [
   {id:1,title:'Acceso a la vivienda para jóvenes',country:'ES',countryName:'España',scope:'national',region:null,count:0,heat:5,timer:172800,color:'#7C6FFF',cities:1,desc:'Los jóvenes españoles necesitan entre 8 y 12 años de ahorro íntegro para reunir el 20% de entrada exigido por los bancos. La tasa de emancipación juvenil en España (15,9%) es la más baja de la UE (media 31,4%).',demands:'Que el Gobierno derogue la obligación del 20% de entrada para primera vivienda habitual de menores de 35 años · Que establezca un sistema de garantías públicas · Que publique un plan de acceso a vivienda para jóvenes',joined:false,viralCount:0},
 ];
 
-const INITIAL_QUEUE = [
-  {id:20,title:'Contra la comercialización de carne',country:'ES',countryName:'España',scope:'national',votes:1240},
-  {id:21,title:'Por el transporte público gratuito',country:'FR',countryName:'Francia',scope:'national',votes:8900},
-  {id:22,title:'Por el salario mínimo digno',country:'ES',countryName:'España',scope:'national',votes:15600},
-  {id:23,title:'Acceso universal a medicamentos',country:null,countryName:'Global',scope:'global',votes:22100},
-];
+const INITIAL_QUEUE = [ ];
 
 export const useProtestsStore = defineStore('protests', () => {
   const protests      = ref(FALLBACK_PROTESTS.map(p => ({ ...p })));

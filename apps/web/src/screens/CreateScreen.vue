@@ -81,14 +81,10 @@
         <div class="mstep"><div class="mn">4</div>La ciudadanía impulsa. La más impulsada sube al mapa.</div>
       </div>
     </div>
-    <button class="btn-primary" style="width:100%;margin-bottom:18px" @click="submit">Crear convocatoria →</button>
+   
+      <button class="btn-primary" style="width:100%;margin-bottom:18px" @click="submit">Crear convocatoria →</button>
   </div>
 </div>
-   
-
-      <button class="btn-primary" style="width:100%;margin-bottom:18px" @click="submit">Crear convocatoria →</button>
-      </div>
-    </div>
   </div>
 </template>
 

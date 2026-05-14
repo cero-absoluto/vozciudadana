@@ -155,7 +155,7 @@ html, body { height: 100%; overflow: hidden; }
     padding: 12px 24px 8px;
   }
   #s-about .manifesto {
-    font-size: 13px;
+    font-size: 16px;
     margin: 16px 24px;
   }
 }

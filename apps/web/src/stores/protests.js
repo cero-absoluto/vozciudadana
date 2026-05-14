@@ -105,7 +105,7 @@ export const useProtestsStore = defineStore('protests', () => {
 
   function scopeBadge(p) {
     if (p.scope === 'national') return { cls: 'sb-national', icon: '🏛️', label: p.countryName };
-    if (p.scope === 'regional') return { cls: 'sb-regional', icon: '🌐', label: REGIONS[p.region]?.name || 'Local' };
+    if (p.scope === 'regional') return { cls: 'sb-regional', icon: '🌐', label: 'Local' };
     return { cls: 'sb-global', icon: '🌍', label: 'Global' };
   }
 

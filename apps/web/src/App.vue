@@ -113,8 +113,9 @@ html, body { height: 100%; overflow: hidden; }
     border-right: 1px solid var(--border);
   }
   #s-create {
-    max-width: 100%;
-    margin: 0;
+  max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
     border: none;
   }
   .create-scroll {

@@ -86,7 +86,7 @@
         </div>
       </div>
 
-      <button class="btn-primary" style="width:100%;margin-bottom:18px" @click="submit">Crear convocatoria (modo demo) →</button>
+      <button class="btn-primary" style="width:100%;margin-bottom:18px" @click="submit">Crear convocatoria →</button>
     </div>
   </div>
 </template>

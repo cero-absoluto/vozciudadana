@@ -56,14 +56,7 @@
         </div>
       </div>
 
-      <div class="fg"><label>Duración</label>
-        <select v-model="form.duration_h">
-          <option value="2">2 horas (estándar)</option>
-          <option value="6">6 horas</option>
-          <option value="24">24 horas</option>
-          <option value="48">48 horas (internacional)</option>
-        </select>
-      </div>
+      
       <div class="fg"><label>Nivel de riesgo</label>
         <select v-model="form.risk_level">
           <option value="low">Bajo — democracia plena</option>
@@ -105,7 +98,7 @@ const ui       = useUiStore();
 const form = reactive({
   title: '', description: '', demands: '', focal_point: '',
   category: 'corruption', scope: 'national', region: null,
-  duration_h: '2', risk_level: 'low',
+  duration_h: '36', risk_level: 'low',
 });
 
 const scopes = [
@@ -117,6 +110,9 @@ const scopes = [
 function selectScope(s) {
   form.scope = s;
   form.region = null;
+  if (s === 'regional') form.duration_h = 8;
+  else if (s === 'national') form.duration_h = 36;
+  else form.duration_h = 72;
 }
 
 function submit() {

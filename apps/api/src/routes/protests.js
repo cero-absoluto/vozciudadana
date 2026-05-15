@@ -144,15 +144,16 @@ export default async function protestRoutes(app) {
    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
 let ciudad = null, region = null, pais = null;
 try {
-  const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName&lang=es,country&lang=es`);
+  const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country&lang=es`);
   const geo = await geoRes.json();
   ciudad = geo.city || null;
   region = geo.regionName || null;
-  const pais = geo.country || null;
+  pais = geo.country || null;
 } catch { /* silencioso */ }
+    const idioma = req.headers['accept-language']?.split(',')[0] || null;
     const { data, error } = await supabase
       .from('adhesions')
-      .insert({ protest_id: req.params.id, phone_hash, doc_hash: doc_hash ?? null, device_id, ciudad, region, pais})
+      .insert({ protest_id: req.params.id, phone_hash, doc_hash: doc_hash ?? null, device_id, ciudad, region, pais,idioma})
       .select()
       .single();
 

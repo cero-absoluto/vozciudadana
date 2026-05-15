@@ -6,6 +6,7 @@ import AuthScreen   from '@/screens/AuthScreen.vue';
 import VerifyScreen from '@/screens/VerifyScreen.vue';
 import CreateScreen from '@/screens/CreateScreen.vue';
 import AboutScreen  from '@/screens/AboutScreen.vue';
+import InformeScreen from '@/screens/InformeScreen.vue';
 
 const routes = [
   { path: '/',          component: HomeScreen },
@@ -14,6 +15,7 @@ const routes = [
   { path: '/verify',    component: VerifyScreen },
   { path: '/create',    component: CreateScreen },
   { path: '/about',     component: AboutScreen },
+  { path: '/informe/:id', component: InformeScreen },
 ];
 
 export const router = createRouter({

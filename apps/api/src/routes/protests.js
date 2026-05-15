@@ -205,6 +205,11 @@ app.get('/:id/informe', {
   const ciudades = [...new Set(adhesions.map(a => a.ciudad).filter(Boolean))];
   const paises = [...new Set(adhesions.map(a => a.pais).filter(Boolean))];
   const idiomas = [...new Set(adhesions.map(a => a.idioma).filter(Boolean))];
+  // Distribución por región
+const distribucion_regiones = adhesions.reduce((acc, a) => {
+  if (a.region) acc[a.region] = (acc[a.region] || 0) + 1;
+  return acc;
+}, {});
 
   return {
     protest,
@@ -214,6 +219,7 @@ app.get('/:id/informe', {
     idiomas_distintos: idiomas.length,
     distribucion_paises: paises,
     distribucion_ciudades: ciudades,
+    distribucion_regiones,
     primera_adhesion: adhesions[0]?.created_at || null,
     ultima_adhesion: adhesions[adhesions.length - 1]?.created_at || null,
   };

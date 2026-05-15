@@ -141,9 +141,17 @@ export default async function protestRoutes(app) {
 
     if (existing) return reply.conflict('Device already joined this protest');
 
+   const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
+let ciudad = null, region = null;
+try {
+  const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName&lang=es`);
+  const geo = await geoRes.json();
+  ciudad = geo.city || null;
+  region = geo.regionName || null;
+} catch { /* silencioso */ }
     const { data, error } = await supabase
       .from('adhesions')
-      .insert({ protest_id: req.params.id, phone_hash, doc_hash: doc_hash ?? null, device_id })
+      .insert({ protest_id: req.params.id, phone_hash, doc_hash: doc_hash ?? null, device_id, ciudad, region })
       .select()
       .single();
 

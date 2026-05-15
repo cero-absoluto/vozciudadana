@@ -24,16 +24,16 @@
           <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;letter-spacing:-.4px;margin-bottom:8px">
             {{ data.protest.title }}
           </div>
-          <div style="font-size:10px;color:var(--text2);margin-bottom:4px">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:4px">
             {{ data.protest.demands }}
           </div>
-          <div style="font-size:9px;color:var(--text3)">
+          <div style="font-size:11px;color:var(--text3)">
             {{ formatDate(data.protest.starts_at) }} → {{ formatDate(data.protest.ends_at) }}
           </div>
         </div>
 
         <!-- BLOQUE 1 — Titular -->
-        <div class="block" style="margin-bottom:12px">
+        <div class="block" style="margin-bottom:14px">
           <div class="block-title">📢 Titular político</div>
           <div style="font-size:14px;font-weight:600;line-height:1.5;color:var(--text)">
            {{ data.total_adhesiones }} ciudadanos verificados de {{ data.protest.country_name }}
@@ -63,7 +63,7 @@ exigen al {{ data.protest.focal_point }}: "{{ data.protest.demands }}"
         <!-- BLOQUE 3 — Prueba de humanidad -->
         <div class="block" style="margin-bottom:12px">
           <div class="block-title">🧠 Prueba de humanidad</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.8">
+          <div style="font-size:14px;color:var(--text2);line-height:1.8">
             - {{ data.paises_distintos }} {{ data.paises_distintos === 1 ? 'país distinto' : 'países distintos' }}<br>
 - {{ data.idiomas_distintos }} {{ data.idiomas_distintos === 1 ? 'idioma distinto' : 'idiomas distintos' }}<br>
             • Primera adhesión: {{ formatDateTime(data.primera_adhesion) }}<br>
@@ -74,7 +74,7 @@ exigen al {{ data.protest.focal_point }}: "{{ data.protest.demands }}"
         <!-- BLOQUE 4 — Penetración del universo -->
         <div class="block" style="margin-bottom:12px">
           <div class="block-title">🌍 Penetración del universo</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.8">
+          <div style="font-size:14px;color:var(--text2);line-height:1.8">
             {{ data.total_adhesiones }} adhesiones verificadas sobre un universo elegible de ciudadanos de {{ data.protest.country_name }}.
           </div>
         </div>
@@ -82,13 +82,13 @@ exigen al {{ data.protest.focal_point }}: "{{ data.protest.demands }}"
         <!-- BLOQUE 5 — Distribución geográfica -->
 <div class="block" style="margin-bottom:12px">
   <div class="block-title">📍 Distribución geográfica</div>
-  <div style="font-size:11px;color:var(--text2);line-height:1.8;margin-bottom:8px">
+  <div style="font-size:14px;color:var(--text2);line-height:1.8;margin-bottom:8px">
     <strong>Por región:</strong><br>
     <span v-for="(count, region) in data.distribucion_regiones" :key="region">
       {{ region }}: {{ count }} adhesión{{ count > 1 ? 'es' : '' }} · 
     </span>
   </div>
-  <div style="font-size:11px;color:var(--text2);line-height:1.8">
+  <div style="font-size:14px;color:var(--text2);line-height:1.8">
     <strong>Por ciudad:</strong><br>
     <span v-for="ciudad in data.distribucion_ciudades.slice(0,10)" :key="ciudad">
       {{ ciudad }} · 
@@ -102,7 +102,7 @@ exigen al {{ data.protest.focal_point }}: "{{ data.protest.demands }}"
         <!-- BLOQUE 6 — Cadena de verificación -->
         <div class="block" style="margin-bottom:12px">
           <div class="block-title">🔒 Cadena de verificación</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.8">
+          <div style="font-size:14px;color:var(--text2);line-height:1.8">
             Cada adhesión fue verificada mediante: reCAPTCHA v3 (prueba de humanidad) + SMS OTP (número real) + hash SHA-256 local (anonimato irreversible) + unicidad de dispositivo.
           </div>
         </div>
@@ -110,7 +110,7 @@ exigen al {{ data.protest.focal_point }}: "{{ data.protest.demands }}"
         <!-- BLOQUE 7 — Sello de transparencia -->
 <div class="block" style="margin-bottom:20px">
   <div class="block-title">✅ Sello de transparencia</div>
-  <div style="font-size:11px;color:var(--text2);line-height:1.8">
+  <div style="font-size:14px;color:var(--text2);line-height:1.8">
     Código fuente auditado públicamente en:<br>
 <span style="color:var(--accent);font-family:monospace;font-size:10px">
   github.com/cero-absoluto/vozciudadana

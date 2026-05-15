@@ -111,7 +111,6 @@ exigen al {{ data.protest.focal_point }}: "{{ data.protest.demands }}"
 <div class="block" style="margin-bottom:20px">
   <div class="block-title">✅ Sello de transparencia</div>
   <div style="font-size:11px;color:var(--text2);line-height:1.8">
-    Código fuente auditado públicamente en
     Código fuente auditado públicamente en:<br>
 <span style="color:var(--accent);font-family:monospace;font-size:10px">
   github.com/cero-absoluto/vozciudadana

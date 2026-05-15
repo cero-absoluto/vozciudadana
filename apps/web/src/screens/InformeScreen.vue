@@ -116,7 +116,7 @@ exigen al {{ data.protest.focal_point }}: "{{ data.protest.demands }}"
   github.com/cero-absoluto/vozciudadana
 </span>.<br>
     Informe generado: {{ formatDateTime(new Date().toISOString()) }}<br>
-    ID de convocatoria: <span style="font-family:monospace;font-size:9px;color:var(--accent2)">{{ $route.params.id }}</span><br>
+    ID de convocatoria: <span style="font-family:monospace;font-size:10px;color:var(--accent2)">{{ $route.params.id }}</span><br>
     Blockchain en desarrollo — disponible en v2.0.
   </div>
 </div>

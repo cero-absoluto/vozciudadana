@@ -80,17 +80,24 @@
         </div>
 
         <!-- BLOQUE 5 — Distribución geográfica -->
-        <div class="block" style="margin-bottom:12px">
-          <div class="block-title">📍 Distribución geográfica</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.8">
-            <span v-for="ciudad in data.distribucion_ciudades.slice(0,10)" :key="ciudad">
-              {{ ciudad }} · 
-            </span>
-            <span v-if="data.distribucion_ciudades.length > 10">
-              y {{ data.distribucion_ciudades.length - 10 }} ciudades más.
-            </span>
-          </div>
-        </div>
+<div class="block" style="margin-bottom:12px">
+  <div class="block-title">📍 Distribución geográfica</div>
+  <div style="font-size:11px;color:var(--text2);line-height:1.8;margin-bottom:8px">
+    <strong>Por región:</strong><br>
+    <span v-for="(count, region) in data.distribucion_regiones" :key="region">
+      {{ region }}: {{ count }} adhesión{{ count > 1 ? 'es' : '' }} · 
+    </span>
+  </div>
+  <div style="font-size:11px;color:var(--text2);line-height:1.8">
+    <strong>Por ciudad:</strong><br>
+    <span v-for="ciudad in data.distribucion_ciudades.slice(0,10)" :key="ciudad">
+      {{ ciudad }} · 
+    </span>
+    <span v-if="data.distribucion_ciudades.length > 10">
+      y {{ data.distribucion_ciudades.length - 10 }} ciudades más.
+    </span>
+  </div>
+</div>
 
         <!-- BLOQUE 6 — Cadena de verificación -->
         <div class="block" style="margin-bottom:12px">

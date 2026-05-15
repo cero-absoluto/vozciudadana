@@ -63,9 +63,10 @@ export default async function userRoutes(app) {
 
     const phone_hash = hashPhone(phone);
 
+    const user_agent = req.headers['user-agent'] || null;
     const { data, error } = await supabase
       .from('devices')
-      .upsert({ id: device_id, phone_hash, verified_at: new Date().toISOString() })
+      .upsert({ id: device_id, phone_hash, verified_at: new Date().toISOString(),user_agent })
       .select()
       .single();
 

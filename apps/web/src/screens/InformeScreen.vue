@@ -1,0 +1,161 @@
+<template>
+  <div class="screen active" id="s-informe">
+    <div class="scroll" style="padding:16px">
+
+      <!-- Cargando -->
+      <div v-if="loading" style="text-align:center;padding:40px">
+        <div class="spin-ring" style="margin:0 auto 12px"></div>
+        <div style="font-size:12px;color:var(--text3)">Cargando informe...</div>
+      </div>
+
+      <!-- Error -->
+      <div v-else-if="error" style="text-align:center;padding:40px;color:var(--accent3)">
+        No se encontró la convocatoria.
+      </div>
+
+      <!-- Informe -->
+      <div v-else-if="data">
+
+        <!-- Cabecera -->
+        <div style="margin-bottom:20px">
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">
+            Informe público verificado
+          </div>
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;letter-spacing:-.4px;margin-bottom:8px">
+            {{ data.protest.title }}
+          </div>
+          <div style="font-size:10px;color:var(--text2);margin-bottom:4px">
+            {{ data.protest.demands }}
+          </div>
+          <div style="font-size:9px;color:var(--text3)">
+            {{ formatDate(data.protest.starts_at) }} → {{ formatDate(data.protest.ends_at) }}
+          </div>
+        </div>
+
+        <!-- BLOQUE 1 — Titular -->
+        <div class="block" style="margin-bottom:12px">
+          <div class="block-title">📢 Titular político</div>
+          <div style="font-size:14px;font-weight:600;line-height:1.5;color:var(--text)">
+            {{ data.total_adhesiones }} ciudadanos verificados de {{ data.protest.country_name }}
+            exigen: "{{ data.protest.demands }}"
+          </div>
+        </div>
+
+        <!-- BLOQUE 2 — Los tres números -->
+        <div class="block" style="margin-bottom:12px">
+          <div class="block-title">🔢 Los tres números</div>
+          <div class="stats-row">
+            <div class="sc">
+              <div class="sc-n" style="color:var(--accent)">{{ data.total_adhesiones }}</div>
+              <div class="sc-l">Adhesiones</div>
+            </div>
+            <div class="sc">
+              <div class="sc-n" style="color:var(--accent2)">{{ data.ciudades_distintas }}</div>
+              <div class="sc-l">Ciudades</div>
+            </div>
+            <div class="sc">
+              <div class="sc-n" style="color:var(--accent4)">100%</div>
+              <div class="sc-l">Verificadas</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BLOQUE 3 — Prueba de humanidad -->
+        <div class="block" style="margin-bottom:12px">
+          <div class="block-title">🧠 Prueba de humanidad</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.8">
+            • {{ data.paises_distintos }} {{ data.paises_distintos === 1 ? 'país' : 'países' }} distintos<br>
+            • {{ data.idiomas_distintos }} {{ data.idiomas_distintos === 1 ? 'idioma' : 'idiomas' }} distintos<br>
+            • Primera adhesión: {{ formatDateTime(data.primera_adhesion) }}<br>
+            • Última adhesión: {{ formatDateTime(data.ultima_adhesion) }}
+          </div>
+        </div>
+
+        <!-- BLOQUE 4 — Penetración del universo -->
+        <div class="block" style="margin-bottom:12px">
+          <div class="block-title">🌍 Penetración del universo</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.8">
+            {{ data.total_adhesiones }} adhesiones verificadas sobre un universo elegible de ciudadanos de {{ data.protest.country_name }}.
+          </div>
+        </div>
+
+        <!-- BLOQUE 5 — Distribución geográfica -->
+        <div class="block" style="margin-bottom:12px">
+          <div class="block-title">📍 Distribución geográfica</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.8">
+            <span v-for="ciudad in data.distribucion_ciudades.slice(0,10)" :key="ciudad">
+              {{ ciudad }} · 
+            </span>
+            <span v-if="data.distribucion_ciudades.length > 10">
+              y {{ data.distribucion_ciudades.length - 10 }} ciudades más.
+            </span>
+          </div>
+        </div>
+
+        <!-- BLOQUE 6 — Cadena de verificación -->
+        <div class="block" style="margin-bottom:12px">
+          <div class="block-title">🔒 Cadena de verificación</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.8">
+            Cada adhesión fue verificada mediante: reCAPTCHA v3 (prueba de humanidad) + SMS OTP (número real) + hash SHA-256 local (anonimato irreversible) + unicidad de dispositivo.
+          </div>
+        </div>
+
+        <!-- BLOQUE 7 — Sello de transparencia -->
+        <div class="block" style="margin-bottom:20px">
+          <div class="block-title">✅ Sello de transparencia</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.8">
+            Código fuente auditado públicamente en
+            <a href="https://github.com/cero-absoluto/vozciudadana" 
+               style="color:var(--accent)" target="_blank">GitHub</a>.
+            Blockchain en desarrollo — disponible en v2.0.
+          </div>
+        </div>
+
+        <!-- Botón volver -->
+        <button class="btn-primary" style="width:100%" @click="$router.back()">
+          ← Volver
+        </button>
+
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import * as api from '@/services/api.js';
+
+const route = useRoute();
+const data = ref(null);
+const loading = ref(true);
+const error = ref(false);
+
+onMounted(async () => {
+  try {
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/api/protests/${route.params.id}/informe`
+    );
+    if (!res.ok) throw new Error('Not found');
+    data.value = await res.json();
+  } catch {
+    error.value = true;
+  } finally {
+    loading.value = false;
+  }
+});
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('es-ES', {
+    day: 'numeric', month: 'long', year: 'numeric'
+  });
+}
+
+function formatDateTime(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('es-ES', {
+    day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
+  });
+}
+</script>

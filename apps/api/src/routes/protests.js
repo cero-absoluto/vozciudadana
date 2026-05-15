@@ -179,6 +179,45 @@ try {
     if (error) req.log.error({ error }, 'increment_viral_count failed');
     return { ok: true };
   });
+  // GET /api/protests/:id/informe — datos para el informe público
+app.get('/:id/informe', {
+  schema: {
+    params: {
+      type: 'object',
+      properties: { id: { type: 'string', format: 'uuid' } },
+      required: ['id'],
+    },
+  },
+}, async (req, reply) => {
+  const { data: protest, error } = await supabase
+    .from('protests')
+    .select('*')
+    .eq('id', req.params.id)
+    .single();
+
+  if (error) return reply.notFound('Convocatoria no encontrada');
+
+  const { data: adhesions } = await supabase
+    .from('adhesions')
+    .select('ciudad, region, pais, idioma, created_at')
+    .eq('protest_id', req.params.id);
+
+  const ciudades = [...new Set(adhesions.map(a => a.ciudad).filter(Boolean))];
+  const paises = [...new Set(adhesions.map(a => a.pais).filter(Boolean))];
+  const idiomas = [...new Set(adhesions.map(a => a.idioma).filter(Boolean))];
+
+  return {
+    protest,
+    total_adhesiones: protest.count,
+    ciudades_distintas: ciudades.length,
+    paises_distintos: paises.length,
+    idiomas_distintos: idiomas.length,
+    distribucion_paises: paises,
+    distribucion_ciudades: ciudades,
+    primera_adhesion: adhesions[0]?.created_at || null,
+    ultima_adhesion: adhesions[adhesions.length - 1]?.created_at || null,
+  };
+});
 }
 
 /**

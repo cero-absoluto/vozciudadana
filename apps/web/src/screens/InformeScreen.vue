@@ -64,8 +64,8 @@ exigen al {{ data.protest.focal_point }}: "{{ data.protest.demands }}"
         <div class="block" style="margin-bottom:12px">
           <div class="block-title">🧠 Prueba de humanidad</div>
           <div style="font-size:11px;color:var(--text2);line-height:1.8">
-            • {{ data.paises_distintos }} {{ data.paises_distintos === 1 ? 'país' : 'países' }} distintos<br>
-            • {{ data.idiomas_distintos }} {{ data.idiomas_distintos === 1 ? 'idioma' : 'idiomas' }} distintos<br>
+            - {{ data.paises_distintos }} {{ data.paises_distintos === 1 ? 'país distinto' : 'países distintos' }}<br>
+- {{ data.idiomas_distintos }} {{ data.idiomas_distintos === 1 ? 'idioma distinto' : 'idiomas distintos' }}<br>
             • Primera adhesión: {{ formatDateTime(data.primera_adhesion) }}<br>
             • Última adhesión: {{ formatDateTime(data.ultima_adhesion) }}
           </div>

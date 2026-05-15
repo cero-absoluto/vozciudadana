@@ -36,8 +36,8 @@
         <div class="block" style="margin-bottom:12px">
           <div class="block-title">📢 Titular político</div>
           <div style="font-size:14px;font-weight:600;line-height:1.5;color:var(--text)">
-            {{ data.total_adhesiones }} ciudadanos verificados de {{ data.protest.country_name }}
-            exigen: "{{ data.protest.demands }}"
+           {{ data.total_adhesiones }} ciudadanos verificados de {{ data.protest.country_name }}
+exigen al {{ data.protest.focal_point }}: "{{ data.protest.demands }}"
           </div>
         </div>
 

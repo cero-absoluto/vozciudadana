@@ -101,15 +101,19 @@
         </div>
 
         <!-- BLOQUE 7 — Sello de transparencia -->
-        <div class="block" style="margin-bottom:20px">
-          <div class="block-title">✅ Sello de transparencia</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.8">
-            Código fuente auditado públicamente en
-            <a href="https://github.com/cero-absoluto/vozciudadana" 
-               style="color:var(--accent)" target="_blank">GitHub</a>.
-            Blockchain en desarrollo — disponible en v2.0.
-          </div>
-        </div>
+<div class="block" style="margin-bottom:20px">
+  <div class="block-title">✅ Sello de transparencia</div>
+  <div style="font-size:11px;color:var(--text2);line-height:1.8">
+    Código fuente auditado públicamente en
+    <a href="https://github.com/cero-absoluto/vozciudadana" 
+       style="color:var(--accent);text-decoration:underline" target="_blank">
+      github.com/cero-absoluto/vozciudadana
+    </a>.<br>
+    Informe generado: {{ formatDateTime(new Date().toISOString()) }}<br>
+    ID de convocatoria: <span style="font-family:monospace;font-size:9px;color:var(--accent2)">{{ $route.params.id }}</span><br>
+    Blockchain en desarrollo — disponible en v2.0.
+  </div>
+</div>
 
         <!-- Botón volver -->
         <button class="btn-primary" style="width:100%" @click="$router.back()">

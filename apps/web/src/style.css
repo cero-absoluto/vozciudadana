@@ -418,4 +418,8 @@ a:hover{opacity:.8}
   .v-h{font-size:15px}
   .v-p{font-size:11px}
   .phone-in{font-size:14px}
+  /* INFORME */
+#s-informe .block-title{font-size:13px}
+#s-informe .sc-n{font-size:22px}
+#s-informe .sc-l{font-size:11px}
 }

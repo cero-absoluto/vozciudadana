@@ -112,10 +112,10 @@ exigen al {{ data.protest.focal_point }}: "{{ data.protest.demands }}"
   <div class="block-title">✅ Sello de transparencia</div>
   <div style="font-size:11px;color:var(--text2);line-height:1.8">
     Código fuente auditado públicamente en
-    <a href="https://github.com/cero-absoluto/vozciudadana" 
-       style="color:var(--accent);text-decoration:underline" target="_blank">
-      github.com/cero-absoluto/vozciudadana
-    </a>.<br>
+    Código fuente auditado públicamente en:<br>
+<span style="color:var(--accent);font-family:monospace;font-size:10px">
+  github.com/cero-absoluto/vozciudadana
+</span>.<br>
     Informe generado: {{ formatDateTime(new Date().toISOString()) }}<br>
     ID de convocatoria: <span style="font-family:monospace;font-size:9px;color:var(--accent2)">{{ $route.params.id }}</span><br>
     Blockchain en desarrollo — disponible en v2.0.

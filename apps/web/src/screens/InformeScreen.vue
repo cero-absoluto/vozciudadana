@@ -107,14 +107,16 @@ exigen al {{ data.protest.focal_point }}: "{{ data.protest.demands }}"
           </div>
         </div>
 
-        <!-- BLOQUE 7 — Sello de transparencia -->
+      <!-- BLOQUE 7 — Sello de transparencia -->
 <div class="block" style="margin-bottom:20px">
   <div class="block-title">✅ Sello de transparencia</div>
   <div style="font-size:14px;color:var(--text2);line-height:1.8">
-    Código fuente auditado públicamente en:<br>
-<span style="color:var(--accent);font-family:monospace;font-size:10px">
-  github.com/cero-absoluto/vozciudadana
-</span>.<br>
+    Código fuente auditado públicamente:<br>
+    <button 
+      onclick="window.open('https://github.com/cero-absoluto/vozciudadana','_blank')"
+      style="background:transparent;border:.5px solid var(--accent);border-radius:var(--r);padding:4px 10px;color:var(--accent);cursor:pointer;font-size:11px;margin-top:4px">
+      Ver código fuente en GitHub →
+    </button><br><br>
     Informe generado: {{ formatDateTime(new Date().toISOString()) }}<br>
     ID de convocatoria: <span style="font-family:monospace;font-size:10px;color:var(--accent2)">{{ $route.params.id }}</span><br>
     Blockchain en desarrollo — disponible en v2.0.

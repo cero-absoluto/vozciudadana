@@ -78,7 +78,7 @@ onMounted(() => {
   const c = canvasEl.value;
   ctx = c.getContext('2d');
   W = c.width  = c.parentElement.clientWidth;
-  H = c.height = 155;
+  H = c.height = 268;
   initParticles();
   drawFrame();
 

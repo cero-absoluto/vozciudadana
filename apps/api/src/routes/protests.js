@@ -160,6 +160,7 @@ try {
     if (error) throw error;
 
     const { error: rpcErr } = await supabase.rpc('increment_protest_count', { protest_id: req.params.id });
+    await supabase.rpc('update_cities_count', { protest_id: req.params.id });
     if (rpcErr) req.log.error({ rpcErr }, 'increment_protest_count failed');
 
     return reply.code(201).send({ receipt: data.id });

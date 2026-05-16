@@ -11,21 +11,9 @@
     </div>
 
     <!-- Particle map -->
-    <!-- Desktop layout wrapper -->
-    <div class="detail-body">
-      <DetailMap :participant-count="protest.count" :joined="protest.joined" />
+    <DetailMap :participant-count="protest.count" :joined="protest.joined" />
 
-      <div class="d-scroll">
-        <!-- Stats -->
-        <div class="stats-row">
-        ... todo el contenido que ya está ...
-        </div><!-- cierre del último bloque -->
-      </div><!-- cierre d-scroll -->
-
-    </div><!-- cierre detail-body -->
-
-    <!-- Join footer -->
-    <div class="join-footer">
+    <div class="d-scroll">
       <!-- Stats -->
       <div class="stats-row">
         <div class="sc"><div class="sc-n" style="color:var(--accent)">{{ fmt(protest.count) }}</div><div class="sc-l">Adheridos</div></div>

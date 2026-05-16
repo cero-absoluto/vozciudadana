@@ -158,20 +158,6 @@ html, body { height: 100%; overflow: hidden; }
     font-size: 16px;
     margin: 16px 24px;
   }
-  .detail-body {
-    display: flex;
-    flex-direction: row;
-    flex: 1;
-    overflow: hidden;
-  }
-  .detail-body .detail-map {
-    width: 300px;
-    flex-shrink: 0;
-    height: 100% !important;
-  }
-  .detail-body .d-scroll {
-    flex: 1;
-    overflow-y: auto;
-  }
+  #s-detail .detail-map { display: none;   }
 }
 </style>

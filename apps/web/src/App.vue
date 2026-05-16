@@ -158,5 +158,6 @@ html, body { height: 100%; overflow: hidden; }
     font-size: 16px;
     margin: 16px 24px;
   }
+   #s-detail .detail-map { height: 268px; }
 }
 </style>

@@ -20,7 +20,7 @@ function normalizeProtest(p) {
     heat:        p.heat ?? 5,
     timer:       Math.max(0, Math.floor((endsAt - Date.now()) / 1000)),
     color:       SCOPE_COLOR[p.scope] ?? '#7C6FFF',
-    cities:      p.cities ?? 1,
+    cities:      p.cities_count ?? 0,
     desc:        p.description,
     demands:     p.demands ?? '',
     joined:      false,

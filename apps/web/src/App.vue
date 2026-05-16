@@ -159,5 +159,20 @@ html, body { height: 100%; overflow: hidden; }
     margin: 16px 24px;
   }
    #s-detail .detail-map { height: 268px; }
+  .detail-body {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    overflow: hidden;
+  }
+  .detail-body .detail-map {
+    width: 300px;
+    flex-shrink: 0;
+    height: 100% !important;
+  }
+  .detail-body .d-scroll {
+    flex: 1;
+    overflow-y: auto;
+  }
 }
 </style>

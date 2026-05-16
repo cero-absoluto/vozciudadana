@@ -126,7 +126,7 @@ html, body { height: 100%; overflow: hidden; }
     align-items: start;
      width: 100%;
   }
-  #s-detail {max-width: 100% !important; width: 100% !important; margin: 0 !important; border: none; }
+  #s-detail {max-width: 860px;  }
   .topbar { max-width: 100%; border-bottom: 1px solid var(--border); padding: 12px 24px; }
   .bottom-nav { max-width: 100%; padding: 0 24px; }
   .modal { max-width: 480px; }
@@ -158,7 +158,6 @@ html, body { height: 100%; overflow: hidden; }
     font-size: 16px;
     margin: 16px 24px;
   }
-   #s-detail .detail-map { height: 180px; }
   .detail-body {
     display: flex;
     flex-direction: row;

@@ -122,3 +122,13 @@ export function verifyOtp(payload) {
 export function fetchDeviceLocks(deviceId) {
   return request('GET', `/api/users/device/${deviceId}/locks`);
 }
+
+// ── Reference data ────────────────────────────────────────────────────────────
+
+/**
+ * Fetch the list of country codes (static reference data, server-cached).
+ * @returns {Promise<Array<{ iso2: string, dial_code: number, flag: string, name: string }>>}
+ */
+export function fetchCountryCodes() {
+  return request('GET', '/api/country-codes');
+}

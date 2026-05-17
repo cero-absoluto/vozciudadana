@@ -62,6 +62,9 @@ supabase start
 # Apply migrations
 supabase db push
 
+# Local migration
+supabase migration up
+
 # Seed demo data
 supabase db reset --db-url <local-url> < supabase/seed.sql
 ```

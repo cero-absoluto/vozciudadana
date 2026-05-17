@@ -5,8 +5,9 @@ import sensible from '@fastify/sensible';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 
-import protestRoutes from './routes/protests.js';
-import userRoutes from './routes/users.js';
+import protestRoutes    from './routes/protests.js';
+import userRoutes       from './routes/users.js';
+import countryCodeRoutes from './routes/countryCodes.js';
 
 const app = Fastify({
   logger: true,
@@ -33,8 +34,9 @@ app.setErrorHandler((err, req, reply) => {
   reply.status(500).send({ error: 'Internal server error' });
 });
 
-app.register(protestRoutes, { prefix: '/api/protests' });
-app.register(userRoutes,    { prefix: '/api/users' });
+app.register(protestRoutes,     { prefix: '/api/protests' });
+app.register(userRoutes,        { prefix: '/api/users' });
+app.register(countryCodeRoutes, { prefix: '/api/country-codes' });
 
 app.get('/health', async () => ({ status: 'ok' }));
 

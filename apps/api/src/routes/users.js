@@ -48,15 +48,16 @@ export default async function userRoutes(app) {
         type: 'object',
         required: ['phone', 'otp', 'device_id'],
         properties: {
-          phone:     { type: 'string', minLength: 8, maxLength: 16, pattern: '^\\+[1-9]\\d{7,14}$' },
-          otp:       { type: 'string', minLength: 6, maxLength: 6, pattern: '^[0-9]{6}$' },
-          device_id: { type: 'string', minLength: 8, maxLength: 128 },
+          phone:        { type: 'string', minLength: 8, maxLength: 16, pattern: '^\\+[1-9]\\d{7,14}$' },
+          otp:          { type: 'string', minLength: 6, maxLength: 6, pattern: '^[0-9]{6}$' },
+          device_id:    { type: 'string', minLength: 8, maxLength: 128 },
+          country_code: { type: 'string', minLength: 2, maxLength: 2, pattern: '^[A-Z]{2}$', nullable: true },
         },
         additionalProperties: false,
       },
     },
   }, async (req, reply) => {
-    const { phone, otp, device_id } = req.body;
+    const { phone, otp, device_id, country_code } = req.body;
 
     const approved = await verifyOtp(phone, otp);
     if (!approved) return reply.unauthorized('OTP inválido o expirado');
@@ -66,7 +67,7 @@ export default async function userRoutes(app) {
     const user_agent = req.headers['user-agent'] || null;
     const { data, error } = await supabase
       .from('devices')
-      .upsert({ id: device_id, phone_hash, verified_at: new Date().toISOString(),user_agent })
+      .upsert({ id: device_id, phone_hash, verified_at: new Date().toISOString(), user_agent, country_code: country_code ?? null })
       .select()
       .single();
 

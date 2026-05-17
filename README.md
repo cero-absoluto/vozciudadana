@@ -62,7 +62,7 @@ supabase start
 # Apply migrations
 supabase db push
 
-# Local migration
+# Local migration (http://localhost:54323)
 supabase migration up
 
 # Seed demo data

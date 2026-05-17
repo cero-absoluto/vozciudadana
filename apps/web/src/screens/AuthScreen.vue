@@ -17,7 +17,7 @@
           <label for="cc-sel" class="sr-only">Prefijo del país</label>
           <select id="cc-sel" class="cc-sel" v-model="countryCode" :disabled="countryCodes.length === 0">
             <option v-if="countryCodes.length === 0" :value="countryCode">...</option>
-            <option v-for="c in countryCodes" :key="c.iso2" :value="String(c.dial_code)">
+            <option v-for="c in countryCodes" :key="c.iso2" :value="c.iso2">
               {{ c.flag }} +{{ c.dial_code }}
             </option>
           </select>
@@ -83,8 +83,12 @@ import { useUiStore } from '@/stores/ui.js';
 const router = useRouter();
 const ui     = useUiStore();
 
-const countryCode  = ref('34');
+const countryCode  = ref('ES');
 const countryCodes = ref([]);
+const dialCode     = computed(() => {
+  const c = countryCodes.value.find(c => c.iso2 === countryCode.value);
+  return c ? c.dial_code : 34;
+});
 const phone        = ref('');
 const sending      = ref(false);
 const otpVisible   = ref(false);
@@ -142,7 +146,7 @@ const hashDisplay = ref('Escribe tu número...');
 watch([countryCode, phone], async () => {
   const v = phone.value.replace(/\D/g, '');
   if (v.length >= 4) {
-    const h = await sha256('+' + countryCode.value + v);
+    const h = await sha256('+' + dialCode.value + v);
     hashDisplay.value = 'sha256:' + h;
   } else {
     hashDisplay.value = 'Escribe tu número...';
@@ -160,7 +164,7 @@ async function sendSMS() {
   const existingDevice = await api.fetchDeviceLocks(device.getDeviceId());
   if (existingDevice && existingDevice.length > 0) {
     const v = phone.value.replace(/\D/g, '');
-    const phoneHash = await sha256('+' + countryCode.value + v);
+    const phoneHash = await sha256('+' + dialCode.value + v);
     sessionStorage.setItem('vc_phone_hash', phoneHash);
     sessionStorage.setItem('vc_device_id', device.getDeviceId());
     router.push('/verify');
@@ -172,7 +176,7 @@ async function sendSMS() {
   try {
     let token = '';
     try { token = await getRecaptchaToken('request_otp'); } catch { /* dev mode */ }
-    await api.requestOtp({ phone: '+' + countryCode.value + v, recaptcha_token: token || 'dev' });
+    await api.requestOtp({ phone: '+' + dialCode.value + v, recaptcha_token: token || 'dev' });
     otpDigits.value = ['', '', '', '', '', ''];
     otpVisible.value = true;
   } catch (err) {
@@ -196,7 +200,7 @@ async function verifyOTP() {
     const deviceId  = device.getDeviceId();
     sessionStorage.setItem('vc_phone_hash', phoneHash);
     sessionStorage.setItem('vc_device_id',  deviceId);
-    await api.verifyOtp({ phone: '+' + countryCode.value + v, otp: code, device_id: deviceId });
+    await api.verifyOtp({ phone: '+' + dialCode.value + v, otp: code, device_id: deviceId, country_code: countryCode.value });
     router.push('/verify');
   } catch (err) {
     ui.showToast('Código incorrecto o expirado: ' + err.message);

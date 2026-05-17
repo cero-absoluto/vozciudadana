@@ -63,7 +63,14 @@ onMounted(async () => {
           recaptcha_token: token || 'dev',
         })
       );
-    } catch (e) { /* silencioso */ }
+    } catch (e) {
+      if (e.code === 'NATIONAL_ONLY') {
+        ui.showToast('No puede adherirse, la protesta es únicamente para ciudadanos nacionales');
+        router.push('/');
+        return;
+      }
+      /* silencioso para otros errores */
+    }
     protests.joinProtest(target.id);
     sessionStorage.setItem('vc_last_joined', String(target.id));
   }

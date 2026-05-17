@@ -21,7 +21,11 @@ async function request(method, path, body) {
     body:    body ? JSON.stringify(body) : undefined,
   });
   const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.message ?? `API error ${res.status}`);
+  if (!res.ok) {
+    const err = new Error(json.error ?? json.message ?? `API error ${res.status}`);
+    if (json.code) err.code = json.code;
+    throw err;
+  }
   return json;
 }
 

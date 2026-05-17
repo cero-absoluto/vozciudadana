@@ -131,15 +131,27 @@ export default async function protestRoutes(app) {
 
     await verifyRecaptcha(recaptcha_token, 'join_protest', reply);
 
-    // Idempotency: one device per protest
-    const { data: existing } = await supabase
-      .from('adhesions')
-      .select('id')
-      .eq('protest_id', req.params.id)
-      .eq('device_id', device_id)
-      .maybeSingle();
+    // Fetch protest metadata and idempotency check in parallel
+    const [{ data: protest, error: protestErr }, { data: existing }] = await Promise.all([
+      supabase.from('protests').select('scope, country').eq('id', req.params.id).maybeSingle(),
+      supabase.from('adhesions').select('id').eq('protest_id', req.params.id).eq('device_id', device_id).maybeSingle(),
+    ]);
 
+    if (protestErr || !protest) return reply.notFound('Protest not found');
     if (existing) return reply.conflict('Device already joined this protest');
+
+    // National protests: device country must match protest country
+    if (protest.scope === 'national' && protest.country) {
+      const { data: dev } = await supabase
+        .from('devices')
+        .select('country_code')
+        .eq('id', device_id)
+        .maybeSingle();
+
+      if (!dev?.country_code || dev.country_code !== protest.country) {
+        return reply.status(403).send({ code: 'NATIONAL_ONLY', error: 'protests country does not match device country' });
+      }
+    }
 
    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
 let ciudad = null, region = null, pais = null;

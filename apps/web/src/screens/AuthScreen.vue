@@ -15,22 +15,11 @@
       <div style="width:100%" v-if="!otpVisible">
         <div class="phone-wrap">
           <label for="cc-sel" class="sr-only">Prefijo del país</label>
-          <select id="cc-sel" class="cc-sel" v-model="countryCode">
-            <option value="+356">🇲🇹 +356</option>
-            <option value="+34">🇪🇸 +34</option>
-            <option value="+52">🇲🇽 +52</option>
-            <option value="+54">🇦🇷 +54</option>
-            <option value="+58">🇻🇪 +58</option>
-            <option value="+53">🇨🇺 +53</option>
-            <option value="+7">🇷🇺 +7</option>
-            <option value="+98">🇮🇷 +98</option>
-            <option value="+375">🇧🇾 +375</option>
-            <option value="+1">🇺🇸 +1</option>
-            <option value="+44">🇬🇧 +44</option>
-            <option value="+33">🇫🇷 +33</option>
-            <option value="+49">🇩🇪 +49</option>
-            <option value="+86">🇨🇳 +86</option>
-            <option value="+55">🇧🇷 +55</option>
+          <select id="cc-sel" class="cc-sel" v-model="countryCode" :disabled="countryCodes.length === 0">
+            <option v-if="countryCodes.length === 0" :value="countryCode">...</option>
+            <option v-for="c in countryCodes" :key="c.iso2" :value="String(c.dial_code)">
+              {{ c.flag }} +{{ c.dial_code }}
+            </option>
           </select>
           <label for="phone-in" class="sr-only">Número de teléfono</label>
           <input id="phone-in" class="phone-in" type="tel" v-model="phone" placeholder="600 000 000" maxlength="12" aria-label="Número de teléfono">
@@ -94,7 +83,8 @@ import { useUiStore } from '@/stores/ui.js';
 const router = useRouter();
 const ui     = useUiStore();
 
-const countryCode  = ref('+34');
+const countryCode  = ref('34');
+const countryCodes = ref([]);
 const phone        = ref('');
 const sending      = ref(false);
 const otpVisible   = ref(false);
@@ -134,6 +124,12 @@ onMounted(async () => {
     captchaIco.value = '⚠️';
     captchaTxt.value = 'No se pudo verificar reCAPTCHA. Continúa si estás en desarrollo.';
   }
+
+  try {
+    countryCodes.value = await api.fetchCountryCodes();
+  } catch {
+    // Fallback: mantener el selector deshabilitado con el prefijo por defecto
+  }
 });
 
 /** Real SHA-256 hash using the Web Crypto API. */
@@ -146,7 +142,7 @@ const hashDisplay = ref('Escribe tu número...');
 watch([countryCode, phone], async () => {
   const v = phone.value.replace(/\D/g, '');
   if (v.length >= 4) {
-    const h = await sha256(countryCode.value + v);
+    const h = await sha256('+' + countryCode.value + v);
     hashDisplay.value = 'sha256:' + h;
   } else {
     hashDisplay.value = 'Escribe tu número...';
@@ -161,22 +157,22 @@ async function sendSMS() {
   if (sending.value) return;
 
   // Si el dispositivo ya está verificado, saltar OTP
-const existingDevice = await api.fetchDeviceLocks(device.getDeviceId());
-if (existingDevice && existingDevice.length > 0) {
-  const v = phone.value.replace(/\D/g, '');
-  const phoneHash = await sha256(countryCode.value + v);
-  sessionStorage.setItem('vc_phone_hash', phoneHash);
-  sessionStorage.setItem('vc_device_id', device.getDeviceId());
-  router.push('/verify');
-  return;
-}
+  const existingDevice = await api.fetchDeviceLocks(device.getDeviceId());
+  if (existingDevice && existingDevice.length > 0) {
+    const v = phone.value.replace(/\D/g, '');
+    const phoneHash = await sha256('+' + countryCode.value + v);
+    sessionStorage.setItem('vc_phone_hash', phoneHash);
+    sessionStorage.setItem('vc_device_id', device.getDeviceId());
+    router.push('/verify');
+    return;
+  }
   const v = phone.value.replace(/\D/g, '');
   if (v.length < 6) return;
   sending.value = true;
   try {
     let token = '';
     try { token = await getRecaptchaToken('request_otp'); } catch { /* dev mode */ }
-    await api.requestOtp({ phone: countryCode.value + v, recaptcha_token: token || 'dev' });
+    await api.requestOtp({ phone: '+' + countryCode.value + v, recaptcha_token: token || 'dev' });
     otpDigits.value = ['', '', '', '', '', ''];
     otpVisible.value = true;
   } catch (err) {
@@ -196,11 +192,11 @@ async function verifyOTP() {
   sending.value = true;
   try {
     const v = phone.value.replace(/\D/g, '');
-    const phoneHash = await sha256(countryCode.value + v);
+    const phoneHash = await sha256('+' + countryCode.value + v);
     const deviceId  = device.getDeviceId();
     sessionStorage.setItem('vc_phone_hash', phoneHash);
     sessionStorage.setItem('vc_device_id',  deviceId);
-    await api.verifyOtp({ phone: countryCode.value + v, otp: code, device_id: deviceId });
+    await api.verifyOtp({ phone: '+' + countryCode.value + v, otp: code, device_id: deviceId });
     router.push('/verify');
   } catch (err) {
     ui.showToast('Código incorrecto o expirado: ' + err.message);

@@ -1,6 +1,6 @@
 import { supabase } from '../services/supabase.js';
 
-const VALID_SCOPES    = ['national', 'regional', 'global'];
+const VALID_SCOPES    = ['national', 'local', 'global'];
 const VALID_REGIONS   = ['region', 'provincia', 'ciudad', 'distrito', 'institucion'];
 const VALID_RISK      = ['low', 'med', 'high', 'critical'];
 const COUNTRY_RE      = /^[A-Z]{2}$/;

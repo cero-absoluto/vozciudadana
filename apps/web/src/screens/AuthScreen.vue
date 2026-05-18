@@ -200,7 +200,14 @@ async function verifyOTP() {
     const deviceId  = device.getDeviceId();
     sessionStorage.setItem('vc_phone_hash', phoneHash);
     sessionStorage.setItem('vc_device_id',  deviceId);
-    await api.verifyOtp({ phone: '+' + dialCode.value + v, otp: code, device_id: deviceId, country_code: countryCode.value });
+    const res = await api.verifyOtp({ phone: '+' + dialCode.value + v, otp: code, device_id: deviceId, country_code: countryCode.value });
+    // Sync local device_id with the canonical one from the server (anchored to phone_hash).
+    // If localStorage was cleared and the phone was already verified, the server returns
+    // the original device_id so the user keeps their identity across sessions.
+    if (res.device_id && res.device_id !== deviceId) {
+      device.setDeviceId(res.device_id);
+      sessionStorage.setItem('vc_device_id', res.device_id);
+    }
     router.push('/verify');
   } catch (err) {
     ui.showToast('Código incorrecto o expirado: ' + err.message);

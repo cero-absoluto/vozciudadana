@@ -64,6 +64,19 @@ export default async function userRoutes(app) {
 
     const phone_hash = hashPhone(phone);
 
+    // Note: we allow multiple devices per phone number, but each device can only be verified with one phone number. 
+    // This means that if a user tries to verify a phone number that's already verified on another device, 
+    // we won't create a new device record but return the existing one. 
+    // This is to prevent abuse where someone could verify multiple phone numbers on the same device (i.e: web) to gain more "confidence" in the system.
+    // If this phone is already verified on another device, return it directly.
+    const { data: existing } = await supabase
+      .from('devices')
+      .select('id')
+      .eq('phone_hash', phone_hash)
+      .maybeSingle();
+
+    if (existing) return { verified: true, device_id: existing.id };
+
     const user_agent = req.headers['user-agent'] || null;
     const { data, error } = await supabase
       .from('devices')

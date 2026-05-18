@@ -49,9 +49,13 @@ export const useDeviceStore = defineStore('device', () => {
     return id;
   }
 
+  function setDeviceId(id) {
+    localStorage.setItem('vc_device_id', id);
+  }
+
   return {
     simPrefix, simCountry, simName, ipCountry, ipCity, docCountry,
     confidence, myRegions, regionLabel,
-    setDocCountry, getLocks, setLock, getDeviceId,
+    setDocCountry, getLocks, setLock, getDeviceId, setDeviceId,
   };
 });

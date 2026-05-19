@@ -4,6 +4,7 @@ import HomeScreen   from '@/screens/HomeScreen.vue';
 import DetailScreen from '@/screens/DetailScreen.vue';
 import AuthScreen   from '@/screens/AuthScreen.vue';
 import VerifyScreen from '@/screens/VerifyScreen.vue';
+import VerifyInstitucionalScreen from '@/screens/VerifyInstitucionalScreen.vue';
 import CreateScreen from '@/screens/CreateScreen.vue';
 import AboutScreen  from '@/screens/AboutScreen.vue';
 import InformeScreen from '@/screens/InformeScreen.vue';
@@ -13,6 +14,7 @@ const routes = [
   { path: '/detail/:id', component: DetailScreen },
   { path: '/auth',      component: AuthScreen },
   { path: '/verify',    component: VerifyScreen },
+  { path: '/verify-institucional/:protestId', component: VerifyInstitucionalScreen },
   { path: '/create',    component: CreateScreen },
   { path: '/about',     component: AboutScreen },
   { path: '/informe/:id', component: InformeScreen },

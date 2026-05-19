@@ -145,7 +145,7 @@ function onJoin() {
   if (!cj.value.ok) return;
   if (protest.value.scope === 'regional' && protest.value.dominio_email) {
     router.push(`/verify-institucional/${protest.value.id}`);
-  } else {
+ } else {
   router.push('/auth');
 }
 </script>

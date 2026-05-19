@@ -45,15 +45,111 @@
           <div class="so-radio" :class="{on: form.scope === s.key}"></div>
         </div>
       </div>
-      <div v-if="form.scope === 'regional'" class="region-picker" style="display:block">
-        <div class="rp-label">Selecciona el bloque regional</div>
-        <div class="region-chips">
-          <div v-for="[key, r] in Object.entries(REGIONS)" :key="key"
-            class="rchip" :class="{on: form.region === key}"
-            @click="form.region = key">
-            {{ r.icon }} {{ r.name }}
-          </div>
-        </div>
+      <!-- Campos adaptativos según alcance -->
+<div v-if="form.scope === 'national' || form.scope === 'regional'" class="fg" style="margin-top:12px">
+  <label>País *</label>
+  <select v-model="form.convocatoria_pais">
+    <option value="">Selecciona un país...</option>
+    <option value="AF">Afganistán</option>
+    <option value="DE">Alemania</option>
+    <option value="AR">Argentina</option>
+    <option value="AU">Australia</option>
+    <option value="AT">Austria</option>
+    <option value="BE">Bélgica</option>
+    <option value="BO">Bolivia</option>
+    <option value="BR">Brasil</option>
+    <option value="CA">Canadá</option>
+    <option value="CL">Chile</option>
+    <option value="CN">China</option>
+    <option value="CO">Colombia</option>
+    <option value="KR">Corea del Sur</option>
+    <option value="CR">Costa Rica</option>
+    <option value="CU">Cuba</option>
+    <option value="DK">Dinamarca</option>
+    <option value="EC">Ecuador</option>
+    <option value="EG">Egipto</option>
+    <option value="SV">El Salvador</option>
+    <option value="AE">Emiratos Árabes</option>
+    <option value="SK">Eslovaquia</option>
+    <option value="SI">Eslovenia</option>
+    <option value="ES">España</option>
+    <option value="US">Estados Unidos</option>
+    <option value="EE">Estonia</option>
+    <option value="ET">Etiopía</option>
+    <option value="PH">Filipinas</option>
+    <option value="FI">Finlandia</option>
+    <option value="FR">Francia</option>
+    <option value="GH">Ghana</option>
+    <option value="GR">Grecia</option>
+    <option value="GT">Guatemala</option>
+    <option value="HN">Honduras</option>
+    <option value="HU">Hungría</option>
+    <option value="IN">India</option>
+    <option value="ID">Indonesia</option>
+    <option value="IQ">Irak</option>
+    <option value="IR">Irán</option>
+    <option value="IE">Irlanda</option>
+    <option value="IL">Israel</option>
+    <option value="IT">Italia</option>
+    <option value="JP">Japón</option>
+    <option value="JO">Jordania</option>
+    <option value="KZ">Kazajistán</option>
+    <option value="KE">Kenia</option>
+    <option value="LV">Letonia</option>
+    <option value="LB">Líbano</option>
+    <option value="LT">Lituania</option>
+    <option value="LU">Luxemburgo</option>
+    <option value="MX">México</option>
+    <option value="MA">Marruecos</option>
+    <option value="NL">Países Bajos</option>
+    <option value="NG">Nigeria</option>
+    <option value="NO">Noruega</option>
+    <option value="NZ">Nueva Zelanda</option>
+    <option value="PK">Pakistán</option>
+    <option value="PA">Panamá</option>
+    <option value="PY">Paraguay</option>
+    <option value="PE">Perú</option>
+    <option value="PL">Polonia</option>
+    <option value="PT">Portugal</option>
+    <option value="GB">Reino Unido</option>
+    <option value="CZ">República Checa</option>
+    <option value="DO">República Dominicana</option>
+    <option value="RO">Rumanía</option>
+    <option value="RU">Rusia</option>
+    <option value="SA">Arabia Saudí</option>
+    <option value="SN">Senegal</option>
+    <option value="RS">Serbia</option>
+    <option value="ZA">Sudáfrica</option>
+    <option value="SE">Suecia</option>
+    <option value="CH">Suiza</option>
+    <option value="TH">Tailandia</option>
+    <option value="TW">Taiwán</option>
+    <option value="TZ">Tanzania</option>
+    <option value="TR">Turquía</option>
+    <option value="UA">Ucrania</option>
+    <option value="UG">Uganda</option>
+    <option value="UY">Uruguay</option>
+    <option value="VE">Venezuela</option>
+    <option value="VN">Vietnam</option>
+  </select>
+</div>
+
+<div v-if="form.scope === 'regional'" class="fg" style="margin-top:12px">
+  <label>Región / Provincia *</label>
+  <input type="text" v-model="form.convocatoria_region" placeholder="Ej: Noord-Holland, Cataluña, Île-de-France">
+</div>
+
+<div v-if="form.scope === 'regional'" class="fg" style="margin-top:12px">
+  <label>Institución <span style="font-weight:400;opacity:.6">(opcional)</span></label>
+  <input type="text" v-model="form.convocatoria_institucion" placeholder="Ej: Utrecht University, Hospital Vall d'Hebron">
+  <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">Si es una convocatoria universitaria o laboral, indica el nombre.</div>
+</div>
+
+<div v-if="form.scope === 'regional' && form.convocatoria_institucion" class="fg" style="margin-top:12px">
+  <label>Dominio de email institucional *</label>
+  <input type="text" v-model="form.dominio_email" placeholder="Ej: uu.nl, uab.cat, upf.edu">
+  <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">Los participantes verificarán su pertenencia con su email institucional.</div>
+</div>
       </div>
     </div>
     <div style="display:flex;gap:12px">
@@ -104,6 +200,10 @@ const form = reactive({
   title: '', description: '', demands: '', focal_point: '',
   category: 'corruption', scope: 'national', region: null,
   duration_h: 36, risk_level: 'low', starts_at: '',
+  convocatoria_pais: '',
+  convocatoria_region: '',
+  convocatoria_institucion: '',
+  dominio_email: '',
 });
 
 const scopes = [
@@ -126,12 +226,20 @@ function submit() {
   if (!form.demands.trim())     { ui.showToast('Indica qué exigís'); return; }
   if (!form.focal_point.trim()) { ui.showToast('El punto focal es obligatorio'); return; }
   if (!form.starts_at) { ui.showToast('La fecha del evento es obligatoria'); return; }
-  if (form.scope === 'regional' && !form.region) { ui.showToast('Selecciona el bloque regional'); return; }
-const confirmMsg = `¿Confirmas que quieres publicar esta convocatoria?\n\n"${form.title}"\n\nUna vez publicada no podrá editarse ni eliminarse.`;
+  if (form.scope === 'national' && !form.convocatoria_pais) { ui.showToast('Selecciona el país de la convocatoria'); return; }
+  if (form.scope === 'regional' && !form.convocatoria_pais) { ui.showToast('Selecciona el país de la convocatoria'); return; }
+  if (form.scope === 'regional' && !form.convocatoria_region.trim()) { ui.showToast('Indica la región o provincia'); return; }
+  if (form.scope === 'regional' && form.convocatoria_institucion && !form.dominio_email.trim()) { ui.showToast('Indica el dominio de email institucional'); return; }
+const confirmMsg = `¿Confirmas que quieres publicar esta convocatoria?\n\n"${form.title}"\n\nUna vez publicada no podrá editarse ni eliminarse.`; }
   if (!window.confirm(confirmMsg)) return;
   protests.createProtest({
-    ...form,
-  starts_at: form.starts_at ? form.starts_at + 'T08:00:00.000Z' : null});
+  ...form,
+  starts_at: form.starts_at ? form.starts_at + 'T08:00:00.000Z' : null,
+  convocatoria_pais: form.convocatoria_pais || null,
+  convocatoria_region: form.convocatoria_region || null,
+  convocatoria_institucion: form.convocatoria_institucion || null,
+  dominio_email: form.dominio_email || null,
+});
   ui.showToast('✓ Convocatoria creada — ya aparece en el mapa');
   router.push('/');
 }

@@ -1,0 +1,22 @@
+-- Migración: mejoras de privacidad (Bloque 2)
+-- Fecha: 2026-05-19
+-- Descripción: nullifier por adhesión, umbral de publicación, hash de integridad
+
+-- 2.1 Nullifier por adhesión
+-- Sustituye phone_hash como identificador público por un HMAC-SHA256(phone_hash, protest_id)
+-- Esto evita correlación de la misma persona entre convocatorias distintas
+ALTER TABLE adhesions
+  ADD COLUMN IF NOT EXISTS nullifier TEXT UNIQUE;
+
+-- 2.3 Umbral de publicación y cierre
+-- umbral_publicacion: número mínimo de adhesiones para publicar resultado al cierre
+-- closed_at: timestamp de cierre de la convocatoria (NULL = activa)
+ALTER TABLE protests
+  ADD COLUMN IF NOT EXISTS umbral_publicacion INTEGER DEFAULT 10,
+  ADD COLUMN IF NOT EXISTS closed_at TIMESTAMPTZ;
+
+-- 2.4 Hash de integridad al cierre
+-- Se calcula en el backend al cerrar: SHA-256(id + title + demands + count + closed_at)
+-- Se muestra en el informe público para que cualquiera pueda verificar que no fue alterado
+ALTER TABLE protests
+  ADD COLUMN IF NOT EXISTS hash_integridad TEXT;

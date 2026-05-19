@@ -109,7 +109,7 @@ tipo_abuso:  { type: 'string', nullable: true },
               convocatoria_pais: convocatoria_pais ?? null,
             convocatoria_region: convocatoria_region ?? null,
             convocatoria_institucion: convocatoria_institucion ?? null,
-            dominio_email: dominio_email ?? null 
+            dominio_email: dominio_email ?? null, 
            fuente_url: fuente_url ?? null,
            tipo_abuso: tipo_abuso ?? null })
            .select()

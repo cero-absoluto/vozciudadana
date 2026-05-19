@@ -101,7 +101,8 @@ export const useProtestsStore = defineStore('protests', () => {
       if (device.confidence < 60) return { ok: false, geo: true, msg: `Confianza geográfica insuficiente (${device.confidence}%). Aporta tu documento de identidad.` };
     }
     if (p.scope === 'regional') {
-      if (!inRegion(p.region, device.simCountry)) return { ok: false, geo: true, msg: `Esta convocatoria es para miembros de ${REGIONS[p.region]?.name}.` };
+      if (p.dominio_email) return { ok: true };
+      if (!inRegion(p.region, device.simCountry)) return { ok: false, geo: true, msg:`Esta convocatoria es para miembros de ${p.convocatoria_institucion || p.convocatoria_region || p.countryName}.` };
       if (device.confidence < 40) return { ok: false, geo: true, msg: `Confianza geográfica insuficiente (${device.confidence}%).` };
     }
     return { ok: true };

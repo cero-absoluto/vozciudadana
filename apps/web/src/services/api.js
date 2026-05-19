@@ -136,3 +136,22 @@ export function fetchDeviceLocks(deviceId) {
 export function fetchCountryCodes() {
   return request('GET', '/api/country-codes');
 }
+// ── Verificación institucional ─────────────────────────────────────────────────
+
+/**
+ * Enviar OTP por email institucional.
+ * @param {{ email: string, protest_id: string }} payload
+ * @returns {Promise<{ sent: boolean }>}
+ */
+export function sendEmailOtp(payload) {
+  return request('POST', '/api/institucional/send-otp', payload);
+}
+
+/**
+ * Verificar OTP de email institucional y registrar adhesión.
+ * @param {{ email: string, otp: string, protest_id: string }} payload
+ * @returns {Promise<{ receipt: string }>}
+ */
+export function verifyEmailOtp(payload) {
+  return request('POST', '/api/institucional/verify-otp', payload);
+}

@@ -25,6 +25,10 @@ function normalizeProtest(p) {
     demands:     p.demands ?? '',
     joined:      false,
     viralCount:  p.viral_count ?? 0,
+    convocatoria_pais:        p.convocatoria_pais ?? null,
+    convocatoria_region:      p.convocatoria_region ?? null,
+    convocatoria_institucion: p.convocatoria_institucion ?? null,
+    dominio_email:            p.dominio_email ?? null,
   };
 }
 

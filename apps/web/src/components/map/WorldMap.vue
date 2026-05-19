@@ -106,7 +106,8 @@ function drawFrame() {
       const numIso = Object.entries(ISO_NUM_TO_A2).find(([, v]) => v === p.country)?.[0];
       co = numIso ? COORDS[numIso] : null;
     } else if (p.scope === 'regional') {
-      co = REGION_COORDS[p.region] || null;
+      const numIso = Object.entries(ISO_NUM_TO_A2).find(([, v]) => v === p.convocatoria_pais)?.[0];
+  co = numIso ? COORDS[numIso] : (REGION_COORDS[p.region] || null);
     } else {
       co = REGION_COORDS['global'];
     }

@@ -166,7 +166,6 @@ export const useProtestsStore = defineStore('protests', () => {
   duration_h: dur,
   country: data.country || (data.scope === 'national' ? device.simCountry : null),
   country_name: data.country_name || (data.scope === 'national' ? device.simName : data.scope === 'regional' ? 'Regional' : 'Global'),
-});
       });
       protests.value.push(normalizeProtest(created));
       return created;

@@ -27,6 +27,22 @@
         <option value="social">Social y laboral</option>
       </select>
     </div>
+    <div class="fg"><label>Tipo de abuso *</label>
+  <select v-model="form.tipo_abuso">
+    <option value="">Selecciona el tipo de abuso...</option>
+    <option value="corrupcion">Corrupción o malversación</option>
+    <option value="nepotismo">Nepotismo o favoritismo</option>
+    <option value="derechos">Vulneración de derechos fundamentales</option>
+    <option value="negligencia">Negligencia grave</option>
+    <option value="represion">Represión o censura</option>
+    <option value="opacidad">Opacidad o falta de rendición de cuentas</option>
+    <option value="otro">Otro abuso de poder público</option>
+  </select>
+</div>
+<div class="fg"><label>Fuente que acredita el hecho *</label>
+  <input type="url" v-model="form.fuente_url" placeholder="https://elpais.com/... o https://boe.es/...">
+  <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">Enlaza el artículo, documento oficial o dato que acredita el hecho denunciado.</div>
+</div>
   </div>
 
   <!-- COLUMNA DERECHA -->
@@ -203,6 +219,8 @@ const form = reactive({
   convocatoria_region: '',
   convocatoria_institucion: '',
   dominio_email: '',
+  tipo_abuso: '',
+  fuente_url: '',
 });
 
 const scopes = [
@@ -228,7 +246,8 @@ function submit() {
   if (form.scope === 'national' && !form.convocatoria_pais) { ui.showToast('Selecciona el país de la convocatoria'); return; }
   if (form.scope === 'regional' && !form.convocatoria_pais) { ui.showToast('Selecciona el país de la convocatoria'); return; }
   if (form.scope === 'regional' && !form.convocatoria_region.trim()) { ui.showToast('Indica la región o provincia'); return; }
-  if (form.scope === 'regional' && form.convocatoria_institucion && !form.dominio_email.trim()) { ui.showToast('Indica el dominio de email institucional'); return; }
+  if (!form.tipo_abuso) { ui.showToast('Selecciona el tipo de abuso'); return; }
+if (!form.fuente_url.trim()) { ui.showToast('Indica la fuente que acredita el hecho'); return; }
 const confirmMsg = `¿Confirmas que quieres publicar esta convocatoria?\n\n"${form.title}"\n\nUna vez publicada no podrá editarse ni eliminarse.`;
   if (!window.confirm(confirmMsg)) return;
   // Mapa de códigos ISO a nombres de país
@@ -262,6 +281,8 @@ const PAIS_NOMBRES = {
   convocatoria_region: form.convocatoria_region || null,
   convocatoria_institucion: form.convocatoria_institucion || null,
   dominio_email: form.dominio_email || null,
+  tipo_abuso: form.tipo_abuso || null,
+  fuente_url: form.fuente_url || null,
     country: form.convocatoria_pais || null,
   country_name: PAIS_NOMBRES[form.convocatoria_pais] || form.convocatoria_pais || 'regional',
 });

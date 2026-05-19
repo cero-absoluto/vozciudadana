@@ -1,6 +1,7 @@
 import { supabase } from '../services/supabase.js';
+import { createHmac } from 'crypto';
 
-const VALID_SCOPES    = ['national', 'local', 'global'];
+const VALID_SCOPES    = ['national', 'regional', 'global'];
 const VALID_REGIONS   = ['region', 'provincia', 'ciudad', 'distrito', 'institucion'];
 const VALID_RISK      = ['low', 'med', 'high', 'critical'];
 const COUNTRY_RE      = /^[A-Z]{2}$/;
@@ -76,13 +77,17 @@ export default async function protestRoutes(app) {
           duration_h:   { type: 'number', minimum: 0.5, maximum: 720 },
           starts_at:    { type: 'string', format: 'date-time', nullable: true },
           risk_level:   { type: 'string', enum: VALID_RISK },
+          convocatoria_pais:        { type: 'string', nullable: true },
+         convocatoria_region:      { type: 'string', nullable: true },
+         convocatoria_institucion: { type: 'string', nullable: true },
+         dominio_email:            { type: 'string', nullable: true },
         },
         additionalProperties: false,
       },
     },
   }, async (req, reply) => {
     const { title, description, demands, country, country_name, scope, region,
-            focal_point, category, duration_h, starts_at, risk_level } = req.body;
+            focal_point, category, duration_h, starts_at, risk_level, convocatoria_pais, convocatoria_region, convocatoria_institucion, dominio_email  } = req.body;
 
     const ends_at = new Date(
       new Date(starts_at ?? Date.now()).getTime() + duration_h * 3_600_000
@@ -97,8 +102,12 @@ export default async function protestRoutes(app) {
                 category: category ?? null,
                 risk_level: risk_level ?? 'low',
                 starts_at: starts_at ?? new Date().toISOString(),
-                ends_at })
-      .select()
+                ends_at,
+              convocatoria_pais: convocatoria_pais ?? null,
+            convocatoria_region: convocatoria_region ?? null,
+            convocatoria_institucion: convocatoria_institucion ?? null,
+            dominio_email: dominio_email ?? null })
+           .select()
       .single();
 
     if (error) throw error;
@@ -163,11 +172,22 @@ try {
   pais = geo.country || null;
 } catch { /* silencioso */ }
     const idioma = req.headers['accept-language']?.split(',')[0] || null;
-    const { data, error } = await supabase
-      .from('adhesions')
-      .insert({ protest_id: req.params.id, phone_hash, doc_hash: doc_hash ?? null, device_id, ciudad, region, pais,idioma})
-      .select()
-      .single();
+   // Nullifier: HMAC-SHA256(phone_hash, protest_id) — evita correlación entre convocatorias
+const nullifier = createHmac('sha256', process.env.NULLIFIER_SECRET || 'dev-secret')
+  .update(phone_hash + req.params.id)
+  .digest('hex');
+
+// Timestamp redondeado a la hora — evita correlación temporal
+const created_at = new Date(
+  Math.floor(Date.now() / 3_600_000) * 3_600_000
+).toISOString();
+
+const { data, error } = await supabase
+  .from('adhesions')
+  .insert({ protest_id: req.params.id, phone_hash, doc_hash: doc_hash ?? null,
+            device_id, ciudad, region, pais, idioma, nullifier, created_at })
+  .select()
+  .single();
 
     if (error) throw error;
 

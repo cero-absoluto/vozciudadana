@@ -249,7 +249,7 @@ function submit() {
   if (!form.tipo_abuso) { ui.showToast('Selecciona el tipo de abuso'); return; }
 if (!form.fuente_url.trim()) { ui.showToast('Indica la fuente que acredita el hecho'); return; }
   const VERBOS_PROHIBIDOS = ['apoyar','respaldar','celebrar','felicitar','pedir','solicitar','rogar','desear','esperar','agradecer','proponer','sugerir','recomendar','mejorar','support','endorse','celebrate','congratulate','ask','request','beg','wish','hope','thank','propose','suggest','recommend','improve'];
-const VERBOS_PERMITIDOS = ['exigir','denunciar','demandar','rechazar','condenar','cesar','dimitir','investigar','publicar','revelar','restituir','parar','detener','suspender','demand','denounce','reject','condemn','dismiss','resign','investigate','publish','reveal','restore','stop','halt','suspend'];
+const VERBOS_PERMITIDOS = ['exigi','denuncia','demanda','rechaza','condena','ces','dimt','investig','public','revel','restitu','par','deten','suspend','demand','denounce','reject','condemn','dismiss','resign','investigate','publish','reveal','restore','stop','halt','suspend'];
 
 const demandsLower = form.demands.toLowerCase();
 const tieneProhibido = VERBOS_PROHIBIDOS.some(v => demandsLower.includes(v));

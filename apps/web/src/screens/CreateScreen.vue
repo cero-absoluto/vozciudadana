@@ -248,6 +248,15 @@ function submit() {
   if (form.scope === 'regional' && !form.convocatoria_region.trim()) { ui.showToast('Indica la región o provincia'); return; }
   if (!form.tipo_abuso) { ui.showToast('Selecciona el tipo de abuso'); return; }
 if (!form.fuente_url.trim()) { ui.showToast('Indica la fuente que acredita el hecho'); return; }
+  const VERBOS_PROHIBIDOS = ['apoyar','respaldar','celebrar','felicitar','pedir','solicitar','rogar','desear','esperar','agradecer','proponer','sugerir','recomendar','mejorar','support','endorse','celebrate','congratulate','ask','request','beg','wish','hope','thank','propose','suggest','recommend','improve'];
+const VERBOS_PERMITIDOS = ['exigir','denunciar','demandar','rechazar','condenar','cesar','dimitir','investigar','publicar','revelar','restituir','parar','detener','suspender','demand','denounce','reject','condemn','dismiss','resign','investigate','publish','reveal','restore','stop','halt','suspend'];
+
+const demandsLower = form.demands.toLowerCase();
+const tieneProhibido = VERBOS_PROHIBIDOS.some(v => demandsLower.includes(v));
+const tienePermitido = VERBOS_PERMITIDOS.some(v => demandsLower.includes(v));
+
+if (tieneProhibido) { ui.showToast('Evita verbos como "solicitar" o "pedir". Usa "exigir", "denunciar" o "demandar".'); return; }
+if (!tienePermitido) { ui.showToast('Las exigencias deben incluir verbos como "exigir", "denunciar" o "demandar".'); return; }
 const confirmMsg = `¿Confirmas que quieres publicar esta convocatoria?\n\n"${form.title}"\n\nUna vez publicada no podrá editarse ni eliminarse.`;
   if (!window.confirm(confirmMsg)) return;
   // Mapa de códigos ISO a nombres de país

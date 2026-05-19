@@ -150,7 +150,6 @@
   <input type="text" v-model="form.dominio_email" placeholder="Ej: uu.nl, uab.cat, upf.edu">
   <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">Los participantes verificarán su pertenencia con su email institucional.</div>
 </div>
-      </div>
     </div>
     <div style="display:flex;gap:12px">
       <div class="fg" style="flex:1"><label>Fecha del evento *</label>

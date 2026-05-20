@@ -12,15 +12,30 @@
       <input type="text" v-model="form.title" maxlength="120" placeholder="Ej: Contra la corrupción del gobierno">
       <div class="char-c">{{ form.title.length }}/120</div>
     </div>
-    <div class="fg"><label>Descripción *</label>
+    <div class="fg">
+  <label>Descripción *
+    <span class="info-icon" @mouseenter="showTooltip('description')" @mouseleave="hideTooltip()">ℹ️
+      <div v-if="tooltip === 'description'" class="tooltip-box">Explica el abuso con hechos concretos y verificables. Sin opiniones ni valoraciones personales. Máximo 500 caracteres.</div>
+    </span>
+  </label>
       <textarea v-model="form.description" rows="2" maxlength="500" placeholder="Explica el motivo con hechos concretos."></textarea>
       <div class="char-c">{{ form.description.length }}/500</div>
     </div>
-    <div class="fg"><label>Qué exigimos *</label>
+    <div class="fg">
+  <label>Qué exigimos *
+    <span class="info-icon" @mouseenter="showTooltip('demands')" @mouseleave="hideTooltip()">ℹ️
+      <div v-if="tooltip === 'demands'" class="tooltip-box">Usa verbos de acción: exigir, denunciar, dimitir, investigar. Evita: pedir, solicitar, proponer. Máximo 300 caracteres.</div>
+    </span>
+  </label>
       <textarea v-model="form.demands" rows="2" maxlength="300" placeholder="Ej: Que dimita el presidente · Que se retire la ley"></textarea>
       <div class="char-c">{{ form.demands.length }}/300</div>
     </div>
-    <div class="fg"><label>Punto focal *</label>
+    <div class="fg">
+  <label>Punto focal *
+    <span class="info-icon" @mouseenter="showTooltip('focal')" @mouseleave="hideTooltip()">ℹ️
+      <div v-if="tooltip === 'focal'" class="tooltip-box">Institución o cargo público al que va dirigida la demanda. Debe ser una autoridad pública con poder de decisión.</div>
+    </span>
+  </label>
       <input type="text" v-model="form.focal_point" placeholder="Ej: Congreso de los Diputados, Madrid">
     </div>
     <div class="fg"><label>Categoría</label>
@@ -44,7 +59,12 @@
     <option value="otro">Otro abuso de poder público</option>
   </select>
 </div>
-<div class="fg"><label>Fuente que acredita el hecho *</label>
+<div class="fg">
+  <label>Fuente que acredita el hecho *
+    <span class="info-icon" @mouseenter="showTooltip('fuente')" @mouseleave="hideTooltip()">ℹ️
+      <div v-if="tooltip === 'fuente'" class="tooltip-box">Enlaza un artículo de prensa, documento oficial, resolución judicial o dato estadístico que acredite el hecho denunciado.</div>
+    </span>
+  </label>
   <input type="url" v-model="form.fuente_url" placeholder="https://elpais.com/... o https://boe.es/...">
   <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">Enlaza el artículo, documento oficial o dato que acredita el hecho denunciado.</div>
 </div>

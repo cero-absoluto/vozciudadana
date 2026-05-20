@@ -200,7 +200,7 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue';
+import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useProtestsStore } from '@/stores/protests.js';
 import { useUiStore }       from '@/stores/ui.js';
@@ -221,7 +221,12 @@ const form = reactive({
   dominio_email: '',
   tipo_abuso: '',
   fuente_url: '',
+  
 });
+  const tooltip = ref(null);
+
+function showTooltip(id) { tooltip.value = id; }
+function hideTooltip() { tooltip.value = null; }
 
 const scopes = [
   { key:'national', icon:'🏛️', label:'Nacional', badgeClass:'sb-national', badgeLabel:'Solo ciudadanos del país', bg:'rgba(124,111,255,.08)', desc:'Solo participan dispositivos cuya SIM + IP correspondan al país de la convocatoria.' },

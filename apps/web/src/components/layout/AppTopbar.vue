@@ -6,7 +6,7 @@
   </div>
   <div>
     <div>Voz Ciudadana</div>
-    <div style="font-size:12px;opacity:.5;font-weight:400;letter-spacing:.3px">Protesta ciudadana verificada · Sin identidad · Sin censura</div>
+    <div style="font-size:20px;opacity:.5;font-weight:400;letter-spacing:.3px">Protesta ciudadana verificada · Sin identidad · Sin censura</div>
   </div>
 </div>
     <div class="topbar-right">

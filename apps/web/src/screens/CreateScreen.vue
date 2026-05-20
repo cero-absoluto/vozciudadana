@@ -38,15 +38,7 @@
   </label>
       <input type="text" v-model="form.focal_point" placeholder="Ej: Congreso de los Diputados, Madrid">
     </div>
-    <div class="fg"><label>Categoría</label>
-      <select v-model="form.category">
-        <option value="corruption">Corrupción</option>
-        <option value="rights">Derechos humanos</option>
-        <option value="political">Política y democracia</option>
-        <option value="environment">Medio ambiente</option>
-        <option value="social">Social y laboral</option>
-      </select>
-    </div>
+    
     <div class="fg"><label>Tipo de abuso *</label>
   <select v-model="form.tipo_abuso">
     <option value="">Selecciona el tipo de abuso...</option>
@@ -249,7 +241,7 @@ const ui       = useUiStore();
   const minDate = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 const form = reactive({
   title: '', description: '', demands: '', focal_point: '',
-  category: 'corruption', scope: 'national', region: null,
+  scope: 'national', region: null,
   duration_h: 36, risk_level: 'low', starts_at: '',
   convocatoria_pais: '',
   convocatoria_region: '',

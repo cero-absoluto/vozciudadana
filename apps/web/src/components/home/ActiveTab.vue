@@ -24,18 +24,20 @@
           <div class="pi-bar" :style="{ width: p.heat + '%', background: p.color }"></div>
         </div>
         <div class="pi-right">
-          <div class="pi-count">{{ fmt(p.count) }}</div>
-          <div class="pi-timer">{{ fmtTime(p.timer) }}</div>
-        </div>
+  <div style="display:flex;align-items:center;gap:4px">
+    <div class="pi-count">{{ fmt(p.count) }}</div>
+    <div @click.stop="router.push(`/informe/${p.id}`)"
+      style="cursor:pointer;font-size:14px;opacity:.6" title="Ver informe público">📄</div>
+  </div>
+  <div class="pi-timer">{{ fmtTime(p.timer) }}</div>
+</div>
         <div v-if="isBlocked(p)" class="pi-lock">🔒</div>
       </div>
       <!-- status strips -->
       <div v-if="p.joined"                  class="joined-strip">✓ Adherido · {{ fmtTime(p.timer) }} restante</div>
       <div v-else-if="cj(p).lock"           class="lock-strip">🔒 {{ cj(p).msg }}</div>
       <div v-else-if="cj(p).geo"            class="geo-strip">🌍 {{ cj(p).msg }}</div>
-      <div class="informe-strip" @click.stop="$router.push(`/informe/${p.id}`)">
-        📊 Ver informe público →
-      </div>
+      
     </div>
   </div>
 </template>

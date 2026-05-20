@@ -33,11 +33,16 @@
       <div v-if="p.joined"                  class="joined-strip">✓ Adherido · {{ fmtTime(p.timer) }} restante</div>
       <div v-else-if="cj(p).lock"           class="lock-strip">🔒 {{ cj(p).msg }}</div>
       <div v-else-if="cj(p).geo"            class="geo-strip">🌍 {{ cj(p).msg }}</div>
+      <div class="informe-strip" @click.stop="$router.push(`/informe/${p.id}`)">
+        📊 Ver informe público →
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router';
+const router = useRouter();
 import { useProtestsStore } from '@/stores/protests.js';
 import { useUiStore }       from '@/stores/ui.js';
 import { fmt, fmtTime }     from '@/constants.js';

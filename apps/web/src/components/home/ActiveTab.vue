@@ -28,7 +28,7 @@
   <div @click.stop="router.push(`/informe/${p.id}`)"
     style="cursor:pointer;font-size:14px;opacity:.6" title="Ver informe público">📄</div>
   <div class="pi-count">{{ fmt(p.count) }}</div>
-</div>
+ </div>
   <div class="pi-timer">{{ fmtTime(p.timer) }}</div>
 </div>
         <div v-if="isBlocked(p)" class="pi-lock">🔒</div>

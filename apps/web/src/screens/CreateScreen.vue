@@ -3,7 +3,12 @@
     <div class="create-scroll">
   <!-- COLUMNA IZQUIERDA -->
   <div>
-        <div class="fg"><label>Título *</label>
+        <div class="fg">
+  <label>Título *
+    <span class="info-icon" @mouseenter="showTooltip('title')" @mouseleave="hideTooltip()">ℹ️
+      <div v-if="tooltip === 'title'" class="tooltip-box">Resume la denuncia en una frase clara. Usa verbos como "exigir" o "denunciar". Máximo 120 caracteres.</div>
+    </span>
+  </label>
       <input type="text" v-model="form.title" maxlength="120" placeholder="Ej: Contra la corrupción del gobierno">
       <div class="char-c">{{ form.title.length }}/120</div>
     </div>
@@ -197,7 +202,18 @@
   </div>
 </div>
   </div>
+  
 </template>
+<style scoped>
+.info-icon { position: relative; cursor: pointer; font-size: 12px; margin-left: 4px; }
+.tooltip-box {
+  position: absolute; left: 20px; top: -4px; z-index: 100;
+  background: var(--bg2); border: .5px solid var(--border2);
+  border-radius: var(--r); padding: 8px 10px;
+  font-size: 10px; color: var(--text2); width: 220px;
+  line-height: 1.5; font-weight: 400;
+}
+</style>
 
 <script setup>
 import { reactive, ref } from 'vue';

@@ -27,6 +27,13 @@
           <div style="font-size:11px;color:var(--text2);margin-bottom:4px">
             {{ data.protest.demands }}
           </div>
+          <div v-if="data.protest.fuente_url" style="font-size:10px;color:var(--text3);margin-top:6px">
+  📎 Fuente:
+  <a :href="data.protest.fuente_url" target="_blank"
+    style="color:var(--accent);text-decoration:underline;word-break:break-all">
+    {{ data.protest.fuente_url }}
+  </a>
+</div>
           <div style="font-size:11px;color:var(--text3)">
             {{ formatDate(data.protest.starts_at) }} → {{ formatDate(data.protest.ends_at) }}
           </div>

@@ -289,7 +289,7 @@ const demandsLower = form.demands.toLowerCase();
 const tieneProhibido = VERBOS_PROHIBIDOS.some(v => demandsLower.includes(v));
 const tienePermitido = VERBOS_PERMITIDOS.some(v => demandsLower.includes(v));
 
-if (tieneProhibido) { ui.showToast('Evita verbos como "solicitar" o "pedir". Usa "exigir", "denunciar" o "demandar".'); return; }
+if (tieneProhibido && !window.confirm('Detectamos un verbo que puede debilitar tu demanda ("solicitar", "pedir", etc.).\n\n¿Quieres continuar de todas formas?')) return;
 if (!tienePermitido) { ui.showToast('Las exigencias deben incluir verbos como "exigir", "denunciar" o "demandar".'); return; }
 const confirmMsg = `¿Confirmas que quieres publicar esta convocatoria?\n\n"${form.title}"\n\nUna vez publicada no podrá editarse ni eliminarse.`;
   if (!window.confirm(confirmMsg)) return;

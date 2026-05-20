@@ -1,11 +1,14 @@
 <template>
   <div class="topbar">
     <div class="logo">
-      <div class="logo-mark">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zM10 16.5v-9l6 4.5-6 4.5z"/></svg>
-      </div>
-      Voz Ciudadana
-    </div>
+  <div class="logo-mark">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zM10 16.5v-9l6 4.5-6 4.5z"/></svg>
+  </div>
+  <div>
+    <div>Voz Ciudadana</div>
+    <div style="font-size:8px;opacity:.5;font-weight:400;letter-spacing:.3px">Protesta ciudadana verificada · Sin identidad · Sin censura</div>
+  </div>
+</div>
     <div class="topbar-right">
       <div class="lang-switcher">
         <button v-for="l in langs" :key="l.code"

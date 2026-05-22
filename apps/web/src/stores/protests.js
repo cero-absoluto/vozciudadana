@@ -98,7 +98,7 @@ export const useProtestsStore = defineStore('protests', () => {
 
     if (p.scope === 'national') {
       if (device.simCountry !== p.country) return { ok: false, geo: true, msg: `Esta convocatoria es exclusivamente para ciudadanos de ${p.countryName}.` };
-      if (device.confidence < 60) return { ok: false, geo: true, msg: `Confianza geográfica insuficiente (${device.confidence}%). Aporta tu documento de identidad.` };
+      if (device.confidence < 60) return { ok: false, geo: true, msg: `Confianza geográfica insuficiente (${device.confidence}%).` };
     }
     if (p.scope === 'regional') {
       if (p.dominio_email) return { ok: true };

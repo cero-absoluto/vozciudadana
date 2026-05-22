@@ -34,6 +34,10 @@
     {{ data.protest.fuente_url }}
   </a>
 </div>
+          <div v-if="data.protest.tipo_abuso" style="font-size:10px;color:var(--text3);margin-top:4px">
+  ⚠️ Tipo de abuso:
+  <span style="color:var(--accent4);font-weight:500">{{ tipoAbusoLabel }}</span>
+</div>
           <div style="font-size:11px;color:var(--text3)">
             {{ formatDate(data.protest.starts_at) }} → {{ formatDate(data.protest.ends_at) }}
           </div>
@@ -146,6 +150,19 @@ import { useRoute } from 'vue-router';
 import * as api from '@/services/api.js';
 
 const route = useRoute();
+const TIPO_ABUSO_LABELS = {
+  corrupcion: 'Corrupción o malversación',
+  nepotismo: 'Nepotismo o favoritismo',
+  derechos: 'Vulneración de derechos fundamentales',
+  negligencia: 'Negligencia grave',
+  represion: 'Represión o censura',
+  opacidad: 'Opacidad o falta de rendición de cuentas',
+  otro: 'Otro abuso de poder público',
+};
+
+const tipoAbusoLabel = computed(() =>
+  TIPO_ABUSO_LABELS[data.value?.protest?.tipo_abuso] || data.value?.protest?.tipo_abuso || '—'
+);
 const data = ref(null);
 const loading = ref(true);
 const error = ref(false);

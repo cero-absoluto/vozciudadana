@@ -26,7 +26,7 @@
         <div class="tcard"><div class="tcard-ico">📱</div><div class="tcard-h">1 por alcance</div><div class="tcard-p">Un dispositivo puede estar en una nacional + una regional + una global al mismo tiempo.</div></div>
         <div class="tcard"><div class="tcard-ico">⏳</div><div class="tcard-h">Bloqueo temporal</div><div class="tcard-p">Al unirte a una convocatoria nacional, tu dispositivo espera a que termine.</div></div>
       </div>
-      <div class="section-head">Verificación de pertenencia — convocatorias locales</div>
+      <div class="section-head">Censo de pertenencia — convocatorias locales</div>
       <div class="tech-grid">
         <div class="tcard"><div class="tcard-ico">📧</div><div class="tcard-h">Email institucional</div><div class="tcard-p">Verifica tu pertenencia a una universidad pública, hospital o institución con tu email oficial.</div></div>
         <div class="tcard"><div class="tcard-ico">👥</div><div class="tcard-h">Grafo de vouches</div><div class="tcard-p">Tus propios compañeros te avalan. 2 avales de miembros acreditados para entrar al grupo.</div></div>

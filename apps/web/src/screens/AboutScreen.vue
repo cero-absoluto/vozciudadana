@@ -8,13 +8,7 @@
      <div class="manifesto">
         <strong>Principio fundamental:</strong> "Una manifestación en la calle mide quién puede desplazarse ese día. Nosotros medimos el apoyo real, con garantías matemáticas de que cada adhesión es una persona real del país correcto."
       </div>
-      <div class="section-head">Verificación institucional</div>
-      <div class="tech-grid">
-        <div class="tcard"><div class="tcard-ico">📧</div><div class="tcard-h">Email institucional</div><div class="tcard-p">Verifica tu pertenencia a una universidad pública, hospital o institución con tu email oficial.</div></div>
-        <div class="tcard"><div class="tcard-ico">👥</div><div class="tcard-h">Grafo de vouches</div><div class="tcard-p">Tus propios compañeros te avalan. 2 avales de miembros acreditados para entrar al grupo.</div></div>
-        <div class="tcard"><div class="tcard-ico">🗑️</div><div class="tcard-h">Email destruido</div><div class="tcard-p">Tu email se convierte en una huella matemática irreversible y se destruye inmediatamente.</div></div>
-        <div class="tcard"><div class="tcard-ico">📊</div><div class="tcard-h">Censo dinámico</div><div class="tcard-p">El censo emerge de las adhesiones verificadas. Nadie tiene una lista previa de miembros.</div></div>
-      </div>
+      
       <div class="section-head">Qué es y qué no es Voz Ciudadana</div>
       <div class="tech-grid">
         <div class="tcard"><div class="tcard-ico">✅</div><div class="tcard-h">Denuncia de abuso público</div><div class="tcard-p">Corrupción, nepotismo, negligencia grave, represión, opacidad. Contra instituciones que usan dinero o mandato público.</div></div>
@@ -31,6 +25,13 @@
         <div class="tcard"><div class="tcard-ico">🌍</div><div class="tcard-h">Global</div><div class="tcard-p">Sin restricción geográfica.</div></div>
         <div class="tcard"><div class="tcard-ico">📱</div><div class="tcard-h">1 por alcance</div><div class="tcard-p">Un dispositivo puede estar en una nacional + una regional + una global al mismo tiempo.</div></div>
         <div class="tcard"><div class="tcard-ico">⏳</div><div class="tcard-h">Bloqueo temporal</div><div class="tcard-p">Al unirte a una convocatoria nacional, tu dispositivo espera a que termine.</div></div>
+      </div>
+      <div class="section-head">Verificación institucional</div>
+      <div class="tech-grid">
+        <div class="tcard"><div class="tcard-ico">📧</div><div class="tcard-h">Email institucional</div><div class="tcard-p">Verifica tu pertenencia a una universidad pública, hospital o institución con tu email oficial.</div></div>
+        <div class="tcard"><div class="tcard-ico">👥</div><div class="tcard-h">Grafo de vouches</div><div class="tcard-p">Tus propios compañeros te avalan. 2 avales de miembros acreditados para entrar al grupo.</div></div>
+        <div class="tcard"><div class="tcard-ico">🗑️</div><div class="tcard-h">Email destruido</div><div class="tcard-p">Tu email se convierte en una huella matemática irreversible y se destruye inmediatamente.</div></div>
+        <div class="tcard"><div class="tcard-ico">📊</div><div class="tcard-h">Censo dinámico</div><div class="tcard-p">El censo emerge de las adhesiones verificadas. Nadie tiene una lista previa de miembros.</div></div>
       </div>
       <div class="section-head">Seguridad</div>
       <div class="tech-grid">

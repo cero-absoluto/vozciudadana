@@ -121,6 +121,10 @@ exigen al {{ data.protest.focal_point }}: "{{ data.protest.demands }}"
       <!-- BLOQUE 7 — Sello de transparencia -->
 <div class="block" style="margin-bottom:20px">
   <div class="block-title">✅ Sello de transparencia</div>
+  <div v-if="data.protest.hash_integridad" style="margin-bottom:12px;padding:8px 10px;background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.18);border-radius:var(--r)">
+  <div style="font-size:9px;color:var(--text3);margin-bottom:4px">🔐 Hash de integridad al cierre</div>
+  <div style="font-family:monospace;font-size:9px;color:var(--accent2);word-break:break-all">{{ data.protest.hash_integridad }}</div>
+</div>
   <div style="font-size:14px;color:var(--text2);line-height:1.8">
     Código fuente auditado públicamente:<br>
     <button 

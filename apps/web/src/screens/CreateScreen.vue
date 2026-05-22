@@ -201,14 +201,14 @@
       ⚠️ Se activará Tor + cifrado adicional automáticamente.
     </div>
     <div class="mod-box">
-      <div class="mod-h">⚖️ Proceso de moderación independiente</div>
-      <div class="mod-steps">
-        <div class="mstep"><div class="mn">1</div>Verificación automática de criterios objetivos</div>
-        <div class="mstep"><div class="mn">2</div>Verificación: sin incitación al odio ni datos falsos</div>
-        <div class="mstep"><div class="mn">3</div>Si se aprueba, entra en cola de impulso de su país</div>
-        <div class="mstep"><div class="mn">4</div>La ciudadanía impulsa. La más impulsada sube al mapa.</div>
-      </div>
-    </div>
+  <div class="mod-h">✅ Criterios de validación automática</div>
+  <div class="mod-steps">
+    <div class="mstep"><div class="mn">1</div>Fuente verificable — enlace a artículo, documento oficial o dato estadístico</div>
+    <div class="mstep"><div class="mn">2</div>Destinatario público — institución con dinero o mandato público</div>
+    <div class="mstep"><div class="mn">3</div>Denuncia de abuso — no solicitudes de mejora ni preferencias políticas</div>
+    <div class="mstep"><div class="mn">4</div>Verbos de acción — exigir, denunciar, dimitir. No: pedir, solicitar, proponer</div>
+  </div>
+</div>
    
       <button class="btn-primary" style="width:100%;margin-bottom:18px" @click="submit">Crear convocatoria →</button>
   </div>

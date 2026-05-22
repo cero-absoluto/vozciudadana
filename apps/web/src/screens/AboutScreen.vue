@@ -30,15 +30,14 @@
         <div class="tcard"><div class="tcard-ico">🌐</div><div class="tcard-h">Local</div><div class="tcard-p">Región, provincia, ciudad, distrito o institución.</div></div>
         <div class="tcard"><div class="tcard-ico">🌍</div><div class="tcard-h">Global</div><div class="tcard-p">Sin restricción geográfica.</div></div>
         <div class="tcard"><div class="tcard-ico">📱</div><div class="tcard-h">1 por alcance</div><div class="tcard-p">Un dispositivo puede estar en una nacional + una regional + una global al mismo tiempo.</div></div>
-        <div class="tcard"><div class="tcard-ico">🔒</div><div class="tcard-h">Confianza geográfica</div><div class="tcard-p">SIM (40%) + IP (35%) + Documento (25%). Mínimo 60% para nacionales.</div></div>
         <div class="tcard"><div class="tcard-ico">⏳</div><div class="tcard-h">Bloqueo temporal</div><div class="tcard-p">Al unirte a una convocatoria nacional, tu dispositivo espera a que termine.</div></div>
       </div>
       <div class="section-head">Seguridad</div>
       <div class="tech-grid">
-        <div class="tcard"><div class="tcard-ico">🔒</div><div class="tcard-h">Hash local</div><div class="tcard-p">SHA-256 en tu dispositivo. El número nunca sale en texto claro.</div></div>
-        <div class="tcard"><div class="tcard-ico">🧅</div><div class="tcard-h">Tor integrado</div><div class="tcard-p">Para países de alto riesgo. Tu IP es invisible.</div></div>
-        <div class="tcard"><div class="tcard-ico">🔮</div><div class="tcard-h">Zero-Knowledge</div><div class="tcard-p">Prueba de humanidad única. Imposible falsificar.</div></div>
-        <div class="tcard"><div class="tcard-ico">⛓️</div><div class="tcard-h">Blockchain</div><div class="tcard-p">Conteos inmutables. Ningún gobierno puede borrarlos.</div></div>
+        <div class="tcard"><div class="tcard-ico">🔒</div><div class="tcard-h">Hash local</div><div class="tcard-p">SHA-256 en tu dispositivo. Tu número o email nunca sale en texto claro — solo su huella matemática irreversible.</div></div>
+        <div class="tcard"><div class="tcard-ico">🪪</div><div class="tcard-h">SMS verificado</div><div class="tcard-p">Un número real, una adhesión por convocatoria. Imposible participar dos veces ni suplantar a otra persona.</div></div>
+        <div class="tcard"><div class="tcard-ico">🧅</div><div class="tcard-h">Tor — en desarrollo</div><div class="tcard-p">Para países de alto riesgo. Tu IP será invisible. Disponible en v2.0.</div></div>
+        <div class="tcard"><div class="tcard-ico">⛓️</div><div class="tcard-h">Blockchain — en desarrollo</div><div class="tcard-p">Conteos inmutables y verificables públicamente. Disponible en v2.0.</div></div>
       </div>
     </div>
   </div>

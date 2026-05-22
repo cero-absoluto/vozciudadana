@@ -6,6 +6,7 @@ import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 
 import protestRoutes    from './routes/protests.js';
+import institucionalRoutes from './routes/institucional.js';
 import userRoutes       from './routes/users.js';
 import countryCodeRoutes from './routes/countryCodes.js';
 
@@ -35,6 +36,7 @@ app.setErrorHandler((err, req, reply) => {
 });
 
 app.register(protestRoutes,     { prefix: '/api/protests' });
+app.register(institucionalRoutes, { prefix: '/api/institucional' });
 app.register(userRoutes,        { prefix: '/api/users' });
 app.register(countryCodeRoutes, { prefix: '/api/country-codes' });
 

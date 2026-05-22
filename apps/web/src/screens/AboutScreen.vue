@@ -16,7 +16,7 @@
         <div class="tcard"><div class="tcard-ico">🏛️</div><div class="tcard-h">Destinatario público</div><div class="tcard-p">Gobiernos, parlamentos, ayuntamientos, universidades públicas, hospitales públicos, medios públicos.</div></div>
         <div class="tcard"><div class="tcard-ico">📎</div><div class="tcard-h">Hecho verificable</div><div class="tcard-p">Toda convocatoria debe incluir una fuente — artículo de prensa, documento oficial o dato estadístico.</div></div>
         <div class="tcard"><div class="tcard-ico">⚡</div><div class="tcard-h">Verbos de acción</div><div class="tcard-p">Exigir, denunciar, dimitir, investigar, cesar. No: pedir, solicitar, proponer, agradecer.</div></div>
-        <div class="tcard"><div class="tcard-ico">🔍</div><div class="tcard-h">Moderación independiente</div><div class="tcard-p">Cada convocatoria es revisada antes de publicarse. Los criterios son objetivos y públicos.</div></div>
+        <div class="tcard"><div class="tcard-ico">🔍</div><div class="tcard-h">Validación automática</div><div class="tcard-p">El formulario valida fuente verificable, tipo de abuso y verbos de acción. </div></div>
       </div>
       <div class="section-head">Alcance geográfico — cómo funciona</div>
       <div class="tech-grid">

@@ -8,6 +8,9 @@ import VerifyInstitucionalScreen from '@/screens/VerifyInstitucionalScreen.vue';
 import CreateScreen from '@/screens/CreateScreen.vue';
 import AboutScreen  from '@/screens/AboutScreen.vue';
 import InformeScreen from '@/screens/InformeScreen.vue';
+import MiGrupoScreen from '@/screens/MiGrupoScreen.vue';
+import UnirseGrupoScreen from '@/screens/UnirseGrupoScreen.vue';
+import InviteScreen from '@/screens/InviteScreen.vue';
 
 const routes = [
   { path: '/',          component: HomeScreen },
@@ -18,6 +21,9 @@ const routes = [
   { path: '/create',    component: CreateScreen },
   { path: '/about',     component: AboutScreen },
   { path: '/informe/:id', component: InformeScreen },
+  { path: '/grupo/:protestId', component: MiGrupoScreen },
+{ path: '/grupo/:protestId/unirse', component: UnirseGrupoScreen },
+{ path: '/invite/:token', component: InviteScreen },
 ];
 
 export const router = createRouter({

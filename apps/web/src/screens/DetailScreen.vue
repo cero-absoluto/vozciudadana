@@ -81,6 +81,11 @@
         <button class="btn-primary" :class="{sj: protest.joined}" :disabled="!cj.ok" @click="onJoin">
           {{ joinLabel }}
         </button>
+        <button v-if="protest.scope === 'regional' && protest.dominio_email"
+  @click="router.push(`/grupo/${protest.id}`)"
+  style="width:100%;margin-top:8px;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:10px;cursor:pointer">
+  👥 Ver mi grupo
+</button>
         <div class="viral-wrap">
           <button class="btn-viral" @click="ui.showShareModal = true">
             <div class="bv-inner">

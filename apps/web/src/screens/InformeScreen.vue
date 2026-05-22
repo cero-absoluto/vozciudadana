@@ -145,7 +145,7 @@ exigen al {{ data.protest.focal_point }}: "{{ data.protest.demands }}"
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import * as api from '@/services/api.js';
 

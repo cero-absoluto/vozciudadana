@@ -38,13 +38,7 @@
             {{ simOk ? '✓ ' + device.ipCity : '✗ Diferente país' }}
           </div>
         </div>
-        <div class="gv-row">
-          <div class="gv-dot" :style="{background: device.docCountry ? 'var(--accent2)' : 'var(--accent4)'}"></div>
-          <div class="gv-label">Documento (voluntario)</div>
-          <div class="gv-val" :class="device.docCountry ? 'gv-ok' : 'gv-warn'">
-            {{ device.docCountry ? '✓ Verificado' : 'No aportado (+25%)' }}
-          </div>
-        </div>
+        
         <div class="conf-bar"><div class="conf-fill" :style="{ width: device.confidence + '%', background: confFillColor }"></div></div>
         <div style="display:flex;justify-content:space-between;margin-top:3px">
           <div style="font-size:7px;color:var(--text3)">Confianza geográfica</div>

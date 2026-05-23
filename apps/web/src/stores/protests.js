@@ -101,10 +101,13 @@ export const useProtestsStore = defineStore('protests', () => {
       if (device.confidence < 60) return { ok: false, geo: true, msg: `Confianza geográfica insuficiente (${device.confidence}%).` };
     }
     if (p.scope === 'regional') {
-      if (p.dominio_email) return { ok: true };
-      if (!inRegion(p.region, device.simCountry)) return { ok: false, geo: true, msg:`Esta convocatoria es para miembros de ${p.convocatoria_institucion || p.convocatoria_region || p.countryName}.` };
-      if (device.confidence < 40) return { ok: false, geo: true, msg: `Confianza geográfica insuficiente (${device.confidence}%).` };
-    }
+  if (p.dominio_email) return { ok: true };
+  if (p.convocatoria_pais) {
+    const simOk = device.simCountry === p.convocatoria_pais;
+    const ipOk  = device.ipCountry  === p.convocatoria_pais;
+    if (!simOk && !ipOk) return { ok: false, geo: true, msg: `Esta convocatoria es para personas en ${p.countryName}.` };
+  }
+}
     return { ok: true };
   }
 

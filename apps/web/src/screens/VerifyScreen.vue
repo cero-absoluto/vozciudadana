@@ -65,9 +65,9 @@ const target = lastId
     phone_hash:      phoneHash,
     device_id:       deviceId,
     recaptcha_token: token || 'dev',
-   gps_lat:         ui.gpsLat,
-   gps_lng:         ui.gpsLng,
-   gps_accuracy:    ui.gpsAccuracy,
+   gps_lat:         ui.gpsLat ?? (sessionStorage.getItem('vc_gps_lat') ? parseFloat(sessionStorage.getItem('vc_gps_lat')) : null),
+   gps_lng:         ui.gpsLng ?? (sessionStorage.getItem('vc_gps_lng') ? parseFloat(sessionStorage.getItem('vc_gps_lng')) : null),
+   gps_accuracy:    ui.gpsAccuracy ?? (sessionStorage.getItem('vc_gps_accuracy') ? parseFloat(sessionStorage.getItem('vc_gps_accuracy')) : null),
   })
 );
     } catch (e) {

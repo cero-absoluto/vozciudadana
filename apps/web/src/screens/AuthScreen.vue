@@ -69,7 +69,24 @@
           </div>
         </div>
       </div>
-
+<!-- Modal GPS -->
+      <div v-if="showGpsModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px">
+        <div style="background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r2);padding:24px;max-width:340px;width:100%">
+          <div style="font-size:24px;text-align:center;margin-bottom:12px">📍</div>
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;margin-bottom:10px;text-align:center">Refuerza tu participación</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:20px;text-align:center">
+            Para reforzar la credibilidad de tu participación, vamos a pedirte que compartas tu ubicación. Esto confirma que estás en el país correcto y hace tu participación más difícil de cuestionar.<br><br>
+            <strong style="color:var(--accent2)">Tu ubicación nunca se guarda — solo se usa en este momento.</strong>
+          </div>
+          <button class="btn-primary" style="width:100%;margin-bottom:8px" @click="aceptarGps">
+            📍 Reforzar mi participación
+          </button>
+          <button @click="rechazarGps"
+            style="width:100%;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:10px;cursor:pointer">
+            Continuar sin ubicación
+          </button>
+        </div>
+      </div>
       <div class="anon-note" style="margin-top:10px">🛡️ Tu identidad nunca se almacena. Solo huellas matemáticas irreversibles.</div>
     </div>
   </div>
@@ -95,6 +112,18 @@ const otpVisible   = ref(false);
 const otpDigits    = ref(['1','2','3','4','5','6']);
 const otpRefs      = ref([]);
 const advOpen      = ref(false);
+  const showGpsModal = ref(false);
+let gpsResolve = null;
+
+function aceptarGps() {
+  showGpsModal.value = false;
+  if (gpsResolve) gpsResolve(true);
+}
+
+function rechazarGps() {
+  showGpsModal.value = false;
+  if (gpsResolve) gpsResolve(false);
+}
 
 // reCAPTCHA status
 const captchaStatusClass = ref('verif-loading');
@@ -165,16 +194,21 @@ async function sendSMS() {
   const scope = sessionStorage.getItem('vc_protest_scope') || 'national';
   
   if (scope === 'national' && (riskLevel === 'low' || riskLevel === 'med')) {
-    try {
-      const pos = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 });
-      });
-      sessionStorage.setItem('vc_gps_lat', pos.coords.latitude);
-      sessionStorage.setItem('vc_gps_lng', pos.coords.longitude);
-      sessionStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
-    } catch {
-      // El usuario rechazó o no hay GPS — continuamos sin él
-      sessionStorage.removeItem('vc_gps_lat');
+    const accepted = await new Promise(resolve => {
+      gpsResolve = resolve;
+      showGpsModal.value = true;
+    });
+    if (accepted) {
+      try {
+        const pos = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 });
+        });
+        sessionStorage.setItem('vc_gps_lat', pos.coords.latitude);
+        sessionStorage.setItem('vc_gps_lng', pos.coords.longitude);
+        sessionStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
+      } catch {
+        sessionStorage.removeItem('vc_gps_lat');
+      }
     }
   }
 

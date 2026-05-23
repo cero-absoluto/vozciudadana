@@ -161,6 +161,7 @@ function onJoin() {
   } else {
     sessionStorage.setItem('vc_risk_level', protest.value.risk_level || 'low');
     sessionStorage.setItem('vc_protest_scope', protest.value.scope || 'national');
+    sessionStorage.setItem('vc_last_joined', String(protest.value.id));
     router.push('/auth');
   }
 }

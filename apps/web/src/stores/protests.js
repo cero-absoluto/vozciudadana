@@ -32,9 +32,7 @@ function normalizeProtest(p) {
   };
 }
 
-const FALLBACK_PROTESTS = [
-  {id:1,title:'Acceso a la vivienda para jóvenes',country:'ES',countryName:'España',scope:'national',region:null,count:0,heat:5,timer:172800,color:'#7C6FFF',cities:1,desc:'Los jóvenes españoles necesitan entre 8 y 12 años de ahorro íntegro para reunir el 20% de entrada exigido por los bancos. La tasa de emancipación juvenil en España (15,9%) es la más baja de la UE (media 31,4%).',demands:'Que el Gobierno derogue la obligación del 20% de entrada para primera vivienda habitual de menores de 35 años · Que establezca un sistema de garantías públicas · Que publique un plan de acceso a vivienda para jóvenes',joined:false,viralCount:0},
-];
+const FALLBACK_PROTESTS = [];
 
 const INITIAL_QUEUE = [ ];
 

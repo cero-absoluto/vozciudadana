@@ -160,6 +160,24 @@ const device = useDeviceStore();
 async function sendSMS() {
   if (sending.value) return;
 
+  // Solicitar GPS si la convocatoria es nacional de riesgo bajo/medio
+  const riskLevel = sessionStorage.getItem('vc_risk_level') || 'low';
+  const scope = sessionStorage.getItem('vc_protest_scope') || 'national';
+  
+  if (scope === 'national' && (riskLevel === 'low' || riskLevel === 'med')) {
+    try {
+      const pos = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 });
+      });
+      sessionStorage.setItem('vc_gps_lat', pos.coords.latitude);
+      sessionStorage.setItem('vc_gps_lng', pos.coords.longitude);
+      sessionStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
+    } catch {
+      // El usuario rechazó o no hay GPS — continuamos sin él
+      sessionStorage.removeItem('vc_gps_lat');
+    }
+  }
+
   // Si el dispositivo ya está verificado, saltar OTP
   const existingDevice = await api.fetchDeviceLocks(device.getDeviceId());
   if (existingDevice && existingDevice.length > 0) {

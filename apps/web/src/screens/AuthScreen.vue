@@ -203,11 +203,9 @@ async function sendSMS() {
         const pos = await new Promise((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 });
         });
-        sessionStorage.setItem('vc_gps_lat', pos.coords.latitude);
-        sessionStorage.setItem('vc_gps_lng', pos.coords.longitude);
-        sessionStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
+        ui.setGps(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
       } catch {
-        sessionStorage.removeItem('vc_gps_lat');
+        ui.clearGps();
       }
     }
   }

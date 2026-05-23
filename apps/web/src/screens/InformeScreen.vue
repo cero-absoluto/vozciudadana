@@ -71,6 +71,23 @@ exigen al {{ data.protest.focal_point }}: "{{ data.protest.demands }}"
           </div>
         </div>
 
+        <!-- BLOQUE GPS — Nivel de verificación -->
+        <div class="block" style="margin-bottom:12px">
+          <div class="block-title">📍 Nivel de verificación geográfica</div>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <div style="flex:1;background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.2);border-radius:var(--r);padding:10px;text-align:center">
+              <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--accent2)">{{ data.adhesiones_con_gps }}</div>
+              <div style="font-size:9px;color:var(--text3);margin-top:2px">Con GPS verificado ✅</div>
+            </div>
+            <div style="flex:1;background:rgba(124,111,255,.06);border:.5px solid var(--border);border-radius:var(--r);padding:10px;text-align:center">
+              <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--accent)">{{ data.adhesiones_sin_gps }}</div>
+              <div style="font-size:9px;color:var(--text3);margin-top:2px">Solo SIM/IP 📱</div>
+            </div>
+          </div>
+          <div style="font-size:10px;color:var(--text3);line-height:1.6">
+            Las adhesiones con GPS confirmado acreditan la ubicación física del participante en el momento de adherirse.
+          </div>
+        </div>
         <!-- BLOQUE 3 — Prueba de humanidad -->
         <div class="block" style="margin-bottom:12px">
           <div class="block-title">🧠 Prueba de humanidad</div>

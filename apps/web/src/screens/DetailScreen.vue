@@ -159,6 +159,8 @@ function onJoin() {
   if (protest.value.scope === 'regional' && protest.value.dominio_email) {
     router.push(`/verify-institucional/${protest.value.id}`);
   } else {
+    sessionStorage.setItem('vc_risk_level', protest.value.risk_level || 'low');
+    sessionStorage.setItem('vc_protest_scope', protest.value.scope || 'national');
     router.push('/auth');
   }
 }

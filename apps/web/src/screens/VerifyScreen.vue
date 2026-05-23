@@ -41,6 +41,7 @@ const receiptHash = ref('');
 const MSGS = ['Verificando código...', 'Registrando en blockchain...', 'Generando comprobante anónimo...'];
 
 onMounted(async () => {
+  await protests.loadProtests();
   for (const msg of MSGS) {
     spinMsg.value = msg;
     await new Promise(r => setTimeout(r, 850));

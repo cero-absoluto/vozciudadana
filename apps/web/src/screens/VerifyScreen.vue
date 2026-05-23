@@ -47,7 +47,10 @@ onMounted(async () => {
   }
 
   // Find the protest the user was viewing (the first joinable one for demo)
-  const target = protests.protests.find(p => !p.joined && protests.canJoin(p).ok);
+  const lastId = sessionStorage.getItem('vc_last_joined');
+const target = lastId 
+  ? protests.protests.find(p => String(p.id) === lastId)
+  : protests.protests.find(p => !p.joined && protests.canJoin(p).ok);
   if (target) {
     try {
       const phoneHash = sessionStorage.getItem('vc_phone_hash');

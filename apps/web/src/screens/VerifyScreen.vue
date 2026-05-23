@@ -60,12 +60,15 @@ const target = lastId
         token = await window.grecaptcha.execute(import.meta.env.VITE_RECAPTCHA_KEY, { action: 'join_protest' });
       } catch { /* dev */ }
       await import('@/services/api.js').then(api =>
-        api.joinProtest(target.id, {
-          phone_hash:      phoneHash,
-          device_id:       deviceId,
-          recaptcha_token: token || 'dev',
-        })
-      );
+  api.joinProtest(target.id, {
+    phone_hash:      phoneHash,
+    device_id:       deviceId,
+    recaptcha_token: token || 'dev',
+    gps_lat:         sessionStorage.getItem('vc_gps_lat') ? parseFloat(sessionStorage.getItem('vc_gps_lat')) : null,
+    gps_lng:         sessionStorage.getItem('vc_gps_lng') ? parseFloat(sessionStorage.getItem('vc_gps_lng')) : null,
+    gps_accuracy:    sessionStorage.getItem('vc_gps_accuracy') ? parseFloat(sessionStorage.getItem('vc_gps_accuracy')) : null,
+  })
+);
     } catch (e) {
       if (e.code === 'NATIONAL_ONLY') {
         ui.showToast('No puede adherirse, la protesta es únicamente para ciudadanos nacionales');

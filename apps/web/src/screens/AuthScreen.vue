@@ -207,7 +207,8 @@ async function sendSMS() {
         sessionStorage.setItem('vc_gps_lat', pos.coords.latitude);
         sessionStorage.setItem('vc_gps_lng', pos.coords.longitude);
         sessionStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
-      } catch {
+     } catch (gpsErr) {
+        console.log('GPS error:', gpsErr);
         ui.clearGps();
       }
     }

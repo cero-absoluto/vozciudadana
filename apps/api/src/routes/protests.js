@@ -253,9 +253,13 @@ const distribucion_regiones = adhesions.reduce((acc, a) => {
   return acc;
 }, {});
 
+  const adhesiones_con_gps = adhesions.filter(a => a.gps_lat !== null).length;
+
   return {
     protest,
     total_adhesiones: protest.count,
+    adhesiones_con_gps,
+    adhesiones_sin_gps: protest.count - adhesiones_con_gps,
     ciudades_distintas: ciudades.length,
     paises_distintos: paises.length,
     idiomas_distintos: idiomas.length,

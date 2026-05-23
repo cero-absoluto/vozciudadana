@@ -131,17 +131,20 @@ tipo_abuso:  { type: 'string', nullable: true },
       body: {
         type: 'object',
         required: ['phone_hash', 'device_id', 'recaptcha_token'],
-        properties: {
-          phone_hash:      { type: 'string', minLength: 64, maxLength: 64 },
-          doc_hash:        { type: 'string', minLength: 64, maxLength: 64, nullable: true },
-          device_id:       { type: 'string', minLength: 8, maxLength: 128 },
-          recaptcha_token: { type: 'string', minLength: 1 },
-        },
+       properties: {
+  phone_hash:      { type: 'string', minLength: 64, maxLength: 64 },
+  doc_hash:        { type: 'string', minLength: 64, maxLength: 64, nullable: true },
+  device_id:       { type: 'string', minLength: 8, maxLength: 128 },
+  recaptcha_token: { type: 'string', minLength: 1 },
+  gps_lat:         { type: 'number', nullable: true },
+  gps_lng:         { type: 'number', nullable: true },
+  gps_accuracy:    { type: 'number', nullable: true },
+},
         additionalProperties: false,
       },
     },
   }, async (req, reply) => {
-    const { phone_hash, doc_hash, device_id, recaptcha_token } = req.body;
+   const { phone_hash, doc_hash, device_id, recaptcha_token, gps_lat, gps_lng, gps_accuracy } = req.body;
 
     await verifyRecaptcha(recaptcha_token, 'join_protest', reply);
 
@@ -190,7 +193,8 @@ const created_at = new Date(
 const { data, error } = await supabase
   .from('adhesions')
   .insert({ protest_id: req.params.id, phone_hash, doc_hash: doc_hash ?? null,
-            device_id, ciudad, region, pais, idioma, nullifier, created_at })
+            device_id, ciudad, region, pais, idioma, nullifier, created_at,
+            gps_lat: gps_lat ?? null, gps_lng: gps_lng ?? null, gps_accuracy: gps_accuracy ?? null })
   .select()
   .single();
 

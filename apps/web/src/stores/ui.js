@@ -8,6 +8,21 @@ export const useUiStore = defineStore('ui', () => {
   const showInstallBanner  = ref(false);
   const lang               = ref('es');
   const deferredPrompt     = shallowRef(null);
+  const gpsLat      = ref(null);
+const gpsLng      = ref(null);
+const gpsAccuracy = ref(null);
+
+function setGps(lat, lng, accuracy) {
+  gpsLat.value      = lat;
+  gpsLng.value      = lng;
+  gpsAccuracy.value = accuracy;
+}
+
+function clearGps() {
+  gpsLat.value      = null;
+  gpsLng.value      = null;
+  gpsAccuracy.value = null;
+}
   let   _toastTimer        = null;
 
   function showToast(msg) {
@@ -40,8 +55,9 @@ export const useUiStore = defineStore('ui', () => {
     showInstallBanner.value = false;
   }
 
-  return {
+ return {
     toastMsg, toastVisible, showShareModal, showInstallBanner, lang,
     showToast, setDeferredPrompt, revealInstallBanner, dismissInstallBanner, installPWA,
+    gpsLat, gpsLng, gpsAccuracy, setGps, clearGps,
   };
 });

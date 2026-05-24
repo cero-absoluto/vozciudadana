@@ -83,7 +83,7 @@ export default async function institucionalRoutes(app) {
 
     // 8. Enviar email con Resend
     await resend.emails.send({
-      from: "Voz Ciudadana <noreply@send.ceroabsoluto.es>",
+      from: "Voz Ciudadana <noreply@ceroabsoluto.es>",
       to: email,
       subject: `Tu código de verificación: ${otp}`,
       html: `

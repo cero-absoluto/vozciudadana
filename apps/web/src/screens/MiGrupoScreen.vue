@@ -169,6 +169,67 @@ const protest = computed(() => protests.protests.find(p => String(p.id) === prot
 const linkInvitacion = ref('');
 const groupId = ref(null);
 const emailHash = ref(sessionStorage.getItem('vc_email_hash') || '');
+const creandoGrupo = ref(false);
+const genesisEmail = ref('');
+const genesisOtp = ref('');
+const genesisError = ref('');
+const genesisOtpError = ref('');
+const genesisOtpVisible = ref(false);
+const loadingGenesis = ref(false);
+
+async function sha256(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function enviarOtpGenesis() {
+  genesisError.value = '';
+  const dominio = protest.value?.dominio_email || '';
+  const partes = genesisEmail.value.split('@');
+  if (partes[1]?.toLowerCase() !== dominio.toLowerCase()) {
+    genesisError.value = `El email debe ser del dominio @${dominio}`;
+    return;
+  }
+  loadingGenesis.value = true;
+  try {
+    await api.sendEmailOtp({ email: genesisEmail.value, protest_id: protestId });
+    genesisOtpVisible.value = true;
+  } catch (e) {
+    genesisError.value = e.message || 'Error al enviar el código.';
+  } finally {
+    loadingGenesis.value = false;
+  }
+}
+
+async function verificarOtpGenesis() {
+  genesisOtpError.value = '';
+  if (!genesisOtp.value || genesisOtp.value.length < 6) {
+    genesisOtpError.value = 'Introduce el código de 6 dígitos';
+    return;
+  }
+  loadingGenesis.value = true;
+  try {
+    await api.verifyEmailOtp({ email: genesisEmail.value, otp: genesisOtp.value, protest_id: protestId });
+    const hash = await sha256(genesisEmail.value.toLowerCase());
+    const data = await api.crearGrupo({
+      protest_id:   protestId,
+      genesis_hash: hash,
+      name:         protest.value?.convocatoria_institucion || 'Grupo',
+    });
+    groupId.value = data.group_id;
+    emailHash.value = hash;
+    sessionStorage.setItem('vc_group_id', data.group_id);
+    sessionStorage.setItem('vc_email_hash', hash);
+    await cargarEstado();
+    creandoGrupo.value = false;
+    genesisOtpVisible.value = false;
+    ui.showToast('✓ Censo iniciado — eres el nodo génesis');
+  } catch (e) {
+    genesisOtpError.value = e.message || 'Error al crear el grupo.';
+  } finally {
+    loadingGenesis.value = false;
+  }
+}  
 
 const grupo = ref({
   acreditados: 0,

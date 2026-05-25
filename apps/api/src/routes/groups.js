@@ -326,7 +326,7 @@ export default async function gruposRoutes(app) {
   });
   // GET /api/grupos/por-convocatoria/:protestId
   // Busca el grupo asociado a una convocatoria
-  app.get('/por-convocatoria/:protestId', {
+  app.get('/convocatoria/:protestId', {
     schema: {
       params: {
         type: 'object',

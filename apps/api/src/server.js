@@ -7,7 +7,7 @@ import rateLimit from '@fastify/rate-limit';
 
 import protestRoutes    from './routes/protests.js';
 import institucionalRoutes from './routes/institucional.js';
-import gruposRoutes from './routes/grupos.js';
+import gruposRoutes from './routes/groups.js';
 import userRoutes       from './routes/users.js';
 import countryCodeRoutes from './routes/countryCodes.js';
 

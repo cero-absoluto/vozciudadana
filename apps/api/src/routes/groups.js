@@ -156,4 +156,98 @@ export default async function gruposRoutes(app) {
 
     return data;
   });
+  // GET /api/grupos/:id/estado
+  // Devuelve el estado del grupo
+  app.get('/:id/estado', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string', format: 'uuid' } },
+        required: ['id'],
+      },
+      querystring: {
+        type: 'object',
+        properties: {
+          email_hash: { type: 'string', minLength: 64, maxLength: 64 },
+        },
+        additionalProperties: false,
+      },
+    },
+  }, async (req, reply) => {
+    const { id: group_id } = req.params;
+    const { email_hash } = req.query;
+
+    // Obtener el grupo
+    const { data: group, error: groupErr } = await supabase
+      .from('groups')
+      .select('*')
+      .eq('id', group_id)
+      .single();
+
+    if (groupErr || !group) return reply.notFound('Grupo no encontrado');
+
+    // Contar miembros acreditados
+    const { count: acreditados } = await supabase
+      .from('group_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('group_id', group_id)
+      .not('accredited_at', 'is', null);
+
+    // Solicitudes pendientes
+    const { data: solicitudes } = await supabase
+      .from('vouch_requests')
+      .select('id, candidate_hash, requested_at')
+      .eq('group_id', group_id)
+      .eq('status', 'pending');
+
+    // Enriquecer solicitudes con vouches recibidos
+    const solicitudesConVouches = await Promise.all(
+      (solicitudes || []).map(async s => {
+        const { count } = await supabase
+          .from('vouches')
+          .select('id', { count: 'exact', head: true })
+          .eq('group_id', group_id)
+          .eq('candidate_hash', s.candidate_hash);
+
+        const ya_avalado = email_hash ? await supabase
+          .from('vouches')
+          .select('id')
+          .eq('group_id', group_id)
+          .eq('voucher_hash', email_hash)
+          .eq('candidate_hash', s.candidate_hash)
+          .maybeSingle().then(r => !!r.data) : false;
+
+        return { ...s, vouches_recibidos: count || 0, ya_avalado };
+      })
+    );
+
+    // Mi estado como miembro
+    let miEstado = { acreditado: false, es_genesis: false, vouches_dados: 0 };
+    if (email_hash) {
+      const { data: miembro } = await supabase
+        .from('group_members')
+        .select('is_genesis, vouches_given, accredited_at')
+        .eq('group_id', group_id)
+        .eq('email_hash', email_hash)
+        .maybeSingle();
+
+      if (miembro) {
+        miEstado = {
+          acreditado:    !!miembro.accredited_at,
+          es_genesis:    miembro.is_genesis,
+          vouches_dados: miembro.vouches_given || 0,
+        };
+      }
+    }
+
+    return {
+      group,
+      acreditados:             acreditados || 0,
+      pendientes:              solicitudesConVouches.length,
+      objetivo:                30,
+      mis_vouches_restantes:   Math.max(0, group.max_vouches_per_member - miEstado.vouches_dados),
+      solicitudes:             solicitudesConVouches,
+      mi_estado:               miEstado,
+    };
+  });
 }

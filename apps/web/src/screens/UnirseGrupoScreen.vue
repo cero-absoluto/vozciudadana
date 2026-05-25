@@ -41,16 +41,7 @@
 
       <!-- Paso 2: introducir OTP -->
       <div v-if="paso === 2">
-        <!-- Unirme -->
-      <div v-if="!miEstado.acreditado && !miEstado.es_genesis" class="block" style="margin-bottom:12px">
-        <div class="block-title">🚪 Unirme al grupo</div>
-        <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">
-          Todavía no eres miembro acreditado. Verifica tu email institucional y solicita unirte.
-        </div>
-        <button class="btn-primary" style="width:100%" @click="router.push(`/grupo/${protestId}/unirse`)">
-          Solicitar unirme →
-        </button>
-      </div>
+        
         <div class="block" style="margin-bottom:12px">
           <div class="block-title">📬 Introduce el código</div>
           <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">

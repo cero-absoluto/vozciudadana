@@ -56,7 +56,6 @@ a:hover{opacity:.8}
   #s-detail .gv-val{font-size:12px}
   #s-detail .btn-primary{font-size:15px;padding:14px}
    #s-detail .sec-ico{width:32px;height:32px;font-size:16px}
-  #s-detail [style*="font-size:9px"]{font-size:13px !important}
   /* Other screens centered */
   #s-auth,#s-verify,#s-create,#s-about{
     max-width:680px;

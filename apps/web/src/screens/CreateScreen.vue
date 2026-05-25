@@ -179,9 +179,12 @@
 </div>
 
 <div v-if="form.scope === 'regional' && form.convocatoria_institucion" class="fg" style="margin-top:12px">
-  <label>Dominio de email institucional *</label>
-  <input type="text" v-model="form.dominio_email" placeholder="Ej: uu.nl, uab.cat, upf.edu">
-  <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">Los participantes verificarán su pertenencia con su email institucional.</div>
+ <label>Dominio de email institucional *</label>
+<div style="display:flex;align-items:center;gap:0">
+  <div style="padding:9px 10px;background:var(--bg3);border:.5px solid var(--border);border-right:none;border-radius:var(--r) 0 0 var(--r);font-size:15px;color:var(--text3);font-family:'DM Sans',sans-serif">@</div>
+  <input type="text" v-model="form.dominio_email" placeholder="uu.nl, uab.cat, upf.edu" style="border-radius:0 var(--r) var(--r) 0;flex:1">
+</div>
+<div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">Solo la parte después de la @ — por ejemplo: uu.nl</div>
 </div>
       <div v-if="form.scope === 'regional' && form.convocatoria_institucion && form.dominio_email" 
   style="background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r2);padding:12px;margin-top:12px">

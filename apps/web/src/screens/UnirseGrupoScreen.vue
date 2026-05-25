@@ -160,6 +160,7 @@ async function verificarOtp() {
 
     paso.value = 3;
   } catch (e) {
+     console.log('Error verificarOtp:', e);
     otpError.value = e.message || 'Código incorrecto o caducado.';
   } finally {
     loading.value = false;

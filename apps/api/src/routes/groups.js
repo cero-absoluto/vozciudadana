@@ -113,5 +113,47 @@ export default async function gruposRoutes(app) {
 
     return reply.code(201).send({ requested: true });
   });
+// POST /api/grupos/:id/vouch
+  // Un miembro acreditado avala a un candidato
+  app.post('/:id/vouch', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string', format: 'uuid' } },
+        required: ['id'],
+      },
+      body: {
+        type: 'object',
+        required: ['voucher_hash', 'candidate_hash'],
+        properties: {
+          voucher_hash:   { type: 'string', minLength: 64, maxLength: 64 },
+          candidate_hash: { type: 'string', minLength: 64, maxLength: 64 },
+        },
+        additionalProperties: false,
+      },
+    },
+  }, async (req, reply) => {
+    const { id: group_id } = req.params;
+    const { voucher_hash, candidate_hash } = req.body;
 
+    // Llamar a la función process_vouch de Supabase
+    const { data, error } = await supabase.rpc('process_vouch', {
+      p_group_id:      group_id,
+      p_voucher_hash:  voucher_hash,
+      p_candidate_hash: candidate_hash,
+    });
+
+    if (error) throw error;
+
+    // Si el candidato fue acreditado, actualizar vouch_requests
+    if (data?.accredited) {
+      await supabase
+        .from('vouch_requests')
+        .update({ status: 'accredited' })
+        .eq('group_id', group_id)
+        .eq('candidate_hash', candidate_hash);
+    }
+
+    return data;
+  });
 }

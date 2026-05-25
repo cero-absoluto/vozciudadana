@@ -206,3 +206,11 @@ export function fetchGrupoEstado(groupId, emailHash) {
 export function generarInvite(groupId, payload) {
   return request('POST', `/api/grupos/${groupId}/invite`, payload);
 }
+/**
+ * Buscar el grupo asociado a una convocatoria.
+ * @param {string} protestId
+ * @returns {Promise<{ group_id: string, name: string }>}
+ */
+export function fetchGrupoPorConvocatoria(protestId) {
+  return request('GET', `/api/grupos/por-convocatoria/${protestId}`);
+}

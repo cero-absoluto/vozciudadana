@@ -155,3 +155,54 @@ export function sendEmailOtp(payload) {
 export function verifyEmailOtp(payload) {
   return request('POST', '/api/institucional/verify-otp', payload);
 }
+// ── Grafo de vouches ───────────────────────────────────────────────────────────
+
+/**
+ * Crear un grupo con nodo génesis.
+ * @param {{ protest_id: string, genesis_hash: string, name: string }} payload
+ * @returns {Promise<{ group_id: string }>}
+ */
+export function crearGrupo(payload) {
+  return request('POST', '/api/grupos/crear', payload);
+}
+
+/**
+ * Solicitar unirse a un grupo.
+ * @param {string} groupId
+ * @param {{ email_hash: string }} payload
+ * @returns {Promise<{ requested: boolean }>}
+ */
+export function solicitarUnirse(groupId, payload) {
+  return request('POST', `/api/grupos/${groupId}/solicitar`, payload);
+}
+
+/**
+ * Avalar a un candidato.
+ * @param {string} groupId
+ * @param {{ voucher_hash: string, candidate_hash: string }} payload
+ * @returns {Promise<Object>}
+ */
+export function darVouch(groupId, payload) {
+  return request('POST', `/api/grupos/${groupId}/vouch`, payload);
+}
+
+/**
+ * Obtener el estado del grupo.
+ * @param {string} groupId
+ * @param {string} [emailHash]
+ * @returns {Promise<Object>}
+ */
+export function fetchGrupoEstado(groupId, emailHash) {
+  const qs = emailHash ? `?email_hash=${emailHash}` : '';
+  return request('GET', `/api/grupos/${groupId}/estado${qs}`);
+}
+
+/**
+ * Generar link de invitación personal.
+ * @param {string} groupId
+ * @param {{ inviter_hash: string }} payload
+ * @returns {Promise<{ token: string, url: string }>}
+ */
+export function generarInvite(groupId, payload) {
+  return request('POST', `/api/grupos/${groupId}/invite`, payload);
+}

@@ -29,6 +29,7 @@ function normalizeProtest(p) {
     convocatoria_region:      p.convocatoria_region ?? null,
     convocatoria_institucion: p.convocatoria_institucion ?? null,
     dominio_email:            p.dominio_email ?? null,
+    requiere_censo:           p.requiere_censo ?? false,
   };
 }
 

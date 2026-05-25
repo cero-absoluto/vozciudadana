@@ -75,25 +75,38 @@ const ui = useUiStore();
 const token = route.params.token;
 const estado = ref('cargando');
 const invitacion = ref({
-  institucion: 'Utrecht University',
-  region: 'Utrecht',
-  protestId: null,
+  institucion: '',
+  region: '',
+  group_id: null,
+  protest_id: null,
 });
 
 onMounted(async () => {
-  // TODO: validar token con GET /api/grupos/invite/:token cuando Jaime lo implemente
-  await new Promise(r => setTimeout(r, 800)); // simulación
-  estado.value = 'valida'; // simulación — siempre válida por ahora
+  try {
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/api/grupos/invite/${token}`
+    );
+    if (!res.ok) throw new Error('Invitación no válida');
+    const data = await res.json();
+    invitacion.value = {
+      institucion: data.institucion,
+      region:      data.region,
+      group_id:    data.group_id,
+      protest_id:  data.protest_id,
+    };
+    estado.value = 'valida';
+  } catch {
+    estado.value = 'invalida';
+  }
 });
 
 async function aceptarInvitacion() {
-  // Redirigir al flujo de verificación de email con el token de invitación
-  if (invitacion.value.protestId) {
-    router.push(`/grupo/${invitacion.value.protestId}/unirse?invite=${token}`);
+  if (invitacion.value.protest_id && invitacion.value.group_id) {
+    sessionStorage.setItem('vc_invite_token', token);
+    sessionStorage.setItem('vc_group_id', invitacion.value.group_id);
+    router.push(`/grupo/${invitacion.value.protest_id}/unirse?invite=${token}`);
   } else {
-    // Demo: ir a unirse sin protestId específico
-    ui.showToast('Invitación aceptada — verifica tu email para completar el proceso');
-    router.push('/');
+    ui.showToast('Error — invitación no válida');
   }
 }
 </script>

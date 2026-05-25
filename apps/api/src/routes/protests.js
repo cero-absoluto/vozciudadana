@@ -81,8 +81,9 @@ export default async function protestRoutes(app) {
          convocatoria_region:      { type: 'string', nullable: true },
          convocatoria_institucion: { type: 'string', nullable: true },
          dominio_email:            { type: 'string', nullable: true },
-          fuente_url:  { type: 'string', nullable: true },
-tipo_abuso:  { type: 'string', nullable: true },
+         fuente_url:  { type: 'string', nullable: true },
+         tipo_abuso:  { type: 'string', nullable: true },
+         requiere_censo: { type: 'boolean', nullable: true },
         },
         additionalProperties: false,
       },
@@ -90,7 +91,7 @@ tipo_abuso:  { type: 'string', nullable: true },
   }, async (req, reply) => {
     const { title, description, demands, country, country_name, scope, region,
         focal_point, category, duration_h, starts_at, risk_level, convocatoria_pais, convocatoria_region, convocatoria_institucion, dominio_email,
-        fuente_url, tipo_abuso } = req.body;
+        fuente_url, tipo_abuso, requiere_censo  } = req.body;
 
     const ends_at = new Date(
       new Date(starts_at ?? Date.now()).getTime() + duration_h * 3_600_000
@@ -111,7 +112,8 @@ tipo_abuso:  { type: 'string', nullable: true },
             convocatoria_institucion: convocatoria_institucion ?? null,
             dominio_email: dominio_email ?? null, 
            fuente_url: fuente_url ?? null,
-           tipo_abuso: tipo_abuso ?? null })
+           tipo_abuso: tipo_abuso ?? null,
+           requiere_censo: requiere_censo ?? false})
            .select()
       .single();
 

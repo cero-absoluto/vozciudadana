@@ -294,4 +294,34 @@ export default async function gruposRoutes(app) {
     const baseUrl = process.env.FRONTEND_URL || 'https://cero-absoluto.github.io/vozciudadana';
     return { token: invite.token, url: `${baseUrl}/#/invite/${invite.token}` };
   });
+  // GET /api/grupos/invite/:token
+  // Valida un token de invitación y devuelve los datos del grupo
+  app.get('/invite/:token', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: { token: { type: 'string' } },
+        required: ['token'],
+      },
+    },
+  }, async (req, reply) => {
+    const { token } = req.params;
+
+    const { data: invite, error } = await supabase
+      .from('invite_links')
+      .select('id, group_id, uses_count, max_uses, groups(id, name, protest_id, protests(convocatoria_institucion, convocatoria_region))')
+      .eq('token', token)
+      .single();
+
+    if (error || !invite) return reply.notFound('Invitación no encontrada');
+    if (invite.uses_count >= invite.max_uses) return reply.badRequest('Este link ha alcanzado el máximo de usos');
+
+    return {
+      valid:       true,
+      group_id:    invite.group_id,
+      protest_id:  invite.groups.protest_id,
+      institucion: invite.groups.protests?.convocatoria_institucion || 'Institución',
+      region:      invite.groups.protests?.convocatoria_region || '',
+    };
+  });
 }

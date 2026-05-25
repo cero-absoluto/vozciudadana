@@ -129,7 +129,10 @@
       <div class="block" style="margin-bottom:20px">
         <div class="block-title">🔗 Invitar a compañeros</div>
         <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">
-          Comparte tu link personal. Quien lo use recibirá automáticamente 1 de los 2 avales necesarios.
+          Comparte este link <strong>solo con compañeros de tu grupo</strong>. Compartirlo fuera compromete la integridad del censo.
+        </div>
+        <div style="font-size:9px;padding:6px 8px;background:rgba(255,107,107,.06);border:.5px solid rgba(255,107,107,.2);border-radius:var(--r);color:var(--accent3);margin-bottom:10px;line-height:1.5">
+          ⚠️ Cada link tiene un máximo de usos. Los primeros {{ grupo.mis_vouches_restantes }} compañeros que lo usen recibirán 1 aval tuyo automáticamente. El resto necesitará avales de otros miembros acreditados.
         </div>
         <div v-if="linkInvitacion" style="background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:8px 10px;font-family:monospace;font-size:9px;color:var(--accent);word-break:break-all;margin-bottom:8px">
           {{ linkInvitacion }}
@@ -139,9 +142,9 @@
             style="flex:1;padding:9px;background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:11px;cursor:pointer">
             {{ linkInvitacion ? '↺ Regenerar link' : '+ Generar link' }}
           </button>
-          <button v-if="linkInvitacion" @click="copiarLink"
+          <button v-if="linkInvitacion" @click="compartirLink"
             style="padding:9px 14px;background:var(--accent);border:none;border-radius:var(--r);color:white;font-size:11px;cursor:pointer">
-            Copiar
+            Compartir
           </button>
         </div>
       </div>
@@ -304,7 +307,23 @@ async function copiarLink() {
     ui.showToast('No se pudo copiar — copia el link manualmente');
   }
 }
-
+async function compartirLink() {
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: 'Únete al censo de ' + (protest.value?.convocatoria_institucion || 'nuestro grupo'),
+        text: 'Te invito a unirte al censo verificado. Solo para compañeros del grupo — no compartas este link fuera.',
+        url: linkInvitacion.value,
+      });
+    } catch {
+      // Usuario canceló
+    }
+  } else {
+    await copiarLink();
+    ui.showToast('✓ Link copiado — compártelo solo con tus compañeros');
+  }
+}
+  
 onMounted(async () => {
   // Buscar el grupo asociado a esta convocatoria
   // Por ahora usamos el groupId guardado en sessionStorage

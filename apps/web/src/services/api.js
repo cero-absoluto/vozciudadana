@@ -212,5 +212,5 @@ export function generarInvite(groupId, payload) {
  * @returns {Promise<{ group_id: string, name: string }>}
  */
 export function fetchGrupoPorConvocatoria(protestId) {
-  return request('GET', `/api/grupos/por-convocatoria/${protestId}`);
+  return request('GET', `/api/grupos/convocatoria/${protestId}`);
 }

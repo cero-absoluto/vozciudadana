@@ -324,4 +324,28 @@ export default async function gruposRoutes(app) {
       region:      invite.groups.protests?.convocatoria_region || '',
     };
   });
+  // GET /api/grupos/por-convocatoria/:protestId
+  // Busca el grupo asociado a una convocatoria
+  app.get('/por-convocatoria/:protestId', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: { protestId: { type: 'string', format: 'uuid' } },
+        required: ['protestId'],
+      },
+    },
+  }, async (req, reply) => {
+    const { protestId } = req.params;
+
+    const { data: group, error } = await supabase
+      .from('groups')
+      .select('id, name, protest_id')
+      .eq('protest_id', protestId)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!group) return reply.notFound('No hay grupo para esta convocatoria');
+
+    return { group_id: group.id, name: group.name };
+  });
 }

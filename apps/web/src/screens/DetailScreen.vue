@@ -74,12 +74,21 @@
       <!-- Risk info -->
       <div v-if="!protest.joined && cj.ok" style="margin-bottom:8px;padding:8px 10px;border-radius:var(--r);font-size:9px;line-height:1.6"
         :style="{
-          background: protest.risk_level === 'high' || protest.risk_level === 'critical' ? 'rgba(255,107,107,.06)' : 'rgba(76,255,164,.06)',
-          border: protest.risk_level === 'high' || protest.risk_level === 'critical' ? '.5px solid rgba(255,107,107,.2)' : '.5px solid rgba(76,255,164,.2)',
-          color: protest.risk_level === 'high' || protest.risk_level === 'critical' ? 'var(--accent3)' : 'var(--accent2)'
+          background: protest.risk_level === 'high' || protest.risk_level === 'critical' ? 'rgba(255,107,107,.06)' : protest.scope === 'global' ? 'rgba(124,111,255,.06)' : 'rgba(76,255,164,.06)',
+          border: protest.risk_level === 'high' || protest.risk_level === 'critical' ? '.5px solid rgba(255,107,107,.2)' : protest.scope === 'global' ? '.5px solid var(--border2)' : '.5px solid rgba(76,255,164,.2)',
+          color: protest.risk_level === 'high' || protest.risk_level === 'critical' ? 'var(--accent3)' : protest.scope === 'global' ? 'var(--text2)' : 'var(--accent2)'
         }">
         <span v-if="protest.risk_level === 'high' || protest.risk_level === 'critical'">
           🕵️ <strong>Régimen de alto riesgo.</strong> Tu adhesión es completamente anónima. No se recaba ningún dato de ubicación. Tu identidad nunca se almacena.
+        </span>
+        <span v-else-if="protest.scope === 'global'">
+          🌍 <strong>Convocatoria global.</strong> Solo verificarás que eres una persona real. Tu identidad nunca se almacena.
+        </span>
+        <span v-else-if="protest.scope === 'regional' && protest.dominio_email && protest.requiere_censo">
+          👥 <strong>Convocatoria con censo dinámico.</strong> Verificarás tu pertenencia con tu email y el aval de tus compañeros. Tu identidad nunca se almacena.
+        </span>
+        <span v-else-if="protest.scope === 'regional' && protest.dominio_email">
+          📧 <strong>Convocatoria local.</strong> Verificarás tu pertenencia con tu email institucional. Tu identidad nunca se almacena.
         </span>
         <span v-else>
           📍 <strong>Democracia verificada.</strong> Al adherirte se usará tu ubicación para acreditar que estás en el país correcto. Esto añade credibilidad al informe público. Tu identidad nunca se almacena.

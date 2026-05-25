@@ -218,7 +218,7 @@
     </div>
     <div style="display:flex;gap:12px">
       <div class="fg" style="flex:1"><label>Fecha del evento *</label>
-        <input type="date" v-model="form.starts_at" :min="minDate">
+        <input type="date" v-model="form.starts_at" :min="minDate" placeholder="DD/MM/AAAA">
       </div>
       <div class="fg" style="flex:1"><label>Nivel de riesgo</label>
         <select v-model="form.risk_level">

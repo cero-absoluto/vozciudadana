@@ -43,8 +43,18 @@ a:hover{opacity:.8}
   .map-topbar{padding:8px 16px}
   .panel-body{flex:1;overflow-y:auto}
   /* Detail screen wider */
-  #s-detail{max-width:860px;margin:0 auto;border-left:1px solid var(--border);border-right:1px solid var(--border)}
+  #s-detail{max-width:1100px;margin:0 auto;border-left:1px solid var(--border);border-right:1px solid var(--border)}
   #s-detail .detail-map{height:260px}
+  #s-detail .d-title{font-size:24px}
+  #s-detail .sc-n{font-size:28px}
+  #s-detail .sc-l{font-size:12px}
+  #s-detail .sec-lbl{font-size:14px}
+  #s-detail .sec-sub{font-size:12px}
+  #s-detail .d-desc{font-size:14px}
+  #s-detail .block-title{font-size:11px}
+  #s-detail .gv-label{font-size:12px}
+  #s-detail .gv-val{font-size:12px}
+  #s-detail .btn-primary{font-size:15px;padding:14px}
   /* Other screens centered */
   #s-auth,#s-verify,#s-create,#s-about{
     max-width:680px;

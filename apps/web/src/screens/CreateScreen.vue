@@ -183,6 +183,38 @@
   <input type="text" v-model="form.dominio_email" placeholder="Ej: uu.nl, uab.cat, upf.edu">
   <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">Los participantes verificarán su pertenencia con su email institucional.</div>
 </div>
+      <div v-if="form.scope === 'regional' && form.convocatoria_institucion && form.dominio_email" 
+  style="background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r2);padding:12px;margin-top:12px">
+  <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px">
+    ¿A quién va dirigida esta convocatoria?
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <div @click="form.requiere_censo = false"
+      style="display:flex;align-items:flex-start;gap:10px;padding:10px;border-radius:var(--r);cursor:pointer;transition:all .15s"
+      :style="{background: !form.requiere_censo ? 'rgba(124,111,255,.08)' : 'var(--bg3)', border: !form.requiere_censo ? '.5px solid var(--accent)' : '.5px solid var(--border)'}">
+      <div style="width:14px;height:14px;border-radius:50%;border:.5px solid var(--border2);flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center"
+        :style="{borderColor: !form.requiere_censo ? 'var(--accent)' : 'var(--border2)', background: !form.requiere_censo ? 'var(--accent)' : 'transparent'}">
+        <div v-if="!form.requiere_censo" style="width:5px;height:5px;border-radius:50%;background:white"></div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:500;margin-bottom:3px">A toda la institución</div>
+        <div style="font-size:9px;color:var(--text3);line-height:1.5">Cualquier miembro con email @{{ form.dominio_email || 'tuinstitucion.edu' }} puede participar</div>
+      </div>
+    </div>
+    <div @click="form.requiere_censo = true"
+      style="display:flex;align-items:flex-start;gap:10px;padding:10px;border-radius:var(--r);cursor:pointer;transition:all .15s"
+      :style="{background: form.requiere_censo ? 'rgba(124,111,255,.08)' : 'var(--bg3)', border: form.requiere_censo ? '.5px solid var(--accent)' : '.5px solid var(--border)'}">
+      <div style="width:14px;height:14px;border-radius:50%;border:.5px solid var(--border2);flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center"
+        :style="{borderColor: form.requiere_censo ? 'var(--accent)' : 'var(--border2)', background: form.requiere_censo ? 'var(--accent)' : 'transparent'}">
+        <div v-if="form.requiere_censo" style="width:5px;height:5px;border-radius:50%;background:white"></div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:500;margin-bottom:3px">A un departamento o grupo concreto</div>
+        <div style="font-size:9px;color:var(--text3);line-height:1.5">Crea un censo dinámico y adhiérete — los miembros se verifican entre sí, solo entran quienes son avalados por compañeros del grupo</div>
+      </div>
+    </div>
+  </div>
+</div>
     </div>
     <div style="display:flex;gap:12px">
       <div class="fg" style="flex:1"><label>Fecha del evento *</label>
@@ -249,6 +281,7 @@ const form = reactive({
   dominio_email: '',
   tipo_abuso: '',
   fuente_url: '',
+  requiere_censo: false,
   
 });
   const tooltip = ref(null);
@@ -326,7 +359,8 @@ const PAIS_NOMBRES = {
   dominio_email: form.dominio_email || null,
   tipo_abuso: form.tipo_abuso || null,
   fuente_url: form.fuente_url || null,
-    country: form.convocatoria_pais || null,
+  requiere_censo: form.requiere_censo || false,
+  country: form.convocatoria_pais || null,
   country_name: PAIS_NOMBRES[form.convocatoria_pais] || form.convocatoria_pais || 'regional',
 });
   ui.showToast('✓ Convocatoria creada — ya aparece en el mapa');

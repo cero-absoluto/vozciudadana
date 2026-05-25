@@ -325,9 +325,14 @@ async function compartirLink() {
 }
   
 onMounted(async () => {
-  // Buscar el grupo asociado a esta convocatoria
-  // Por ahora usamos el groupId guardado en sessionStorage
-  groupId.value = sessionStorage.getItem('vc_group_id') || null;
+  try {
+    const data = await api.fetchGrupoPorConvocatoria(protestId);
+    groupId.value = data.group_id;
+    sessionStorage.setItem('vc_group_id', data.group_id);
+  } catch {
+    // No hay grupo para esta convocatoria — mostrar pantalla de crear censo
+    groupId.value = null;
+  }
   await cargarEstado();
 });
 </script>

@@ -157,7 +157,12 @@ const joinLabel = computed(() => {
 function onJoin() {
   if (!cj.value.ok) return;
   if (protest.value.scope === 'regional' && protest.value.dominio_email) {
-    router.push(`/verify-institucional/${protest.value.id}`);
+    if (protest.value.requiere_censo) {
+      sessionStorage.setItem('vc_group_id', sessionStorage.getItem('vc_group_id') || '');
+      router.push(`/grupo/${protest.value.id}`);
+    } else {
+      router.push(`/verify-institucional/${protest.value.id}`);
+    }
   } else {
     sessionStorage.setItem('vc_risk_level', protest.value.risk_level || 'low');
     sessionStorage.setItem('vc_protest_scope', protest.value.scope || 'national');

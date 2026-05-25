@@ -107,11 +107,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useProtestsStore } from '@/stores/protests.js';
 import { useUiStore } from '@/stores/ui.js';
+import * as api from '@/services/api.js';
 
 const route = useRoute();
+const router = useRouter();
 const protests = useProtestsStore();
 const ui = useUiStore();
 
@@ -119,17 +121,19 @@ const protestId = route.params.protestId;
 const protest = computed(() => protests.protests.find(p => String(p.id) === protestId));
 
 const linkInvitacion = ref('');
+const groupId = ref(null);
+const emailHash = ref(sessionStorage.getItem('vc_email_hash') || '');
 
-// Datos demo mientras Jaime implementa el backend
 const grupo = ref({
-  acreditados: 1,
+  acreditados: 0,
   pendientes: 0,
   mis_vouches_restantes: 5,
   objetivo: 30,
 });
 
 const miEstado = ref({
-  es_genesis: true,
+  acreditado: false,
+  es_genesis: false,
   vouches_dados: 0,
 });
 
@@ -144,23 +148,45 @@ function formatFecha(iso) {
   return new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
 }
 
-async function darVouch(solicitud) {
-  // TODO: conectar con POST /api/grupos/:id/vouch cuando Jaime lo implemente
-  solicitud.ya_avalado = true;
-  solicitud.vouches_recibidos += 1;
-  grupo.value.mis_vouches_restantes -= 1;
-  miEstado.value.vouches_dados += 1;
-  if (solicitud.vouches_recibidos >= 2) {
-    grupo.value.acreditados += 1;
-    grupo.value.pendientes = Math.max(0, grupo.value.pendientes - 1);
+async function cargarEstado() {
+  if (!groupId.value) return;
+  try {
+    const data = await api.fetchGrupoEstado(groupId.value, emailHash.value);
+    grupo.value = {
+      acreditados:           data.acreditados,
+      pendientes:            data.pendientes,
+      mis_vouches_restantes: data.mis_vouches_restantes,
+      objetivo:              data.objetivo,
+    };
+    miEstado.value = data.mi_estado;
+    solicitudes.value = data.solicitudes;
+  } catch (e) {
+    ui.showToast('Error al cargar el estado del grupo');
   }
-  ui.showToast('✓ Aval registrado');
+}
+
+async function darVouch(solicitud) {
+  if (!groupId.value || !emailHash.value) return;
+  try {
+    await api.darVouch(groupId.value, {
+      voucher_hash:   emailHash.value,
+      candidate_hash: solicitud.candidate_hash,
+    });
+    ui.showToast('✓ Aval registrado');
+    await cargarEstado();
+  } catch (e) {
+    ui.showToast('Error al registrar el aval: ' + e.message);
+  }
 }
 
 async function generarLink() {
-  // TODO: conectar con POST /api/grupos/:id/invite cuando Jaime lo implemente
-  const token = Math.random().toString(36).substring(2, 18);
-  linkInvitacion.value = `${window.location.origin}${window.location.pathname}#/invite/${token}`;
+  if (!groupId.value || !emailHash.value) return;
+  try {
+    const data = await api.generarInvite(groupId.value, { inviter_hash: emailHash.value });
+    linkInvitacion.value = data.url;
+  } catch (e) {
+    ui.showToast('Error al generar el link: ' + e.message);
+  }
 }
 
 async function copiarLink() {
@@ -172,7 +198,10 @@ async function copiarLink() {
   }
 }
 
-onMounted(() => {
-  // TODO: cargar datos reales del grupo desde la API cuando Jaime lo implemente
+onMounted(async () => {
+  // Buscar el grupo asociado a esta convocatoria
+  // Por ahora usamos el groupId guardado en sessionStorage
+  groupId.value = sessionStorage.getItem('vc_group_id') || null;
+  await cargarEstado();
 });
 </script>

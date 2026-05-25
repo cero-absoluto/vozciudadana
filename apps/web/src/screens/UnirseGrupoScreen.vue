@@ -88,6 +88,7 @@ import { ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useProtestsStore } from '@/stores/protests.js';
 import { useUiStore } from '@/stores/ui.js';
+import * as api from '@/services/api.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -105,6 +106,11 @@ const loading = ref(false);
 const emailError = ref('');
 const otpError = ref('');
 
+async function sha256(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function solicitarOtp() {
   emailError.value = '';
   if (!email.value.trim()) { emailError.value = 'Introduce tu email institucional'; return; }
@@ -115,8 +121,7 @@ async function solicitarOtp() {
   }
   loading.value = true;
   try {
-    // TODO: conectar con POST /api/institucional/send-otp cuando Jaime lo implemente
-    await new Promise(r => setTimeout(r, 800)); // simulación
+    await api.sendEmailOtp({ email: email.value, protest_id: protestId });
     paso.value = 2;
   } catch (e) {
     emailError.value = e.message || 'Error al enviar el código.';
@@ -133,8 +138,26 @@ async function verificarOtp() {
   }
   loading.value = true;
   try {
-    // TODO: conectar con POST /api/institucional/verify-otp cuando Jaime lo implemente
-    await new Promise(r => setTimeout(r, 800)); // simulación
+    // 1. Verificar OTP y registrar adhesión institucional
+    await api.verifyEmailOtp({ email: email.value, otp: otp.value, protest_id: protestId });
+
+    // 2. Calcular hash del email
+    const emailHash = await sha256(email.value.toLowerCase());
+    sessionStorage.setItem('vc_email_hash', emailHash);
+
+    // 3. Solicitar unirse al grupo
+    const groupId = sessionStorage.getItem('vc_group_id');
+    if (groupId) {
+      await api.solicitarUnirse(groupId, { email_hash: emailHash });
+
+      // 4. Si viene de invitación, aplicar vouch automático del invitador
+      const inviteToken = route.query.invite || sessionStorage.getItem('vc_invite_token');
+      if (inviteToken) {
+        // El vouch automático lo gestiona el backend al validar el token
+        // Por ahora registramos la solicitud y el nodo génesis avalará manualmente
+      }
+    }
+
     paso.value = 3;
   } catch (e) {
     otpError.value = e.message || 'Código incorrecto o caducado.';

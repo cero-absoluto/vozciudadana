@@ -250,4 +250,48 @@ export default async function gruposRoutes(app) {
       mi_estado:               miEstado,
     };
   });
+  // POST /api/grupos/:id/invite
+  // Genera un link de invitación personal
+  app.post('/:id/invite', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string', format: 'uuid' } },
+        required: ['id'],
+      },
+      body: {
+        type: 'object',
+        required: ['inviter_hash'],
+        properties: {
+          inviter_hash: { type: 'string', minLength: 64, maxLength: 64 },
+        },
+        additionalProperties: false,
+      },
+    },
+  }, async (req, reply) => {
+    const { id: group_id } = req.params;
+    const { inviter_hash } = req.body;
+
+    // Verificar que el invitador es miembro acreditado
+    const { data: miembro } = await supabase
+      .from('group_members')
+      .select('id, accredited_at')
+      .eq('group_id', group_id)
+      .eq('email_hash', inviter_hash)
+      .maybeSingle();
+
+    if (!miembro?.accredited_at) return reply.forbidden('Solo los miembros acreditados pueden invitar');
+
+    // Crear link de invitación
+    const { data: invite, error } = await supabase
+      .from('invite_links')
+      .insert({ group_id, inviter_hash })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const baseUrl = process.env.FRONTEND_URL || 'https://cero-absoluto.github.io/vozciudadana';
+    return { token: invite.token, url: `${baseUrl}/#/invite/${invite.token}` };
+  });
 }

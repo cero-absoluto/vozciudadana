@@ -23,10 +23,13 @@ import InstallBanner from '@/components/shared/InstallBanner.vue';
 
 const protests = useProtestsStore();
 const ui       = useUiStore();
+import { useDeviceStore } from '@/stores/device.js';
+const device = useDeviceStore();
 
 onMounted(() => {
   // Restore joined state from localStorage
   protests.restoreFromStorage();
+  device.detectSecondarySignals();
 
   // Live counter tick
   setInterval(() => protests.tickTimers(), 1000);

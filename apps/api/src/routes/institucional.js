@@ -63,13 +63,14 @@ export default async function institucionalRoutes(app) {
     // 5. Generar OTP de 6 dígitos
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // 6. Guardar OTP en base de datos (caduca en 10 minutos)
+    // 6. Guardar OTP en base de datos (caduca en 24 horas)
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     await supabase.from('email_otp_requests').insert({
       email_hash: emailHash,
       protest_id,
       otp_code: otp,
+      expires_at: expiresAt,
     });
-
     // 7. Actualizar rate limiting
     if (rateLimit) {
       await supabase.from('email_otp_rate_limit')

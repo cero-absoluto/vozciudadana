@@ -63,23 +63,49 @@ export default async function institucionalRoutes(app) {
     // 5. Generar OTP de 6 dígitos
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // 6. Guardar OTP en base de datos (caduca en 24 horas)
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    await supabase.from('email_otp_requests').insert({
-      email_hash: emailHash,
+    // 6. Registrar adhesión anónima en institutional_members
+    const expiresAt = new Date(new Date().getFullYear(), 7, 31).toISOString();
+
+    const { data: member, error: memberErr } = await supabase
+      .from('institutional_members')
+      .insert({
+        email_hash: emailHash,
+        protest_id,
+        expires_at: expiresAt,
+      })
+      .select()
+      .single();
+
+    if (memberErr) throw memberErr;
+
+    // 7. Registrar también en adhesions para el contador y el informe
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
+    let ciudad = null, region = null, pais = null;
+    try {
+      const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country&lang=es`);
+      const geo = await geoRes.json();
+      ciudad = geo.city || null;
+      region = geo.regionName || null;
+      pais = geo.country || null;
+    } catch { /* silencioso */ }
+
+    const idioma = req.headers['accept-language']?.split(',')[0] || null;
+    const created_at = new Date(Math.floor(Date.now() / 3_600_000) * 3_600_000).toISOString();
+
+    await supabase.from('adhesions').insert({
       protest_id,
-      otp_code: otp,
-      expires_at: expiresAt,
+      phone_hash: emailHash,
+      device_id:  emailHash.substring(0, 32),
+      ciudad, region, pais, idioma,
+      nullifier:  emailHash,
+      created_at,
     });
-    // 7. Actualizar rate limiting
-    if (rateLimit) {
-      await supabase.from('email_otp_rate_limit')
-        .update({ attempt_count: rateLimit.attempt_count + 1 })
-        .eq('email_hash', emailHash)
-        .eq('protest_id', protest_id);
-    } else {
-      await supabase.from('email_otp_rate_limit')
-        .insert({ email_hash: emailHash, protest_id });
+
+    // 8. Incrementar contador
+    await supabase.rpc('increment_protest_count', { protest_id });
+    await supabase.rpc('update_cities_count', { protest_id });
+
+    return { receipt: member.id, verified: true };
     }
 
     // 8. Enviar email con Resend

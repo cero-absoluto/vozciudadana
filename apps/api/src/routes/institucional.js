@@ -204,5 +204,4 @@ export default async function institucionalRoutes(app) {
 
     return { sent: true };
   });
-  });
 }

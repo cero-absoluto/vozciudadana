@@ -57,6 +57,13 @@ a:hover{opacity:.8}
   #s-detail .btn-primary{font-size:15px;padding:14px}
    #s-detail .sec-ico{width:32px;height:32px;font-size:16px}
   #s-detail .risk-info{font-size:13px!important}
+  #s-informe .block-title{font-size:14px;letter-spacing:1.5px}
+  #s-informe .sc-n{font-size:32px}
+  #s-informe .sc-l{font-size:13px}
+  #s-informe [style*="font-size:14px"]{font-size:16px !important;color:var(--text) !important}
+  #s-informe [style*="font-size:11px"]{font-size:14px !important;color:var(--text2) !important}
+  #s-informe [style*="font-size:10px"]{font-size:13px !important;color:var(--text2) !important}
+  #s-informe [style*="font-size:9px"]{font-size:12px !important;color:var(--text2) !important}
   /* Other screens centered */
   #s-auth,#s-verify,#s-create,#s-about{
     max-width:680px;

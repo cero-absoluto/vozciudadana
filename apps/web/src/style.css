@@ -218,7 +218,7 @@ a:hover{opacity:.8}
 /* JOIN FOOTER */
 .join-footer{padding:10px 14px 12px;border-top:1px solid var(--border);flex-shrink:0;background:var(--bg)}
 .btn-row{display:flex;gap:7px}
-.btn-primary{flex:1;padding:11px;background:var(--accent);color:white;border:none;border-radius:var(--r2);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-primary{flex:1;min-width:0;padding:11px;background:var(--accent);color:white;border:none;border-radius:var(--r2);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
 .btn-primary:hover{background:#6B5EFF}
 .btn-primary:active{transform:scale(.98)}
 .btn-primary:disabled{background:var(--bg4);color:var(--text3);cursor:default;transform:none}
@@ -245,7 +245,7 @@ a:hover{opacity:.8}
 .bv-count{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:white;line-height:1.1;font-variant-numeric:tabular-nums}
 .bv-clabel{font-size:8px;color:rgba(255,255,255,.65)}
 /* pulse ring around viral button */
-.viral-wrap{position:relative;flex:1}
+.viral-wrap{position:relative;flex:1;min-width:0}
 .viral-wrap::after{content:'';position:absolute;inset:-2px;border-radius:calc(var(--r2) + 2px);border:1.5px solid #e85d24;opacity:0;animation:vring 2.2s ease-out infinite;pointer-events:none}
 @keyframes vring{0%{opacity:.65;transform:scale(1)}100%{opacity:0;transform:scale(1.05)}}
 /* AUTH */

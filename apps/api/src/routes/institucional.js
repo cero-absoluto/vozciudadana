@@ -165,27 +165,44 @@ export default async function institucionalRoutes(app) {
 
     if (existing) return reply.conflict('Ya estás registrado en esta convocatoria');
 
-    // 6. Registrar adhesión anónima
-    // El email ha sido procesado y destruido — solo guardamos el hash
-    const expiresAt = new Date(new Date().getFullYear(), 7, 31).toISOString(); // 31 agosto
+  // 6. Guardar OTP en base de datos
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    await supabase.from('email_otp_requests').insert({
+      email_hash: emailHash,
+      protest_id,
+      otp_code: otp,
+      expires_at: expiresAt,
+    });
 
-    const { data: member, error: memberErr } = await supabase
-      .from('institutional_members')
-      .insert({
-        email_hash: emailHash,
-        protest_id,
-        expires_at: expiresAt,
-      })
-      .select()
-      .single();
+    // 7. Actualizar rate limiting
+    if (rateLimit) {
+      await supabase.from('email_otp_rate_limit')
+        .update({ attempt_count: rateLimit.attempt_count + 1 })
+        .eq('email_hash', emailHash).eq('protest_id', protest_id);
+    } else {
+      await supabase.from('email_otp_rate_limit')
+        .insert({ email_hash: emailHash, protest_id, attempt_count: 1 });
+    }
 
-    if (memberErr) throw memberErr;
+    // 8. Enviar email con Resend
+    await resend.emails.send({
+      from: 'Voz Ciudadana <noreply@ceroabsoluto.es>',
+      to: email,
+      subject: `Tu código de verificación: ${otp}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px">
+          <h2 style="color:#7C6FFF">Voz Ciudadana</h2>
+          <p>Tu código de verificación para <strong>${protest.title}</strong> es:</p>
+          <div style="font-size:36px;font-weight:bold;letter-spacing:8px;color:#7C6FFF;margin:24px 0;text-align:center">
+            ${otp}
+          </div>
+          <p style="color:#888;font-size:12px">Este código caduca en 24 horas.</p>
+          <p style="color:#888;font-size:12px">Tu email no se guarda — solo su huella matemática irreversible.</p>
+        </div>
+      `,
+    });
 
-    // 7. Incrementar contador de adhesiones
-    await supabase.rpc('increment_protest_count', { protest_id });
-    await supabase.rpc('update_cities_count', { protest_id });
-
-    // El email nunca se guarda. Solo el hash.
-    return { receipt: member.id, verified: true };
+    return { sent: true };
+  });
   });
 }

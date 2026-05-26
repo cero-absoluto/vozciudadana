@@ -18,7 +18,7 @@
         <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin-bottom:8px">
           El censo aún no existe
         </div>
-        <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:24px">
+        <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:24px">
           Sé el primero en iniciarlo. Como nodo génesis podrás invitar a tus compañeros y avalar sus solicitudes.
         </div>
         <div v-if="!creandoGrupo">
@@ -28,7 +28,7 @@
         </div>
        <div v-if="creandoGrupo" class="block" style="text-align:left">
           <div class="block-title">📧 Verifica tu email institucional</div>
-          <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6">
             Introduce tu email <strong>@{{ protest?.dominio_email }}</strong> para convertirte en el nodo génesis del censo.
           </div>
           <div v-if="!genesisOtpVisible">

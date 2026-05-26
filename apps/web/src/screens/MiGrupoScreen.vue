@@ -6,10 +6,10 @@
       <div style="margin-bottom:20px">
         <button class="back" @click="$router.back()">← Volver</button>
         <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin-bottom:4px">
-          Mi Grupo — PPE
+          Mi Grupo — {{ protest?.convocatoria_institucion || 'Mi Grupo' }}
         </div>
         <div style="font-size:11px;color:var(--text3)">
-          {{ protest?.convocatoria_institucion || 'Institución' }} · {{ protest?.convocatoria_region || '' }}
+          {{ protest?.convocatoria_region || '' }} {{ protest?.dominio_email ? '· @' + protest.dominio_email : '' }}
         </div>
       </div>
       <!-- Sin grupo — crear censo -->

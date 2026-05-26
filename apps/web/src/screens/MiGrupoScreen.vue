@@ -325,12 +325,12 @@ async function compartirLink() {
 }
   
 onMounted(async () => {
+  await protests.loadProtests();
   try {
     const data = await api.fetchGrupoPorConvocatoria(protestId);
     groupId.value = data.group_id;
     sessionStorage.setItem('vc_group_id', data.group_id);
   } catch {
-    // No hay grupo para esta convocatoria — mostrar pantalla de crear censo
     groupId.value = null;
   }
   await cargarEstado();

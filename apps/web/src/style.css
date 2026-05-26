@@ -229,7 +229,7 @@ a:hover{opacity:.8}
   padding:0;border:none;border-radius:var(--r2);cursor:pointer;
   background:#B7410E;transition:all .2s;
   display:flex;align-items:center;justify-content:space-between;
-  gap:0;
+  gap:0;width:100%;
 }
 .btn-viral::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,#e85d24 0%,#B7410E 55%,#8B3010 100%);transition:opacity .2s}
 .btn-viral:hover::before{opacity:.85}

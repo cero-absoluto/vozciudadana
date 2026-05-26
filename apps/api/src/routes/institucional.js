@@ -106,28 +106,7 @@ export default async function institucionalRoutes(app) {
     await supabase.rpc('update_cities_count', { protest_id });
 
     return { receipt: member.id, verified: true };
-    }
-
-    // 8. Enviar email con Resend
-    await resend.emails.send({
-      from: "Voz Ciudadana <noreply@ceroabsoluto.es>",
-      to: email,
-      subject: `Tu código de verificación: ${otp}`,
-      html: `
-        <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px">
-          <h2 style="color:#7C6FFF">Voz Ciudadana</h2>
-          <p>Tu código de verificación para <strong>${protest.title}</strong> es:</p>
-          <div style="font-size:36px;font-weight:bold;letter-spacing:8px;color:#7C6FFF;margin:24px 0;text-align:center">
-            ${otp}
-          </div>
-          <p style="color:#888;font-size:12px">Este código caduca en 10 minutos.</p>
-          <p style="color:#888;font-size:12px">Tu email no se guarda — solo su huella matemática irreversible.</p>
-        </div>
-      `,
-    });
-
-    return { sent: true };
-  });
+   });
 
 
   // POST /api/institucional/verify-otp

@@ -234,7 +234,7 @@ a:hover{opacity:.8}
 .btn-viral::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,#e85d24 0%,#B7410E 55%,#8B3010 100%);transition:opacity .2s}
 .btn-viral:hover::before{opacity:.85}
 .btn-viral:active{transform:scale(.98)}
-.bv-inner{display:flex;align-items:center;justify-content:space-between;width:100%;padding:9px 11px;position:relative;z-index:1;gap:6px}
+.bv-inner{display:flex;align-items:center;justify-content:space-between;width:100%;padding:11px 11px;position:relative;z-index:1;gap:6px}
 .bv-left{display:flex;align-items:center;gap:7px}
 .bv-fire{font-size:18px;animation:flicker 1.8s ease-in-out infinite alternate;display:block}
 @keyframes flicker{0%{transform:scale(1) rotate(-3deg)}100%{transform:scale(1.15) rotate(3deg)}}

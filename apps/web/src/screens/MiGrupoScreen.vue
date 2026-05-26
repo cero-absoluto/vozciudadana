@@ -26,21 +26,23 @@
             🌱 Iniciar el censo
           </button>
         </div>
-        <div v-if="creandoGrupo" class="block" style="text-align:left">
+       <div v-if="creandoGrupo" class="block" style="text-align:left">
           <div class="block-title">📧 Verifica tu email institucional</div>
           <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">
             Introduce tu email <strong>@{{ protest?.dominio_email }}</strong> para convertirte en el nodo génesis del censo.
           </div>
-          <div class="fg">
-            <label>Tu email institucional</label>
-            <input type="email" v-model="genesisEmail"
-              :placeholder="`tu.nombre@${protest?.dominio_email}`">
-            <div v-if="genesisError" style="font-size:10px;color:var(--accent3);margin-top:4px">{{ genesisError }}</div>
+          <div v-if="!genesisOtpVisible">
+            <div class="fg">
+              <label>Tu email institucional</label>
+              <input type="email" v-model="genesisEmail"
+                :placeholder="`tu.nombre@${protest?.dominio_email}`">
+              <div v-if="genesisError" style="font-size:10px;color:var(--accent3);margin-top:4px">{{ genesisError }}</div>
+            </div>
+            <button class="btn-primary" style="width:100%;margin-top:8px"
+              :disabled="loadingGenesis" @click="enviarOtpGenesis">
+              {{ loadingGenesis ? 'Enviando...' : 'Enviar código →' }}
+            </button>
           </div>
-          <button class="btn-primary" style="width:100%;margin-top:8px"
-            :disabled="loadingGenesis" @click="enviarOtpGenesis">
-            {{ loadingGenesis ? 'Enviando...' : 'Enviar código →' }}
-          </button>
         </div>
         <div v-if="genesisOtpVisible" class="block" style="text-align:left;margin-top:12px">
           <div class="block-title">📬 Introduce el código</div>

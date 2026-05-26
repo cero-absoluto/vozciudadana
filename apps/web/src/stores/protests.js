@@ -99,20 +99,17 @@ export const useProtestsStore = defineStore('protests', () => {
       if (device.simCountry !== p.country) return { ok: false, geo: true, msg: `Esta convocatoria es exclusivamente para ciudadanos de ${p.countryName}.` };
       if (device.confidence < 60) return { ok: false, geo: true, msg: `Confianza geográfica insuficiente (${device.confidence}%).` };
     }
-    if (p.scope === 'regional') {
-  if (p.dominio_email) return { ok: true };
-  if (p.convocatoria_pais) {
-    const simOk = device.simCountry === p.convocatoria_pais;
-    const ipOk  = device.ipCountry  === p.convocatoria_pais;
-    if (!simOk && !ipOk) {
-  if (p.dominio_email) return { ok: false, geo: true, msg: `Esta convocatoria requiere email @${p.dominio_email}.` };
-  return { ok: false, geo: true, msg: `Esta convocatoria es para personas en ${p.countryName}.` };
-}
+   if (p.scope === 'regional') {
+      if (p.dominio_email) return { ok: true };
+      if (p.convocatoria_pais) {
+        const simOk = device.simCountry === p.convocatoria_pais;
+        const ipOk  = device.ipCountry  === p.convocatoria_pais;
+        if (!simOk && !ipOk) return { ok: false, geo: true, msg: `Esta convocatoria es para personas en ${p.countryName}.` };
+      }
+      return { ok: true };
+    }
+      return { ok: true };
   }
-}
-    return { ok: true };
-  }
-
   function scopeBadge(p) {
     if (p.scope === 'national') return { cls: 'sb-national', icon: '🏛️', label: p.countryName };
     if (p.scope === 'regional') return { cls: 'sb-regional', icon: '🌐', label: 'Local' };

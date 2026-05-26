@@ -68,8 +68,12 @@ export const REGION_COORDS = {
 export const fmt = n => Math.round(n).toLocaleString('es-ES');
 export const fmtTime = s => {
   if (s <= 0) return 'Finalizada';
-  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sc = s % 60;
-  return h > 0 ? `${h}h ${String(m).padStart(2,'0')}m` : `${m}m ${String(sc).padStart(2,'0')}s`;
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${String(m).padStart(2,'0')}m`;
+  return `${m}m ${String(s % 60).padStart(2,'0')}s`;
 };
 export const heatColor = h => {
   if (!h) return '#1a3a5c';

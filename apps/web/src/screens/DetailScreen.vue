@@ -160,6 +160,12 @@ const joinLabel = computed(() => {
   if (!protest.value) return '—';
   if (protest.value.joined) return '✓ Adherido de forma anónima';
   if (!cj.value.ok) return cj.value.lock ? '🔒 Dispositivo bloqueado' : '🌍 Fuera de alcance';
+  if (protest.value.scope === 'regional' && protest.value.dominio_email && protest.value.requiere_censo) {
+    return '👥 Unirme al grupo';
+  }
+  if (protest.value.scope === 'regional' && protest.value.dominio_email) {
+    return '📧 Verificar email y adherirme';
+  }
   return 'Adherirme de forma anónima';
 });
 

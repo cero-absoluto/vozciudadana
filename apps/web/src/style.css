@@ -387,8 +387,8 @@ a:hover{opacity:.8}
 .tech-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 13px;margin-bottom:11px}
 .tcard{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r2);padding:9px}
 .tcard-ico{font-size:14px;margin-bottom:4px}
-.tcard-h{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:3px}
-.tcard-p{font-size:11px;color:var(--text3);line-height:1.6}
+.tcard-h{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:3px}
+.tcard-p{font-size:13px;color:var(--text2);line-height:1.6}
 /* MISC */
 #toast{position:fixed;bottom:64px;left:50%;transform:translateX(-50%);background:var(--bg3);border:.5px solid var(--border2);color:var(--text);padding:7px 12px;border-radius:20px;font-size:10px;font-weight:500;pointer-events:none;opacity:0;transition:opacity .25s;white-space:nowrap;z-index:999}
 #toast.show{opacity:1}

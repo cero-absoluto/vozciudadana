@@ -38,7 +38,7 @@ const success    = ref(false);
 const spinMsg    = ref('Verificando código...');
 const receiptHash = ref('');
 
-const MSGS = ['Verificando código...', 'Registrando en blockchain...', 'Generando comprobante anónimo...'];
+const MSGS = ['Verificando código...', 'Registrando adhesión anónima...', 'Generando comprobante...'];
 
 onMounted(async () => {
   await protests.loadProtests();

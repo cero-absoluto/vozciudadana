@@ -146,10 +146,14 @@ async function verificarOtp() {
     sessionStorage.setItem('vc_email_hash', emailHash);
 
     // 3. Solicitar unirse al grupo
-    const groupId = sessionStorage.getItem('vc_group_id');
+   const groupId = sessionStorage.getItem('vc_group_id');
     const inviteToken = route.query.invite || sessionStorage.getItem('vc_invite_token');
     if (groupId) {
-      await api.solicitarUnirse(groupId, { email_hash: emailHash, invite_token: inviteToken || null });
+      await api.solicitarUnirse(groupId, { 
+        email_hash:    emailHash, 
+        invite_token:  inviteToken || null,
+        candidate_email: email.value,
+      });
 
       // 4. Si viene de invitación, aplicar vouch automático del invitador
       const inviteToken = route.query.invite || sessionStorage.getItem('vc_invite_token');

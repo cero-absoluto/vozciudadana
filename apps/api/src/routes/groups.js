@@ -30,8 +30,7 @@ export default async function gruposRoutes(app) {
 
     if (groupErr) throw groupErr;
 
-    // Insertar al nodo génesis como miembro acreditado
-    // Insertar al nodo génesis como miembro acreditado
+  // Insertar al nodo génesis como miembro acreditado
     const { error: memberErr } = await supabase
       .from('group_members')
       .insert({
@@ -61,6 +60,7 @@ export default async function gruposRoutes(app) {
         properties: {
           email_hash:   { type: 'string', minLength: 64, maxLength: 64 },
           invite_token: { type: 'string', nullable: true },
+          candidate_email: { type: 'string', nullable: true },
         },
         additionalProperties: false,
       },
@@ -136,8 +136,9 @@ export default async function gruposRoutes(app) {
     if (!existingReq) {
       await supabase.from('vouch_requests').insert({
         group_id,
-        candidate_hash: email_hash,
-        status: 'pending',
+        candidate_hash:  email_hash,
+        candidate_email: req.body.candidate_email || null,
+        status:          'pending',
       });
     }
 

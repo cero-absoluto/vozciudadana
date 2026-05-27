@@ -110,7 +110,7 @@
         </div>
         <div v-for="s in solicitudes" :key="s.id" style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:.5px solid var(--border)">
           <div style="flex:1">
-            <div style="font-size:11px;font-weight:500">Candidato anónimo</div>
+            <div style="font-size:11px;font-weight:500">{{ s.candidate_email || 'Candidato anónimo' }}</div>
             <div style="font-size:9px;color:var(--text3)">{{ s.vouches_recibidos }}/2 avales · Solicitó {{ formatFecha(s.requested_at) }}</div>
             <div style="background:var(--bg4);border-radius:4px;height:4px;overflow:hidden;margin-top:4px;width:80px">
               <div :style="{width: (s.vouches_recibidos/2*100)+'%',background:'var(--accent4)',height:'100%',borderRadius:'4px'}"></div>

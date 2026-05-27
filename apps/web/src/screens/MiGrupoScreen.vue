@@ -131,10 +131,13 @@
       <div class="block" style="margin-bottom:20px">
         <div class="block-title">🔗 Invitar a compañeros</div>
         <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">
-          Comparte este link <strong>solo con compañeros de tu grupo</strong>. Compartirlo fuera compromete la integridad del censo.
+          Genera un link personal para cada compañero de tu grupo que quieras invitar. Cada link es de <strong>un solo uso</strong> y caduca en <strong>48 horas</strong>.
         </div>
         <div style="font-size:9px;padding:6px 8px;background:rgba(255,107,107,.06);border:.5px solid rgba(255,107,107,.2);border-radius:var(--r);color:var(--accent3);margin-bottom:10px;line-height:1.5">
-          ⚠️ Cada link tiene un máximo de usos. Los primeros {{ grupo.mis_vouches_restantes }} compañeros que lo usen recibirán 1 aval tuyo automáticamente. El resto necesitará avales de otros miembros acreditados.
+          ⚠️ Este link es personal e intransferible. Si lo reenvías y alguien externo al grupo lo usa, comprometes la integridad del censo.
+        </div>
+        <div style="font-size:9px;padding:6px 8px;background:rgba(124,111,255,.06);border:.5px solid var(--border);border-radius:var(--r);color:var(--text2);margin-bottom:10px;line-height:1.5">
+          📊 Invitaciones disponibles: {{ grupo.mis_vouches_restantes }} restantes
         </div>
         <div v-if="linkInvitacion" style="background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:8px 10px;font-family:monospace;font-size:9px;color:var(--accent);word-break:break-all;margin-bottom:8px">
           {{ linkInvitacion }}

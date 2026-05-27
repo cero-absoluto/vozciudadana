@@ -283,9 +283,11 @@ export default async function gruposRoutes(app) {
     if (!miembro?.accredited_at) return reply.forbidden('Solo los miembros acreditados pueden invitar');
 
     // Crear link de invitación
+   // Crear link de invitación con caducidad 48h
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
     const { data: invite, error } = await supabase
       .from('invite_links')
-      .insert({ group_id, inviter_hash })
+      .insert({ group_id, inviter_hash, expires_at: expiresAt })
       .select()
       .single();
 
@@ -309,12 +311,13 @@ export default async function gruposRoutes(app) {
 
     const { data: invite, error } = await supabase
       .from('invite_links')
-      .select('id, group_id, uses_count, max_uses, groups(id, name, protest_id, protests(convocatoria_institucion, convocatoria_region))')
+      .select('id, group_id, used_at, expires_at, groups(id, name, protest_id, protests(convocatoria_institucion, convocatoria_region))')
       .eq('token', token)
       .single();
 
-    if (error || !invite) return reply.notFound('Invitación no encontrada');
-    if (invite.uses_count >= invite.max_uses) return reply.badRequest('Este link ha alcanzado el máximo de usos');
+   if (error || !invite) return reply.notFound('Invitación no encontrada');
+    if (invite.used_at) return reply.badRequest('Este link ya ha sido usado');
+    if (new Date(invite.expires_at) < new Date()) return reply.badRequest('Este link ha caducado');
 
     return {
       valid:       true,

@@ -31,12 +31,14 @@ export default async function gruposRoutes(app) {
     if (groupErr) throw groupErr;
 
     // Insertar al nodo génesis como miembro acreditado
+    // Insertar al nodo génesis como miembro acreditado
     const { error: memberErr } = await supabase
       .from('group_members')
       .insert({
         group_id:      group.id,
         email_hash:    genesis_hash,
         is_genesis:    true,
+        wave:          0,
         accredited_at: new Date().toISOString(),
       });
 

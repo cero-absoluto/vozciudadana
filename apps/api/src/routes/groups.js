@@ -57,14 +57,15 @@ export default async function gruposRoutes(app) {
         type: 'object',
         required: ['email_hash'],
         properties: {
-          email_hash: { type: 'string', minLength: 64, maxLength: 64 },
+          email_hash:   { type: 'string', minLength: 64, maxLength: 64 },
+          invite_token: { type: 'string', nullable: true },
         },
         additionalProperties: false,
       },
     },
   }, async (req, reply) => {
     const { id: group_id } = req.params;
-    const { email_hash } = req.body;
+    const { email_hash, invite_token } = req.body;
 
     // Verificar que el grupo existe
     const { data: group, error: groupErr } = await supabase
@@ -111,6 +112,13 @@ export default async function gruposRoutes(app) {
       });
     }
 
+    // Marcar el link de invitación como usado
+    if (invite_token) {
+      await supabase
+        .from('invite_links')
+        .update({ used_at: new Date().toISOString() })
+        .eq('token', invite_token);
+    }
     return reply.code(201).send({ requested: true });
   });
 // POST /api/grupos/:id/vouch

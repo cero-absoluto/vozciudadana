@@ -234,7 +234,7 @@ export default async function gruposRoutes(app) {
     // Solicitudes pendientes
     const { data: solicitudes } = await supabase
       .from('vouch_requests')
-      .select('id, candidate_hash, requested_at')
+      .select('id, candidate_hash, candidate_email, requested_at')
       .eq('group_id', group_id)
       .eq('status', 'pending');
 
@@ -255,7 +255,7 @@ export default async function gruposRoutes(app) {
           .eq('candidate_hash', s.candidate_hash)
           .maybeSingle().then(r => !!r.data) : false;
 
-        return { ...s, vouches_recibidos: count || 0, ya_avalado };
+        return { ...s, vouches_recibidos: count || 0, ya_avalado, candidate_email: s.candidate_email || null};
       })
     );
 

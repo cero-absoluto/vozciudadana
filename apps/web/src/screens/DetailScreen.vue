@@ -98,7 +98,7 @@
         <button class="btn-primary" :class="{sj: protest.joined}" :disabled="!cj.ok" @click="onJoin">
           {{ joinLabel }}
         </button>
-        <div class="viral-wrap">
+        <div class="viral-wrap"v-if="!protest.requiere_censo">
           <button class="btn-viral" @click="ui.showShareModal = true">
             <div class="bv-inner">
               <div class="bv-left"><span class="bv-fire">🔥</span>

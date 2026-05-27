@@ -89,11 +89,38 @@ export default async function gruposRoutes(app) {
     if (existing?.accredited_at) return reply.conflict('Ya eres miembro acreditado de este grupo');
 
     // Insertar en group_members si no existe
+    // Obtener la onda del invitador si hay token
+    let inviterWave = null;
+    if (invite_token) {
+      const { data: inviteLink } = await supabase
+        .from('invite_links')
+        .select('inviter_hash')
+        .eq('token', invite_token)
+        .maybeSingle();
+
+      if (inviteLink) {
+        const { data: inviter } = await supabase
+          .from('group_members')
+          .select('wave')
+          .eq('group_id', group_id)
+          .eq('email_hash', inviteLink.inviter_hash)
+          .maybeSingle();
+        inviterWave = inviter?.wave ?? null;
+      }
+    }
+
+    // Si el invitador es de onda 0 (génesis), acreditar automáticamente
+    const autoAccredit = inviterWave === 0;
+    const candidateWave = inviterWave !== null ? inviterWave + 1 : 1;
+
+    // Insertar en group_members si no existe
     if (!existing) {
       await supabase.from('group_members').insert({
         group_id,
         email_hash,
-        is_genesis: false,
+        is_genesis:    false,
+        wave:          candidateWave,
+        accredited_at: autoAccredit ? new Date().toISOString() : null,
       });
     }
 

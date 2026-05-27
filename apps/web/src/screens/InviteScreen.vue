@@ -23,9 +23,22 @@
         <div class="block" style="margin-bottom:12px">
           <div class="block-title">ℹ️ Cómo funciona</div>
           <div style="font-size:11px;color:var(--text2);line-height:1.8">
-            Al aceptar esta invitación recibirás automáticamente <strong>1 de los 2 avales</strong> necesarios para entrar al grupo.<br><br>
-            Solo necesitarás <strong>1 aval más</strong> de cualquier otro miembro acreditado.
+            Al aceptar verificarás tu email institucional. El aval de quien te invitó se registra automáticamente.<br><br>
+            Si fuiste invitado directamente por el nodo génesis, quedarás acreditado sin necesitar avales adicionales.<br><br>
+            Si fuiste invitado por otro miembro, necesitarás <strong>1 aval más</strong> de cualquier miembro acreditado.
           </div>
+Y busca:
+html        <div class="block" style="margin-bottom:20px">
+          <div class="block-title">🔒 Tu privacidad</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.8">
+            Tu email se convierte en una huella matemática irreversible y se destruye inmediatamente. Nadie — ni el sistema ni quien te invitó — puede saber quién eres.
+          </div>
+        </div>
+Añade justo después:
+html        <div style="font-size:9px;padding:6px 8px;background:rgba(255,107,107,.06);border:.5px solid rgba(255,107,107,.2);border-radius:var(--r);color:var(--accent3);margin-bottom:20px;line-height:1.5">
+          ⚠️ Este link es de un solo uso y caduca en 48 horas. Si no eres miembro del grupo, por favor no lo uses.
+        </div>
+Dime cuando esté listo.
         </div>
 
         <div class="block" style="margin-bottom:20px">

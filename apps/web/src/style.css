@@ -64,13 +64,13 @@ a:hover{opacity:.8}
   #s-informe [style*="font-size:11px"]{font-size:14px !important;color:var(--text2) !important}
   #s-informe [style*="font-size:10px"]{font-size:13px !important;color:var(--text2) !important}
   #s-informe [style*="font-size:9px"]{font-size:12px !important;color:var(--text2) !important}
-  #s-mi-grupo .block-title{font-size:13px}
+  #s-mi-grupo .block-title{font-size:13px;color:var(--text2)}
   #s-mi-grupo .sc-n{font-size:28px}
-  #s-mi-grupo .sc-l{font-size:12px}
-  #s-mi-grupo [style*="font-size:11px"]{font-size:14px !important}
-  #s-mi-grupo [style*="font-size:10px"]{font-size:13px !important}
-  #s-mi-grupo [style*="font-size:9px"]{font-size:12px !important}
-  #s-mi-grupo [style*="font-size:8px"]{font-size:11px !important}
+  #s-mi-grupo .sc-l{font-size:12px;color:var(--text2)}
+  #s-mi-grupo [style*="font-size:11px"]{font-size:14px !important;color:var(--text) !important}
+  #s-mi-grupo [style*="font-size:10px"]{font-size:13px !important;color:var(--text2) !important}
+  #s-mi-grupo [style*="font-size:9px"]{font-size:12px !important;color:var(--text2) !important}
+  #s-mi-grupo [style*="font-size:8px"]{font-size:11px !important;color:var(--text2) !important}
   /* Other screens centered */
   #s-auth,#s-verify,#s-create,#s-about{
     max-width:680px;

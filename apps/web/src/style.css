@@ -81,7 +81,7 @@ a:hover{opacity:.8}
   /* Topbar full width */
   .topbar{max-width:100%;border-bottom:1px solid var(--border);padding:12px 24px}
   .bottom-nav{max-width:100%;padding:0 24px}
-  .topbar-sub{font-size:11px !important}
+  .topbar-sub{font-size:13px !important}
   .logo-mark{width:30px;height:30px}
   .logo-mark svg{width:17px;height:17px}
   /* Modal wider on desktop */

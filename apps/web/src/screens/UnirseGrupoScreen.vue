@@ -157,7 +157,22 @@ async function verificarOtp() {
 
          }
 
-    paso.value = 3;
+   // Comprobar si fue acreditado automáticamente
+    const groupId2 = sessionStorage.getItem('vc_group_id');
+    if (groupId2) {
+      try {
+        const estado = await api.fetchGrupoEstado(groupId2, emailHash);
+        if (estado.mi_estado?.acreditado) {
+          paso.value = 4;
+        } else {
+          paso.value = 3;
+        }
+      } catch {
+        paso.value = 3;
+      }
+    } else {
+      paso.value = 3;
+    }
   } catch (e) {
      console.log('Error verificarOtp:', e);
     otpError.value = e.message || 'Código incorrecto o caducado.';

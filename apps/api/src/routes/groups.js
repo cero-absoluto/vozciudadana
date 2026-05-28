@@ -90,15 +90,17 @@ export default async function gruposRoutes(app) {
 
     // Insertar en group_members si no existe
     // Obtener la onda del invitador si hay token
-    let inviterWave = null;
+   let inviterWave = null;
+    let inviteLink = null;
     if (invite_token) {
-      const { data: inviteLink } = await supabase
+      const { data: foundLink } = await supabase
         .from('invite_links')
         .select('inviter_hash')
         .eq('token', invite_token)
         .maybeSingle();
 
-      if (inviteLink) {
+      if (foundLink) {
+        inviteLink = foundLink;
         const { data: inviter } = await supabase
           .from('group_members')
           .select('wave')

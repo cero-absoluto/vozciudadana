@@ -117,6 +117,7 @@ const dominio = computed(() => protest.value?.dominio_email || 'tu institución'
 const paso = ref(1);
 const email = ref('');
 const otp = ref('');
+const avalosRecibidos = ref(0);
 const loading = ref(false);
 const emailError = ref('');
 const otpError = ref('');
@@ -179,7 +180,13 @@ async function verificarOtp() {
         const estado = await api.fetchGrupoEstado(groupId2, emailHash);
         if (estado.mi_estado?.acreditado) {
           paso.value = 4;
-        } else {
+       } else {
+          // Obtener avales recibidos para mostrar mensaje correcto
+          try {
+            const est = await api.fetchGrupoEstado(groupId2, emailHash);
+            const sol = est.solicitudes?.find(s => s.candidate_hash === emailHash);
+            avalosRecibidos.value = sol?.vouches_recibidos || 0;
+          } catch { avalosRecibidos.value = 0; }
           paso.value = 3;
         }
       } catch {

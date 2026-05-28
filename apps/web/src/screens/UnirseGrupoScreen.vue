@@ -155,13 +155,7 @@ async function verificarOtp() {
         candidate_email: email.value,
       });
 
-      // 4. Si viene de invitación, aplicar vouch automático del invitador
-      const inviteToken = route.query.invite || sessionStorage.getItem('vc_invite_token');
-      if (inviteToken) {
-        // El vouch automático lo gestiona el backend al validar el token
-        // Por ahora registramos la solicitud y el nodo génesis avalará manualmente
-      }
-    }
+         }
 
     paso.value = 3;
   } catch (e) {

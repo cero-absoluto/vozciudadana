@@ -124,24 +124,25 @@ export default async function gruposRoutes(app) {
       });
     }
 
-    // Crear solicitud de vouch si no existe
-    const { data: existingReq } = await supabase
-      .from('vouch_requests')
-      .select('id')
-      .eq('group_id', group_id)
-      .eq('candidate_hash', email_hash)
-      .eq('status', 'pending')
-      .maybeSingle();
+   // Crear solicitud de vouch solo si no fue acreditado automáticamente
+    if (!autoAccredit) {
+      const { data: existingReq } = await supabase
+        .from('vouch_requests')
+        .select('id')
+        .eq('group_id', group_id)
+        .eq('candidate_hash', email_hash)
+        .eq('status', 'pending')
+        .maybeSingle();
 
-    if (!existingReq) {
-      await supabase.from('vouch_requests').insert({
-        group_id,
-        candidate_hash:  email_hash,
-        candidate_email: req.body.candidate_email || null,
-        status:          'pending',
-      });
+      if (!existingReq) {
+        await supabase.from('vouch_requests').insert({
+          group_id,
+          candidate_hash:  email_hash,
+          candidate_email: req.body.candidate_email || null,
+          status:          'pending',
+        });
+      }
     }
-
     // Marcar el link de invitación como usado
     if (invite_token) {
       await supabase

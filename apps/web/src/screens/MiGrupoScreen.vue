@@ -27,16 +27,11 @@
             🌱 Iniciar el censo
           </button>
         </div>
-        <div v-if="creandoGrupo" class="block" style="margin-top:20px">
-          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;margin-bottom:8px">
+        <div v-if="creandoGrupo" class="block" style="text-align:left;margin-top:20px">
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;margin-bottom:12px">
             📧 Verifica tu email institucional
           </div>
           <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
-            Introduce tu email <strong>@{{ protest?.dominio_email }}</strong> para convertirte en el nodo génesis del censo.
-          </div>
-       <div v-if="creandoGrupo" class="block" style="text-align:left">
-          <div class="block-title">📧 Verifica tu email institucional</div>
-          <div style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6">
             Introduce tu email <strong>@{{ protest?.dominio_email }}</strong> para convertirte en el nodo génesis del censo.
           </div>
           <div v-if="!genesisOtpVisible">
@@ -48,10 +43,22 @@
             </div>
             <button class="btn-primary" style="width:100%;margin-top:8px"
               :disabled="loadingGenesis" @click="enviarOtpGenesis">
-              {{ loadingGenesis ? 'Enviando...' : 'Enviar código →' }}
+              {{ loadingGenesis ? 'Enviando...' : 'Solicitar código →' }}
             </button>
           </div>
         </div>
+        <div v-if="genesisOtpVisible" class="block" style="text-align:left;margin-top:12px">
+          <div class="block-title">📬 Introduce el código</div>
+          <input type="text" v-model="genesisOtp" maxlength="6"
+            placeholder="000000"
+            style="width:100%;padding:14px;text-align:center;letter-spacing:10px;font-size:24px;font-weight:700;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:'Syne',sans-serif">
+          <div v-if="genesisOtpError" style="font-size:10px;color:var(--accent3);margin-top:6px">{{ genesisOtpError }}</div>
+          <button class="btn-primary" style="width:100%;margin-top:12px"
+            :disabled="loadingGenesis" @click="verificarOtpGenesis">
+            {{ loadingGenesis ? 'Verificando...' : 'Verificar y crear censo →' }}
+          </button>
+        </div>
+      </div>
         <div v-if="genesisOtpVisible" class="block" style="text-align:left;margin-top:12px">
           <div class="block-title">📬 Introduce el código</div>
           <input type="text" v-model="genesisOtp" maxlength="6"

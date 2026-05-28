@@ -177,6 +177,7 @@ const protest = computed(() => protests.protests.find(p => String(p.id) === prot
 
 const linkInvitacion = ref('');
 const groupId = ref(null);
+const cargando = ref(true);
 const emailHash = ref(sessionStorage.getItem('vc_email_hash') || '');
 const creandoGrupo = ref(false);
 const genesisEmail = ref('');
@@ -340,5 +341,6 @@ onMounted(async () => {
     groupId.value = null;
   }
   await cargarEstado();
+  cargando.value = false;
 });
 </script>

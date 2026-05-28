@@ -115,7 +115,7 @@
       <button v-if="protest.scope === 'regional' && protest.dominio_email && protest.requiere_censo"
         @click="router.push(`/grupo/${protest.id}`)"
         style="width:100%;margin-top:8px;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:10px;cursor:pointer">
-        👥 {{ protest.joined ? 'Ver mi grupo' : 'Ver el censo' }}
+        {{ !censoExiste ? '🌱 Iniciar el censo' : protest.joined ? '👥 Mi grupo' : '👥 Unirme al censo' }}
       </button>
       <div v-if="(protest.viralCount || 0) > 0"
         style="display:flex;align-items:center;gap:6px;margin-top:7px;padding:6px 9px;background:rgba(184,65,14,.08);border:.5px solid rgba(232,93,36,.22);border-radius:var(--r)">
@@ -127,13 +127,14 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useProtestsStore } from '@/stores/protests.js';
 import { useDeviceStore }   from '@/stores/device.js';
 import { useUiStore }       from '@/stores/ui.js';
 import DetailMap from '@/components/map/DetailMap.vue';
 import { fmt, fmtTime, inRegion } from '@/constants.js';
+import * as api from '@/services/api.js';
 
 const route    = useRoute();
 const router   = useRouter();
@@ -143,6 +144,21 @@ const ui       = useUiStore();
 
 const protest = computed(() => store.protests.find(p => String(p.id) === route.params.id));
 const cj      = computed(() => protest.value ? store.canJoin(protest.value) : { ok: false });
+
+const grupoId = ref(null);
+const censoExiste = ref(false);
+
+onMounted(async () => {
+  if (protest.value?.requiere_censo) {
+    try {
+      const data = await api.fetchGrupoPorConvocatoria(route.params.id);
+      grupoId.value = data.group_id;
+      censoExiste.value = true;
+    } catch {
+      censoExiste.value = false;
+    }
+  }
+});
 
 const simOk = computed(() => {
   if (!protest.value) return false;
@@ -161,7 +177,7 @@ const joinLabel = computed(() => {
   if (protest.value.joined) return '✓ Adherido de forma anónima';
   if (!cj.value.ok) return cj.value.lock ? '🔒 Dispositivo bloqueado' : '🌍 Fuera de alcance';
   if (protest.value.scope === 'regional' && protest.value.dominio_email && protest.value.requiere_censo) {
-    return '👥 Unirme al grupo';
+    return censoExiste.value ? '👥 Unirme al censo' : '🌱 Iniciar el censo';
   }
   if (protest.value.scope === 'regional' && protest.value.dominio_email) {
     return '📧 Verificar email y adherirme';

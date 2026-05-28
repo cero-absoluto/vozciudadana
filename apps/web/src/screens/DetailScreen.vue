@@ -190,7 +190,11 @@ function onJoin() {
   if (protest.value.scope === 'regional' && protest.value.dominio_email) {
     if (protest.value.requiere_censo) {
       sessionStorage.setItem('vc_group_id', sessionStorage.getItem('vc_group_id') || '');
-      router.push(`/grupo/${protest.value.id}`);
+      if (!censoExiste.value) {
+        router.push(`/grupo/${protest.value.id}?iniciar=true`);
+      } else {
+        router.push(`/grupo/${protest.value.id}`);
+      }
     } else {
       router.push(`/verify-institucional/${protest.value.id}`);
     }

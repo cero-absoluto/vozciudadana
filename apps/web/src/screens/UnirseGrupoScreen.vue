@@ -71,7 +71,7 @@
         </div>
         <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:24px">
           Tu email ha sido verificado y tu solicitud está pendiente de avales.<br><br>
-          Necesitas <strong>2 avales</strong> de compañeros acreditados para entrar al grupo.<br>
+          Necesitas <strong>{{ 2 - avalosRecibidos }} aval{{ (2 - avalosRecibidos) === 1 ? '' : 'es' }} más</strong> de compañeros acreditados para entrar al grupo.<br>
           Coordínate con ellos por WhatsApp o en clase.
         </div>
         <button class="btn-primary" style="width:100%" @click="$router.push('/')">

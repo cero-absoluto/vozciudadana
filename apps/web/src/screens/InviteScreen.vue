@@ -41,17 +41,7 @@
 
         </div>
 
-        <div class="block" style="margin-bottom:20px">
-          <div class="block-title">🔒 Tu privacidad</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.8">
-            Tu email se convierte en una huella matemática irreversible y se destruye inmediatamente. Nadie — ni el sistema ni quien te invitó — puede saber quién eres.
-          </div>
-        </div>
-        <div style="font-size:9px;padding:6px 8px;background:rgba(255,107,107,.06);border:.5px solid rgba(255,107,107,.2);border-radius:var(--r);color:var(--accent3);margin-bottom:20px;line-height:1.5">
-          ⚠️ Este link es de un solo uso y caduca en 48 horas. Si no eres miembro del grupo, por favor no lo uses.
-        </div>
-
-        <button class="btn-primary" style="width:100%;margin-bottom:8px"
+          <button class="btn-primary" style="width:100%;margin-bottom:8px"
           @click="aceptarInvitacion">
           Aceptar invitación →
         </button>

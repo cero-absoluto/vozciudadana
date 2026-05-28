@@ -13,7 +13,8 @@
         </div>
       </div>
       <!-- Sin grupo — crear censo -->
-      <div v-if="!groupId" style="text-align:center;padding:40px 20px">
+      <!-- Sin grupo — crear censo -->
+      <div v-if="!groupId && !cargando" style="text-align:center;padding:40px 20px">
         <div style="font-size:48px;margin-bottom:16px">🌱</div>
         <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin-bottom:8px">
           El censo aún no existe

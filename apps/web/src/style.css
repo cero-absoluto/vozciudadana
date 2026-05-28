@@ -84,6 +84,19 @@ a:hover{opacity:.8}
   /* Modal wider on desktop */
   .modal{max-width:480px}
   #install-banner{max-width:860px}
+  /* HOME pantalla principal */
+  .dev-country{font-size:16px}
+  .dev-conf{font-size:13px}
+  .pill{font-size:13px;padding:5px 12px}
+  .ptab{font-size:13px;padding:10px 8px}
+  .pi-title{font-size:15px}
+  .pi-meta{font-size:11px}
+  .pi-count{font-size:16px}
+  .pi-timer{font-size:11px}
+  .ml-title{font-size:9px}
+  .ml-row{font-size:10px}
+  .map-hint{font-size:10px}
+  .nav-item{font-size:12px}
 }
 .screen{display:none;flex-direction:column;flex:1;overflow:hidden;animation:fadeUp .3s ease}
 .screen.active{display:flex}

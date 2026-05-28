@@ -342,5 +342,9 @@ onMounted(async () => {
   }
   await cargarEstado();
   cargando.value = false;
+  // Si viene con ?iniciar=true, mostrar directamente el formulario
+  if (route.query.iniciar === 'true' && !groupId.value) {
+    creandoGrupo.value = true;
+  }
 });
 </script>

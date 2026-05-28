@@ -104,6 +104,7 @@ a:hover{opacity:.8}
 /* TOPBAR */
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg);gap:6px}
 .logo{display:flex;align-items:center;gap:7px;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;letter-spacing:-.5px;flex-shrink:0}
+@media(min-width:900px){.logo{font-size:18px}}
 .logo-mark{width:24px;height:24px;border-radius:6px;background:var(--accent);display:flex;align-items:center;justify-content:center}
 .logo-mark svg{width:13px;height:13px;fill:white}
 .topbar-right{display:flex;align-items:center;gap:5px}

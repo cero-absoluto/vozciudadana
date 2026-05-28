@@ -112,15 +112,10 @@
           </button>
         </div>
       </div>
-      <button v-if="protest.scope === 'regional' && protest.dominio_email"
+      <button v-if="protest.scope === 'regional' && protest.dominio_email && protest.requiere_censo"
         @click="router.push(`/grupo/${protest.id}`)"
         style="width:100%;margin-top:8px;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:10px;cursor:pointer">
-        👥 Ver mi grupo
-      </button>
-      <button v-if="protest.scope === 'regional' && protest.dominio_email && protest.requiere_censo && !protest.joined"
-        @click="router.push(`/grupo/${protest.id}/unirse`)"
-        style="width:100%;margin-top:8px;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:10px;cursor:pointer">
-        📋 Solicitar unirme al censo
+        👥 {{ protest.joined ? 'Ver mi grupo' : 'Ver el censo' }}
       </button>
       <div v-if="(protest.viralCount || 0) > 0"
         style="display:flex;align-items:center;gap:6px;margin-top:7px;padding:6px 9px;background:rgba(184,65,14,.08);border:.5px solid rgba(232,93,36,.22);border-radius:var(--r)">

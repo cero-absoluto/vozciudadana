@@ -123,6 +123,14 @@ export default async function gruposRoutes(app) {
         accredited_at: autoAccredit ? new Date().toISOString() : null,
       });
     }
+    // Si hay invitador de onda 1+, registrar 1 aval automático
+    if (inviterWave !== null && inviterWave > 0 && inviteLink) {
+      await supabase.from('vouches').insert({
+        group_id,
+        voucher_hash:   inviteLink.inviter_hash,
+        candidate_hash: email_hash,
+      });
+    }
 
    // Crear solicitud de vouch solo si no fue acreditado automáticamente
     if (!autoAccredit) {

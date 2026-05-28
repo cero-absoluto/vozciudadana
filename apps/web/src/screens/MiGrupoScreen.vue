@@ -100,7 +100,7 @@
             {{ miEstado.es_genesis ? '⭐ Nodo génesis' : '✓ Acreditado' }}
           </div>
         </div>
-        <div style="font-size:10px;color:var(--text3)">
+        <div style="font-size:13px;color:var(--text2)">
           Has dado {{ miEstado.vouches_dados }} avales · Puedes dar {{ grupo.mis_vouches_restantes }} más
         </div>
       </div>
@@ -108,7 +108,7 @@
       <!-- Solicitudes pendientes -->
       <div class="block" style="margin-bottom:12px">
         <div class="block-title">🔔 Solicitudes pendientes ({{ solicitudes.length }})</div>
-        <div v-if="solicitudes.length === 0" style="font-size:11px;color:var(--text3);padding:8px 0">
+        <div v-if="solicitudes.length === 0" style="font-size:13px;color:var(--text2);padding:8px 0">
           No hay solicitudes pendientes.
         </div>
         <div v-for="s in solicitudes" :key="s.id" style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:.5px solid var(--border)">
@@ -136,7 +136,7 @@
         <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">
           Genera un link personal para cada compañero de tu grupo que quieras invitar. Cada link es de <strong>un solo uso</strong> y caduca en <strong>48 horas</strong>.
         </div>
-        <div style="font-size:9px;padding:6px 8px;background:rgba(255,107,107,.06);border:.5px solid rgba(255,107,107,.2);border-radius:var(--r);color:var(--accent3);margin-bottom:10px;line-height:1.5">
+        <div style="font-size:12px;padding:6px 8px;background:rgba(255,107,107,.06);border:.5px solid rgba(255,107,107,.2);border-radius:var(--r);color:var(--accent3);margin-bottom:10px;line-height:1.5">
           ⚠️ Este link es personal e intransferible. Si lo reenvías y alguien externo al grupo lo usa, comprometes la integridad del censo.
         </div>
         <div style="font-size:9px;padding:6px 8px;background:rgba(124,111,255,.06);border:.5px solid var(--border);border-radius:var(--r);color:var(--text2);margin-bottom:10px;line-height:1.5">

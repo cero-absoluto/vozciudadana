@@ -59,19 +59,7 @@
           </button>
         </div>
       </div>
-        <div v-if="genesisOtpVisible" class="block" style="text-align:left;margin-top:12px">
-          <div class="block-title">📬 Introduce el código</div>
-          <input type="text" v-model="genesisOtp" maxlength="6"
-            placeholder="000000"
-            style="width:100%;padding:14px;text-align:center;letter-spacing:10px;font-size:24px;font-weight:700;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:'Syne',sans-serif">
-          <div v-if="genesisOtpError" style="font-size:10px;color:var(--accent3);margin-top:6px">{{ genesisOtpError }}</div>
-          <button class="btn-primary" style="width:100%;margin-top:12px"
-            :disabled="loadingGenesis" @click="verificarOtpGenesis">
-            {{ loadingGenesis ? 'Verificando...' : 'Verificar y crear censo →' }}
-          </button>
-        </div>
-      </div>
-
+       
       <!-- Con grupo — mostrar estado -->
       <div v-if="groupId">
 

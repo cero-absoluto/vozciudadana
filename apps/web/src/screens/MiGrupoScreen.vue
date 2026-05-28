@@ -145,14 +145,14 @@
         <div v-if="linkInvitacion" style="background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:8px 10px;font-family:monospace;font-size:9px;color:var(--accent);word-break:break-all;margin-bottom:8px">
           {{ linkInvitacion }}
         </div>
-        <div style="display:flex;gap:8px">
-          <button @click="generarLink"
-            style="flex:1;padding:9px;background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:11px;cursor:pointer">
-            {{ linkInvitacion ? '↺ Regenerar link' : '+ Generar link' }}
+       <div style="display:flex;gap:8px">
+          <button @click="generarYCompartirLink"
+            style="flex:1;padding:9px;background:var(--accent);border:none;border-radius:var(--r);color:white;font-size:11px;font-weight:600;cursor:pointer">
+            {{ linkInvitacion ? '↺ Regenerar y compartir' : '🔗 Generar y compartir link' }}
           </button>
-          <button v-if="linkInvitacion" @click="compartirLink"
-            style="padding:9px 14px;background:var(--accent);border:none;border-radius:var(--r);color:white;font-size:11px;cursor:pointer">
-            Compartir
+          <button v-if="linkInvitacion" @click="copiarLink"
+            style="padding:9px 14px;background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:11px;cursor:pointer">
+            📋
           </button>
         </div>
       </div>
@@ -305,6 +305,12 @@ async function generarLink() {
     linkInvitacion.value = data.url;
   } catch (e) {
     ui.showToast('Error al generar el link: ' + e.message);
+  }
+}
+  async function generarYCompartirLink() {
+  await generarLink();
+  if (linkInvitacion.value) {
+    await compartirLink();
   }
 }
 

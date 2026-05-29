@@ -323,18 +323,6 @@ async function verificarFuente(domain) {
     }
   } catch { /* silencioso */ }
   return 'unknown';
-}
-  `;
-  try {
-    const res = await fetch(`https://query.wikidata.org/sparql?query=${encodeURIComponent(query)}&format=json`);
-    const data = await res.json();
-    if (data.results.bindings.length > 0) {
-      fuenteName.value = data.results.bindings[0].label.value;
-      return 'verified';
-    }
-  } catch { /* silencioso */ }
-  return 'unknown';
-}
 
 watch(() => form.fuente_url, async (url) => {
   fuenteStatus.value = null;

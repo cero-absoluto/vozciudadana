@@ -100,9 +100,9 @@ a:hover{opacity:.8}
   .ml-row{font-size:10px}
   .map-hint{font-size:10px}
   .nav-item{font-size:12px}
-  .so-title{font-size:14px}
-  .so-desc{font-size:12px;color:var(--text2)}
-  .so-ico{width:32px;height:32px;font-size:16px}
+  .so-title{font-size:16px !important}
+  .so-desc{font-size:13px !important;color:var(--text2) !important}
+  .so-ico{width:36px;height:36px;font-size:18px}
 }
 .screen{display:none;flex-direction:column;flex:1;overflow:hidden;animation:fadeUp .3s ease}
 .screen.active{display:flex}

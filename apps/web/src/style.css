@@ -457,8 +457,14 @@ a:hover{opacity:.8}
 /* ── MOBILE FONT SIZE IMPROVEMENTS ── */
 @media(max-width:899px){
   html,body{font-size:16px}
-  .pi-title{font-size:13px}
-  .pi-count{font-size:13px}
+ .pi-title{font-size:15px;color:var(--text)}
+  .pi-count{font-size:15px}
+  .pi-meta{font-size:11px;color:var(--text2)}
+  .pi-timer{font-size:11px;color:var(--text2)}
+  .lock-strip{font-size:10px}
+  .geo-strip{font-size:10px}
+  .ml-title{font-size:9px}
+  .ml-row{font-size:10px}
   .d-title{font-size:16px}
   .d-desc{font-size:12px}
   .auth-h{font-size:18px}

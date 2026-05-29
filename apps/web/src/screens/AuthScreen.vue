@@ -93,6 +93,7 @@
 </template>
 
 <script setup>
+import { useProtestsStore } from '@/stores/protests.js';
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUiStore } from '@/stores/ui.js';
@@ -160,8 +161,12 @@ onMounted(async () => {
 
   try {
     countryCodes.value = await api.fetchCountryCodes();
+    const dev = useDeviceStore();
+    if (dev.ipCountry) {
+      countryCode.value = dev.ipCountry;
+    }
   } catch {
-    // Fallback: mantener el selector deshabilitado con el prefijo por defecto
+    // Fallback
   }
 });
 
@@ -188,6 +193,16 @@ const device = useDeviceStore();
 
 async function sendSMS() {
   if (sending.value) return;
+  const protestScope = sessionStorage.getItem('vc_protest_scope') || 'national';
+  if (protestScope === 'national') {
+    const lastId = sessionStorage.getItem('vc_last_joined');
+    const protestsStore = useProtestsStore();
+    const protest = protestsStore.protests.find(p => String(p.id) === lastId);
+    if (protest?.country && protest.country !== countryCode.value) {
+      ui.showToast(`Esta convocatoria es solo para ciudadanos de ${protest.country_name}. Usa un número de ese país.`);
+      return;
+    }
+  }
 
   // Solicitar GPS si la convocatoria es nacional de riesgo bajo/medio
   const riskLevel = sessionStorage.getItem('vc_risk_level') || 'low';

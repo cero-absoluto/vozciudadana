@@ -290,7 +290,7 @@ const router   = useRouter();
 const protests = useProtestsStore();
 const ui       = useUiStore();
 
-  const minDate = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+const minDate = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 const form = reactive({
   title: '', description: '', demands: '', focal_point: '',
   scope: 'national', region: null,
@@ -306,23 +306,24 @@ const form = reactive({
 });
   const tooltip = ref(null);
   const fuenteStatus = ref(null);
-const fuenteName = ref('');
+  const fuenteName = ref('');
 
 async function verificarFuente(domain) {
-  // Dominios oficiales — aprobación automática
   const oficiales = ['.gov', '.gob', '.edu', '.europa.eu', '.un.org', '.who.int', '.gc.ca', '.gouv.fr', '.gob.es', '.gov.uk'];
   if (oficiales.some(tld => domain.endsWith(tld))) return 'oficial';
 
-  // Consulta a Wikidata
-  const query = `
-    SELECT ?label WHERE {
-      ?item wdt:P856 ?url .
-      ?item wdt:P31 ?type .
-      VALUES ?type { wd:Q1193236 wd:Q11033 wd:Q1004705 wd:Q7275 wd:Q2297946 wd:Q1002697 wd:Q35127 }
-      FILTER(CONTAINS(LCASE(str(?url)), "${domain}"))
-      ?item rdfs:label ?label FILTER(LANG(?label) = "es" || LANG(?label) = "en")
-    } LIMIT 1
-  `;
+  const query = 'SELECT ?label WHERE { ?item wdt:P856 ?url . ?item wdt:P31 ?type . VALUES ?type { wd:Q1193236 wd:Q11033 wd:Q1004705 wd:Q7275 wd:Q2297946 wd:Q1002697 wd:Q35127 } FILTER(CONTAINS(LCASE(str(?url)), "' + domain + '")) ?item rdfs:label ?label FILTER(LANG(?label) = "es" || LANG(?label) = "en") } LIMIT 1';
+
+  try {
+    const res = await fetch('https://query.wikidata.org/sparql?query=' + encodeURIComponent(query) + '&format=json');
+    const data = await res.json();
+    if (data.results.bindings.length > 0) {
+      fuenteName.value = data.results.bindings[0].label.value;
+      return 'verified';
+    }
+  } catch { /* silencioso */ }
+  return 'unknown';
+}
   `;
   try {
     const res = await fetch(`https://query.wikidata.org/sparql?query=${encodeURIComponent(query)}&format=json`);

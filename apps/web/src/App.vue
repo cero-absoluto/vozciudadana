@@ -30,6 +30,7 @@ onMounted(() => {
   // Restore joined state from localStorage
   protests.restoreFromStorage();
   device.detectSecondarySignals();
+  device.detectCountryByIp();
 
   // Live counter tick
   setInterval(() => protests.tickTimers(), 1000);

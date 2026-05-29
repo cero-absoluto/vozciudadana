@@ -57,7 +57,7 @@
       <div v-if="tooltip === 'fuente'" class="tooltip-box">Enlaza un artículo de prensa, documento oficial, resolución judicial o dato estadístico que acredite el hecho denunciado.</div>
     </span>
   </label>
-  <input type="url" v-model="form.fuente_url" placeholder="https://elpais.com/... o https://boe.es/...">
+ <input type="text" v-model="form.fuente_url" placeholder="elpais.com/... o boe.es/...">
   <div v-if="fuenteStatus === 'checking'" style="font-size:11px;color:var(--text3);margin-top:4px">
     🔄 Verificando fuente...
   </div>
@@ -337,8 +337,9 @@ watch(() => form.fuente_url, async (url) => {
   fuenteName.value = '';
   if (!url || url.length < 10) return;
   try {
-    new URL(url); // valida que sea URL válida
-    const domain = new URL(url).hostname.replace('www.', '');
+      const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+      new URL(fullUrl); // valida que sea URL válida
+      const domain = new URL(fullUrl).hostname.replace('www.', '');
     fuenteStatus.value = 'checking';
     fuenteStatus.value = await verificarFuente(domain);
   } catch {

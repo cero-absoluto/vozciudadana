@@ -317,9 +317,12 @@ async function verificarFuente(domain) {
   const query = `
     SELECT ?label WHERE {
       ?item wdt:P856 ?url .
+      ?item wdt:P31 ?type .
+      VALUES ?type { wd:Q1193236 wd:Q11033 wd:Q1004705 wd:Q7275 wd:Q2297946 wd:Q1002697 wd:Q35127 }
       FILTER(CONTAINS(LCASE(str(?url)), "${domain}"))
       ?item rdfs:label ?label FILTER(LANG(?label) = "es" || LANG(?label) = "en")
     } LIMIT 1
+  `;
   `;
   try {
     const res = await fetch(`https://query.wikidata.org/sparql?query=${encodeURIComponent(query)}&format=json`);

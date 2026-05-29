@@ -80,6 +80,60 @@
         <!-- COLUMNA DERECHA -->
         <div class="informe-right">
 
+          <!-- BLOQUE FIABILIDAD — Calidad de la verificación -->
+          <div class="block" style="margin-bottom:12px">
+            <div class="block-title">🔬 Calidad de la verificación</div>
+            <div v-if="data.desglose_fiabilidad" style="display:flex;flex-direction:column;gap:8px">
+              
+              <!-- Alta -->
+              <div v-if="data.desglose_fiabilidad.alta.count > 0">
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+                  <span style="color:var(--accent2);font-weight:500">Fiabilidad alta (85-95%)</span>
+                  <span style="color:var(--text2)">{{ data.desglose_fiabilidad.alta.count }} ciudadanos</span>
+                </div>
+                <div style="background:var(--bg4);border-radius:4px;height:8px;overflow:hidden">
+                  <div :style="{width: pct(data.desglose_fiabilidad.alta.count) + '%', background:'var(--accent2)', height:'100%', borderRadius:'4px', transition:'width .5s'}"></div>
+                </div>
+                <div style="font-size:10px;color:var(--text3);margin-top:2px">{{ data.desglose_fiabilidad.alta.descripcion }}</div>
+              </div>
+
+              <!-- Media -->
+              <div v-if="data.desglose_fiabilidad.media.count > 0">
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+                  <span style="color:var(--accent4);font-weight:500">Fiabilidad media (75-84%)</span>
+                  <span style="color:var(--text2)">{{ data.desglose_fiabilidad.media.count }} ciudadanos</span>
+                </div>
+                <div style="background:var(--bg4);border-radius:4px;height:8px;overflow:hidden">
+                  <div :style="{width: pct(data.desglose_fiabilidad.media.count) + '%', background:'var(--accent4)', height:'100%', borderRadius:'4px', transition:'width .5s'}"></div>
+                </div>
+                <div style="font-size:10px;color:var(--text3);margin-top:2px">{{ data.desglose_fiabilidad.media.descripcion }}</div>
+              </div>
+
+              <!-- Base -->
+              <div v-if="data.desglose_fiabilidad.base.count > 0">
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+                  <span style="color:var(--accent);font-weight:500">Fiabilidad base (60-74%)</span>
+                  <span style="color:var(--text2)">{{ data.desglose_fiabilidad.base.count }} ciudadanos</span>
+                </div>
+                <div style="background:var(--bg4);border-radius:4px;height:8px;overflow:hidden">
+                  <div :style="{width: pct(data.desglose_fiabilidad.base.count) + '%', background:'var(--accent)', height:'100%', borderRadius:'4px', transition:'width .5s'}"></div>
+                </div>
+                <div style="font-size:10px;color:var(--text3);margin-top:2px">{{ data.desglose_fiabilidad.base.descripcion }}</div>
+              </div>
+
+              <!-- Sin dato -->
+              <div v-if="data.desglose_fiabilidad.sin_dato.count > 0">
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+                  <span style="color:var(--text3);font-weight:500">Sin clasificar</span>
+                  <span style="color:var(--text2)">{{ data.desglose_fiabilidad.sin_dato.count }} ciudadanos</span>
+                </div>
+                <div style="font-size:10px;color:var(--text3);margin-top:2px">Adhesiones anteriores al sistema de fiabilidad</div>
+              </div>
+
+            </div>
+            <div v-else style="font-size:12px;color:var(--text3)">Sin datos de fiabilidad disponibles.</div>
+          </div>
+
           <!-- BLOQUE 2 — Los tres números -->
           <div class="block" style="margin-bottom:12px">
             <div class="block-title">🔢 Los tres números</div>
@@ -225,5 +279,10 @@ function formatDateTime(iso) {
   return new Date(iso).toLocaleString('es-ES', {
     day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
   });
+}
+
+function pct(count) {
+  if (!data.value?.total_adhesiones) return 0;
+  return Math.round((count / data.value.total_adhesiones) * 100);
 }
 </script>

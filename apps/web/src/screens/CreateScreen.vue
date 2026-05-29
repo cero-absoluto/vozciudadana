@@ -31,7 +31,7 @@
       <div class="char-c">{{ form.demands.length }}/300</div>
     </div>
     <div class="fg">
-  <label>Punto focal *
+  <label>Contra quien va dirigida *
     <span class="info-icon" @mouseenter="showTooltip('focal')" @mouseleave="hideTooltip()">ℹ️
       <div v-if="tooltip === 'focal'" class="tooltip-box">Institución o cargo público al que va dirigida la demanda. Debe ser una autoridad pública con poder de decisión.</div>
     </span>

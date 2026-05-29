@@ -54,7 +54,7 @@
 <div class="fg">
   <label>Fuente que acredita el hecho *
     <span class="info-icon" @mouseenter="showTooltip('fuente')" @mouseleave="hideTooltip()">ℹ️
-      <div v-if="tooltip === 'fuente'" class="tooltip-box">Enlaza un artículo de prensa, documento oficial, resolución judicial o dato estadístico que acredite el hecho denunciado.</div>
+      <div v-if="tooltip === 'fuente'" class="tooltip-box">Verificación automática en Wikidata.Medios no reconocidos puedes ser también válidos</div>
     </span>
   </label>
  <input type="text" v-model="form.fuente_url" placeholder="elpais.com/... o boe.es/...">

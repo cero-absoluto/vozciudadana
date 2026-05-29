@@ -323,7 +323,7 @@ async function verificarFuente(domain) {
     }
   } catch { /* silencioso */ }
   return 'unknown';
-
+}
 watch(() => form.fuente_url, async (url) => {
   fuenteStatus.value = null;
   fuenteName.value = '';

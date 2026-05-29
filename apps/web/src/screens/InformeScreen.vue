@@ -44,7 +44,7 @@
             {{ formatDate(data.protest.starts_at) }} → {{ formatDate(data.protest.ends_at) }}
           </div>
         </div>
-        </div><!-- fin cabecera -->
+    
 
         <!-- BLOQUE 1 — Titular -->
         <div class="block" style="margin-bottom:14px">

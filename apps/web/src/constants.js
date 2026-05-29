@@ -76,7 +76,7 @@ export const fmtTime = s => {
   return `${m}m ${String(s % 60).padStart(2,'0')}s`;
 };
 export const heatColor = h => {
-  if (!h) return '#1a3a5c';
+  if (!h) return '#1e4a7a';
   if (h < 40) return '#2d5a8e';
   if (h < 65) return '#e8a020';
   if (h < 85) return '#e84020';

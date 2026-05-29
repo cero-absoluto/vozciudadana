@@ -130,6 +130,11 @@ exigen al {{ data.protest.focal_point }}: "{{ data.protest.demands }}"
   </div>
 </div>
 
+  </div><!-- fin columna izquierda -->
+
+        <!-- COLUMNA DERECHA -->
+        <div class="informe-right">
+        <!-- BLOQUE 6 — Cadena de verificación -->
         <!-- BLOQUE 6 — Cadena de verificación -->
         <div class="block" style="margin-bottom:12px">
           <div class="block-title">🔒 Cadena de verificación</div>
@@ -157,6 +162,7 @@ exigen al {{ data.protest.focal_point }}: "{{ data.protest.demands }}"
     Blockchain en desarrollo — disponible en v2.0.
   </div>
 </div>
+  </div><!-- fin columna derecha -->
 
         <!-- Botón volver -->
         <button class="btn-primary" style="width:100%" @click="$router.back()">

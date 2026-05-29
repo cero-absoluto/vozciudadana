@@ -23,14 +23,13 @@ export const useDeviceStore = defineStore('device', () => {
   });
   async function detectCountryByIp() {
     try {
-      const res = await fetch('http://ip-api.com/json/?fields=countryCode,city,query&lang=es');
-      const data = await res.json();
-      if (data.countryCode) {
-        ipCountry.value = data.countryCode;
+    const res = await fetch('https://ipapi.co/json/');
+     const data = await res.json();
+      if (data.country_code) {
+        ipCountry.value = data.country_code;
         ipCity.value = data.city || '';
-        // Si no hay SIM detectada, usar IP como país principal
         if (simCountry.value === 'ES') {
-          simCountry.value = data.countryCode;
+          simCountry.value = data.country_code;
         }
       }
     } catch { /* silencioso */ }

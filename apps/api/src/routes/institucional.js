@@ -182,6 +182,8 @@ export default async function institucionalRoutes(app) {
       ciudad, region, pais, idioma,
       nullifier:   emailHash,
       created_at,
+      fiabilidad:  90,
+      senales:     'email_otp',
     });
 
     // 8. Incrementar contador

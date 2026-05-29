@@ -13,9 +13,11 @@
         No se encontró la convocatoria.
       </div>
 
-      <!-- Informe -->
-      <div v-else-if="data">
+     <!-- Informe -->
+      <div v-else-if="data" class="informe-layout">
 
+        <!-- COLUMNA IZQUIERDA -->
+        <div class="informe-left">
         <!-- Cabecera -->
         <div style="margin-bottom:20px">
           <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">
@@ -42,6 +44,7 @@
             {{ formatDate(data.protest.starts_at) }} → {{ formatDate(data.protest.ends_at) }}
           </div>
         </div>
+        </div><!-- fin cabecera -->
 
         <!-- BLOQUE 1 — Titular -->
         <div class="block" style="margin-bottom:14px">

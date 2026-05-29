@@ -24,7 +24,7 @@
             <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">
               Informe público verificado
             </div>
-            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;letter-spacing:-.4px;margin-bottom:8px">
+           <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.4px;margin-bottom:8px">
               {{ data.protest.title }}
             </div>
             <div style="font-size:11px;color:var(--text2);margin-bottom:4px">

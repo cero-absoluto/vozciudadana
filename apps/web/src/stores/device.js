@@ -28,9 +28,32 @@ export const useDeviceStore = defineStore('device', () => {
       if (data.country_code) {
         ipCountry.value = data.country_code;
         ipCity.value = data.city || '';
-        if (simCountry.value === 'ES') {
-          simCountry.value = data.country_code;
-        }
+       ipCountry.value = data.country_code;
+        ipCity.value = data.city || '';
+        simCountry.value = data.country_code;
+        // Actualizar nombre y prefijo según país detectado
+        const countryNames = {
+          'MT': 'Malta', 'ES': 'España', 'NL': 'Países Bajos', 'GB': 'Reino Unido',
+          'FR': 'Francia', 'DE': 'Alemania', 'IT': 'Italia', 'PT': 'Portugal',
+          'BE': 'Bélgica', 'US': 'Estados Unidos', 'MX': 'México', 'AR': 'Argentina',
+          'BR': 'Brasil', 'CO': 'Colombia', 'CL': 'Chile', 'PE': 'Perú',
+          'UY': 'Uruguay', 'VE': 'Venezuela', 'JP': 'Japón', 'CN': 'China',
+          'AU': 'Australia', 'CA': 'Canadá', 'SE': 'Suecia', 'NO': 'Noruega',
+          'DK': 'Dinamarca', 'FI': 'Finlandia', 'PL': 'Polonia', 'UA': 'Ucrania',
+          'RU': 'Rusia', 'TR': 'Turquía', 'ZA': 'Sudáfrica', 'IN': 'India',
+        };
+        const countryPrefixes = {
+          'MT': '+356', 'ES': '+34', 'NL': '+31', 'GB': '+44',
+          'FR': '+33', 'DE': '+49', 'IT': '+39', 'PT': '+351',
+          'BE': '+32', 'US': '+1', 'MX': '+52', 'AR': '+54',
+          'BR': '+55', 'CO': '+57', 'CL': '+56', 'PE': '+51',
+          'UY': '+598', 'VE': '+58', 'JP': '+81', 'CN': '+86',
+          'AU': '+61', 'CA': '+1', 'SE': '+46', 'NO': '+47',
+          'DK': '+45', 'FI': '+358', 'PL': '+48', 'UA': '+380',
+          'RU': '+7', 'TR': '+90', 'ZA': '+27', 'IN': '+91',
+        };
+        simName.value = countryNames[data.country_code] || data.country_code;
+        simPrefix.value = countryPrefixes[data.country_code] || '';
       }
     } catch { /* silencioso */ }
   }

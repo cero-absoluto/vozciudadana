@@ -103,6 +103,8 @@ a:hover{opacity:.8}
   .so-title{font-size:16px !important}
   .so-desc{font-size:13px !important;color:var(--text2) !important}
   .so-ico{width:36px;height:36px;font-size:18px}
+  .informe-layout{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+  .informe-layout .btn-primary{grid-column:1 / -1}
   .mod-h{font-size:13px !important;color:var(--text) !important}
   .mstep{font-size:12px !important;color:var(--text) !important}
   .mn{width:18px;height:18px;font-size:9px}

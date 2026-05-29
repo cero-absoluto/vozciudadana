@@ -105,6 +105,10 @@ a:hover{opacity:.8}
   .so-ico{width:36px;height:36px;font-size:18px}
   .informe-layout{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
   .informe-layout .btn-primary{grid-column:1 / -1}
+  #s-informe .d-title{font-size:28px}
+  #s-informe [style*="font-size:9px"]{font-size:12px !important;color:var(--text2) !important}
+  #s-informe [style*="font-size:10px"]{font-size:13px !important;color:var(--text2) !important}
+  #s-informe [style*="font-size:11px"]{font-size:14px !important;color:var(--text2) !important}
   .mod-h{font-size:13px !important;color:var(--text) !important}
   .mstep{font-size:12px !important;color:var(--text) !important}
   .mn{width:18px;height:18px;font-size:9px}

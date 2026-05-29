@@ -268,7 +268,7 @@ app.get('/:id/informe', {
 
   const { data: adhesions } = await supabase
     .from('adhesions')
-    .select('ciudad, region, pais, idioma, created_at')
+    .select('ciudad, region, pais, idioma, created_at, gps_lat, fiabilidad, senales')
     .eq('protest_id', req.params.id);
 
   const ciudades = [...new Set(adhesions.map(a => a.ciudad).filter(Boolean))];
@@ -281,6 +281,12 @@ const distribucion_regiones = adhesions.reduce((acc, a) => {
 }, {});
 
   const adhesiones_con_gps = adhesions.filter(a => a.gps_lat !== null).length;
+
+  // Desglose de fiabilidad
+  const fiabilidad_alta    = adhesions.filter(a => a.fiabilidad >= 85).length;
+  const fiabilidad_media   = adhesions.filter(a => a.fiabilidad >= 75 && a.fiabilidad < 85).length;
+  const fiabilidad_base    = adhesions.filter(a => a.fiabilidad >= 60 && a.fiabilidad < 75).length;
+  const fiabilidad_sin_dato = adhesions.filter(a => !a.fiabilidad).length;
 
   return {
     protest,
@@ -295,6 +301,12 @@ const distribucion_regiones = adhesions.reduce((acc, a) => {
     distribucion_regiones,
     primera_adhesion: adhesions[0]?.created_at || null,
     ultima_adhesion: adhesions[adhesions.length - 1]?.created_at || null,
+    desglose_fiabilidad: {
+      alta:     { count: fiabilidad_alta,     rango: '85-95%', descripcion: 'GPS + SIM + IP verificados' },
+      media:    { count: fiabilidad_media,    rango: '75-84%', descripcion: 'SIM verificada' },
+      base:     { count: fiabilidad_base,     rango: '60-74%', descripcion: 'Solo IP verificada' },
+      sin_dato: { count: fiabilidad_sin_dato, rango: '—',      descripcion: 'Adhesiones anteriores al sistema' },
+    },
   };
 });
 }

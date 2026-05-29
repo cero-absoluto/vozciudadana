@@ -24,7 +24,7 @@
     <div class="fg">
   <label>Qué exigimos *
     <span class="info-icon" @mouseenter="showTooltip('demands')" @mouseleave="hideTooltip()">ℹ️
-      <div v-if="tooltip === 'demands'" class="tooltip-box">Usa verbos de acción: exigir, denunciar, dimitir, investigar. Evita: pedir, solicitar, proponer. Máximo 300 caracteres.</div>
+      <div v-if="tooltip === 'demands'" class="tooltip-box">Usa verbos de acción: exigir, denunciar, dimitir, investigar. Verbos NO PERMTIDOS pedir, solicitar, proponer. Máximo 300 caracteres.</div>
     </span>
   </label>
       <textarea v-model="form.demands" rows="2" maxlength="300" placeholder="Ej: Que dimita el presidente · Que se retire la ley"></textarea>
@@ -36,7 +36,7 @@
       <div v-if="tooltip === 'focal'" class="tooltip-box">Institución o cargo público al que va dirigida la demanda. Debe ser una autoridad pública con poder de decisión.</div>
     </span>
   </label>
-      <input type="text" v-model="form.focal_point" placeholder="Ej: Congreso de los Diputados, Madrid">
+      <input type="text" v-model="form.focal_point" placeholder="Ej: Congreso de los Diputados">
     </div>
     
     <div class="fg"><label>Tipo de abuso *</label>

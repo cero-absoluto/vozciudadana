@@ -1,3 +1,41 @@
+# Voz Ciudadana
+
+**Plataforma de protesta ciudadana verificada, anónima y sin censura.**
+
+Voz Ciudadana permite a ciudadanos adherirse a convocatorias de denuncia verificadas, con identidad protegida mediante hash SHA-256. Cada adhesión es anónima, verificada y contabilizada de forma transparente.
+
+## Características principales
+
+- 🔒 Anonimato total — el número de teléfono o email se convierte en huella matemática irreversible
+- 📍 Verificación geográfica — SIM + IP confirman la pertenencia al país o región
+- 👥 Censo dinámico — sistema de ondas de confianza con avales entre compañeros
+- 📧 Verificación institucional — email corporativo para convocatorias universitarias o laborales
+- 🌍 Alcance configurable — nacional, local o global
+- ⛓️ Blockchain (en desarrollo) — conteos inmutables y verificables públicamente
+
+## Stack tecnológico
+
+- **Frontend:** Vue.js 3 + Vite — desplegado en GitHub Pages
+- **Backend:** Fastify (Node.js) — desplegado en Railway
+- **Base de datos:** Supabase (PostgreSQL)
+- **Verificación SMS:** Twilio
+- **Verificación email:** Resend
+- **Verificación de fuentes:** Wikidata API
+
+## URLs
+
+- **App:** https://cero-absoluto.github.io/vozciudadana/
+- **API:** https://vozciudadanaapi-production.up.railway.app
+
+## Autoría
+
+**Voz Ciudadana** es un proyecto original de **Judith Galan Mayoral**.
+
+Concepto y desarrollo: Judith Galan Mayoral  
+Diseño y programación: JL DD
+Repositorio: https://github.com/cero-absoluto/vozciudadana  
+© 2026 Judith Galan Mayoral. Todos los derechos reservados.
+
 # Voz Ciudadana — Monorepo
 
 ```

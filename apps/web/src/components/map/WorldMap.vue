@@ -68,7 +68,7 @@ function getHeat(iso) {
 function drawFrame() {
   if (!worldData || !ctx) return;
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#0d1a2e'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#0a1628'; ctx.fillRect(0, 0, W, H);
 
   topojson.feature(worldData, worldData.objects.countries).features.forEach(f => {
     const iso = f.id ? String(f.id).padStart(3, '0') : null;

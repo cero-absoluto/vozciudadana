@@ -75,7 +75,7 @@ function drawFrame() {
     ctx.beginPath(); gp(f);
     ctx.fillStyle = iso === hovered ? lighten(heatColor(getHeat(iso))) : heatColor(getHeat(iso));
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 0.4; ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 0.5; ctx.stroke();
   });
 
   const t = Date.now();

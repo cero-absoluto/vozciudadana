@@ -58,7 +58,24 @@
     </span>
   </label>
   <input type="url" v-model="form.fuente_url" placeholder="https://elpais.com/... o https://boe.es/...">
-  <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">Enlaza el artículo, documento oficial o dato que acredita el hecho denunciado.</div>
+  <div v-if="fuenteStatus === 'checking'" style="font-size:11px;color:var(--text3);margin-top:4px">
+    🔄 Verificando fuente...
+  </div>
+  <div v-else-if="fuenteStatus === 'oficial'" style="font-size:11px;color:var(--accent2);margin-top:4px">
+    ✅ Organismo oficial verificado
+  </div>
+  <div v-else-if="fuenteStatus === 'verified'" style="font-size:11px;color:var(--accent2);margin-top:4px">
+    ✅ Fuente verificada — {{ fuenteName }}
+  </div>
+  <div v-else-if="fuenteStatus === 'unknown'" style="font-size:11px;color:var(--accent4);margin-top:4px">
+    ⚠️ Fuente no reconocida — asegúrate de que sea accesible públicamente
+  </div>
+  <div v-else-if="fuenteStatus === 'invalid'" style="font-size:11px;color:var(--accent3);margin-top:4px">
+    ❌ URL no válida
+  </div>
+  <div v-else style="font-size:10px;color:var(--text3);margin-top:4px;opacity:.6">
+    Enlaza el artículo, documento oficial o dato que acredita el hecho denunciado.
+  </div>
 </div>
   </div>
 

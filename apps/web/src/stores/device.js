@@ -21,6 +21,20 @@ export const useDeviceStore = defineStore('device', () => {
     if (langCountry.value && langCountry.value === simCountry.value) score += 8;
     return Math.min(100, score);
   });
+  async function detectCountryByIp() {
+    try {
+      const res = await fetch('http://ip-api.com/json/?fields=countryCode,city,query&lang=es');
+      const data = await res.json();
+      if (data.countryCode) {
+        ipCountry.value = data.countryCode;
+        ipCity.value = data.city || '';
+        // Si no hay SIM detectada, usar IP como país principal
+        if (simCountry.value === 'ES') {
+          simCountry.value = data.countryCode;
+        }
+      }
+    } catch { /* silencioso */ }
+  }
   function detectSecondarySignals() {
     // Zona horaria → país aproximado
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -88,6 +102,6 @@ export const useDeviceStore = defineStore('device', () => {
     simPrefix, simCountry, simName, ipCountry, ipCity, docCountry,
     confidence, myRegions, regionLabel,
     setDocCountry, getLocks, setLock, getDeviceId, setDeviceId,
-    tzCountry, langCountry, detectSecondarySignals,
+    tzCountry, langCountry, detectSecondarySignals, detectCountryByIp,
   };
 });

@@ -1,5 +1,6 @@
 {
   "name": "vozciudadana",
+  "author": "Judith Galan Mayoral",
   "private": true,
   "workspaces": [
     "apps/web",

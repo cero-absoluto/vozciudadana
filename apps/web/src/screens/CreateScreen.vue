@@ -263,7 +263,7 @@
 </style>
 
 <script setup>
-import { reactive, ref } from 'vue';
+import { reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useProtestsStore } from '@/stores/protests.js';
 import { useUiStore }       from '@/stores/ui.js';
@@ -288,6 +288,46 @@ const form = reactive({
   
 });
   const tooltip = ref(null);
+  const fuenteStatus = ref(null);
+const fuenteName = ref('');
+
+async function verificarFuente(domain) {
+  // Dominios oficiales — aprobación automática
+  const oficiales = ['.gov', '.gob', '.edu', '.europa.eu', '.un.org', '.who.int', '.gc.ca', '.gouv.fr', '.gob.es', '.gov.uk'];
+  if (oficiales.some(tld => domain.endsWith(tld))) return 'oficial';
+
+  // Consulta a Wikidata
+  const query = `
+    SELECT ?label WHERE {
+      ?item wdt:P856 ?url .
+      FILTER(CONTAINS(LCASE(str(?url)), "${domain}"))
+      ?item rdfs:label ?label FILTER(LANG(?label) = "es" || LANG(?label) = "en")
+    } LIMIT 1
+  `;
+  try {
+    const res = await fetch(`https://query.wikidata.org/sparql?query=${encodeURIComponent(query)}&format=json`);
+    const data = await res.json();
+    if (data.results.bindings.length > 0) {
+      fuenteName.value = data.results.bindings[0].label.value;
+      return 'verified';
+    }
+  } catch { /* silencioso */ }
+  return 'unknown';
+}
+
+watch(() => form.fuente_url, async (url) => {
+  fuenteStatus.value = null;
+  fuenteName.value = '';
+  if (!url || url.length < 10) return;
+  try {
+    new URL(url); // valida que sea URL válida
+    const domain = new URL(url).hostname.replace('www.', '');
+    fuenteStatus.value = 'checking';
+    fuenteStatus.value = await verificarFuente(domain);
+  } catch {
+    fuenteStatus.value = 'invalid';
+  }
+});
 
 function showTooltip(id) { tooltip.value = id; }
 function hideTooltip() { tooltip.value = null; }

@@ -83,6 +83,7 @@ const target = lastId
       /* silencioso para otros errores */
     }
     protests.joinProtest(target.id);
+    await protests.loadProtests();
     sessionStorage.setItem('vc_last_joined', String(target.id));
   }
 

@@ -192,14 +192,39 @@ const created_at = new Date(
   Math.floor(Date.now() / 3_600_000) * 3_600_000
 ).toISOString();
 
+// Calcular fiabilidad según señales disponibles
+const tieneGps = gps_lat != null && gps_lng != null;
+const tieneSim = !!phone_hash;
+const tieneIpPais = !!pais;
+
+let fiabilidad = 60;
+let senales = [];
+
+if (tieneGps && tieneSim && tieneIpPais) {
+  fiabilidad = 95;
+  senales = ['gps', 'sim', 'ip'];
+} else if (tieneGps && tieneSim) {
+  fiabilidad = 92;
+  senales = ['gps', 'sim'];
+} else if (tieneSim && tieneIpPais) {
+  fiabilidad = 85;
+  senales = ['sim', 'ip'];
+} else if (tieneSim) {
+  fiabilidad = 75;
+  senales = ['sim'];
+} else if (tieneIpPais) {
+  fiabilidad = 60;
+  senales = ['ip'];
+}
+
 const { data, error } = await supabase
   .from('adhesions')
   .insert({ protest_id: req.params.id, phone_hash, doc_hash: doc_hash ?? null,
             device_id, ciudad, region, pais, idioma, nullifier, created_at,
-            gps_lat: gps_lat ?? null, gps_lng: gps_lng ?? null, gps_accuracy: gps_accuracy ?? null })
+            gps_lat: gps_lat ?? null, gps_lng: gps_lng ?? null, gps_accuracy: gps_accuracy ?? null,
+            fiabilidad, senales: senales.join(',') })
   .select()
   .single();
-
     if (error) throw error;
 
     const { error: rpcErr } = await supabase.rpc('increment_protest_count', { protest_id: req.params.id });

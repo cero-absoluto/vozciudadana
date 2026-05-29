@@ -151,6 +151,7 @@
     <option value="LU">Luxemburgo</option>
     <option value="MX">México</option>
     <option value="MA">Marruecos</option>
+    <option value="MT">Malta</option>
     <option value="NL">Países Bajos</option>
     <option value="NG">Nigeria</option>
     <option value="NO">Noruega</option>

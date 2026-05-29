@@ -309,7 +309,9 @@ const form = reactive({
   const fuenteName = ref('');
 
 async function verificarFuente(domain) {
-  const oficiales = ['.gov', '.gob', '.edu', '.europa.eu', '.un.org', '.who.int', '.gc.ca', '.gouv.fr', '.gob.es', '.gov.uk'];
+  const oficiales = ['.gov', '.gob', '.edu', '.europa.eu', '.un.org', '.who.int', '.gc.ca', '.gouv.fr', '.gob.es', '.gov.uk', '.gob.mx', '.gov.au', '.gov.br', '.gouv.be'];
+  const dominiosOficiales = ['boe.es', 'sepe.es', 'congreso.es', 'senado.es', 'poderjudicial.es', 'ine.es', 'europarl.europa.eu', 'eur-lex.europa.eu', 'un.org', 'who.int', 'oecd.org', 'worldbank.org', 'imf.org', 'rtve.es'];
+  if (dominiosOficiales.includes(domain)) return 'oficial';
   if (oficiales.some(tld => domain.endsWith(tld))) return 'oficial';
 
   const query = 'SELECT ?label WHERE { ?item wdt:P856 ?url . ?item wdt:P31 ?type . VALUES ?type { wd:Q1193236 wd:Q11033 wd:Q1004705 wd:Q7275 wd:Q2297946 wd:Q1002697 wd:Q35127 } FILTER(CONTAINS(LCASE(str(?url)), "' + domain + '")) ?item rdfs:label ?label FILTER(LANG(?label) = "es" || LANG(?label) = "en") } LIMIT 1';

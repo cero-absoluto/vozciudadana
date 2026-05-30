@@ -447,8 +447,7 @@ a:hover{opacity:.8}
 @keyframes flashCount{from{transform:scale(1.2);color:var(--accent2)}to{transform:scale(1)}}
 .flash{animation:flashCount .35s ease}
 /* reCAPTCHA badge pequeño */
-.grecaptcha-badge{opacity:.4;transition:opacity .3s}
-.grecaptcha-badge:hover{opacity:1}
+.grecaptcha-badge{opacity:.6;transition:opacity .3s;pointer-events:none}
 /* Estado de verificación */
 .verif-strip{display:flex;align-items:center;gap:8px;padding:8px 11px;border-radius:var(--r);font-size:10px;margin-bottom:8px}
 .verif-ok{background:rgba(76,255,164,.08);border:.5px solid rgba(76,255,164,.2);color:var(--accent2)}

@@ -485,5 +485,12 @@ a:hover{opacity:.8}
 #s-informe .sc-n{font-size:22px}
 #s-informe .sc-l{font-size:11px}
 #s-informe .d-desc{font-size:14px;color:var(--text2)} 
+  @keyframes pulse-map{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.8}}
+.so-title{font-size:14px !important}
+  .so-desc{font-size:12px !important;color:var(--text2) !important}
+  .so-ico{width:32px;height:32px;font-size:15px}
+  .scope-section-title{font-size:12px !important;color:var(--text) !important}
+  .mod-h{font-size:13px !important;color:var(--text) !important}
+  .mstep{font-size:12px !important;color:var(--text2) !important}
+  .mn{width:18px;height:18px;font-size:9px}
 }
-@keyframes pulse-map{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.8}}

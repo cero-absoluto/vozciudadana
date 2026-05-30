@@ -193,6 +193,7 @@ const device = useDeviceStore();
 
 async function sendSMS() {
   if (sending.value) return;
+  sending.value = true;
   const protestScope = sessionStorage.getItem('vc_protest_scope') || 'national';
   if (protestScope === 'national') {
     const lastId = sessionStorage.getItem('vc_last_joined');
@@ -200,6 +201,7 @@ async function sendSMS() {
     const protest = protestsStore.protests.find(p => String(p.id) === lastId);
     if (protest?.country && protest.country !== countryCode.value) {
       ui.showToast(`Esta convocatoria es solo para ciudadanos de ${protest.country_name}. Usa un número de ese país.`);
+      sending.value = false;
       return;
     }
   }
@@ -258,8 +260,7 @@ async function sendSMS() {
     return;
   }
   const v = phone.value.replace(/\D/g, '');
-  if (v.length < 6) return;
-  sending.value = true;
+  if (v.length < 6) { sending.value = false; return; }
   try {
     let token = '';
     try { token = await getRecaptchaToken('request_otp'); } catch { /* dev mode */ }

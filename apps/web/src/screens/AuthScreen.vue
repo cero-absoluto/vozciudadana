@@ -22,7 +22,7 @@
             </option>
           </select>
           <label for="phone-in" class="sr-only">Número de teléfono</label>
-          <input id="phone-in" class="phone-in" type="tel" v-model="phone" placeholder="600 000 000" maxlength="12" aria-label="Número de teléfono">
+          <input id="phone-in" class="phone-in" type="tel" v-model="phone" placeholder="600 000 000" maxlength="12" aria-label="Número de móvil">
         </div>
         <div class="input-hint">Tu número se transforma en una huella irreversible en tu dispositivo antes de enviarse.</div>
         <div class="hash-label">Huella generada en tiempo real</div>

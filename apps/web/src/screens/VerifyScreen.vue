@@ -17,10 +17,10 @@
       <button class="suc-share" @click="ui.showShareModal = true">🔥 VIRAL — Hazlo viral ahora</button>
       <button class="btn-primary" style="width:100%;margin-bottom:7px" @click="goDetail">← Ver la convocatoria</button>
       <button @click="goInforme"
-        style="width:100%;margin-bottom:7px;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:11px;cursor:pointer">
+        style="width:100%;margin-bottom:7px;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:14px;cursor:pointer">
         📄 Ver informe público
       </button>
-      <button style="width:100%;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);font-size:10px;color:var(--text2);cursor:pointer"
+      <button style="width:100%;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);font-size:13px;color:var(--text2);cursor:pointer"
         @click="$router.push('/')">Ir al mapa mundial</button>
     </div>
   </div>
@@ -116,3 +116,4 @@ function goDetail() {
   else    router.push('/');
 }
 </script>
+

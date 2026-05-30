@@ -79,9 +79,9 @@ const target = lastId
    gps_lat:         ui.gpsLat ?? (localStorage.getItem('vc_gps_lat') ? parseFloat(localStorage.getItem('vc_gps_lat')) : null),
    gps_lng:         ui.gpsLng ?? (localStorage.getItem('vc_gps_lng') ? parseFloat(localStorage.getItem('vc_gps_lng')) : null),
    gps_accuracy:    ui.gpsAccuracy ?? (localStorage.getItem('vc_gps_accuracy') ? parseFloat(localStorage.getItem('vc_gps_accuracy')) : null),
-   ip_ciudad:  device.ipCity || null,
-   ip_pais:    device.ipCountryName || null,
-   ip_region:  device.ipRegion || null,
+   ip_ciudad:  localStorage.getItem('vc_geo_ciudad') || device.ipCity || null,
+   ip_pais:    localStorage.getItem('vc_geo_pais') || device.ipCountryName || null,
+   ip_region:  localStorage.getItem('vc_geo_region') || device.ipRegion || null,
   })
 );
     } catch (e) {

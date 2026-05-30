@@ -465,8 +465,17 @@ a:hover{opacity:.8}
   .geo-strip{font-size:10px}
   .ml-title{font-size:9px}
   .ml-row{font-size:10px}
-  .d-title{font-size:16px}
-  .d-desc{font-size:12px}
+  .d-title{font-size:19px}
+  .d-desc{font-size:13px;color:var(--text)}
+  /* DETAIL — contraste y tamaños */
+  #s-detail .back{font-size:12px;color:var(--text2)}
+  #s-detail .sc-l{font-size:10px;color:var(--text)}
+  #s-detail .gv-title{font-size:11px;color:var(--text)}
+  #s-detail .gv-label{font-size:12px;color:var(--text)}
+  #s-detail .block-title{font-size:11px;color:var(--text2)}
+  #s-detail .sec-lbl{font-size:13px;color:var(--text)}
+  #s-detail .sec-sub{font-size:11px;color:var(--text2)}
+  #s-detail .d-desc{font-size:13px;color:var(--text)}
   .auth-h{font-size:18px}
   .auth-p{font-size:12px}
   .ao-title{font-size:13px}
@@ -509,5 +518,4 @@ a:hover{opacity:.8}
   .p-item{padding:12px !important}
   .auth-wrap{justify-content:flex-start;padding-top:24px}
 }
-
 

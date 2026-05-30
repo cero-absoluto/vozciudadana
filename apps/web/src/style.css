@@ -476,10 +476,12 @@ a:hover{opacity:.8}
   #s-detail .sec-lbl{font-size:13px;color:var(--text)}
   #s-detail .sec-sub{font-size:11px;color:var(--text2)}
   #s-detail .d-desc{font-size:13px;color:var(--text)}
-  .auth-h{font-size:18px}
-  .auth-p{font-size:12px}
+  .auth-h{font-size:22px}
+  .auth-p{font-size:13px;color:var(--text2)}
   .ao-title{font-size:13px}
-  .ao-desc{font-size:10px}
+  .ao-desc{font-size:11px;color:var(--text2)}
+  .input-hint{font-size:12px;color:var(--text2)}
+  .hash-label{font-size:11px;color:var(--text2)}
   .sec-lbl{font-size:12px}
   .sec-sub{font-size:10px}
   .sc-n{font-size:17px}
@@ -518,4 +520,3 @@ a:hover{opacity:.8}
   .p-item{padding:12px !important}
   .auth-wrap{justify-content:flex-start;padding-top:24px}
 }
-

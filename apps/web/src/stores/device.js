@@ -6,8 +6,10 @@ export const useDeviceStore = defineStore('device', () => {
   const simPrefix  = ref('+34');
   const simCountry = ref('ES');
   const simName    = ref('España');
-  const ipCountry  = ref('ES');
-  const ipCity     = ref('Madrid');
+  const ipCountry     = ref('ES');
+  const ipCity        = ref('Madrid');
+  const ipRegion      = ref(null);
+  const ipCountryName = ref(null);
   const docCountry = ref(null);
 
   const tzCountry  = ref(null);
@@ -28,8 +30,8 @@ export const useDeviceStore = defineStore('device', () => {
       if (data.country_code) {
         ipCountry.value = data.country_code;
         ipCity.value = data.city || '';
-       ipCountry.value = data.country_code;
-        ipCity.value = data.city || '';
+        ipRegion.value = data.region || null;
+        ipCountryName.value = data.country_name || null;
         simCountry.value = data.country_code;
         // Actualizar nombre y prefijo según país detectado
         const countryNames = {
@@ -124,6 +126,6 @@ export const useDeviceStore = defineStore('device', () => {
     simPrefix, simCountry, simName, ipCountry, ipCity, docCountry,
     confidence, myRegions, regionLabel,
     setDocCountry, getLocks, setLock, getDeviceId, setDeviceId,
-    tzCountry, langCountry, detectSecondarySignals, detectCountryByIp,
+    tzCountry, langCountry, detectSecondarySignals, detectCountryByIp, ipRegion, ipCountryName,
   };
 });

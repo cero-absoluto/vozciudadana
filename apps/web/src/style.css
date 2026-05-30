@@ -487,3 +487,4 @@ a:hover{opacity:.8}
 #s-informe .sc-l{font-size:11px}
 #s-informe .d-desc{font-size:14px;color:var(--text2)} 
 }
+@keyframes pulse-map{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.8}}

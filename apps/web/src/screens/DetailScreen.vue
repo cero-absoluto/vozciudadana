@@ -6,7 +6,7 @@
       <div class="d-title">{{ protest.title }}</div>
       <div class="d-loc">
         <span class="scope-badge" :class="store.scopeBadge(protest).cls">{{ store.scopeBadge(protest).icon }} {{ store.scopeBadge(protest).label }}</span>
-        <span style="font-size:9px;color:var(--text2)">📍 {{ protest.countryName }}</span>
+        <span style="font-size:11px;color:var(--text2)">📍 {{ protest.countryName }}</span>
       </div>
     </div>
 
@@ -50,7 +50,7 @@
         
         <div class="conf-bar"><div class="conf-fill" :style="{ width: device.confidence + '%', background: confFillColor }"></div></div>
         <div style="display:flex;justify-content:space-between;margin-top:3px">
-          <div style="font-size:7px;color:var(--text3)">Confianza geográfica</div>
+          <div style="font-size:10px;color:var(--text2)">Confianza geográfica</div>
           <div style="font-size:8px;font-weight:600" :style="{color: confFillColor}">{{ device.confidence }}%</div>
         </div>
       </div>

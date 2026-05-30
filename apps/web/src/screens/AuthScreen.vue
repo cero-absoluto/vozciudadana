@@ -34,7 +34,7 @@
 
       <!-- OTP input -->
       <div v-if="otpVisible" style="width:100%;margin-top:12px">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:12px;line-height:1.7;text-align:center">
+        <div style="font-size:14px;color:var(--text);margin-bottom:12px;line-height:1.7;text-align:center">
           Código de 6 dígitos enviado. Expira en 5 minutos.
         </div>
         <div class="otp-row">
@@ -44,7 +44,7 @@
             @input="onOtpInput(i)"
             :aria-label="`Dígito ${i + 1} del código`">
         </div>
-        <div style="font-size:9px;color:var(--text3);margin-bottom:10px;text-align:center">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:10px;text-align:center">
           ¿No lo recibiste? <span style="color:var(--accent);cursor:pointer" @click="ui.showToast('Código reenviado')">Reenviar</span>
         </div>
         <button class="btn-primary" style="width:100%" @click="verifyOTP">Verificar →</button>

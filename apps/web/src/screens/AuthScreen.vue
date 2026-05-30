@@ -219,10 +219,10 @@ async function sendSMS() {
           navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 });
         });
         ui.setGps(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
-        sessionStorage.setItem('vc_gps_lat', pos.coords.latitude);
-        sessionStorage.setItem('vc_gps_lng', pos.coords.longitude);
-        sessionStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
-        console.log('GPS guardado:', pos.coords.latitude, pos.coords.longitude);
+        localStorage.setItem('vc_gps_lat', pos.coords.latitude);
+        localStorage.setItem('vc_gps_lng', pos.coords.longitude);
+        localStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
+        localStorage.setItem('vc_gps_ts', Date.now());
      } catch (gpsErr) {
         console.log('GPS error:', gpsErr);
         ui.clearGps();

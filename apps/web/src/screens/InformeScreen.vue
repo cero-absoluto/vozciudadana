@@ -182,12 +182,35 @@
             </div>
           </div>
 
-          <!-- BLOQUE 4 — Penetración del universo -->
+          <!-- BLOQUE 4 — Velocidad de crecimiento -->
           <div class="block" style="margin-bottom:12px">
-            <div class="block-title">🌍 Penetración del universo</div>
-            <div style="font-size:14px;color:var(--text2);line-height:1.8">
-              {{ data.total_adhesiones }} adhesiones verificadas sobre un universo elegible de ciudadanos de {{ data.protest.country_name }}.
+            <div class="block-title">📈 Velocidad de crecimiento</div>
+            <div v-if="data.velocidad" style="margin-bottom:12px">
+              <div style="display:flex;gap:8px;margin-bottom:12px">
+                <div style="flex:1;background:var(--bg3);border-radius:var(--r);padding:10px;text-align:center">
+                  <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent2)">{{ data.velocidad.media_diaria }}</div>
+                  <div style="font-size:10px;color:var(--text3);margin-top:2px">Media diaria de adhesiones</div>
+                </div>
+                <div v-if="data.velocidad.dia_pico" style="flex:1;background:var(--bg3);border-radius:var(--r);padding:10px;text-align:center">
+                  <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent)">{{ data.velocidad.dia_pico.count }}</div>
+                  <div style="font-size:10px;color:var(--text3);margin-top:2px">Pico — {{ formatDate(data.velocidad.dia_pico.fecha) }}</div>
+                </div>
+              </div>
+              <div style="font-size:10px;color:var(--text3);margin-bottom:6px">Adhesiones por día</div>
+              <div style="display:flex;align-items:flex-end;gap:3px;height:80px">
+                <div v-for="d in data.velocidad.adhesiones_por_dia" :key="d.fecha"
+                  :style="{
+                    flex:1,
+                    background: d.count === data.velocidad.dia_pico?.count ? 'var(--accent2)' : 'var(--accent)',
+                    height: maxPct(d.count) + '%',
+                    borderRadius:'3px 3px 0 0',
+                    minHeight:'4px',
+                    opacity: d.count === data.velocidad.dia_pico?.count ? 1 : 0.6
+                  }">
+                </div>
+              </div>
             </div>
+            <div v-else style="font-size:12px;color:var(--text3)">Sin datos de velocidad disponibles.</div>
           </div>
 
           <!-- BLOQUE 6 — Cadena de verificación -->
@@ -284,5 +307,10 @@ function formatDateTime(iso) {
 function pct(count) {
   if (!data.value?.total_adhesiones) return 0;
   return Math.round((count / data.value.total_adhesiones) * 100);
+}
+  function maxPct(count) {
+  if (!data.value?.velocidad?.adhesiones_por_dia?.length) return 0;
+  const max = Math.max(...data.value.velocidad.adhesiones_por_dia.map(d => d.count));
+  return max > 0 ? Math.round((count / max) * 100) : 0;
 }
 </script>

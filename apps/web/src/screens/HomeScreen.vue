@@ -97,6 +97,27 @@ const protests = useProtestsStore();
 const device   = useDeviceStore();
 
 const tab = ref('active');
+const showMapOverlay = ref(!localStorage.getItem('vc_map_intro'));
+const timerWidth = ref(100);
+let timerInterval = null;
+
+function cerrarOverlay() {
+  showMapOverlay.value = false;
+  localStorage.setItem('vc_map_intro', '1');
+  if (timerInterval) clearInterval(timerInterval);
+}
+
+if (showMapOverlay.value) {
+  const duration = 5000;
+  const steps = 50;
+  const stepTime = duration / steps;
+  let current = steps;
+  timerInterval = setInterval(() => {
+    current--;
+    timerWidth.value = (current / steps) * 100;
+    if (current <= 0) cerrarOverlay();
+  }, stepTime);
+}
 const countryFilterName = ref(null);
 
 const deviceFlag = computed(() => {

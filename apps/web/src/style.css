@@ -480,6 +480,8 @@ a:hover{opacity:.8}
   .v-h{font-size:15px}
   .v-p{font-size:11px}
   .phone-in{font-size:14px}
+  /* DETAIL MAP — más compacto en móvil */
+  .detail-map{height:180px !important}
   /* INFORME */
 #s-informe .block-title{font-size:13px}
 #s-informe .sc-n{font-size:22px}
@@ -507,3 +509,5 @@ a:hover{opacity:.8}
   .p-item{padding:12px !important}
   .auth-wrap{justify-content:flex-start;padding-top:24px}
 }
+
+

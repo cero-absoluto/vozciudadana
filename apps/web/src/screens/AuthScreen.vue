@@ -27,7 +27,7 @@
         <div class="input-hint">Tu número se transforma en una huella irreversible en tu dispositivo antes de enviarse.</div>
         <div class="hash-label">Huella generada en tiempo real</div>
         <div class="hash-prev">{{ hashDisplay }}</div>
-        <button class="btn-primary" style="width:100%;margin-top:8px" :disabled="phone.replace(/\D/g,'').length < 6 || sending" @click="sendSMS">
+        <button class="btn-primary" style="width:100%;margin-top:8px;position:sticky;bottom:8px" :disabled="phone.replace(/\D/g,'').length < 6 || sending" @click="sendSMS">
           {{ sending ? 'Procesando...' : 'Solicitar código →' }}
         </button>
       </div>

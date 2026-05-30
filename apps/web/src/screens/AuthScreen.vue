@@ -228,8 +228,11 @@ async function sendSMS() {
         ui.clearGps();
       }
     }
+    
   }
-
+// Esperar a que el GPS se guarde completamente
+    await new Promise(r => setTimeout(r, 500));
+  
   // Si el dispositivo ya está verificado, saltar OTP
   const existingDevice = await api.fetchDeviceLocks(device.getDeviceId());
   if (existingDevice && existingDevice.length > 0) {

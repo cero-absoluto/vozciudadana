@@ -493,4 +493,10 @@ a:hover{opacity:.8}
   .mod-h{font-size:13px !important;color:var(--text) !important}
   .mstep{font-size:12px !important;color:var(--text2) !important}
   .mn{width:18px;height:18px;font-size:9px}
+  .about-h{font-size:20px !important;color:var(--text) !important}
+  .section-head{font-size:13px !important;color:var(--text) !important}
+  .tcard-h{font-size:16px !important;color:var(--text) !important}
+  .tcard-p{font-size:13px !important;color:var(--text2) !important}
+  .about-p{font-size:13px !important;color:var(--text2) !important}
+  .manifesto{font-size:14px !important;color:var(--text2) !important}
 }

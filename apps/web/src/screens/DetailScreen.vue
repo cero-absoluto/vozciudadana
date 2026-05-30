@@ -20,6 +20,15 @@
         <div class="sc"><div class="sc-n" style="color:var(--accent2)">{{ protest.cities }}</div><div class="sc-l">Ciudades</div></div>
         <div class="sc"><div class="sc-n" style="color:var(--accent3)">{{ fmtTime(protest.timer) }}</div><div class="sc-l">Restante</div></div>
       </div>
+      <!-- Velocidad — solo si hay datos de hoy -->
+      <div v-if="velocidadHoy > 0" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.2);border-radius:var(--r);margin-bottom:8px">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--accent2);animation:blink 1.5s infinite;flex-shrink:0"></div>
+        <div style="font-size:11px;color:var(--accent2)">
+          <strong>+{{ velocidadHoy }}</strong> nuevas adhesiones hoy
+          <span v-if="tendenciaHoy > 0" style="color:var(--accent2)"> · ↑ más que ayer</span>
+          <span v-else-if="tendenciaHoy < 0" style="color:var(--accent4)"> · ↓ menos que ayer</span>
+        </div>
+      </div>
 
       <!-- Geo validation -->
       <div v-if="protest.scope !== 'global'" class="geo-validation">
@@ -147,6 +156,8 @@ const cj      = computed(() => protest.value ? store.canJoin(protest.value) : { 
 
 const grupoId = ref(null);
 const censoExiste = ref(false);
+const velocidadHoy = ref(0);
+const tendenciaHoy = ref(0);
 
 onMounted(async () => {
   if (protest.value?.requiere_censo) {
@@ -158,6 +169,12 @@ onMounted(async () => {
       censoExiste.value = false;
     }
   }
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/protests/${route.params.id}/informe`);
+    const informe = await res.json();
+    velocidadHoy.value = informe.velocidad?.adhesiones_hoy || 0;
+    tendenciaHoy.value = informe.velocidad?.tendencia_hoy || 0;
+  } catch { /* silencioso */ }
 });
 
 const simOk = computed(() => {

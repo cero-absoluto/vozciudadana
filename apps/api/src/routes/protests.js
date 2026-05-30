@@ -175,11 +175,12 @@ export default async function protestRoutes(app) {
    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
 let ciudad = null, region = null, pais = null;
 try {
-  const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country&lang=es`);
-  const geo = await geoRes.json();
-  ciudad = geo.city || null;
-  region = geo.regionName || null;
-  pais = geo.country || null;
+const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+const geo = await geoRes.json();
+ciudad = geo.city || null;
+region = geo.region || null;
+pais = geo.country_name || null;
+
 } catch { /* silencioso */ }
     const idioma = req.headers['accept-language']?.split(',')[0] || null;
    // Nullifier: HMAC-SHA256(phone_hash, protest_id) — evita correlación entre convocatorias

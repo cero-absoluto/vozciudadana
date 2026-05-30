@@ -46,6 +46,13 @@ const MSGS = ['Verificando código...', 'Registrando adhesión anónima...', 'Ge
 
 onMounted(async () => {
   await protests.loadProtests();
+  // Limpiar GPS después de usarlo
+  setTimeout(() => {
+    localStorage.removeItem('vc_gps_lat');
+    localStorage.removeItem('vc_gps_lng');
+    localStorage.removeItem('vc_gps_accuracy');
+    localStorage.removeItem('vc_gps_ts');
+  }, 5000);
   for (const msg of MSGS) {
     spinMsg.value = msg;
     await new Promise(r => setTimeout(r, 850));
@@ -69,9 +76,9 @@ const target = lastId
     phone_hash:      phoneHash,
     device_id:       deviceId,
     recaptcha_token: token || 'dev',
-   gps_lat:         ui.gpsLat ?? (sessionStorage.getItem('vc_gps_lat') ? parseFloat(sessionStorage.getItem('vc_gps_lat')) : null),
-   gps_lng:         ui.gpsLng ?? (sessionStorage.getItem('vc_gps_lng') ? parseFloat(sessionStorage.getItem('vc_gps_lng')) : null),
-   gps_accuracy:    ui.gpsAccuracy ?? (sessionStorage.getItem('vc_gps_accuracy') ? parseFloat(sessionStorage.getItem('vc_gps_accuracy')) : null),
+   gps_lat:         ui.gpsLat ?? (localStorage.getItem('vc_gps_lat') ? parseFloat(localStorage.getItem('vc_gps_lat')) : null),
+   gps_lng:         ui.gpsLng ?? (localStorage.getItem('vc_gps_lng') ? parseFloat(localStorage.getItem('vc_gps_lng')) : null),
+   gps_accuracy:    ui.gpsAccuracy ?? (localStorage.getItem('vc_gps_accuracy') ? parseFloat(localStorage.getItem('vc_gps_accuracy')) : null),
    ip_ciudad:  device.ipCity || null,
    ip_pais:    device.ipCountryName || null,
    ip_region:  device.ipRegion || null,

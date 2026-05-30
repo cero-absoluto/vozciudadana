@@ -505,4 +505,5 @@ a:hover{opacity:.8}
   .ptab{font-size:14px !important;padding:10px 8px !important}
   .pi-heat{width:38px;height:38px;font-size:13px}
   .p-item{padding:12px !important}
+  .auth-wrap{justify-content:flex-start;padding-top:24px}
 }

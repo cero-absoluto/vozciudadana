@@ -31,6 +31,27 @@
         </div>
       </div>
 
+     <!-- Overlay bienvenida — solo primera vez -->
+      <div v-if="showMapOverlay" 
+        style="position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;background:rgba(6,14,26,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border-radius:0"
+        @click="cerrarOverlay">
+        <div style="text-align:center;padding:20px">
+          <div style="font-size:40px;margin-bottom:12px;animation:pulse-map 1.5s ease-in-out infinite">🌍</div>
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:white;margin-bottom:8px;line-height:1.3">
+            Explora protestas activas
+          </div>
+          <div style="font-size:12px;color:rgba(255,255,255,.75);line-height:1.7;margin-bottom:16px">
+            Haz zoom en el mapa para ver<br>las convocatorias de tu país.<br>
+            Toca un punto para ver los detalles.
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;justify-content:center;margin-bottom:20px">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--accent2);animation:pulse-map 1s ease-in-out infinite"></div>
+            <div style="font-size:11px;color:var(--accent2)">Convocatorias activas en el mapa</div>
+          </div>
+          <div style="font-size:11px;color:rgba(255,255,255,.4)">Toca para explorar →</div>
+        </div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--accent);transform-origin:left" :style="{width: timerWidth + '%'}"></div>
+      </div>
       <!-- World map -->
       <WorldMap
         :protests="protests.protests"

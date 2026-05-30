@@ -141,13 +141,15 @@ export default async function protestRoutes(app) {
   gps_lat:         { type: 'number', nullable: true },
   gps_lng:         { type: 'number', nullable: true },
   gps_accuracy:    { type: 'number', nullable: true },
+  ip_ciudad:       { type: 'string', nullable: true },
+  ip_pais:         { type: 'string', nullable: true },
+  ip_region:       { type: 'string', nullable: true },
 },
         additionalProperties: false,
       },
     },
   }, async (req, reply) => {
-   const { phone_hash, doc_hash, device_id, recaptcha_token, gps_lat, gps_lng, gps_accuracy } = req.body;
-
+   const { phone_hash, doc_hash, device_id, recaptcha_token, gps_lat, gps_lng, gps_accuracy, ip_ciudad, ip_pais, ip_region } = req.body;
     await verifyRecaptcha(recaptcha_token, 'join_protest', reply);
 
     // Fetch protest metadata and idempotency check in parallel
@@ -173,15 +175,18 @@ export default async function protestRoutes(app) {
     }
 
    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
-let ciudad = null, region = null, pais = null;
-try {
-const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,countryCode,country&lang=es`);
+  let ciudad = ip_ciudad || null;
+  let region = ip_region || null;
+  let pais = ip_pais || null;
+  if (!ciudad) {
+    try {
+      const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country&lang=es`);
       const geo = await geoRes.json();
       ciudad = geo.city || null;
       region = geo.regionName || null;
       pais = geo.country || null;
-
-} catch { /* silencioso */ }
+    } catch { /* silencioso */ }
+  }
     const idioma = req.headers['accept-language']?.split(',')[0] || null;
    // Nullifier: HMAC-SHA256(phone_hash, protest_id) — evita correlación entre convocatorias
 const nullifier = createHmac('sha256', process.env.NULLIFIER_SECRET || 'dev-secret')

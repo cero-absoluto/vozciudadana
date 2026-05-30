@@ -269,7 +269,8 @@ app.get('/:id/informe', {
   const { data: adhesions } = await supabase
     .from('adhesions')
     .select('ciudad, region, pais, idioma, created_at, gps_lat, fiabilidad, senales')
-    .eq('protest_id', req.params.id);
+    .eq('protest_id', req.params.id)
+    .order('created_at', { ascending: true });
 
   const ciudades = [...new Set(adhesions.map(a => a.ciudad).filter(Boolean))];
   const paises = [...new Set(adhesions.map(a => a.pais).filter(Boolean))];
@@ -277,6 +278,7 @@ app.get('/:id/informe', {
   // Distribución por región
 const distribucion_regiones = adhesions.reduce((acc, a) => {
   if (a.region) acc[a.region] = (acc[a.region] || 0) + 1;
+  
   return acc;
 }, {});
 
@@ -287,6 +289,28 @@ const distribucion_regiones = adhesions.reduce((acc, a) => {
   const fiabilidad_media   = adhesions.filter(a => a.fiabilidad >= 75 && a.fiabilidad < 85).length;
   const fiabilidad_base    = adhesions.filter(a => a.fiabilidad >= 60 && a.fiabilidad < 75).length;
   const fiabilidad_sin_dato = adhesions.filter(a => !a.fiabilidad).length;
+  // Adhesiones agrupadas por día
+  const porDia = {};
+  adhesions.forEach(a => {
+    const dia = a.created_at?.substring(0, 10);
+    if (dia) porDia[dia] = (porDia[dia] || 0) + 1;
+  });
+  const diasOrdenados = Object.keys(porDia).sort();
+  const adhesionesPorDia = diasOrdenados.map(d => ({ fecha: d, count: porDia[d] }));
+
+  // Media diaria
+  const mediaDiaria = adhesionesPorDia.length > 0
+    ? Math.round((adhesions.length / adhesionesPorDia.length) * 10) / 10
+    : 0;
+
+  // Día de mayor actividad
+  const diaPico = adhesionesPorDia.reduce((max, d) => d.count > (max?.count || 0) ? d : max, null);
+
+  // Adhesiones hoy
+  const hoy = new Date().toISOString().substring(0, 10);
+  const ayer = new Date(Date.now() - 86400000).toISOString().substring(0, 10);
+  const adhesionesHoy = porDia[hoy] || 0;
+  const adhesionesAyer = porDia[ayer] || 0;
 
   return {
     protest,
@@ -306,6 +330,13 @@ const distribucion_regiones = adhesions.reduce((acc, a) => {
       media:    { count: fiabilidad_media,    rango: '75-84%', descripcion: 'SIM verificada' },
       base:     { count: fiabilidad_base,     rango: '60-74%', descripcion: 'Solo IP verificada' },
       sin_dato: { count: fiabilidad_sin_dato, rango: '—',      descripcion: 'Adhesiones anteriores al sistema' },
+    },
+    velocidad: {
+      adhesiones_por_dia: adhesionesPorDia,
+      media_diaria:       mediaDiaria,
+      dia_pico:           diaPico,
+      adhesiones_hoy:     adhesionesHoy,
+      tendencia_hoy:      adhesionesHoy - adhesionesAyer,
     },
   };
 });

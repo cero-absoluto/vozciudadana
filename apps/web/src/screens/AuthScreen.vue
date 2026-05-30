@@ -223,6 +223,20 @@ async function sendSMS() {
         localStorage.setItem('vc_gps_lng', pos.coords.longitude);
         localStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
         localStorage.setItem('vc_gps_ts', Date.now());
+        // Geocodificación inversa — obtener ciudad/región/país real del GPS
+        try {
+          const geoRes = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`,
+            { headers: { 'Accept-Language': 'es' } }
+          );
+          const geoData = await geoRes.json();
+          const gpsCiudad = geoData.address?.city || geoData.address?.town || geoData.address?.village || null;
+          const gpsRegion = geoData.address?.state || null;
+          const gpsPais = geoData.address?.country || null;
+          localStorage.setItem('vc_geo_ciudad', gpsCiudad || '');
+          localStorage.setItem('vc_geo_region', gpsRegion || '');
+          localStorage.setItem('vc_geo_pais', gpsPais || '');
+        } catch { /* silencioso */ }
      } catch (gpsErr) {
         console.log('GPS error:', gpsErr);
         ui.clearGps();

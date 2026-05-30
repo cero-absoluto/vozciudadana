@@ -222,6 +222,7 @@ async function sendSMS() {
         sessionStorage.setItem('vc_gps_lat', pos.coords.latitude);
         sessionStorage.setItem('vc_gps_lng', pos.coords.longitude);
         sessionStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
+        console.log('GPS guardado:', pos.coords.latitude, pos.coords.longitude);
      } catch (gpsErr) {
         console.log('GPS error:', gpsErr);
         ui.clearGps();

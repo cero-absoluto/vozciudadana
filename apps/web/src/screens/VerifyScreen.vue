@@ -72,6 +72,9 @@ const target = lastId
    gps_lat:         ui.gpsLat ?? (sessionStorage.getItem('vc_gps_lat') ? parseFloat(sessionStorage.getItem('vc_gps_lat')) : null),
    gps_lng:         ui.gpsLng ?? (sessionStorage.getItem('vc_gps_lng') ? parseFloat(sessionStorage.getItem('vc_gps_lng')) : null),
    gps_accuracy:    ui.gpsAccuracy ?? (sessionStorage.getItem('vc_gps_accuracy') ? parseFloat(sessionStorage.getItem('vc_gps_accuracy')) : null),
+   ip_ciudad:  device.ipCity || null,
+   ip_pais:    device.simName || null,
+   ip_region:  null,
   })
 );
     } catch (e) {

@@ -40,7 +40,7 @@
           <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:white;margin-bottom:8px;line-height:1.3">
             Explora protestas activas
           </div>
-          <div style="font-size:15px;color:rgba(255,255,255,.9);line-height:1.7;margin-bottom:16px">
+          <div style="font-size:25px;color:rgba(255,255,255,.9);line-height:1.7;margin-bottom:16px">
             Haz zoom en el mapa para ver<br>las convocatorias de tu país.<br>
             Toca un punto para ver los detalles.
           </div>

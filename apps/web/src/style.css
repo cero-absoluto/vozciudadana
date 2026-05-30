@@ -486,7 +486,7 @@ a:hover{opacity:.8}
 #s-informe .sc-l{font-size:11px}
 #s-informe .d-desc{font-size:14px;color:var(--text2)} 
   @keyframes pulse-map{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.8}}
-.so-title{font-size:14px !important}
+  .so-title{font-size:14px !important}
   .so-desc{font-size:12px !important;color:var(--text2) !important}
   .so-ico{width:32px;height:32px;font-size:15px}
   .scope-section-title{font-size:12px !important;color:var(--text) !important}
@@ -499,4 +499,9 @@ a:hover{opacity:.8}
   .tcard-p{font-size:13px !important;color:var(--text2) !important}
   .about-p{font-size:13px !important;color:var(--text2) !important}
   .manifesto{font-size:14px !important;color:var(--text2) !important}
+  .dev-country{font-size:16px !important}
+  .dev-conf{font-size:12px !important}
+  .pill{font-size:12px !important;padding:5px 10px !important}
+  .ptab{font-size:12px !important}
+  .pi-heat{width:34px;height:34px;font-size:12px}
 }

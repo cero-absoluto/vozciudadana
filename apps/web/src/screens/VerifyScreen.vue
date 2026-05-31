@@ -1,7 +1,7 @@
 <template>
   <div class="screen active" id="s-verify">
     <!-- Spinner -->
-    <div v-if="!success" class="spinner on">
+    <div v-if="!success" class=" spinner on">
       <div class="spin-ring"></div>
       <div class="spin-txt">{{ spinMsg }}</div>
     </div>

@@ -355,6 +355,19 @@ const { data, error } = await supabase
     return { ok: true, saldo_nuevo: nuevo_saldo, adhesiones_posibles: Math.floor(nuevo_saldo / 0.05) };
   });
 
+  // GET /api/protests/archivo — convocatorias cerradas
+  app.get('/archivo', async (req, reply) => {
+    const { data, error } = await supabase
+      .from('protests')
+      .select('id, title, country, country_name, scope, count, cities_count, ends_at, starts_at, saldo_euros, donaciones_total')
+      .lt('ends_at', new Date().toISOString())
+      .order('ends_at', { ascending: false })
+      .limit(200);
+
+    if (error) throw error;
+    return data ?? [];
+  });
+
   // GET /api/protests/:id/informe — datos para el informe público
 app.get('/:id/informe', {
   schema: {

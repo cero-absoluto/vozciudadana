@@ -61,16 +61,6 @@
         <div v-else-if="cj.geo" class="geo-detail">🌍 <strong>Fuera de alcance geográfico:</strong> {{ cj.msg }}</div>
       </div>
 
-      <!-- Security guarantees -->
-      <div class="block">
-        <div class="block-title">Garantías de seguridad</div>
-        <div class="sec-row"><div class="sec-ico" style="background:rgba(76,255,164,.08)">🔒</div><div style="flex:1"><div class="sec-lbl">Hash SHA-256 local</div><div class="sec-sub">Tu número se transforma en una huella matemática en tu dispositivo.</div></div><div class="check"><svg viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" fill="none" stroke="var(--accent2)" stroke-width="2.5"/></svg></div></div>
-        <div class="sec-row"><div class="sec-ico" style="background:rgba(255,179,71,.08)">🪪</div><div style="flex:1"><div class="sec-lbl">Verificación por SMS</div><div class="sec-sub">Tu número confirma que eres una persona real.Un número, una adhesión.</div></div><div class="check"><svg viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" fill="none" stroke="var(--accent2)" stroke-width="2.5"/></svg></div></div>
-        <div class="sec-row"><div class="sec-ico" style="background:rgba(124,111,255,.08)">🧅</div><div style="flex:1"><div class="sec-lbl">Tor en regímenes de riesgo</div><div class="sec-sub">En desarrollo. Para países de alto riesgo tu IP será invisible..</div></div><div class="check"><svg viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" fill="none" stroke="var(--accent2)" stroke-width="2.5"/></svg></div></div>
-        <div class="sec-row"><div class="sec-ico" style="background:rgba(255,107,107,.08)">🗳️</div><div style="flex:1"><div class="sec-lbl">Un numero verificado · una adhesión por alcance</div></div><div class="check"><svg viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" fill="none" stroke="var(--accent2)" stroke-width="2.5"/></svg></div></div>
-        <div class="sec-row"><div class="sec-ico" style="background:rgba(255,179,71,.08)">⛓️</div><div style="flex:1"><div class="sec-lbl">Blockchain público</div><div class="sec-sub">En desarrollo. Conteos inmutables y verificables públicamente. </div></div><div class="check"><svg viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" fill="none" stroke="var(--accent2)" stroke-width="2.5"/></svg></div></div>
-      </div>
-
       <div class="block"><div class="block-title">Sobre esta convocatoria</div><div class="d-desc">{{ protest.desc }}</div></div>
       <div v-if="protest.demands" class="block">
         <div class="block-title" style="color:var(--accent3)">⚡ Qué exigimos</div>

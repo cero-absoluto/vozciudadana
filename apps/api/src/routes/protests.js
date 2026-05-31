@@ -154,12 +154,17 @@ export default async function protestRoutes(app) {
 
     // Fetch protest metadata and idempotency check in parallel
     const [{ data: protest, error: protestErr }, { data: existing }] = await Promise.all([
-      supabase.from('protests').select('scope, country').eq('id', req.params.id).maybeSingle(),
+      supabase.from('protests').select('scope, country, saldo_euros').eq('id', req.params.id).maybeSingle(),
       supabase.from('adhesions').select('id').eq('protest_id', req.params.id).eq('device_id', device_id).maybeSingle(),
     ]);
 
     if (protestErr || !protest) return reply.notFound('Protest not found');
     if (existing) return reply.conflict('Device already joined this protest');
+
+    // Verificar saldo disponible (null = sin límite, 0 = agotado)
+    if (protest.saldo_euros !== null && protest.saldo_euros <= 0) {
+      return reply.status(402).send({ code: 'SALDO_AGOTADO', error: 'Esta convocatoria no tiene saldo. Apóyala con una donación.' });
+    }
 
     // National protests: device country must match protest country
     if (protest.scope === 'national' && protest.country) {
@@ -237,6 +242,13 @@ const { data, error } = await supabase
     await supabase.rpc('update_cities_count', { protest_id: req.params.id });
     if (rpcErr) req.log.error({ rpcErr }, 'increment_protest_count failed');
 
+    // Descontar saldo por adhesion (~0.05euro por verificacion SMS)
+    if (protest.saldo_euros !== null && protest.saldo_euros > 0) {
+      await supabase.from('protests')
+        .update({ saldo_euros: Math.max(0, protest.saldo_euros - 0.05) })
+        .eq('id', req.params.id);
+    }
+
     return reply.code(201).send({ receipt: data.id });
   });
 
@@ -254,6 +266,95 @@ const { data, error } = await supabase
     if (error) req.log.error({ error }, 'increment_viral_count failed');
     return { ok: true };
   });
+  // GET /api/protests/:id/donaciones — historial publico anonimo
+  app.get('/:id/donaciones', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string', format: 'uuid' } },
+        required: ['id'],
+      },
+    },
+  }, async (req, reply) => {
+    const { data: protest } = await supabase
+      .from('protests')
+      .select('saldo_euros, donaciones_count, donaciones_total, ultima_donacion, title')
+      .eq('id', req.params.id)
+      .single();
+
+    const { data: donaciones } = await supabase
+      .from('donaciones')
+      .select('importe, created_at')
+      .eq('protest_id', req.params.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    const adhesiones_posibles = Math.floor((protest?.saldo_euros || 0) / 0.05);
+
+    return {
+      saldo_euros:       protest?.saldo_euros || 0,
+      adhesiones_posibles,
+      donaciones_count:  protest?.donaciones_count || 0,
+      donaciones_total:  protest?.donaciones_total || 0,
+      ultima_donacion:   protest?.ultima_donacion || null,
+      historial:         donaciones || [],
+    };
+  });
+
+  // POST /api/protests/:id/donar — registrar donacion manual (desde panel admin)
+  app.post('/:id/donar', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string', format: 'uuid' } },
+        required: ['id'],
+      },
+      body: {
+        type: 'object',
+        required: ['importe', 'admin_secret'],
+        properties: {
+          importe:      { type: 'number', minimum: 0.01, maximum: 10000 },
+          mensaje:      { type: 'string', maxLength: 200, nullable: true },
+          admin_secret: { type: 'string', minLength: 1 },
+        },
+        additionalProperties: false,
+      },
+    },
+  }, async (req, reply) => {
+    const { importe, mensaje, admin_secret } = req.body;
+
+    if (admin_secret !== process.env.ADMIN_SECRET) {
+      return reply.status(401).send({ error: 'No autorizado' });
+    }
+
+    const { data: protest } = await supabase
+      .from('protests')
+      .select('saldo_euros, donaciones_count, donaciones_total')
+      .eq('id', req.params.id)
+      .single();
+
+    if (!protest) return reply.notFound('Convocatoria no encontrada');
+
+    const nuevo_saldo   = (protest.saldo_euros || 0) + importe;
+    const nuevo_count   = (protest.donaciones_count || 0) + 1;
+    const nuevo_total   = (protest.donaciones_total || 0) + importe;
+
+    await supabase.from('protests').update({
+      saldo_euros:      nuevo_saldo,
+      donaciones_count: nuevo_count,
+      donaciones_total: nuevo_total,
+      ultima_donacion:  new Date().toISOString(),
+    }).eq('id', req.params.id);
+
+    await supabase.from('donaciones').insert({
+      protest_id: req.params.id,
+      importe,
+      mensaje: mensaje || null,
+    });
+
+    return { ok: true, saldo_nuevo: nuevo_saldo, adhesiones_posibles: Math.floor(nuevo_saldo / 0.05) };
+  });
+
   // GET /api/protests/:id/informe — datos para el informe público
 app.get('/:id/informe', {
   schema: {

@@ -126,11 +126,6 @@ function rechazarGps() {
   if (gpsResolve) gpsResolve(false);
 }
 
-function rechazarGps() {
-  showGpsModal.value = false;
-  if (gpsResolve) gpsResolve(false);
-}
-
 // reCAPTCHA status
 const captchaStatusClass = ref('verif-loading');
 const captchaIco         = ref('⏳');

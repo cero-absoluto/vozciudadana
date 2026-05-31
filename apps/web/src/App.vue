@@ -35,9 +35,30 @@ onMounted(() => {
   // Live counter tick
   setInterval(() => protests.tickTimers(), 1000);
 
-  // Service Worker
+  // Service Worker + Push
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/vozciudadana/service-worker.js')
+      .then(async reg => {
+        setTimeout(async () => {
+          try {
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') return;
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/push/vapid-public-key`);
+            const { publicKey } = await res.json();
+            const sub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(publicKey),
+            });
+            const deviceId = localStorage.getItem('vc_device_id') || crypto.randomUUID();
+            localStorage.setItem('vc_device_id', deviceId);
+            await fetch(`${import.meta.env.VITE_API_URL}/api/push/subscribe`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ device_id: deviceId, subscription: sub }),
+            });
+          } catch { /* silencioso */ }
+        }, 10000);
+      })
       .catch(err => console.warn('[PWA] SW error:', err));
   }
 
@@ -47,6 +68,13 @@ onMounted(() => {
     ui.setDeferredPrompt(e);
   });
 });
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+}
 </script>
 
 <style>

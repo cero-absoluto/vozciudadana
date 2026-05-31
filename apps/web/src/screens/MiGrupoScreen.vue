@@ -4,7 +4,7 @@
 
       <!-- Header -->
       <div style="margin-bottom:20px">
-        <button class="back" @click="$router.back()">← Volver</button>
+        <button class="back" @click="$router.back()">{{ $t('migrupo.back') }}</button>
         <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin-bottom:4px">
           Mi Grupo — {{ protest?.convocatoria_institucion || 'Mi Grupo' }}
         </div>
@@ -18,44 +18,44 @@
         <div v-if="!creandoGrupo" style="text-align:center;padding:40px 20px">
           <div style="font-size:48px;margin-bottom:16px">🌱</div>
           <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin-bottom:8px">
-            El censo aún no existe
+          {{ $t('migrupo.noExistsTitle') }}
           </div>
           <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:24px">
-            Sé el primero en iniciarlo. Como nodo génesis podrás invitar a tus compañeros y avalar sus solicitudes.
+          {{ $t('migrupo.noExistsBody') }}
           </div>
           <button class="btn-primary" style="width:100%;margin-bottom:8px" @click="creandoGrupo = true">
-            🌱 Iniciar el censo
+          🌱 {{ $t('migrupo.initCensus') }}
           </button>
         </div>
         <div v-if="creandoGrupo" class="block" style="text-align:left;margin-top:20px">
           <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;margin-bottom:12px">
-            📧 Verifica tu email institucional
+          📧 {{ $t('migrupo.verifyEmail') }}
           </div>
           <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
-            Introduce tu email <strong>@{{ protest?.dominio_email }}</strong> para convertirte en el nodo génesis del censo.
+          {{ $t('migrupo.genesisIntro', { domain: protest?.dominio_email }) }}
           </div>
           <div v-if="!genesisOtpVisible">
             <div class="fg">
-              <label>Tu email institucional</label>
+              <label>{{ $t('migrupo.emailLabel') }}</label>
               <input type="email" v-model="genesisEmail"
                 :placeholder="`tu.nombre@${protest?.dominio_email}`">
               <div v-if="genesisError" style="font-size:10px;color:var(--accent3);margin-top:4px">{{ genesisError }}</div>
             </div>
             <button class="btn-primary" style="width:100%;margin-top:8px"
               :disabled="loadingGenesis" @click="enviarOtpGenesis">
-              {{ loadingGenesis ? 'Enviando...' : 'Solicitar código →' }}
+              {{ loadingGenesis ? $t('migrupo.sending') : $t('migrupo.requestCode') }}
             </button>
           </div>
         </div>
         <div v-if="genesisOtpVisible" class="block" style="text-align:left;margin-top:12px">
-          <div class="block-title">📬 Introduce el código</div>
+          <div class="block-title">📬 {{ $t('migrupo.enterCode') }}</div>
           <input type="text" v-model="genesisOtp" maxlength="6"
             placeholder="000000"
             style="width:100%;padding:14px;text-align:center;letter-spacing:10px;font-size:24px;font-weight:700;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:'Syne',sans-serif">
           <div v-if="genesisOtpError" style="font-size:10px;color:var(--accent3);margin-top:6px">{{ genesisOtpError }}</div>
           <button class="btn-primary" style="width:100%;margin-top:12px"
             :disabled="loadingGenesis" @click="verificarOtpGenesis">
-            {{ loadingGenesis ? 'Verificando...' : 'Verificar y crear censo →' }}
+              {{ loadingGenesis ? $t('migrupo.verifying') : $t('migrupo.verifyCreate') }}
           </button>
         </div>
       </div>
@@ -65,19 +65,19 @@
 
       <!-- Estado del censo -->
       <div class="block" style="margin-bottom:12px">
-        <div class="block-title">📊 Estado del censo</div>
+        <div class="block-title">📊 {{ $t('migrupo.statusTitle') }}</div>
         <div class="stats-row">
           <div class="sc">
             <div class="sc-n" style="color:var(--accent)">{{ grupo.acreditados }}</div>
-            <div class="sc-l">Acreditados</div>
+            <div class="sc-l">{{ $t('migrupo.statAccredited') }}</div>
           </div>
           <div class="sc">
             <div class="sc-n" style="color:var(--accent4)">{{ grupo.pendientes }}</div>
-            <div class="sc-l">Pendientes</div>
+            <div class="sc-l">{{ $t('migrupo.statPending') }}</div>
           </div>
           <div class="sc">
             <div class="sc-n" style="color:var(--accent2)">{{ grupo.mis_vouches_restantes }}</div>
-            <div class="sc-l">Mis avales</div>
+            <div class="sc-l">{{ $t('migrupo.statMyVouches') }}</div>
           </div>
         </div>
         <div style="margin-top:10px">

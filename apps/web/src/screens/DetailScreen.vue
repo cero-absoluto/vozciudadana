@@ -2,7 +2,7 @@
   <div class="screen active" id="s-detail" v-if="protest">
     <!-- Header -->
     <div class="detail-hdr">
-      <button class="back" @click="$router.back()">← Volver al mapa</button>
+      <button class="back" @click="$router.back()">{{ $t('detail.back') }}</button>
       <div class="d-title">{{ protest.title }}</div>
       <div class="d-loc">
         <span class="scope-badge" :class="store.scopeBadge(protest).cls">{{ store.scopeBadge(protest).icon }} {{ store.scopeBadge(protest).label }}</span>
@@ -16,9 +16,9 @@
     <div class="d-scroll">
       <!-- Stats -->
       <div class="stats-row">
-        <div class="sc"><div class="sc-n" style="color:var(--accent)">{{ fmt(protest.count) }}</div><div class="sc-l">Adheridos</div></div>
-        <div class="sc"><div class="sc-n" style="color:var(--accent2)">{{ protest.cities }}</div><div class="sc-l">Ciudades</div></div>
-        <div class="sc"><div class="sc-n" style="color:var(--accent3)">{{ fmtTime(protest.timer) }}</div><div class="sc-l">Restante</div></div>
+        <div class="sc"><div class="sc-n" style="color:var(--accent)">{{ fmt(protest.count) }}</div><div class="sc-l">{{ $t('detail.statAdheridos') }}</div></div>
+        <div class="sc"><div class="sc-n" style="color:var(--accent2)">{{ protest.cities }}</div><div class="sc-l">{{ $t('detail.statCiudades') }}</div></div>
+        <div class="sc"><div class="sc-n" style="color:var(--accent3)">{{ fmtTime(protest.timer) }}</div><div class="sc-l">{{ $t('detail.statRestante') }}</div></div>
       </div>
       <!-- Velocidad — solo si hay datos de hoy -->
       <div v-if="velocidadHoy > 0" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.2);border-radius:var(--r);margin-bottom:8px">
@@ -33,27 +33,27 @@
       <!-- Geo validation — colapsable en movil -->
       <div v-if="protest.scope !== 'global'" class="geo-validation">
         <div class="gv-title" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center" @click="geoOpen = !geoOpen">
-          <span>Validación geográfica</span>
+          <span>{{ $t('detail.geoValidation') }}</span>
           <span style="font-size:10px;color:var(--text2)">{{ geoOpen ? '▲' : '▼' }}</span>
         </div>
         <div v-if="geoOpen">
           <div class="gv-row">
             <div class="gv-dot" :style="{background: simOk ? 'var(--accent2)' : 'var(--accent3)'}"></div>
-            <div class="gv-label">SIM / Prefijo</div>
+            <div class="gv-label">{{ $t('detail.geoSim') }}</div>
             <div class="gv-val" :class="simOk ? 'gv-ok' : 'gv-no'">
-              {{ simOk ? '✓ ' + device.simPrefix + ' (' + device.simName + ')' : '✗ Diferente país' }}
+              {{ simOk ? '✓ ' + device.simPrefix + ' (' + device.simName + ')' : $t('detail.geoDiff') }}
             </div>
           </div>
           <div class="gv-row">
             <div class="gv-dot" :style="{background: simOk ? 'var(--accent2)' : 'var(--accent3)'}"></div>
-            <div class="gv-label">IP / Ubicación</div>
+            <div class="gv-label">{{ $t('detail.geoIp') }}</div>
             <div class="gv-val" :class="simOk ? 'gv-ok' : 'gv-no'">
-              {{ simOk ? '✓ ' + device.ipCity : '✗ Diferente país' }}
+              {{ simOk ? '✓ ' + device.ipCity : $t('detail.geoDiff') }}
             </div>
           </div>
           <div class="conf-bar"><div class="conf-fill" :style="{ width: device.confidence + '%', background: confFillColor }"></div></div>
           <div style="display:flex;justify-content:space-between;margin-top:3px">
-            <div style="font-size:10px;color:var(--text2)">Confianza geográfica</div>
+            <div style="font-size:10px;color:var(--text2)">{{ $t('detail.geoConfidence') }}</div>
             <div style="font-size:8px;font-weight:600" :style="{color: confFillColor}">{{ device.confidence }}%</div>
           </div>
         </div>
@@ -61,20 +61,20 @@
 
       <!-- Lock / geo message -->
       <div v-if="!cj.ok && !cj.joined">
-        <div v-if="cj.lock" class="lock-detail">🔒 <strong>Dispositivo bloqueado:</strong> {{ cj.msg }}</div>
-        <div v-else-if="cj.geo" class="geo-detail">🌍 <strong>Fuera de alcance geográfico:</strong> {{ cj.msg }}</div>
+        <div v-if="cj.lock" class="lock-detail">🔒 <strong>{{ $t('detail.lockMsg') }}</strong> {{ cj.msg }}</div>
+        <div v-else-if="cj.geo" class="geo-detail">🌍 <strong>{{ $t('detail.geoMsg') }}</strong> {{ cj.msg }}</div>
       </div>
 
       <!-- Sobre la convocatoria — colapsable en movil -->
       <div class="block">
         <div class="block-title" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center" @click="sobreOpen = !sobreOpen">
-          <span>Sobre esta convocatoria</span>
+          <span>{{ $t('detail.aboutThisCall') }}</span>
           <span style="font-size:10px;color:var(--text2)">{{ sobreOpen ? '▲' : '▼' }}</span>
         </div>
         <div v-if="sobreOpen">
           <div class="d-desc">{{ protest.desc }}</div>
           <div v-if="protest.demands" style="margin-top:10px">
-            <div class="block-title" style="color:var(--accent3)">⚡ Qué exigimos</div>
+            <div class="block-title" style="color:var(--accent3)">{{ $t('detail.whatWeDemand') }}</div>
             <div class="d-desc" style="color:var(--text);font-weight:500;line-height:1.9">{{ protest.demands }}</div>
           </div>
         </div>
@@ -91,19 +91,19 @@
           color: protest.risk_level === 'high' || protest.risk_level === 'critical' ? 'var(--accent3)' : protest.scope === 'global' ? 'var(--text2)' : 'var(--accent2)'
         }">
         <span v-if="protest.risk_level === 'high' || protest.risk_level === 'critical'">
-          🕵️ <strong>Régimen de alto riesgo.</strong> Tu adhesión es completamente anónima. No se recaba ningún dato de ubicación. Tu identidad nunca se almacena.
+          {{ $t('detail.riskHigh') }}
         </span>
         <span v-else-if="protest.scope === 'global'">
-          🌍 <strong>Convocatoria global.</strong> Solo verificarás que eres una persona real. Tu identidad nunca se almacena.
+          {{ $t('detail.riskGlobal') }}
         </span>
         <span v-else-if="protest.scope === 'regional' && protest.dominio_email && protest.requiere_censo">
-          👥 <strong>Convocatoria con censo dinámico.</strong> Verificarás tu pertenencia con tu email y el aval de tus compañeros. Tu identidad nunca se almacena.
+          {{ $t('detail.riskCensus') }}
         </span>
         <span v-else-if="protest.scope === 'regional' && protest.dominio_email">
-          📧 <strong>Convocatoria local.</strong> Verificarás tu pertenencia con tu email institucional. Tu identidad nunca se almacena.
+          {{ $t('detail.riskEmail') }}
         </span>
         <span v-else>
-          📍 <strong>Democracia verificada.</strong> Al adherirte se usará tu ubicación para acreditar que estás en el país correcto. Esto añade credibilidad al informe público. Tu identidad nunca se almacena.
+          {{ $t('detail.riskNormal') }}
         </span>
       </div>
       <!-- Financiacion ciudadana -->
@@ -137,7 +137,7 @@
               </div>
               <div class="bv-right">
                 <div class="bv-count">{{ fmt(protest.viralCount || 0) }}</div>
-                <div class="bv-clabel">compartieron</div>
+                <div class="bv-clabel">{{ $t('detail.viralShared') }}</div>
               </div>
             </div>
           </button>
@@ -146,12 +146,12 @@
       <button v-if="protest.scope === 'regional' && protest.dominio_email && protest.requiere_censo && censoExiste"
         @click="router.push(`/grupo/${protest.id}`)"
         style="width:100%;margin-top:8px;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:10px;cursor:pointer">
-        {{ protest.joined ? '👥 Mi grupo' : '👥 Ver el censo' }}
+        {{ protest.joined ? $t('detail.myGroup') : $t('detail.seeCensus') }}
       </button>
       <div v-if="(protest.viralCount || 0) > 0"
         style="display:flex;align-items:center;gap:6px;margin-top:7px;padding:6px 9px;background:rgba(184,65,14,.08);border:.5px solid rgba(232,93,36,.22);border-radius:var(--r)">
         <span style="font-size:11px">🔥</span>
-        <span style="font-size:9px;color:rgba(255,140,80,.9)"><strong style="color:#e85d24">{{ fmt(protest.viralCount) }}</strong> personas ya han hecho VIRAL esta convocatoria</span>
+        <span style="font-size:9px;color:rgba(255,140,80,.9)"><strong style="color:#e85d24">{{ fmt(protest.viralCount) }}</strong> {{ $t('detail.viralCountSuffix') }}</span>
       </div>
     </div>
   </div>
@@ -159,6 +159,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useProtestsStore } from '@/stores/protests.js';
 import { useDeviceStore }   from '@/stores/device.js';
@@ -169,6 +170,7 @@ import * as api from '@/services/api.js';
 
 const route    = useRoute();
 const router   = useRouter();
+const { t } = useI18n();
 const store    = useProtestsStore();
 const device   = useDeviceStore();
 const ui       = useUiStore();
@@ -226,15 +228,15 @@ const confFillColor = computed(() => {
 
 const joinLabel = computed(() => {
   if (!protest.value) return '—';
-  if (protest.value.joined) return '✓ Adherido de forma anónima';
-  if (!cj.value.ok) return cj.value.lock ? '🔒 Dispositivo bloqueado' : '🌍 Fuera de alcance';
+  if (protest.value.joined) return t('detail.joinJoined');
+  if (!cj.value.ok) return cj.value.lock ? t('detail.joinLocked') : t('detail.joinGeo');
   if (protest.value.scope === 'regional' && protest.value.dominio_email && protest.value.requiere_censo) {
-    return censoExiste.value ? '👥 Unirme al censo' : '🌱 Iniciar el censo';
+    return censoExiste.value ? t('detail.joinCensus') : t('detail.joinInitCensus');
   }
   if (protest.value.scope === 'regional' && protest.value.dominio_email) {
-    return '📧 Verificar email y adherirme';
+    return t('detail.joinEmail');
   }
-  return 'Adherirme de forma anónima';
+  return t('detail.joinAnon');
 });
 
 function onJoin() {

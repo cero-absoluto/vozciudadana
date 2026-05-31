@@ -8,32 +8,34 @@
     <!-- Success -->
     <div v-if="success" class="success-scr on">
       <div class="suc-ico">✓</div>
-      <div class="suc-h">¡Adhesión registrada!</div>
-      <div class="suc-p">Tu voz ha sido contada de forma anónima y verificada.</div>
+      <div class="suc-h">{{ $t('verify.successTitle') }}</div>
+      <div class="suc-p">{{ $t('verify.successBody') }}</div>
       <div class="suc-hash">
-        <span style="color:var(--text3)">Comprobante:</span><br>
+        <span style="color:var(--text3)">{{ $t('verify.receipt') }}</span><br>
         <span>{{ receiptHash }}</span>
       </div>
-      <button class="suc-share" @click="ui.showShareModal = true">🔥 VIRAL — Hazlo viral ahora</button>
-      <button class="btn-primary" style="width:100%;margin-bottom:7px" @click="goDetail">← Ver la convocatoria</button>
+      <button class="suc-share" @click="ui.showShareModal = true">{{ $t('verify.viral') }}</button>
+      <button class="btn-primary" style="width:100%;margin-bottom:7px" @click="goDetail">{{ $t('verify.backDetail') }}</button>
       <button @click="goInforme"
         style="width:100%;margin-bottom:7px;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:14px;cursor:pointer">
-        📄 Ver informe público
+        {{ $t('verify.seeReport') }}
       </button>
       <button style="width:100%;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);font-size:13px;color:var(--text2);cursor:pointer"
-        @click="$router.push('/')">Ir al mapa mundial</button>
+        @click="$router.push('/')">{{ $t('verify.goMap') }}</button>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useProtestsStore } from '@/stores/protests.js';
 import { useDeviceStore }   from '@/stores/device.js';
 import { useUiStore }       from '@/stores/ui.js';
 
 const router   = useRouter();
+const { t } = useI18n();
 const protests = useProtestsStore();
 const device   = useDeviceStore();
 const ui       = useUiStore();
@@ -42,7 +44,11 @@ const success    = ref(false);
 const spinMsg    = ref('Verificando código...');
 const receiptHash = ref('');
 
-const MSGS = ['Verificando código...', 'Registrando adhesión anónima...', 'Generando comprobante...'];
+const MSGS = [
+  () => t('verify.spinVerifying'),
+  () => t('verify.spinRegistering'),
+  () => t('verify.spinGenerating'),
+];
 
 onMounted(async () => {
   await protests.loadProtests();
@@ -86,7 +92,7 @@ const target = lastId
 );
     } catch (e) {
       if (e.code === 'NATIONAL_ONLY') {
-        ui.showToast('No puede adherirse, la protesta es únicamente para ciudadanos nacionales');
+        ui.showToast(t('verify.toastNational'));
         router.push('/');
         return;
       }
@@ -101,7 +107,7 @@ const target = lastId
   for (let i = 0; i < 64; i++) h += c[Math.floor(Math.random() * 16)];
   receiptHash.value = h;
   success.value = true;
-  ui.showToast('✓ Adhesión anónima registrada');
+  ui.showToast(t('verify.toast'));
   setTimeout(() => ui.revealInstallBanner(), 1500);
 });
 

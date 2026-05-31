@@ -4,9 +4,9 @@
 
       <!-- Header -->
       <div style="margin-bottom:24px">
-        <button class="back" @click="$router.back()">← Volver</button>
+        <button class="back" @click="$router.back()">{{ $t('unirse.back') }}</button>
         <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin-bottom:4px">
-          Unirme al grupo
+          {{ $t('unirse.title') }}
         </div>
         <div style="font-size:11px;color:var(--text3)">
           {{ protest?.convocatoria_institucion || 'Institución' }}
@@ -16,13 +16,12 @@
       <!-- Paso 1: verificar email -->
       <div v-if="paso === 1">
         <div class="block" style="margin-bottom:12px">
-          <div class="block-title">📧 Verifica tu email institucional</div>
+          <div class="block-title">📧 {{ $t('unirse.emailTitle') }}</div>
           <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">
-            Para unirte al grupo necesitas verificar que tienes un email
-            <strong>@{{ dominio }}</strong>. El email no se guardará.
+            {{ $t('unirse.emailBody', { domain: dominio }) }}
           </div>
           <div class="fg">
-            <label>Email institucional *</label>
+            <label>{{ $t('unirse.emailLabel') }}</label>
             <input type="email" v-model="email"
               :placeholder="`tu.nombre@${dominio}`"
               @keyup.enter="solicitarOtp">
@@ -30,12 +29,11 @@
           </div>
           <button class="btn-primary" style="width:100%;margin-top:8px"
             :disabled="loading" @click="solicitarOtp">
-            {{ loading ? 'Enviando...' : 'Enviar código →' }}
+            {{ loading ? $t('unirse.sending') : $t('unirse.sendCode') }}
           </button>
         </div>
         <div style="font-size:9px;color:var(--text3);text-align:center;line-height:1.6">
-          🔒 Tu email se convierte en una huella matemática irreversible.<br>
-          Nadie puede saber quién eres a partir de ella.
+          {{ $t('unirse.privacyNote') }}
         </div>
       </div>
 
@@ -43,9 +41,9 @@
       <div v-if="paso === 2">
         
         <div class="block" style="margin-bottom:12px">
-          <div class="block-title">📬 Introduce el código</div>
+          <div class="block-title">📬 {{ $t('unirse.otpTitle') }}</div>
           <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">
-            Hemos enviado un código de 6 dígitos a tu email. Caduca en 10 minutos.
+            {{ $t('unirse.otpBody') }}
           </div>
           <input type="text" v-model="otp" maxlength="6"
             placeholder="000000"
@@ -54,11 +52,11 @@
           <div v-if="otpError" style="font-size:10px;color:var(--accent3);margin-top:6px">{{ otpError }}</div>
           <button class="btn-primary" style="width:100%;margin-top:12px"
             :disabled="loading" @click="verificarOtp">
-            {{ loading ? 'Verificando...' : 'Verificar código →' }}
+            {{ loading ? $t('unirse.verifying') : $t('unirse.verifyCode') }}
           </button>
           <button @click="paso = 1"
             style="width:100%;margin-top:8px;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:10px;cursor:pointer">
-            ← Cambiar email
+            {{ $t('unirse.changeEmail') }}
           </button>
         </div>
       </div>
@@ -67,12 +65,10 @@
       <div v-if="paso === 3" style="text-align:center;padding:40px 20px">
         <div style="font-size:48px;margin-bottom:16px">✓</div>
         <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--accent2);margin-bottom:8px">
-          Solicitud enviada
+          {{ $t('unirse.successTitle') }}
         </div>
         <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:24px">
-          Tu email ha sido verificado y tu solicitud está pendiente de avales.<br><br>
-          Necesitas <strong>{{ 2 - avalosRecibidos }} aval{{ (2 - avalosRecibidos) === 1 ? '' : 'es' }} más</strong> de compañeros acreditados para entrar al grupo.<br>
-          Coordínate con ellos por WhatsApp o en clase.
+          {{ $t('unirse.successBody', { n: 2 - avalosRecibidos }) }}
         </div>
         <button class="btn-primary" style="width:100%" @click="$router.push('/')">
           Ir al mapa →

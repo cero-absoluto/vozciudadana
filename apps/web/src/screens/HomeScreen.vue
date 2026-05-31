@@ -8,7 +8,7 @@
         <div class="dev-flag">{{ deviceFlag }}</div>
         <div class="dev-info">
           <div class="dev-country">{{ device.simName }}{{ device.regionLabel ? ' · ' + device.regionLabel : '' }}</div>
-          <div class="dev-conf">Confianza geográfica: <span :style="{color: confColor}">{{ device.confidence }}%</span></div>
+          <div class="dev-conf">{{ $t('home.geoConfidence') }} <span :style="{color: confColor}">{{ device.confidence }}%</span></div>
         </div>
         <div class="dev-dots">
           <div class="dev-dot" :style="{background:'var(--accent2)'}" title="SIM"></div>
@@ -20,10 +20,10 @@
       <!-- Filters + count -->
       <div class="map-topbar">
         <div class="filter-row">
-          <button class="pill" :class="{active: protests.filter==='all'}"      @click="setFilter('all')">Todas</button>
-          <button class="pill" :class="{active: protests.filter==='national'}" @click="setFilter('national')">🏛️ Nacional</button>
-          <button class="pill" :class="{active: protests.filter==='regional'}" @click="setFilter('regional')">🌐 Local</button>
-          <button class="pill" :class="{active: protests.filter==='global'}"   @click="setFilter('global')">🌍 Global</button>
+          <button class="pill" :class="{active: protests.filter==='all'}"      @click="setFilter('all')">{{ $t('home.filterAll') }}</button>
+          <button class="pill" :class="{active: protests.filter==='national'}" @click="setFilter('national')">{{ $t('home.filterNational') }}</button>
+          <button class="pill" :class="{active: protests.filter==='regional'}" @click="setFilter('regional')">{{ $t('home.filterRegional') }}</button>
+          <button class="pill" :class="{active: protests.filter==='global'}"   @click="setFilter('global')">{{ $t('home.filterGlobal') }}</button>
         </div>
         <div class="global-chip">
           <div class="red-dot"></div>
@@ -67,9 +67,9 @@
     <!-- Right column: panels -->
     <div id="home-right">
       <div class="panel-tabs">
-        <button class="ptab" :class="{active: tab==='active'}" @click="tab='active'">Activas</button>
-        <button class="ptab" :class="{active: tab==='queue'}"  @click="tab='queue'">Cola</button>
-        <button class="ptab" :class="{active: tab==='slots'}"  @click="tab='slots'">Slots</button>
+        <button class="ptab" :class="{active: tab==='active'}" @click="tab='active'">{{ $t('home.tabActive') }}</button>
+        <button class="ptab" :class="{active: tab==='queue'}"  @click="tab='queue'">{{ $t('home.tabQueue') }}</button>
+        <button class="ptab" :class="{active: tab==='slots'}"  @click="tab='slots'">{{ $t('home.tabSlots') }}</button>
       </div>
       <div class="panel-body">
         <ActiveTab  v-if="tab==='active'" :protests="protests.filteredProtests" @open="openDetail" />

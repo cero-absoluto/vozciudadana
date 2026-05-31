@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="panel-info">Cada país tiene 1 slot activo (nacional). Las convocatorias globales no compiten con las nacionales.</div>
+    <div class="panel-info">{{ $t('slots.info') }}</div>
     <div v-for="c in countries" :key="c" class="slot-item">
       <div class="pi-info">
         <div class="pi-title" style="font-size:11px">{{ c }}</div>
@@ -17,12 +17,12 @@
       </div>
     </div>
 
-    <div class="panel-info" style="margin-top:4px">Slots regionales activos:</div>
+    <div class="panel-info" style="margin-top:4px">{{ $t('slots.infoRegional') }}</div>
     <template v-for="[key, r] in Object.entries(REGIONS)" :key="key">
       <div v-if="activeRegion(key)" class="slot-item">
         <div class="pi-info">
           <div class="pi-title" style="font-size:11px">{{ r.icon }} {{ r.name }}</div>
-          <div class="pi-meta">Slot ocupado: "{{ activeRegion(key).title.substring(0,28) }}..."</div>
+          <div class="pi-meta">{{ $t('slots.occupiedRegion', { title: activeRegion(key).title.substring(0,28) }) }}</div>
           <div class="slot-bar"><div class="slot-fill" :style="{ width: slotPct(null, key) + '%' }"></div></div>
         </div>
         <div class="pi-right">
@@ -36,8 +36,10 @@
 
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { REGIONS, fmtTime } from '@/constants.js';
 
+const { t } = useI18n();
 const props = defineProps({ protests: Array, queue: Array });
 
 const countries = computed(() => {
@@ -57,8 +59,8 @@ const slotPct     = (c, k) => {
 const inQueue     = c  => props.queue.filter(q => q.scope==='national' && q.countryName===c).length;
 const slotLabel   = c  => {
   const a = activeFor(c);
-  if (a)          return `Slot ocupado: "${a.title.substring(0,30)}..."`;
-  if (inQueue(c)) return `Slot libre · ${inQueue(c)} en cola`;
-  return 'Slot libre';
+  if (a)          return t('slots.occupied', { title: a.title.substring(0,30) });
+  if (inQueue(c)) return t('slots.freeQueue', { n: inQueue(c) });
+  return t('slots.free');
 };
 </script>

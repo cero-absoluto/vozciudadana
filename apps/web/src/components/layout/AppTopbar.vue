@@ -7,8 +7,8 @@
   <div>
     <div>Voz Ciudadana</div>
    <div class="topbar-sub" style="font-size:9px;opacity:.5;font-weight:400;letter-spacing:.3px;line-height:1.4">
-  Protesta ciudadana verificada<br>
-  Sin identidad · Sin censura
+  {{ $t('app.tagline1') }}<br>
+  {{ $t('app.tagline2') }}
 </div>
   </div>
 </div>
@@ -18,20 +18,23 @@
           class="lang-btn" :class="{active: ui.lang === l.code}"
           @click="setLang(l.code)">{{ l.label }}</button>
       </div>
-      <div class="badge-anon"><div class="pulse"></div><span>Anónimo</span></div>
+      <div class="badge-anon"><div class="pulse"></div><span>{{ $t('app.anon') }}</span></div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { useUiStore } from '@/stores/ui.js';
+const { locale } = useI18n({ useScope: 'global' });
 const ui = useUiStore();
 const langs = [
   { code:'es', label:'ES' }, { code:'en', label:'EN' },
   { code:'fr', label:'FR' }, { code:'zh', label:'中文' },
 ];
 function setLang(code) {
+  locale.value = code;
   ui.lang = code;
-  ui.showToast(`Idioma: ${code.toUpperCase()} (integración completa en versión final)`);
+  localStorage.setItem('vc_lang', code);
 }
 </script>

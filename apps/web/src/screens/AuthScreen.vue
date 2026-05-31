@@ -2,8 +2,8 @@
   <div class="screen active" id="s-auth">
     <div class="auth-wrap">
       <div class="auth-ico">📱</div>
-      <div class="auth-h">{{ $t('auth.title') }}</div>
-      <div class="auth-p">{{ $t('auth.subtitle') }}</div>
+      <div class="auth-h">Tu número de teléfono</div>
+      <div class="auth-p">Te enviamos un código de 6 dígitos. Tu número se transforma en una huella matemática en tu dispositivo — nunca lo vemos en texto claro.</div>
 
       <!-- reCAPTCHA status -->
       <div class="verif-strip" :class="captchaStatusClass" style="width:100%;margin-bottom:10px">
@@ -14,57 +14,57 @@
       <!-- Phone input -->
       <div style="width:100%" v-if="!otpVisible">
         <div class="phone-wrap">
-          <label for="cc-sel" class="sr-only">{{ $t('auth.countryPrefix') }}</label>
+          <label for="cc-sel" class="sr-only">Prefijo del país</label>
           <select id="cc-sel" class="cc-sel" v-model="countryCode" :disabled="countryCodes.length === 0">
             <option v-if="countryCodes.length === 0" :value="countryCode">...</option>
             <option v-for="c in countryCodes" :key="c.iso2" :value="c.iso2">
               {{ c.flag }} +{{ c.dial_code }}
             </option>
           </select>
-          <label for="phone-in" class="sr-only">{{ $t('auth.phoneNumber') }}</label>
-          <input id="phone-in" class="phone-in" type="tel" v-model="phone" :placeholder="$t('auth.phonePlaceholder')" maxlength="12" :aria-label="$t('auth.phoneNumber')">
+          <label for="phone-in" class="sr-only">Número de teléfono</label>
+          <input id="phone-in" class="phone-in" type="tel" v-model="phone" placeholder="600 000 000" maxlength="12" aria-label="Número de móvil">
         </div>
-        <div class="input-hint">{{ $t('auth.hashHint') }}</div>
-        <div class="hash-label">{{ $t('auth.hashLabel') }}</div>
+        <div class="input-hint">Tu número se transforma en una huella irreversible en tu dispositivo antes de enviarse.</div>
+        <div class="hash-label">Huella generada en tiempo real</div>
         <div class="hash-prev">{{ hashDisplay }}</div>
-        <button class="btn-primary" style="width:100%;margin-top:8px" :disabled="phone.replace(/\D/g,'').length < 6 || sending" @click="sendSMS">
-          {{ sending ? $t('auth.sending') : $t('auth.sendCode') }}
+        <button class="btn-primary" style="width:100%;margin-top:8px;position:sticky;bottom:8px" :disabled="phone.replace(/\D/g,'').length < 6 || sending" @click="sendSMS">
+          {{ sending ? 'Procesando...' : 'Solicitar código →' }}
         </button>
       </div>
 
       <!-- OTP input -->
       <div v-if="otpVisible" style="width:100%;margin-top:12px">
-        <div style="font-size:14px;color:var(--text2);margin-bottom:12px;line-height:1.7;text-align:center">
-          {{ $t('auth.otpSent') }}
+        <div style="font-size:14px;color:var(--text);margin-bottom:12px;line-height:1.7;text-align:center">
+          Código de 6 dígitos enviado. Expira en 5 minutos.
         </div>
         <div class="otp-row">
           <input v-for="(_, i) in 6" :key="i" class="otp-box" type="tel" maxlength="1"
             :ref="el => { if (el) otpRefs[i] = el }"
             v-model="otpDigits[i]"
             @input="onOtpInput(i)"
-            :aria-label="`${$t('auth.otpDigit')} ${i + 1}`">
+            :aria-label="`Dígito ${i + 1} del código`">
         </div>
         <div style="font-size:13px;color:var(--text2);margin-bottom:10px;text-align:center">
-          ¿{{ $t('auth.noCode') }}? <span style="color:var(--accent);cursor:pointer" @click="ui.showToast($t('auth.resent'))">{{ $t('auth.resend') }}</span>
+          ¿No lo recibiste? <span style="color:var(--accent);cursor:pointer" @click="ui.showToast('Código reenviado')">Reenviar</span>
         </div>
-        <button class="btn-primary" style="width:100%" @click="verifyOTP">{{ $t('auth.verify') }}</button>
+        <button class="btn-primary" style="width:100%" @click="verifyOTP">Verificar →</button>
       </div>
 
       <!-- Advanced options -->
       <div style="width:100%;margin-top:14px">
         <button @click="advOpen = !advOpen"
           style="width:100%;padding:8px;background:transparent;border:.5px solid var(--border);border-radius:var(--r);font-size:10px;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px">
-          ⚙️ {{ $t('auth.advancedOpts') }} <span>{{ advOpen ? '▲' : '▼' }}</span>
+          ⚙️ Opciones avanzadas <span>{{ advOpen ? '▲' : '▼' }}</span>
         </button>
         <div v-if="advOpen" style="margin-top:8px">
           <div class="auth-opts">
-            <div class="auth-opt" @click="ui.showToast($t('auth.worldIdSoon'))">
+            <div class="auth-opt" @click="ui.showToast('World ID — próximamente')">
               <div class="ao-ico" style="background:rgba(124,111,255,.08)">🌐</div>
-              <div><div class="ao-title">World ID<span class="ao-badge badge-max">{{ $t('auth.maxAnon') }}</span></div><div class="ao-desc">Zero-Knowledge Proof.</div></div>
+              <div><div class="ao-title">World ID<span class="ao-badge badge-max">Máximo anonimato</span></div><div class="ao-desc">Zero-Knowledge Proof.</div></div>
             </div>
-            <div class="auth-opt" @click="ui.showToast($t('auth.highRiskSoon'))">
+            <div class="auth-opt" @click="ui.showToast('Modo alto riesgo — próximamente')">
               <div class="ao-ico" style="background:rgba(255,107,107,.08)">🕵️</div>
-              <div><div class="ao-title">{{ $t('auth.highRiskTitle') }}</div><div class="ao-desc">Tor + ZK-proof.</div></div>
+              <div><div class="ao-title">Modo alto riesgo</div><div class="ao-desc">Tor + ZK-proof.</div></div>
             </div>
           </div>
         </div>
@@ -73,21 +73,22 @@
       <div v-if="showGpsModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px">
         <div style="background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r2);padding:24px;max-width:340px;width:100%">
           <div style="font-size:24px;text-align:center;margin-bottom:12px">📍</div>
-          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;margin-bottom:10px;text-align:center">{{ $t('auth.gpsTitle') }}</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:20px;text-align:center">
-            {{ $t('auth.gpsBody') }}<br><br>
-            <strong style="color:var(--accent2)">{{ $t('auth.gpsNote') }}</strong>
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;margin-bottom:10px;text-align:center">Refuerza tu participación</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:16px;text-align:center">
+            Compartir tu ubicación confirma que estás en el país correcto y hace tu adhesión más difícil de cuestionar.<br><br>
+            <strong style="color:var(--accent2)">Además recibirás una notificación 1 hora antes del cierre con el informe final.</strong><br><br>
+            <span style="color:var(--text3);font-size:10px">Tu suscripción se borra automáticamente cuando termine la convocatoria. Ningún dato queda vinculado a tu identidad.</span>
           </div>
           <button class="btn-primary" style="width:100%;margin-bottom:8px" @click="aceptarGps">
-            📍 {{ $t('auth.gpsAccept') }}
+            📍 Reforzar mi participación
           </button>
           <button @click="rechazarGps"
             style="width:100%;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:10px;cursor:pointer">
-            {{ $t('auth.gpsSkip') }}
+            Continuar sin reforzar
           </button>
         </div>
       </div>
-      <div class="anon-note" style="margin-top:10px">🛡️ {{ $t('auth.anonNote') }}</div>
+      <div class="anon-note" style="margin-top:10px">🛡️ Tu identidad nunca se almacena. Solo huellas matemáticas irreversibles.</div>
     </div>
   </div>
 </template>
@@ -95,13 +96,11 @@
 <script setup>
 import { useProtestsStore } from '@/stores/protests.js';
 import { ref, computed, watch, onMounted } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useUiStore } from '@/stores/ui.js';
 
 const router = useRouter();
 const ui     = useUiStore();
-const { t }  = useI18n();
 
 const countryCode  = ref('ES');
 const countryCodes = ref([]);
@@ -118,9 +117,47 @@ const advOpen      = ref(false);
   const showGpsModal = ref(false);
 let gpsResolve = null;
 
-function aceptarGps() {
+async function aceptarGps() {
   showGpsModal.value = false;
   if (gpsResolve) gpsResolve(true);
+
+  // Suscribir a notificaciones push para esta convocatoria
+  try {
+    const protestId = sessionStorage.getItem('vc_protest_id');
+    const endsAt    = sessionStorage.getItem('vc_protest_ends_at');
+    if (!protestId || !('serviceWorker' in navigator)) return;
+
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+
+    const reg = await navigator.serviceWorker.ready;
+    const vapidRes = await fetch(`${import.meta.env.VITE_API_URL}/api/push/vapid-public-key`);
+    const { publicKey } = await vapidRes.json();
+
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey),
+    });
+
+    const deviceId = device.getDeviceId();
+    await fetch(`${import.meta.env.VITE_API_URL}/api/push/subscribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        device_id:    deviceId,
+        protest_id:   protestId,
+        ends_at:      endsAt,
+        subscription: sub,
+      }),
+    });
+  } catch { /* silencioso — no interrumpir el flujo principal */ }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
 }
 
 function rechazarGps() {
@@ -131,7 +168,7 @@ function rechazarGps() {
 // reCAPTCHA status
 const captchaStatusClass = ref('verif-loading');
 const captchaIco         = ref('⏳');
-const captchaTxt         = ref('');
+const captchaTxt         = ref('Verificando que eres humano...');
 
 const RECAPTCHA_KEY = import.meta.env.VITE_RECAPTCHA_KEY;
 
@@ -150,16 +187,15 @@ async function getRecaptchaToken(action) {
 }
 
 onMounted(async () => {
-  captchaTxt.value = t('auth.captchaVerifying');
   try {
     await getRecaptchaToken('load');
     captchaStatusClass.value = 'verif-ok';
     captchaIco.value  = '✓';
-    captchaTxt.value  = t('auth.captchaOk');
+    captchaTxt.value  = 'Verificado — eres humano. Introduce tu número.';
   } catch {
     captchaStatusClass.value = 'verif-error';
     captchaIco.value = '⚠️';
-    captchaTxt.value = t('auth.captchaFail');
+    captchaTxt.value = 'No se pudo verificar reCAPTCHA. Continúa si estás en desarrollo.';
   }
 
   try {
@@ -179,14 +215,14 @@ async function sha256(text) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-const hashDisplay = ref(t('auth.hashPlaceholder'));
+const hashDisplay = ref('Escribe tu número...');
 watch([countryCode, phone], async () => {
   const v = phone.value.replace(/\D/g, '');
   if (v.length >= 4) {
     const h = await sha256('+' + dialCode.value + v);
     hashDisplay.value = 'sha256:' + h;
   } else {
-    hashDisplay.value = t('auth.hashPlaceholder');
+    hashDisplay.value = 'Escribe tu número...';
   }
 });
 

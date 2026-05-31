@@ -523,3 +523,20 @@ a:hover{opacity:.8}
   .auth-wrap{justify-content:flex-start;padding-top:24px}
 }
 
+/* ── ARCHIVO ─────────────────────────────────────────────────────────── */
+#s-archivo{display:flex;flex-direction:column;height:100%;overflow:hidden}
+.arch-hdr{padding:16px 16px 8px;border-bottom:.5px solid var(--border)}
+.arch-title{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--text)}
+.arch-sub{font-size:11px;color:var(--text2);margin-top:3px}
+.arch-filters{display:flex;gap:6px;padding:10px 16px;border-bottom:.5px solid var(--border);flex-wrap:wrap}
+.arch-sel{flex:1;min-width:100px;padding:7px 8px;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:11px;cursor:pointer}
+.arch-list{flex:1;overflow-y:auto;padding:10px 16px;display:flex;flex-direction:column;gap:8px}
+.arch-item{padding:12px;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r2);cursor:pointer;transition:border-color .2s}
+.arch-item:hover{border-color:var(--accent)}
+.arch-item-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.arch-fecha{font-size:10px;color:var(--text2)}
+.arch-item-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.4}
+.arch-item-meta{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text2);margin-bottom:6px}
+.arch-item-footer{border-top:.5px solid var(--border);padding-top:6px;margin-top:4px}
+.arch-empty{text-align:center;padding:40px 20px;color:var(--text2)}
+.arch-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1}

@@ -177,7 +177,17 @@ const grupoId = ref(null);
 const censoExiste = ref(false);
 const velocidadHoy = ref(0);
 const tendenciaHoy = ref(0);
-const donacionesInfo = ref(null);
+const donacionesInfo = computed(() => {
+  if (!protest.value) return null;
+  const saldo = protest.value.saldo_euros ?? 0;
+  return {
+    saldo_euros:         saldo,
+    adhesiones_posibles: Math.floor(saldo / 0.05),
+    donaciones_count:    protest.value.donaciones_count ?? 0,
+    donaciones_total:    protest.value.donaciones_total ?? 0,
+    ultima_donacion:     protest.value.ultima_donacion ?? null,
+  };
+});
 
 onMounted(async () => {
   if (protest.value?.requiere_censo) {
@@ -194,10 +204,6 @@ onMounted(async () => {
     const informe = await res.json();
     velocidadHoy.value = informe.velocidad?.adhesiones_hoy || 0;
     tendenciaHoy.value = informe.velocidad?.tendencia_hoy || 0;
-  } catch { /* silencioso */ }
-  try {
-    const res2 = await fetch(`${import.meta.env.VITE_API_URL}/api/protests/${route.params.id}/donaciones`);
-    donacionesInfo.value = await res2.json();
   } catch { /* silencioso */ }
 });
 

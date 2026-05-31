@@ -243,10 +243,42 @@
 
         </div><!-- fin columna derecha -->
 
-        <!-- Botón volver -->
-        <div style="display:flex;gap:8px;margin-top:8px">
+        <!-- Botón volver + PDF + Embed -->
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
           <button class="btn-primary" style="flex:1" @click="$router.back()">← Back</button>
-          <button class="btn-primary" style="flex:1;background:var(--accent2);color:#000" @click="downloadPDF">⬇ Download PDF Report</button>
+          <button class="btn-primary" style="flex:1;background:var(--accent2);color:#000" @click="downloadPDF">⬇ Download PDF</button>
+          <button class="btn-primary" style="flex:1;background:rgba(76,111,255,.2);border:.5px solid #4C6FFF;color:#4C6FFF" @click="showEmbed=true">＜/＞ Embed</button>
+        </div>
+
+        <!-- Embed modal -->
+        <div v-if="showEmbed" style="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px" @click.self="showEmbed=false">
+          <div style="background:#13111F;border:.5px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;max-width:480px;width:100%">
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">＜/＞ Embed this protest</div>
+            <div style="font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.6">
+              Copy this line of code and paste it anywhere in your article, blog or website. The counter updates in real time.
+            </div>
+            <div style="background:#0C0B14;border:.5px solid rgba(255,255,255,.08);border-radius:8px;padding:12px;font-family:monospace;font-size:10px;color:#4CFFA4;word-break:break-all;margin-bottom:12px;line-height:1.7">
+              {{ embedCode }}
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn-primary" style="flex:1;background:#4C6FFF" @click="copyEmbed">{{ copied ? '✅ Copied!' : '📋 Copy code' }}</button>
+              <button class="btn-primary" style="flex:1;background:transparent;border:.5px solid var(--border2);color:var(--text2)" @click="showEmbed=false">Close</button>
+            </div>
+            <!-- Preview -->
+            <div style="margin-top:16px;padding-top:14px;border-top:.5px solid var(--border)">
+              <div style="font-size:10px;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Preview</div>
+              <div style="background:#0C0B14;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px 20px;max-width:320px">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                  <span style="font-size:11px;font-weight:700;color:#4CFFA4;text-transform:uppercase">🗳 Voz Ciudadana</span>
+                  <span style="font-size:9px;color:#4CFFA4;background:rgba(76,255,164,.1);border-radius:20px;padding:2px 7px">● LIVE</span>
+                </div>
+                <div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:6px;line-height:1.4">{{ data?.protest?.title }}</div>
+                <div style="font-size:28px;font-weight:800;color:#4CFFA4;line-height:1">{{ data?.total_adhesiones?.toLocaleString('en') }}</div>
+                <div style="font-size:10px;color:#8884AA;margin-bottom:10px">verified citizens</div>
+                <div style="background:#4C6FFF;border-radius:8px;padding:8px;text-align:center;font-size:12px;font-weight:700;color:#fff">🗳️ Join anonymously</div>
+              </div>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -277,6 +309,19 @@ const tipoAbusoLabel = computed(() =>
 const data = ref(null);
 const loading = ref(true);
 const error = ref(false);
+const showEmbed = ref(false);
+const copied = ref(false);
+
+const embedCode = computed(() =>
+  `<script src="https://cero-absoluto.github.io/vozciudadana/widget.js?id=${route.params.id}"><\/script>`
+);
+
+function copyEmbed() {
+  navigator.clipboard.writeText(embedCode.value).then(() => {
+    copied.value = true;
+    setTimeout(() => { copied.value = false; }, 2000);
+  });
+}
 
 onMounted(async () => {
   try {

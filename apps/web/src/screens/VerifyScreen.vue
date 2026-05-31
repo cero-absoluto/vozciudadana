@@ -8,34 +8,45 @@
     <!-- Success -->
     <div v-if="success" class="success-scr on">
       <div class="suc-ico">✓</div>
-      <div class="suc-h">{{ $t('verify.successTitle') }}</div>
-      <div class="suc-p">{{ $t('verify.successBody') }}</div>
+      <div class="suc-h">¡Adhesión registrada!</div>
+      <div class="suc-p">Tu voz ha sido contada de forma anónima y verificada.</div>
       <div class="suc-hash">
-        <span style="color:var(--text3)">{{ $t('verify.receipt') }}</span><br>
+        <span style="color:var(--text3)">Comprobante:</span><br>
         <span>{{ receiptHash }}</span>
       </div>
-      <button class="suc-share" @click="ui.showShareModal = true">{{ $t('verify.viral') }}</button>
-      <button class="btn-primary" style="width:100%;margin-bottom:7px" @click="goDetail">{{ $t('verify.backDetail') }}</button>
-      <button @click="goInforme"
-        style="width:100%;margin-bottom:7px;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:14px;cursor:pointer">
-        {{ $t('verify.seeReport') }}
-      </button>
-      <button style="width:100%;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);font-size:13px;color:var(--text2);cursor:pointer"
-        @click="$router.push('/')">{{ $t('verify.goMap') }}</button>
+            <!-- Escalera de acción -->
+      <div style="width:100%;margin-top:8px">
+
+        <!-- Peldaño 1 — VIRAL -->
+        <button class="suc-share" style="width:100%;margin-bottom:10px" @click="ui.showShareModal = true">
+          🔥 VIRAL — Hazlo viral ahora
+        </button>
+
+        <!-- Peldaño 2 — Notificación -->
+        <button @click="activarNotificacion"
+          style="width:100%;margin-bottom:10px;padding:10px;background:rgba(76,111,255,.12);border:.5px solid #4C6FFF;border-radius:var(--r);color:#4C6FFF;font-size:12px;font-weight:600;cursor:pointer">
+          🔔 {{ notiActivada ? '✅ Te avisaremos al cierre' : 'Avísame cuando cierre la convocatoria' }}
+        </button>
+
+        <!-- Peldaño 3 — Ver convocatoria (salida) -->
+        <button @click="goDetail"
+          style="width:100%;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:11px;cursor:pointer">
+          ← Ver la convocatoria
+        </button>
+
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useProtestsStore } from '@/stores/protests.js';
 import { useDeviceStore }   from '@/stores/device.js';
 import { useUiStore }       from '@/stores/ui.js';
 
 const router   = useRouter();
-const { t } = useI18n();
 const protests = useProtestsStore();
 const device   = useDeviceStore();
 const ui       = useUiStore();
@@ -43,12 +54,51 @@ const ui       = useUiStore();
 const success    = ref(false);
 const spinMsg    = ref('Verificando código...');
 const receiptHash = ref('');
+const notiActivada = ref(false);
 
-const MSGS = [
-  () => t('verify.spinVerifying'),
-  () => t('verify.spinRegistering'),
-  () => t('verify.spinGenerating'),
-];
+async function activarNotificacion() {
+  if (notiActivada.value) return;
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+
+    const reg = await navigator.serviceWorker.ready;
+    const vapidRes = await fetch(`${import.meta.env.VITE_API_URL}/api/push/vapid-public-key`);
+    const { publicKey } = await vapidRes.json();
+
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey),
+    });
+
+    const protestId = sessionStorage.getItem('vc_last_joined');
+    const deviceId  = sessionStorage.getItem('vc_device_id');
+
+    // Get protest ends_at
+    const protestEndsAt = protests.protests.find(p => String(p.id) === protestId)?.ends_at || null;
+
+    await fetch(`${import.meta.env.VITE_API_URL}/api/push/subscribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        device_id:    deviceId,
+        protest_id:   protestId,
+        ends_at:      protestEndsAt,
+        subscription: sub,
+      }),
+    });
+    notiActivada.value = true;
+  } catch { /* silencioso */ }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+const MSGS = ['Verificando código...', 'Registrando adhesión anónima...', 'Generando comprobante...'];
 
 onMounted(async () => {
   await protests.loadProtests();
@@ -92,7 +142,7 @@ const target = lastId
 );
     } catch (e) {
       if (e.code === 'NATIONAL_ONLY') {
-        ui.showToast(t('verify.toastNational'));
+        ui.showToast('No puede adherirse, la protesta es únicamente para ciudadanos nacionales');
         router.push('/');
         return;
       }
@@ -107,7 +157,7 @@ const target = lastId
   for (let i = 0; i < 64; i++) h += c[Math.floor(Math.random() * 16)];
   receiptHash.value = h;
   success.value = true;
-  ui.showToast(t('verify.toast'));
+  ui.showToast('✓ Adhesión anónima registrada');
   setTimeout(() => ui.revealInstallBanner(), 1500);
 });
 
@@ -122,4 +172,3 @@ function goDetail() {
   else    router.push('/');
 }
 </script>
-

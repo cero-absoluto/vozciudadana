@@ -78,7 +78,7 @@ onMounted(() => {
   const c = canvasEl.value;
   ctx = c.getContext('2d');
   W = c.width  = c.parentElement.clientWidth;
-  H = c.height = window.innerWidth < 900 ? 180 : 268;
+  H = c.height = window.innerWidth < 900 ? 130 : 268;
   initParticles();
   drawFrame();
 
@@ -104,4 +104,3 @@ onUnmounted(() => {
   }
 });
 </script>
-

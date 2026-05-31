@@ -244,9 +244,10 @@
         </div><!-- fin columna derecha -->
 
         <!-- Botón volver -->
-        <button class="btn-primary" style="width:100%;margin-top:8px" @click="$router.back()">
-          ← Volver
-        </button>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn-primary" style="flex:1" @click="$router.back()">← Back</button>
+          <button class="btn-primary" style="flex:1;background:var(--accent2);color:#000" @click="downloadPDF">⬇ Download PDF Report</button>
+        </div>
 
       </div>
     </div>
@@ -257,6 +258,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import * as api from '@/services/api.js';
+import { jsPDF } from 'jspdf';
 
 const route = useRoute();
 const TIPO_ABUSO_LABELS = {
@@ -312,5 +314,162 @@ function pct(count) {
   if (!data.value?.velocidad?.adhesiones_por_dia?.length) return 0;
   const max = Math.max(...data.value.velocidad.adhesiones_por_dia.map(d => d.count));
   return max > 0 ? Math.round((count / max) * 100) : 0;
+}
+
+function downloadPDF() {
+  const d = data.value;
+  if (!d) return;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210; const M = 18; const CW = W - M * 2;
+  let y = 0;
+
+  function nl(h = 5) { y += h; }
+  function line() { doc.setDrawColor(60,60,80); doc.line(M, y, W - M, y); nl(4); }
+  function h1(txt) { doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(255,255,255); doc.text(txt, M, y); nl(9); }
+  function h2(txt) { doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(76,255,164); doc.text(txt, M, y); nl(6); }
+  function body(txt, opts={}) {
+    doc.setFont('helvetica', opts.bold ? 'bold' : 'normal');
+    doc.setFontSize(9); doc.setTextColor(180,178,200);
+    const lines = doc.splitTextToSize(txt, CW);
+    lines.forEach(l => { if (y > 270) { doc.addPage(); setPageBg(); y = 20; } doc.text(l, M, y); nl(5); });
+  }
+  function kv(k, v) {
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(120,115,160);
+    doc.text(k + ':', M, y);
+    doc.setFont('helvetica','normal'); doc.setTextColor(220,218,240);
+    doc.text(String(v), M + 45, y);
+    nl(5);
+  }
+  function setPageBg() { doc.setFillColor(12,11,20); doc.rect(0,0,210,297,'F'); }
+
+  // PAGE 1
+  setPageBg();
+  y = 20;
+
+  // Header band
+  doc.setFillColor(30,27,50); doc.rect(0, 10, 210, 30, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(76,255,164);
+  doc.text('VOZ CIUDADANA — VERIFIED PUBLIC REPORT', M, 18);
+  doc.setFontSize(6); doc.setTextColor(120,115,160);
+  doc.text('cero-absoluto.github.io/vozciudadana', M, 23);
+  doc.setFontSize(6); doc.setTextColor(100,95,140);
+  doc.text('Generated: ' + new Date().toISOString(), M, 27);
+  y = 46;
+
+  // Title
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(255,255,255);
+  const titleLines = doc.splitTextToSize(d.protest.title, CW);
+  titleLines.forEach(l => { doc.text(l, M, y); nl(8); });
+  nl(2);
+
+  // Political headline
+  if (d.protest.demands && d.protest.focal_point) {
+    doc.setFillColor(20,18,35); doc.rect(M-2, y-4, CW+4, 14, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(255,179,71);
+    const headline = d.total_adhesiones + ' verified citizens demand to ' + d.protest.focal_point + ': \ + d.protest.demands + \';
+    const hl = doc.splitTextToSize(headline, CW);
+    hl.forEach(l => { doc.text(l, M, y); nl(5); });
+    nl(3);
+  }
+
+  line();
+
+  // Section 1 — Convocation details
+  h2('1. CONVOCATION DETAILS');
+  kv('Country', d.protest.country_name || '—');
+  kv('Scope', d.protest.scope || '—');
+  kv('Focal point', d.protest.focal_point || '—');
+  kv('Start date', d.protest.starts_at ? new Date(d.protest.starts_at).toLocaleDateString('en-GB') : '—');
+  kv('End date', d.protest.ends_at ? new Date(d.protest.ends_at).toLocaleDateString('en-GB') : '—');
+  if (d.protest.tipo_abuso) kv('Abuse type', d.protest.tipo_abuso);
+  if (d.protest.fuente_url) kv('Source', d.protest.fuente_url);
+  if (d.protest.demands) { nl(1); body('Demands: ' + d.protest.demands); }
+  nl(2); line();
+
+  // Section 2 — Key figures
+  h2('2. KEY FIGURES');
+  kv('Total verified adhesions', d.total_adhesiones);
+  kv('Distinct cities', d.ciudades_distintas);
+  kv('Distinct countries', d.paises_distintos);
+  kv('Distinct languages', d.idiomas_distintos);
+  kv('Adhesions with GPS', d.adhesiones_con_gps + ' (' + Math.round(d.adhesiones_con_gps/Math.max(d.total_adhesiones,1)*100) + '%)');
+  kv('Adhesions SIM/IP only', d.adhesiones_sin_gps);
+  kv('First adhesion', d.primera_adhesion ? new Date(d.primera_adhesion).toLocaleString('en-GB') : '—');
+  kv('Last adhesion', d.ultima_adhesion ? new Date(d.ultima_adhesion).toLocaleString('en-GB') : '—');
+  nl(2); line();
+
+  // Section 3 — Verification quality
+  h2('3. VERIFICATION QUALITY');
+  if (d.desglose_fiabilidad) {
+    const fi = d.desglose_fiabilidad;
+    if (fi.alta?.count > 0) kv('High reliability (85-95%)', fi.alta.count + ' citizens — ' + (fi.alta.descripcion || ''));
+    if (fi.media?.count > 0) kv('Medium reliability (75-84%)', fi.media.count + ' citizens — ' + (fi.media.descripcion || ''));
+    if (fi.base?.count > 0) kv('Base reliability (60-74%)', fi.base.count + ' citizens — ' + (fi.base.descripcion || ''));
+    if (fi.sin_dato?.count > 0) kv('Unclassified', fi.sin_dato.count + ' citizens (prior to reliability system)');
+  }
+  nl(2); line();
+
+  // Section 4 — Geographic distribution
+  h2('4. GEOGRAPHIC DISTRIBUTION');
+  if (d.distribucion_regiones && Object.keys(d.distribucion_regiones).length > 0) {
+    body('By region:', {bold:true});
+    Object.entries(d.distribucion_regiones).forEach(([r, c]) => body('  ' + r + ': ' + c + ' adhesion' + (c>1?'s':'') ));
+    nl(1);
+  }
+  if (d.distribucion_ciudades?.length > 0) {
+    body('Top cities: ' + d.distribucion_ciudades.slice(0,15).join(' · '));
+    if (d.distribucion_ciudades.length > 15) body('...and ' + (d.distribucion_ciudades.length-15) + ' more cities.');
+  }
+  nl(2); line();
+
+  // Section 5 — Growth velocity
+  h2('5. GROWTH VELOCITY');
+  if (d.velocidad) {
+    kv('Daily average', d.velocidad.media_diaria + ' adhesions/day');
+    if (d.velocidad.dia_pico) kv('Peak day', d.velocidad.dia_pico.count + ' adhesions on ' + new Date(d.velocidad.dia_pico.fecha).toLocaleDateString('en-GB'));
+    if (d.velocidad.adhesiones_por_dia?.length > 0) {
+      nl(1);
+      body('Daily breakdown:', {bold:true});
+      d.velocidad.adhesiones_por_dia.forEach(dd => body('  ' + new Date(dd.fecha).toLocaleDateString('en-GB') + ': ' + dd.count + ' adhesions'));
+    }
+  }
+  nl(2); line();
+
+  // Section 6 — Verification chain
+  h2('6. VERIFICATION CHAIN');
+  body('Each adhesion was verified through a multi-layer process:');
+  body('  1. reCAPTCHA v3 — proof of humanity (bot detection)');
+  body('  2. SMS OTP — real phone number verification (one adhesion per number)');
+  body('  3. SHA-256 local hash — irreversible anonymisation (identity never stored)');
+  body('  4. Device uniqueness — one device per protest scope');
+  body('  5. Geographic verification — SIM prefix, IP geolocation, GPS (optional)');
+  nl(2); line();
+
+  // Section 7 — Transparency seal
+  h2('7. TRANSPARENCY SEAL');
+  kv('Convocation ID', route.params.id);
+  kv('Open source', 'github.com/cero-absoluto/vozciudadana');
+  kv('License', 'AGPL 3.0 — publicly auditable');
+  kv('Report generated', new Date().toISOString());
+  if (d.protest.hash_integridad) {
+    nl(1);
+    body('Integrity hash (SHA-256 at closure):', {bold:true});
+    doc.setFont('courier','normal'); doc.setFontSize(7); doc.setTextColor(76,255,164);
+    const hashLines = doc.splitTextToSize(d.protest.hash_integridad, CW);
+    hashLines.forEach(l => { doc.text(l, M, y); nl(4); });
+  }
+
+  // Footer on all pages
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFillColor(20,18,35); doc.rect(0, 285, 210, 12, 'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(80,75,120);
+    doc.text('Voz Ciudadana — Verified Citizen Protest Platform — AGPL 3.0', M, 291);
+    doc.text('Page ' + i + ' of ' + totalPages, W - M, 291, {align:'right'});
+  }
+
+  const filename = 'vozciudadana-report-' + d.protest.title.replace(/[^a-z0-9]/gi,'-').toLowerCase().slice(0,40) + '.pdf';
+  doc.save(filename);
 }
 </script>

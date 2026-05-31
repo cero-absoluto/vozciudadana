@@ -366,7 +366,7 @@ function downloadPDF() {
   if (d.protest.demands && d.protest.focal_point) {
     doc.setFillColor(20,18,35); doc.rect(M-2, y-4, CW+4, 14, 'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(255,179,71);
-    const headline = d.total_adhesiones + ' verified citizens demand to ' + d.protest.focal_point + ': \ + d.protest.demands + \';
+    const headline = d.total_adhesiones + ' verified citizens demand to ' + d.protest.focal_point + ': ' + d.protest.demands;
     const hl = doc.splitTextToSize(headline, CW);
     hl.forEach(l => { doc.text(l, M, y); nl(5); });
     nl(3);

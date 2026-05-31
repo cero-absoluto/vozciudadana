@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia';
 import { ref, shallowRef } from 'vue';
+import i18n from '@/i18n.js';
 
 export const useUiStore = defineStore('ui', () => {
   const toastMsg           = ref('');
   const toastVisible       = ref(false);
   const showShareModal     = ref(false);
   const showInstallBanner  = ref(false);
-  const lang               = ref('es');
+  const lang               = ref(i18n.global.locale.value);
   const deferredPrompt     = shallowRef(null);
   const gpsLat      = ref(null);
 const gpsLng      = ref(null);
@@ -50,7 +51,7 @@ function clearGps() {
     if (!deferredPrompt.value) return;
     deferredPrompt.value.prompt();
     const { outcome } = await deferredPrompt.value.userChoice;
-    if (outcome === 'accepted') showToast('✓ Voz Ciudadana instalada. ¡El pueblo manda!');
+    if (outcome === 'accepted') showToast(i18n.global.t('install.toastInstalled'));
     deferredPrompt.value = null;
     showInstallBanner.value = false;
   }

@@ -5,7 +5,7 @@
       <!-- Cargando -->
       <div v-if="estado === 'cargando'" style="text-align:center;padding:60px 20px">
         <div class="spin-ring" style="margin:0 auto 12px"></div>
-        <div style="font-size:11px;color:var(--text3)">Validando invitación...</div>
+        <div style="font-size:11px;color:var(--text3)">{{ $t('invite.loading') }}</div>
       </div>
 
       <!-- Invitación válida -->
@@ -13,7 +13,7 @@
         <div style="text-align:center;margin-bottom:24px">
           <div style="font-size:48px;margin-bottom:12px">🎓</div>
           <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin-bottom:6px">
-            Te han invitado al grupo
+            {{ $t('invite.title') }}
           </div>
           <div style="font-size:12px;color:var(--text2)">
             {{ invitacion.institucion }} · {{ invitacion.region }}
@@ -21,33 +21,30 @@
         </div>
 
         <div class="block" style="margin-bottom:12px">
-          <div class="block-title">ℹ️ Cómo funciona</div>
+          <div class="block-title">{{ $t('invite.howTitle') }}</div>
           <div style="font-size:11px;color:var(--text2);line-height:1.8">
-            Al aceptar verificarás tu email institucional. El aval de quien te invitó se registra automáticamente.<br><br>
-            Si fuiste invitado directamente por el nodo génesis, quedarás acreditado sin necesitar avales adicionales.<br><br>
-            Si fuiste invitado por otro miembro, necesitarás <strong>1 aval más</strong> de cualquier miembro acreditado.
-          </div>
-
-      <div class="block" style="margin-bottom:20px">
-          <div class="block-title">🔒 Tu privacidad</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.8">
-            Tu email se convierte en una huella matemática irreversible y se destruye inmediatamente. Nadie — ni el sistema ni quien te invitó — puede saber quién eres.
+            {{ $t('invite.howBody') }}
           </div>
         </div>
 
-      <div style="font-size:9px;padding:6px 8px;background:rgba(255,107,107,.06);border:.5px solid rgba(255,107,107,.2);border-radius:var(--r);color:var(--accent3);margin-bottom:20px;line-height:1.5">
-          ⚠️ Este link es de un solo uso y caduca en 48 horas. Si no eres miembro del grupo, por favor no lo uses.
+        <div class="block" style="margin-bottom:20px">
+          <div class="block-title">{{ $t('invite.privacyTitle') }}</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.8">
+            {{ $t('invite.privacyBody') }}
+          </div>
         </div>
 
+        <div style="font-size:9px;padding:6px 8px;background:rgba(255,107,107,.06);border:.5px solid rgba(255,107,107,.2);border-radius:var(--r);color:var(--accent3);margin-bottom:20px;line-height:1.5">
+          {{ $t('invite.warning') }}
         </div>
 
           <button class="btn-primary" style="width:100%;margin-bottom:8px"
           @click="aceptarInvitacion">
-          Aceptar invitación →
+          {{ $t('invite.accept') }}
         </button>
         <button @click="$router.push('/')"
           style="width:100%;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:10px;cursor:pointer">
-          Rechazar
+          {{ $t('invite.reject') }}
         </button>
       </div>
 
@@ -55,13 +52,13 @@
       <div v-if="estado === 'invalida'" style="text-align:center;padding:60px 20px">
         <div style="font-size:48px;margin-bottom:12px">⚠️</div>
         <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-bottom:8px">
-          Invitación no válida
+          {{ $t('invite.invalidTitle') }}
         </div>
         <div style="font-size:11px;color:var(--text3);line-height:1.7;margin-bottom:24px">
-          Este link ha caducado, ya ha sido usado el número máximo de veces o no existe.
+          {{ $t('invite.invalidBody') }}
         </div>
         <button class="btn-primary" style="width:100%" @click="$router.push('/')">
-          Ir al mapa →
+          {{ $t('invite.goMap') }}
         </button>
       </div>
 

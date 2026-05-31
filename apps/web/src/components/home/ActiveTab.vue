@@ -2,11 +2,11 @@
   <div>
     <div v-if="!protests.length" style="padding:20px 14px;text-align:center">
       <div style="font-size:22px;margin-bottom:8px">🌍</div>
-      <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:4px">Sin convocatorias activas</div>
-      <div style="font-size:10px;color:var(--text3);line-height:1.6">No hay convocatorias en este país ahora mismo.</div>
+      <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:4px">{{ $t('active.empty') }}</div>
+      <div style="font-size:10px;color:var(--text3);line-height:1.6">{{ $t('active.emptyDesc') }}</div>
       <button @click="$router.push('/create')"
         style="margin-top:10px;padding:7px 14px;background:var(--accent);border:none;border-radius:var(--r);color:white;font-size:10px;cursor:pointer">
-        + Crear convocatoria
+        {{ $t('active.createBtn') }}
       </button>
     </div>
     <div v-for="p in protests" :key="p.id">
@@ -34,7 +34,7 @@
         <div v-if="isBlocked(p)" class="pi-lock">🔒</div>
       </div>
       <!-- status strips -->
-      <div v-if="p.joined"                  class="joined-strip">✓ Adherido · {{ fmtTime(p.timer) }} restante</div>
+      <div v-if="p.joined"                  class="joined-strip">{{ $t('active.joined', { time: fmtTime(p.timer) }) }}</div>
       <div v-else-if="cj(p).lock"           class="lock-strip">🔒 {{ cj(p).msg }}</div>
       <div v-else-if="cj(p).geo"            class="geo-strip">🌍 {{ cj(p).msg }}</div>
       
@@ -44,7 +44,9 @@
 
 <script setup>
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 const router = useRouter();
+const { t } = useI18n();
 import { useProtestsStore } from '@/stores/protests.js';
 import { useUiStore }       from '@/stores/ui.js';
 import { fmt, fmtTime }     from '@/constants.js';
@@ -60,7 +62,7 @@ const isBlocked  = p => { const r = cj(p); return !r.ok && !r.joined; };
 function handleClick(p) {
   const r = cj(p);
   if (r.joined || r.ok) emit('open', p.id);
-  else if (r.lock)      ui.showToast('🔒 Dispositivo bloqueado hasta que finalice la convocatoria activa');
-  else if (r.geo)       ui.showToast('🌍 No puedes participar: fuera del alcance geográfico');
+  else if (r.lock)      ui.showToast(t('active.toastLocked'));
+  else if (r.geo)       ui.showToast(t('active.toastGeo'));
 }
 </script>

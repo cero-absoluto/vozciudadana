@@ -4,77 +4,77 @@
   <!-- COLUMNA IZQUIERDA -->
   <div>
         <div class="fg">
-  <label>Título *
+  <label>{{ $t('create.titleLabel') }}
     <span class="info-icon" @mouseenter="showTooltip('title')" @mouseleave="hideTooltip()">ℹ️
-      <div v-if="tooltip === 'title'" class="tooltip-box">Resume la denuncia en una frase clara. Usa verbos como "exigir" o "denunciar". Máximo 120 caracteres.</div>
+      <div v-if="tooltip === 'title'" class="tooltip-box">{{ $t('create.titleTooltip') }}</div>
     </span>
   </label>
-      <input type="text" v-model="form.title" maxlength="120" placeholder="Ej: Contra la corrupción del gobierno">
+      <input type="text" v-model="form.title" maxlength="120" :placeholder="$t('create.titlePlaceholder')">
       <div class="char-c">{{ form.title.length }}/120</div>
     </div>
     <div class="fg">
-  <label>Descripción *
+  <label>{{ $t('create.descLabel') }}
     <span class="info-icon" @mouseenter="showTooltip('description')" @mouseleave="hideTooltip()">ℹ️
-      <div v-if="tooltip === 'description'" class="tooltip-box">Explica el abuso con hechos concretos y verificables. Sin opiniones ni valoraciones personales. Máximo 500 caracteres.</div>
+      <div v-if="tooltip === 'description'" class="tooltip-box">{{ $t('create.descTooltip') }}</div>
     </span>
   </label>
-      <textarea v-model="form.description" rows="2" maxlength="500" placeholder="Explica el motivo con hechos concretos."></textarea>
+      <textarea v-model="form.description" rows="2" maxlength="500" :placeholder="$t('create.descPlaceholder')"></textarea>
       <div class="char-c">{{ form.description.length }}/500</div>
     </div>
     <div class="fg">
-  <label>Qué exigimos *
+  <label>{{ $t('create.demandsLabel') }}
     <span class="info-icon" @mouseenter="showTooltip('demands')" @mouseleave="hideTooltip()">ℹ️
-      <div v-if="tooltip === 'demands'" class="tooltip-box">Usa verbos de acción: exigir, denunciar, dimitir, investigar. Verbos NO PERMTIDOS pedir, solicitar, proponer. Máximo 300 caracteres.</div>
+      <div v-if="tooltip === 'demands'" class="tooltip-box">{{ $t('create.demandsTooltip') }}</div>
     </span>
   </label>
-      <textarea v-model="form.demands" rows="2" maxlength="300" placeholder="Ej: Que dimita el presidente · Que se retire la ley"></textarea>
+      <textarea v-model="form.demands" rows="2" maxlength="300" :placeholder="$t('create.demandsPlaceholder')"></textarea>
       <div class="char-c">{{ form.demands.length }}/300</div>
     </div>
     <div class="fg">
-  <label>Contra quien va dirigida *
+  <label>{{ $t('create.focalLabel') }}
     <span class="info-icon" @mouseenter="showTooltip('focal')" @mouseleave="hideTooltip()">ℹ️
-      <div v-if="tooltip === 'focal'" class="tooltip-box">Institución o cargo público al que va dirigida la demanda. Debe ser una autoridad pública con poder de decisión.</div>
+      <div v-if="tooltip === 'focal'" class="tooltip-box">{{ $t('create.focalTooltip') }}</div>
     </span>
   </label>
-      <input type="text" v-model="form.focal_point" placeholder="Ej: Congreso de los Diputados">
+      <input type="text" v-model="form.focal_point" :placeholder="$t('create.focalPlaceholder')">
     </div>
     
-    <div class="fg"><label>Tipo de abuso *</label>
+    <div class="fg"><label>{{ $t('create.abusoLabel') }}</label>
   <select v-model="form.tipo_abuso">
-    <option value="">Selecciona el tipo de abuso...</option>
-    <option value="corrupcion">Corrupción o malversación</option>
-    <option value="nepotismo">Nepotismo o favoritismo</option>
-    <option value="derechos">Vulneración de derechos fundamentales</option>
-    <option value="negligencia">Negligencia grave</option>
-    <option value="represion">Represión o censura</option>
-    <option value="opacidad">Opacidad o falta de rendición de cuentas</option>
-    <option value="otro">Otro abuso de poder público</option>
+    <option value="">{{ $t('create.abusoPlaceholder') }}</option>
+    <option value="corrupcion">{{ $t('create.abusoCorrupcion') }}</option>
+    <option value="nepotismo">{{ $t('create.abusoNepotismo') }}</option>
+    <option value="derechos">{{ $t('create.abusoDerechos') }}</option>
+    <option value="negligencia">{{ $t('create.abusoNegligencia') }}</option>
+    <option value="represion">{{ $t('create.abusoRepresion') }}</option>
+    <option value="opacidad">{{ $t('create.abusoOpacidad') }}</option>
+    <option value="otro">{{ $t('create.abusoOtro') }}</option>
   </select>
 </div>
 <div class="fg">
-  <label>Fuente que acredita el hecho *
+  <label>{{ $t('create.fuenteLabel') }}
     <span class="info-icon" @mouseenter="showTooltip('fuente')" @mouseleave="hideTooltip()">ℹ️
-      <div v-if="tooltip === 'fuente'" class="tooltip-box">Verificación automática en Wikidata.Medios no reconocidos puedes ser también válidos</div>
+      <div v-if="tooltip === 'fuente'" class="tooltip-box">{{ $t('create.fuenteTooltip') }}</div>
     </span>
   </label>
- <input type="text" v-model="form.fuente_url" placeholder="elpais.com/... o boe.es/...">
+ <input type="text" v-model="form.fuente_url" :placeholder="$t('create.fuentePlaceholder')">
   <div v-if="fuenteStatus === 'checking'" style="font-size:11px;color:var(--text3);margin-top:4px">
-    🔄 Verificando fuente...
+    🔄 {{ $t('create.fuenteChecking') }}
   </div>
   <div v-else-if="fuenteStatus === 'oficial'" style="font-size:11px;color:var(--accent2);margin-top:4px">
-    ✅ Organismo oficial verificado
+    ✅ {{ $t('create.fuenteOficial') }}
   </div>
   <div v-else-if="fuenteStatus === 'verified'" style="font-size:11px;color:var(--accent2);margin-top:4px">
-    ✅ Fuente verificada — {{ fuenteName }}
+    ✅ {{ $t('create.fuenteVerified') }} — {{ fuenteName }}
   </div>
   <div v-else-if="fuenteStatus === 'unknown'" style="font-size:11px;color:var(--accent4);margin-top:4px">
-    ⚠️ Fuente no reconocida — asegúrate de que sea accesible públicamente
+    ⚠️ {{ $t('create.fuenteUnknown') }}
   </div>
   <div v-else-if="fuenteStatus === 'invalid'" style="font-size:11px;color:var(--accent3);margin-top:4px">
-    ❌ URL no válida
+    ❌ {{ $t('create.fuenteInvalid') }}
   </div>
   <div v-else style="font-size:10px;color:var(--text3);margin-top:4px;opacity:.6">
-    Enlaza el artículo, documento oficial o dato que acredita el hecho denunciado.
+    {{ $t('create.fuenteHint') }}
   </div>
 </div>
   </div>
@@ -82,7 +82,7 @@
   <!-- COLUMNA DERECHA -->
   <div>
     <div class="scope-section">
-      <div class="scope-section-title">Alcance geográfico *</div>
+      <div class="scope-section-title">{{ $t('create.scopeTitle') }}</div>
       <div class="scope-opts">
         <div v-for="s in scopes" :key="s.key"
           class="scope-opt" :class="{sel: form.scope === s.key}"
@@ -97,9 +97,9 @@
       </div>
       <!-- Campos adaptativos según alcance -->
 <div v-if="form.scope === 'national' || form.scope === 'regional'" class="fg" style="margin-top:12px">
-  <label>País *</label>
+  <label>{{ $t('create.paisLabel') }}</label>
   <select v-model="form.convocatoria_pais">
-    <option value="">Selecciona un país...</option>
+    <option value="">{{ $t('create.paisPlaceholder') }}</option>
     <option value="AF">Afganistán</option>
     <option value="DE">Alemania</option>
     <option value="AR">Argentina</option>
@@ -186,28 +186,28 @@
 </div>
 
 <div v-if="form.scope === 'regional'" class="fg" style="margin-top:12px">
-  <label>Región / Provincia *</label>
-  <input type="text" v-model="form.convocatoria_region" placeholder="Ej: Noord-Holland, Cataluña, Île-de-France">
+  <label>{{ $t('create.regionLabel') }}</label>
+  <input type="text" v-model="form.convocatoria_region" :placeholder="$t('create.regionPlaceholder')">
 </div>
 
 <div v-if="form.scope === 'regional'" class="fg" style="margin-top:12px">
-  <label>Institución <span style="font-weight:400;opacity:.6">(opcional)</span></label>
-  <input type="text" v-model="form.convocatoria_institucion" placeholder="Ej: Utrecht University, Hospital Vall d'Hebron">
-  <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">Si es una convocatoria universitaria o laboral, indica el nombre.</div>
+  <label>{{ $t('create.institucionLabel') }} <span style="font-weight:400;opacity:.6">({{ $t('create.optional') }})</span></label>
+  <input type="text" v-model="form.convocatoria_institucion" :placeholder="$t('create.institucionPlaceholder')">
+  <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">{{ $t('create.institucionHint') }}</div>
 </div>
 
 <div v-if="form.scope === 'regional' && form.convocatoria_institucion" class="fg" style="margin-top:12px">
- <label>Dominio de email institucional *</label>
+ <label>{{ $t('create.dominioLabel') }}</label>
 <div style="display:flex;align-items:center;gap:0">
   <div style="padding:9px 10px;background:var(--bg3);border:.5px solid var(--border);border-right:none;border-radius:var(--r) 0 0 var(--r);font-size:15px;color:var(--text3);font-family:'DM Sans',sans-serif">@</div>
   <input type="text" v-model="form.dominio_email" placeholder="uu.nl, uab.cat, upf.edu" style="border-radius:0 var(--r) var(--r) 0;flex:1">
 </div>
-<div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">Solo la parte después de la @ — por ejemplo: uu.nl</div>
+<div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">{{ $t('create.dominioHint') }}</div>
 </div>
       <div v-if="form.scope === 'regional' && form.convocatoria_institucion && form.dominio_email" 
   style="background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r2);padding:12px;margin-top:12px">
   <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px">
-    ¿A quién va dirigida esta convocatoria?
+    {{ $t('create.censoTitle') }}
   </div>
   <div style="display:flex;flex-direction:column;gap:8px">
     <div @click="form.requiere_censo = false"
@@ -218,8 +218,8 @@
         <div v-if="!form.requiere_censo" style="width:5px;height:5px;border-radius:50%;background:white"></div>
       </div>
       <div>
-        <div style="font-size:11px;font-weight:500;margin-bottom:3px">A toda la institución</div>
-        <div style="font-size:9px;color:var(--text3);line-height:1.5">Cualquier miembro con email @{{ form.dominio_email || 'tuinstitucion.edu' }} puede participar</div>
+        <div style="font-size:11px;font-weight:500;margin-bottom:3px">{{ $t('create.censoAll') }}</div>
+        <div style="font-size:9px;color:var(--text3);line-height:1.5">{{ $t('create.censoAllDesc', { domain: form.dominio_email || 'tuinstitucion.edu' }) }}</div>
       </div>
     </div>
     <div @click="form.requiere_censo = true"
@@ -230,40 +230,40 @@
         <div v-if="form.requiere_censo" style="width:5px;height:5px;border-radius:50%;background:white"></div>
       </div>
       <div>
-        <div style="font-size:11px;font-weight:500;margin-bottom:3px">A un departamento o grupo concreto</div>
-        <div style="font-size:9px;color:var(--text3);line-height:1.5">Crea un censo dinámico y adhiérete — los miembros se verifican entre sí, solo entran quienes son avalados por compañeros del grupo</div>
+        <div style="font-size:11px;font-weight:500;margin-bottom:3px">{{ $t('create.censoDept') }}</div>
+        <div style="font-size:9px;color:var(--text3);line-height:1.5">{{ $t('create.censoDeptDesc') }}</div>
       </div>
     </div>
   </div>
 </div>
     </div>
     <div style="display:flex;gap:12px">
-      <div class="fg" style="flex:1"><label>Fecha del evento *</label>
+      <div class="fg" style="flex:1"><label>{{ $t('create.dateLabel') }}</label>
         <input type="date" v-model="form.starts_at" :min="minDate">
       </div>
-      <div class="fg" style="flex:1"><label>Nivel de riesgo</label>
+      <div class="fg" style="flex:1"><label>{{ $t('create.riskLabel') }}</label>
         <select v-model="form.risk_level">
-          <option value="low">Bajo — democracia plena</option>
-          <option value="med">Medio — restricciones</option>
-          <option value="high">Alto — régimen autoritario</option>
-          <option value="critical">Crítico — represión activa</option>
+          <option value="low">{{ $t('create.riskLow') }}</option>
+          <option value="med">{{ $t('create.riskMed') }}</option>
+          <option value="high">{{ $t('create.riskHigh') }}</option>
+          <option value="critical">{{ $t('create.riskCritical') }}</option>
         </select>
       </div>
     </div>
           <div v-if="form.risk_level === 'high' || form.risk_level === 'critical'" class="risk-warn" style="display:flex">
-      ⚠️ Se activará Tor + cifrado adicional automáticamente.
+      ⚠️ {{ $t('create.riskWarn') }}
     </div>
     <div class="mod-box">
-  <div class="mod-h">✅ Criterios de validación automática</div>
+  <div class="mod-h">✅ {{ $t('create.modTitle') }}</div>
   <div class="mod-steps">
-    <div class="mstep"><div class="mn">1</div>Fuente verificable — enlace a artículo, documento oficial o dato estadístico</div>
-    <div class="mstep"><div class="mn">2</div>Destinatario público — institución con dinero o mandato público</div>
-    <div class="mstep"><div class="mn">3</div>Denuncia de abuso — no solicitudes de mejora ni preferencias políticas</div>
-    <div class="mstep"><div class="mn">4</div>Verbos de acción — exigir, denunciar, dimitir. No: pedir, solicitar, proponer</div>
+    <div class="mstep"><div class="mn">1</div>{{ $t('create.mod1') }}</div>
+    <div class="mstep"><div class="mn">2</div>{{ $t('create.mod2') }}</div>
+    <div class="mstep"><div class="mn">3</div>{{ $t('create.mod3') }}</div>
+    <div class="mstep"><div class="mn">4</div>{{ $t('create.mod4') }}</div>
   </div>
 </div>
    
-      <button class="btn-primary" style="width:100%;margin-bottom:18px" @click="submit">Crear convocatoria →</button>
+      <button class="btn-primary" style="width:100%;margin-bottom:18px" @click="submit">{{ $t('create.submit') }}</button>
   </div>
 </div>
   </div>
@@ -281,7 +281,8 @@
 </style>
 
 <script setup>
-import { reactive, ref, watch } from 'vue';
+import { reactive, ref, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useProtestsStore } from '@/stores/protests.js';
 import { useUiStore }       from '@/stores/ui.js';
@@ -290,6 +291,7 @@ import { REGIONS }          from '@/constants.js';
 const router   = useRouter();
 const protests = useProtestsStore();
 const ui       = useUiStore();
+const { t }    = useI18n();
 
 const minDate = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 const form = reactive({
@@ -345,11 +347,11 @@ watch(() => form.fuente_url, async (url) => {
 function showTooltip(id) { tooltip.value = id; }
 function hideTooltip() { tooltip.value = null; }
 
-const scopes = [
-  { key:'national', icon:'🏛️', label:'Nacional', badgeClass:'sb-national', badgeLabel:'Solo ciudadanos del país', bg:'rgba(124,111,255,.08)', desc:'Solo participan dispositivos cuya SIM + IP correspondan al país de la convocatoria.' },
-  { key:'regional', icon:'🌐', label:'Local',  badgeClass:'sb-regional', badgeLabel:'Ámbito local',          bg:'rgba(255,179,71,.08)',   desc:'Convocatoria de ámbito local' },
-  { key:'global',   icon:'🌍', label:'Global',    badgeClass:'sb-global',   badgeLabel:'Cualquier ciudadano',      bg:'rgba(76,255,164,.08)',   desc:'Sin restricción geográfica.' },
-];
+const scopes = computed(() => [
+  { key:'national', icon:'🏧', label: t('create.scopeNational'), badgeClass:'sb-national', badgeLabel: t('create.scopeNationalBadge'), bg:'rgba(124,111,255,.08)', desc: t('create.scopeNationalDesc') },
+  { key:'regional', icon:'🌐', label: t('create.scopeLocal'),    badgeClass:'sb-regional', badgeLabel: t('create.scopeLocalBadge'),    bg:'rgba(255,179,71,.08)',   desc: t('create.scopeLocalDesc') },
+  { key:'global',   icon:'🌍', label: t('create.scopeGlobal'),   badgeClass:'sb-global',   badgeLabel: t('create.scopeGlobalBadge'),   bg:'rgba(76,255,164,.08)',   desc: t('create.scopeGlobalDesc') },
+]);
 
 function selectScope(s) {
   form.scope = s;
@@ -360,17 +362,17 @@ function selectScope(s) {
 }
 
 function submit() {
-  if (!form.title.trim())       { ui.showToast('El título es obligatorio'); return; }
-  if (!form.description.trim()) { ui.showToast('La descripción es obligatoria'); return; }
-  if (!form.demands.trim())     { ui.showToast('Indica qué exigís'); return; }
-  if (!form.focal_point.trim()) { ui.showToast('El punto focal es obligatorio'); return; }
-  if (!form.starts_at) { ui.showToast('La fecha del evento es obligatoria'); return; }
-  if (form.scope === 'national' && !form.convocatoria_pais) { ui.showToast('Selecciona el país de la convocatoria'); return; }
-  if (form.scope === 'regional' && !form.convocatoria_pais) { ui.showToast('Selecciona el país de la convocatoria'); return; }
-  if (form.scope === 'regional' && !form.convocatoria_region.trim()) { ui.showToast('Indica la región o provincia'); return; }
-  if (form.scope === 'regional' && form.convocatoria_institucion && !form.dominio_email.trim()) { ui.showToast('Indica el dominio de email institucional'); return; }
-  if (!form.tipo_abuso) { ui.showToast('Selecciona el tipo de abuso'); return; }
-if (!form.fuente_url.trim()) { ui.showToast('Indica la fuente que acredita el hecho'); return; }
+  if (!form.title.trim())       { ui.showToast(t('create.errTitle')); return; }
+  if (!form.description.trim()) { ui.showToast(t('create.errDesc')); return; }
+  if (!form.demands.trim())     { ui.showToast(t('create.errDemands')); return; }
+  if (!form.focal_point.trim()) { ui.showToast(t('create.errFocal')); return; }
+  if (!form.starts_at) { ui.showToast(t('create.errDate')); return; }
+  if (form.scope === 'national' && !form.convocatoria_pais) { ui.showToast(t('create.errPais')); return; }
+  if (form.scope === 'regional' && !form.convocatoria_pais) { ui.showToast(t('create.errPais')); return; }
+  if (form.scope === 'regional' && !form.convocatoria_region.trim()) { ui.showToast(t('create.errRegion')); return; }
+  if (form.scope === 'regional' && form.convocatoria_institucion && !form.dominio_email.trim()) { ui.showToast(t('create.errDominio')); return; }
+  if (!form.tipo_abuso) { ui.showToast(t('create.errAbuso')); return; }
+if (!form.fuente_url.trim()) { ui.showToast(t('create.errFuente')); return; }
   const VERBOS_PROHIBIDOS = ['apoyar','respaldar','celebrar','felicitar','pedir','solicitar','rogar','desear','esperar','agradecer','proponer','sugerir','recomendar','mejorar','support','endorse','celebrate','congratulate','ask','request','beg','wish','hope','thank','propose','suggest','recommend','improve'];
 const VERBOS_PERMITIDOS = ['exigi','denuncia','demanda','rechaza','condena','ces','dimt','investig','public','revel','restitu','par','deten','suspend','demand','denounce','reject','condemn','dismiss','resign','investigate','publish','reveal','restore','stop','halt','suspend'];
 
@@ -378,9 +380,9 @@ const demandsLower = form.demands.toLowerCase();
 const tieneProhibido = VERBOS_PROHIBIDOS.some(v => demandsLower.includes(v));
 const tienePermitido = VERBOS_PERMITIDOS.some(v => demandsLower.includes(v));
 
-if (tieneProhibido && !window.confirm('Detectamos un verbo que puede debilitar tu demanda ("solicitar", "pedir", etc.).\n\n¿Quieres continuar de todas formas?')) return;
-if (!tienePermitido) { ui.showToast('Las exigencias deben incluir verbos como "exigir", "denunciar" o "demandar".'); return; }
-const confirmMsg = `¿Confirmas que quieres publicar esta convocatoria?\n\n"${form.title}"\n\nUna vez publicada no podrá editarse ni eliminarse.`;
+if (tieneProhibido && !window.confirm(t('create.confirmWeakVerb'))) return;
+if (!tienePermitido) { ui.showToast(t('create.errVerb')); return; }
+const confirmMsg = t('create.confirmPublish', { title: form.title });
   if (!window.confirm(confirmMsg)) return;
   // Mapa de códigos ISO a nombres de país
 const PAIS_NOMBRES = {

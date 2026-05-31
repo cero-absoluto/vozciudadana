@@ -4,10 +4,10 @@
     <!-- PASO 1: Introducir email -->
     <div v-if="step === 1" class="verify-wrap">
       <div class="verify-icon">🏛️</div>
-      <div class="verify-title">Verificación institucional</div>
-      <div class="verify-sub">Introduce tu email de {{ dominio }} para verificar tu pertenencia.</div>
+      <div class="verify-title">{{ $t('verificacional.title') }}</div>
+      <div class="verify-sub">{{ $t('verificacional.subtitle', { domain: dominio }) }}</div>
       <div class="fg" style="margin-top:24px">
-        <label>Email institucional *</label>
+        <label>{{ $t('verificacional.emailLabel') }}</label>
         <input type="email" v-model="email"
           :placeholder="`Ej: tu.nombre@${dominio}`"
           @keyup.enter="sendOtp">
@@ -15,18 +15,18 @@
       </div>
       <button class="btn-primary" style="width:100%;margin-top:16px"
         :disabled="loading" @click="sendOtp">
-        {{ loading ? 'Enviando...' : 'Enviar código →' }}
+        {{ loading ? $t('verificacional.sending') : $t('verificacional.sendCode') }}
       </button>
-      <button class="btn-back" @click="$router.back()">← Volver</button>
+      <button class="btn-back" @click="$router.back()">{{ $t('verificacional.back') }}</button>
     </div>
 
     <!-- PASO 2: Introducir OTP -->
     <div v-if="step === 2" class="verify-wrap">
       <div class="verify-icon">📬</div>
-      <div class="verify-title">Código enviado</div>
-      <div class="verify-sub">Hemos enviado un código de 6 dígitos a tu email. Caduca en 10 minutos.</div>
+      <div class="verify-title">{{ $t('verificacional.otpTitle') }}</div>
+      <div class="verify-sub">{{ $t('verificacional.otpSubtitle') }}</div>
       <div class="fg" style="margin-top:24px">
-        <label>Código de verificación *</label>
+        <label>{{ $t('verificacional.otpLabel') }}</label>
         <input type="text" v-model="otp" maxlength="6"
           placeholder="000000" @keyup.enter="verifyOtp"
           style="letter-spacing:8px;font-size:22px;text-align:center">
@@ -34,24 +34,24 @@
       </div>
       <button class="btn-primary" style="width:100%;margin-top:16px"
         :disabled="loading" @click="verifyOtp">
-        {{ loading ? 'Verificando...' : 'Verificar código →' }}
+        {{ loading ? $t('verificacional.verifying') : $t('verificacional.verifyCode') }}
       </button>
-      <button class="btn-back" @click="step = 1">← Cambiar email</button>
+      <button class="btn-back" @click="step = 1">{{ $t('verificacional.changeEmail') }}</button>
     </div>
 
     <!-- PASO 3: Éxito -->
     <div v-if="step === 3" class="success-scr on">
       <div class="suc-ico">✓</div>
-      <div class="suc-h">¡Adhesión registrada!</div>
-      <div class="suc-p">Tu voz ha sido contada de forma anónima y verificada.</div>
+      <div class="suc-h">{{ $t('verificacional.successTitle') }}</div>
+      <div class="suc-p">{{ $t('verificacional.successBody') }}</div>
       <div class="suc-hash">
-        <span style="color:var(--text3)">Comprobante:</span><br>
+        <span style="color:var(--text3)">{{ $t('verificacional.receipt') }}</span><br>
         <span>{{ receiptHash }}</span>
       </div>
-      <button class="suc-share" @click="ui.showShareModal = true">🔥 VIRAL — Hazlo viral ahora</button>
-      <button class="btn-primary" style="width:100%;margin-bottom:7px" @click="goDetail">← Ver la convocatoria</button>
+      <button class="suc-share" @click="ui.showShareModal = true">{{ $t('verificacional.viral') }}</button>
+      <button class="btn-primary" style="width:100%;margin-bottom:7px" @click="goDetail">{{ $t('verificacional.backDetail') }}</button>
       <button style="width:100%;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);font-size:10px;color:var(--text2);cursor:pointer"
-        @click="$router.push('/')">Ir al mapa mundial</button>
+        @click="$router.push('/')">{{ $t('verificacional.goMap') }}</button>
     </div>
 
   </div>
@@ -59,12 +59,14 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useProtestsStore } from '@/stores/protests.js';
 import { useUiStore } from '@/stores/ui.js';
 
 const route    = useRoute();
 const router   = useRouter();
+const { t } = useI18n();
 const protests = useProtestsStore();
 const ui       = useUiStore();
 

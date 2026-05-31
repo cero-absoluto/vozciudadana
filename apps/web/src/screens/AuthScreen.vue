@@ -74,17 +74,16 @@
         <div style="background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r2);padding:24px;max-width:340px;width:100%">
           <div style="font-size:24px;text-align:center;margin-bottom:12px">📍</div>
           <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;margin-bottom:10px;text-align:center">Refuerza tu participación</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:16px;text-align:center">
-            Compartir tu ubicación confirma que estás en el país correcto y hace tu adhesión más difícil de cuestionar.<br><br>
-            <strong style="color:var(--accent2)">Además recibirás una notificación 1 hora antes del cierre con el informe final.</strong><br><br>
-            <span style="color:var(--text3);font-size:10px">Tu suscripción se borra automáticamente cuando termine la convocatoria. Ningún dato queda vinculado a tu identidad.</span>
+          <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:20px;text-align:center">
+            Para reforzar la credibilidad de tu participación, vamos a pedirte que compartas tu ubicación. Esto confirma que estás en el país correcto y hace tu participación más difícil de cuestionar.<br><br>
+            <strong style="color:var(--accent2)">Tu ubicación nunca se guarda — solo se usa en este momento.</strong>
           </div>
           <button class="btn-primary" style="width:100%;margin-bottom:8px" @click="aceptarGps">
             📍 Reforzar mi participación
           </button>
           <button @click="rechazarGps"
             style="width:100%;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:10px;cursor:pointer">
-            Continuar sin reforzar
+            Continuar sin ubicación
           </button>
         </div>
       </div>
@@ -117,47 +116,14 @@ const advOpen      = ref(false);
   const showGpsModal = ref(false);
 let gpsResolve = null;
 
-async function aceptarGps() {
+function aceptarGps() {
   showGpsModal.value = false;
   if (gpsResolve) gpsResolve(true);
-
-  // Suscribir a notificaciones push para esta convocatoria
-  try {
-    const protestId = sessionStorage.getItem('vc_protest_id');
-    const endsAt    = sessionStorage.getItem('vc_protest_ends_at');
-    if (!protestId || !('serviceWorker' in navigator)) return;
-
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return;
-
-    const reg = await navigator.serviceWorker.ready;
-    const vapidRes = await fetch(`${import.meta.env.VITE_API_URL}/api/push/vapid-public-key`);
-    const { publicKey } = await vapidRes.json();
-
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey),
-    });
-
-    const deviceId = device.getDeviceId();
-    await fetch(`${import.meta.env.VITE_API_URL}/api/push/subscribe`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        device_id:    deviceId,
-        protest_id:   protestId,
-        ends_at:      endsAt,
-        subscription: sub,
-      }),
-    });
-  } catch { /* silencioso — no interrumpir el flujo principal */ }
 }
 
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+function rechazarGps() {
+  showGpsModal.value = false;
+  if (gpsResolve) gpsResolve(false);
 }
 
 function rechazarGps() {

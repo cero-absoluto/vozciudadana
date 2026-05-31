@@ -22,6 +22,8 @@ export default async function pushRoutes(app) {
         required: ['device_id', 'subscription'],
         properties: {
           device_id:    { type: 'string' },
+          protest_id:   { type: 'string', nullable: true },
+          ends_at:      { type: 'string', nullable: true },
           subscription: {
             type: 'object',
             required: ['endpoint', 'keys'],
@@ -41,7 +43,7 @@ export default async function pushRoutes(app) {
       },
     },
   }, async (req, reply) => {
-    const { device_id, subscription } = req.body;
+    const { device_id, protest_id, ends_at, subscription } = req.body;
     const { endpoint, keys: { p256dh, auth } } = subscription;
 
     await supabase.from('push_subscriptions').upsert({
@@ -49,6 +51,8 @@ export default async function pushRoutes(app) {
       endpoint,
       p256dh,
       auth,
+      protest_id: protest_id || null,
+      ends_at:    ends_at    || null,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'endpoint' });
 
@@ -147,4 +151,63 @@ export default async function pushRoutes(app) {
     return { sent, dead: dead.length };
   });
 
+  // ── HOURLY JOB — notify 1h before closing + cleanup expired ─────────
+  async function hourlyJob() {
+    const now = new Date();
+    const in1h = new Date(now.getTime() + 60 * 60 * 1000);
+
+    // Find protests closing in the next 60 minutes
+    const { data: closing } = await supabase
+      .from('protests')
+      .select('id, title, ends_at')
+      .gte('ends_at', now.toISOString())
+      .lte('ends_at', in1h.toISOString());
+
+    for (const protest of (closing || [])) {
+      const { data: subs } = await supabase
+        .from('push_subscriptions')
+        .select('endpoint, p256dh, auth')
+        .eq('protest_id', protest.id);
+
+      if (!subs?.length) continue;
+
+      const payload = JSON.stringify({
+        title: '⏰ Closing in 1 hour',
+        body:  protest.title + ' — check the final report',
+        icon:  '/vozciudadana/icon-192.png',
+        badge: '/vozciudadana/icon-72.png',
+        url:   `https://cero-absoluto.github.io/vozciudadana/#/informe/${protest.id}`,
+      });
+
+      const dead = [];
+      await Promise.allSettled(subs.map(async sub => {
+        try {
+          await webpush.sendNotification(
+            { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+            payload,
+          );
+        } catch (err) {
+          if (err.statusCode === 410 || err.statusCode === 404) dead.push(sub.endpoint);
+        }
+      }));
+
+      if (dead.length) {
+        await supabase.from('push_subscriptions').delete().in('endpoint', dead);
+      }
+    }
+
+    // Delete subscriptions for protests that have already closed
+    await supabase
+      .from('push_subscriptions')
+      .delete()
+      .not('ends_at', 'is', null)
+      .lt('ends_at', now.toISOString());
+  }
+
+  // Run every 60 minutes + once at startup
+  setInterval(hourlyJob, 60 * 60 * 1000);
+  setTimeout(hourlyJob, 5000);
+
 }
+
+

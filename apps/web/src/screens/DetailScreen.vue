@@ -30,28 +30,32 @@
         </div>
       </div>
 
-      <!-- Geo validation -->
+      <!-- Geo validation — colapsable en movil -->
       <div v-if="protest.scope !== 'global'" class="geo-validation">
-        <div class="gv-title">Validación geográfica</div>
-        <div class="gv-row">
-          <div class="gv-dot" :style="{background: simOk ? 'var(--accent2)' : 'var(--accent3)'}"></div>
-          <div class="gv-label">SIM / Prefijo</div>
-          <div class="gv-val" :class="simOk ? 'gv-ok' : 'gv-no'">
-            {{ simOk ? '✓ ' + device.simPrefix + ' (' + device.simName + ')' : '✗ Diferente país' }}
-          </div>
+        <div class="gv-title" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center" @click="geoOpen = !geoOpen">
+          <span>Validación geográfica</span>
+          <span style="font-size:10px;color:var(--text2)">{{ geoOpen ? '▲' : '▼' }}</span>
         </div>
-        <div class="gv-row">
-          <div class="gv-dot" :style="{background: simOk ? 'var(--accent2)' : 'var(--accent3)'}"></div>
-          <div class="gv-label">IP / Ubicación</div>
-          <div class="gv-val" :class="simOk ? 'gv-ok' : 'gv-no'">
-            {{ simOk ? '✓ ' + device.ipCity : '✗ Diferente país' }}
+        <div v-if="geoOpen">
+          <div class="gv-row">
+            <div class="gv-dot" :style="{background: simOk ? 'var(--accent2)' : 'var(--accent3)'}"></div>
+            <div class="gv-label">SIM / Prefijo</div>
+            <div class="gv-val" :class="simOk ? 'gv-ok' : 'gv-no'">
+              {{ simOk ? '✓ ' + device.simPrefix + ' (' + device.simName + ')' : '✗ Diferente país' }}
+            </div>
           </div>
-        </div>
-        
-        <div class="conf-bar"><div class="conf-fill" :style="{ width: device.confidence + '%', background: confFillColor }"></div></div>
-        <div style="display:flex;justify-content:space-between;margin-top:3px">
-          <div style="font-size:10px;color:var(--text2)">Confianza geográfica</div>
-          <div style="font-size:8px;font-weight:600" :style="{color: confFillColor}">{{ device.confidence }}%</div>
+          <div class="gv-row">
+            <div class="gv-dot" :style="{background: simOk ? 'var(--accent2)' : 'var(--accent3)'}"></div>
+            <div class="gv-label">IP / Ubicación</div>
+            <div class="gv-val" :class="simOk ? 'gv-ok' : 'gv-no'">
+              {{ simOk ? '✓ ' + device.ipCity : '✗ Diferente país' }}
+            </div>
+          </div>
+          <div class="conf-bar"><div class="conf-fill" :style="{ width: device.confidence + '%', background: confFillColor }"></div></div>
+          <div style="display:flex;justify-content:space-between;margin-top:3px">
+            <div style="font-size:10px;color:var(--text2)">Confianza geográfica</div>
+            <div style="font-size:8px;font-weight:600" :style="{color: confFillColor}">{{ device.confidence }}%</div>
+          </div>
         </div>
       </div>
 
@@ -61,10 +65,19 @@
         <div v-else-if="cj.geo" class="geo-detail">🌍 <strong>Fuera de alcance geográfico:</strong> {{ cj.msg }}</div>
       </div>
 
-      <div class="block"><div class="block-title">Sobre esta convocatoria</div><div class="d-desc">{{ protest.desc }}</div></div>
-      <div v-if="protest.demands" class="block">
-        <div class="block-title" style="color:var(--accent3)">⚡ Qué exigimos</div>
-        <div class="d-desc" style="color:var(--text);font-weight:500;line-height:1.9">{{ protest.demands }}</div>
+      <!-- Sobre la convocatoria — colapsable en movil -->
+      <div class="block">
+        <div class="block-title" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center" @click="sobreOpen = !sobreOpen">
+          <span>Sobre esta convocatoria</span>
+          <span style="font-size:10px;color:var(--text2)">{{ sobreOpen ? '▲' : '▼' }}</span>
+        </div>
+        <div v-if="sobreOpen">
+          <div class="d-desc">{{ protest.desc }}</div>
+          <div v-if="protest.demands" style="margin-top:10px">
+            <div class="block-title" style="color:var(--accent3)">⚡ Qué exigimos</div>
+            <div class="d-desc" style="color:var(--text);font-weight:500;line-height:1.9">{{ protest.demands }}</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -167,6 +180,8 @@ const grupoId = ref(null);
 const censoExiste = ref(false);
 const velocidadHoy = ref(0);
 const tendenciaHoy = ref(0);
+const geoOpen = ref(false);
+const sobreOpen = ref(false);
 const donacionesInfo = computed(() => {
   if (!protest.value) return null;
   const saldo = protest.value.saldo_euros ?? 0;

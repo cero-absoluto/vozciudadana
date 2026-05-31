@@ -6,7 +6,7 @@
       <div style="font-size:10px;color:var(--text3);line-height:1.6">{{ $t('active.emptyDesc') }}</div>
       <button @click="$router.push('/create')"
         style="margin-top:10px;padding:7px 14px;background:var(--accent);border:none;border-radius:var(--r);color:white;font-size:10px;cursor:pointer">
-        + {{ $t('active.createBtn') }}
+        {{ $t('active.createBtn') }}
       </button>
     </div>
     <div v-for="p in protests" :key="p.id">

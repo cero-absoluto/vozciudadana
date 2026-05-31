@@ -41,17 +41,17 @@
         <div class="tcard"><div class="tcard-ico">⛓️</div><div class="tcard-h">{{ $t('about.seg4Title') }}</div><div class="tcard-p">{{ $t('about.seg4Body') }}</div></div>
       </div>
       <!-- API pública -->
-      <div class="section-head">Open Data</div>
+      <div class="section-head">{{ $t('about.openTitle') }}</div>
       <div class="tech-grid">
         <div class="tcard" style="cursor:pointer" @click="$router.push('/api-docs')">
           <div class="tcard-ico">🔌</div>
-          <div class="tcard-h">Public API</div>
-          <div class="tcard-p">Free API for researchers and journalists. Aggregated data, no authentication required. →</div>
+          <div class="tcard-h">{{ $t('about.openCard1Title') }}</div>
+          <div class="tcard-p">{{ $t('about.openCard1Body') }}</div>
         </div>
         <div class="tcard">
           <div class="tcard-ico">📦</div>
-          <div class="tcard-h">Open Source</div>
-          <div class="tcard-p">Full source code available under AGPL 3.0 at <a href="https://github.com/cero-absoluto/vozciudadana" target="_blank" style="color:var(--accent)">GitHub</a>.</div>
+          <div class="tcard-h">{{ $t('about.openCard2Title') }}</div>
+          <div class="tcard-p" v-html="$t('about.openCard2Body')"></div>
         </div>
       </div>
     </div>

@@ -7,7 +7,7 @@ export const useUiStore = defineStore('ui', () => {
   const toastVisible       = ref(false);
   const showShareModal     = ref(false);
   const showInstallBanner  = ref(false);
-  const lang               = ref('es');
+  const lang               = ref(i18n.global.locale.value);
   const deferredPrompt     = shallowRef(null);
   const gpsLat      = ref(null);
 const gpsLng      = ref(null);

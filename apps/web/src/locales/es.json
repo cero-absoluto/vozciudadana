@@ -328,7 +328,12 @@
     "seg3Title": "Tor — en desarrollo",
     "seg3Body": "Para países de alto riesgo. Tu IP será invisible. Disponible en v2.0.",
     "seg4Title": "Blockchain — en desarrollo",
-    "seg4Body": "Conteos inmutables y verificables públicamente. Disponible en v2.0."
+    "seg4Body": "Conteos inmutables y verificables públicamente. Disponible en v2.0.",
+    "openTitle": "Open Data",
+    "openCard1Title": "API pública",
+    "openCard1Body": "API gratuita para investigadores y periodistas. Datos agregados, sin autenticación requerida. →",
+    "openCard2Title": "Código abierto",
+    "openCard2Body": "Código fuente completo disponible bajo AGPL 3.0 en <a href=\"https://github.com/cero-absoluto/vozciudadana\" target=\"_blank\" style=\"color:var(--accent)\">GitHub</a>."
   },
   "informe": {
     "loading": "Cargando informe...",
@@ -525,6 +530,15 @@
     "subtitle": "Sigue el resultado en tiempo real · Sin App Store · Sin permisos de nadie",
     "btn": "Instalar",
     "toastInstalled": "✓ Voz Ciudadana instalada. ¡El pueblo manda!"
+  },
+  "map": {
+    "hint": "Clic en un país para filtrar · rueda para zoom",
+    "clearFilter": "Ver todas",
+    "legendTitle": "Temperatura",
+    "legendNone": "Sin actividad",
+    "legendLow": "Baja",
+    "legendMed": "Media",
+    "legendHigh": "Alta/Crítica"
   },
   "archivo": {
     "title": "📁 Archivo",

@@ -5,9 +5,9 @@
       <template v-if="countryFilterName">
         📍 {{ countryFilterName }} —
         <span style="margin-left:4px;cursor:pointer;color:var(--accent);font-size:8px;text-decoration:underline"
-              @click="$emit('clear-country')">✕ Ver todas</span>
+              @click="$emit('clear-country')">✕ {{ $t('map.clearFilter') }}</span>
       </template>
-      <template v-else>Clic en un país para filtrar · rueda para zoom</template>
+      <template v-else>{{ $t('map.hint') }}</template>
     </div>
     <div class="map-ctrl">
       <button class="mc" @click="zoomIn">+</button>
@@ -15,11 +15,11 @@
       <button class="mc" @click="resetView" style="font-size:9px">⊙</button>
     </div>
     <div class="map-legend">
-      <div class="ml-title">Temperatura</div>
-      <div class="ml-row"><div class="ml-sq" style="background:#1a3a5c"></div>Sin actividad</div>
-      <div class="ml-row"><div class="ml-sq" style="background:#2d5a8e"></div>Baja</div>
-      <div class="ml-row"><div class="ml-sq" style="background:#e8a020"></div>Media</div>
-      <div class="ml-row"><div class="ml-sq" style="background:#ff2020"></div>Alta/Crítica</div>
+      <div class="ml-title">{{ $t('map.legendTitle') }}</div>
+      <div class="ml-row"><div class="ml-sq" style="background:#1a3a5c"></div>{{ $t('map.legendNone') }}</div>
+      <div class="ml-row"><div class="ml-sq" style="background:#2d5a8e"></div>{{ $t('map.legendLow') }}</div>
+      <div class="ml-row"><div class="ml-sq" style="background:#e8a020"></div>{{ $t('map.legendMed') }}</div>
+      <div class="ml-row"><div class="ml-sq" style="background:#ff2020"></div>{{ $t('map.legendHigh') }}</div>
     </div>
     <div class="mtt" ref="tooltipEl"></div>
   </div>
@@ -27,7 +27,10 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import * as d3 from 'd3';
+
+const { t } = useI18n({ useScope: 'global' });
 import * as topojson from 'topojson-client';
 import { ISO_NUM_TO_A2, COORDS, REGION_COORDS, heatColor, lighten, fmt, fmtTime, REGIONS } from '@/constants.js';
 

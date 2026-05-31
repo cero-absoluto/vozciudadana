@@ -30,6 +30,10 @@ function normalizeProtest(p) {
     convocatoria_institucion: p.convocatoria_institucion ?? null,
     dominio_email:            p.dominio_email ?? null,
     requiere_censo:           p.requiere_censo ?? false,
+    saldo_euros:              p.saldo_euros ?? 0,
+    donaciones_count:         p.donaciones_count ?? 0,
+    donaciones_total:         p.donaciones_total ?? 0,
+    ultima_donacion:          p.ultima_donacion ?? null,
   };
 }
 

@@ -249,6 +249,28 @@ const { data, error } = await supabase
         .eq('id', req.params.id);
     }
 
+    // Fire push notification on milestones
+    try {
+      const { data: updated } = await supabase.from('protests').select('count, title').eq('id', req.params.id).single();
+      const milestones = [10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000];
+      if (updated && milestones.includes(updated.count)) {
+        const baseUrl = process.env.RAILWAY_PUBLIC_DOMAIN
+          ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+          : 'http://localhost:3000';
+        fetch(`${baseUrl}/api/push/notify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            protest_id:   req.params.id,
+            title:        `🗳️ ${updated.count} verified citizens`,
+            body:         updated.title,
+            url:          `https://cero-absoluto.github.io/vozciudadana/#/protest/${req.params.id}`,
+            admin_secret: process.env.ADMIN_SECRET,
+          }),
+        }).catch(() => {});
+      }
+    } catch { /* silencioso */ }
+
     return reply.code(201).send({ receipt: data.id });
   });
 

@@ -179,14 +179,14 @@ async function sha256(text) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-const hashDisplay = ref('Escribe tu número...');
+const hashDisplay = ref(t('auth.hashPlaceholder'));
 watch([countryCode, phone], async () => {
   const v = phone.value.replace(/\D/g, '');
   if (v.length >= 4) {
     const h = await sha256('+' + dialCode.value + v);
     hashDisplay.value = 'sha256:' + h;
   } else {
-    hashDisplay.value = 'Escribe tu número...';
+    hashDisplay.value = t('auth.hashPlaceholder');
   }
 });
 

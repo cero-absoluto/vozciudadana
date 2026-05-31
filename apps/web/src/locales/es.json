@@ -255,7 +255,18 @@
     "myGroup": "👥 Mi grupo",
     "seeCensus": "👥 Ver el censo",
     "viralCount": "{count} personas ya han hecho VIRAL esta convocatoria",
-    "viralCountSuffix": "personas ya han hecho VIRAL esta convocatoria"
+    "viralCountSuffix": "personas ya han hecho VIRAL esta convocatoria",
+    "aboutThisCall": "Sobre esta convocatoria",
+    "whatWeDemand": "⚡ Qué exigimos",
+    "speedToday": "nuevas adhesiones hoy",
+    "trendUp": "↑ más que ayer",
+    "trendDown": "↓ menos que ayer",
+    "donTitle": "💰 Financiación ciudadana",
+    "donPosibles": "adhesiones posibles",
+    "donSaldo": "Saldo:",
+    "donCount": "{count} donaciones · {total}€ total",
+    "donAgotado": "⚠️ Saldo agotado — esta convocatoria necesita tu apoyo",
+    "donApoyar": "☕ Apoyar esta convocatoria"
   },
   "verify": {
     "spinVerifying": "Verificando código...",
@@ -514,5 +525,24 @@
     "subtitle": "Sigue el resultado en tiempo real · Sin App Store · Sin permisos de nadie",
     "btn": "Instalar",
     "toastInstalled": "✓ Voz Ciudadana instalada. ¡El pueblo manda!"
+  },
+  "archivo": {
+    "title": "📁 Archivo",
+    "subtitle": "Convocatorias cerradas — memoria ciudadana",
+    "filterAll": "Todos los tipos",
+    "filterNational": "Nacional",
+    "filterRegional": "Regional",
+    "filterGlobal": "Global",
+    "filterAllCountries": "Todos los países",
+    "sortDate": "Más recientes",
+    "sortAdheridos": "Más adheridos",
+    "empty": "No hay convocatorias cerradas con estos filtros",
+    "seeReport": "Ver informe final →",
+    "loading": "Cargando archivo...",
+    "badgeNational": "Nacional",
+    "badgeRegional": "Regional",
+    "badgeGlobal": "Global",
+    "metaAdheridos": "adheridos",
+    "metaCiudades": "ciudades"
   }
 }

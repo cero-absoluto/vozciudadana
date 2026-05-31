@@ -255,7 +255,18 @@
     "myGroup": "👥 Mon groupe",
     "seeCensus": "👥 Voir le recensement",
     "viralCount": "{count} personnes ont déjà rendu cet événement VIRAL",
-    "viralCountSuffix": "personnes ont déjà rendu cet événement VIRAL"
+    "viralCountSuffix": "personnes ont déjà rendu cet événement VIRAL",
+    "aboutThisCall": "À propos de cet événement",
+    "whatWeDemand": "⚡ Nos revendications",
+    "speedToday": "nouveaux soutiens aujourd'hui",
+    "trendUp": "↑ plus qu'hier",
+    "trendDown": "↓ moins qu'hier",
+    "donTitle": "💰 Financement citoyen",
+    "donPosibles": "soutiens possibles",
+    "donSaldo": "Solde :",
+    "donCount": "{count} dons · {total}€ au total",
+    "donAgotado": "⚠️ Solde épuisé — cet événement a besoin de votre soutien",
+    "donApoyar": "☕ Soutenir cet événement"
   },
   "verify": {
     "spinVerifying": "Vérification de votre participation...",
@@ -499,5 +510,24 @@
     "subtitle": "Suivez le résultat en temps réel · Sans App Store · Sans autorisation",
     "btn": "Installer",
     "toastInstalled": "✓ Voz Ciudadana installée. Le peuple commande !"
+  },
+  "archivo": {
+    "title": "📁 Fichier",
+    "subtitle": "Événements fermés — mémoire citoyenne",
+    "filterAll": "Tous les types",
+    "filterNational": "National",
+    "filterRegional": "Régional",
+    "filterGlobal": "Mondial",
+    "filterAllCountries": "Tous les pays",
+    "sortDate": "Plus récents",
+    "sortAdheridos": "Plus de soutiens",
+    "empty": "Aucun événement fermé ne correspond à ces filtres",
+    "seeReport": "Voir le rapport final →",
+    "loading": "Chargement des archives...",
+    "badgeNational": "National",
+    "badgeRegional": "Régional",
+    "badgeGlobal": "Mondial",
+    "metaAdheridos": "soutiens",
+    "metaCiudades": "villes"
   }
 }

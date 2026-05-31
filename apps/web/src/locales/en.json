@@ -255,7 +255,18 @@
     "myGroup": "👥 My group",
     "seeCensus": "👥 See the census",
     "viralCount": "{count} people have already made this event VIRAL",
-    "viralCountSuffix": "people have already made this event VIRAL"
+    "viralCountSuffix": "people have already made this event VIRAL",
+    "aboutThisCall": "About this event",
+    "whatWeDemand": "⚡ What we demand",
+    "speedToday": "new supporters today",
+    "trendUp": "↑ more than yesterday",
+    "trendDown": "↓ fewer than yesterday",
+    "donTitle": "💰 Citizen funding",
+    "donPosibles": "possible supporters",
+    "donSaldo": "Balance:",
+    "donCount": "{count} donations · {total}€ total",
+    "donAgotado": "⚠️ Balance depleted — this event needs your support",
+    "donApoyar": "☕ Support this event"
   },
   "verify": {
     "spinVerifying": "Verifying your participation...",
@@ -499,5 +510,24 @@
     "subtitle": "Follow the result in real time · No App Store · No one's permission",
     "btn": "Install",
     "toastInstalled": "✓ Voz Ciudadana installed. The people command!"
+  },
+  "archivo": {
+    "title": "📁 File",
+    "subtitle": "Closed events — citizen memory",
+    "filterAll": "All types",
+    "filterNational": "National",
+    "filterRegional": "Regional",
+    "filterGlobal": "Global",
+    "filterAllCountries": "All countries",
+    "sortDate": "Most recent",
+    "sortAdheridos": "Most supporters",
+    "empty": "No closed events match these filters",
+    "seeReport": "See final report →",
+    "loading": "Loading archive...",
+    "badgeNational": "National",
+    "badgeRegional": "Regional",
+    "badgeGlobal": "Global",
+    "metaAdheridos": "supporters",
+    "metaCiudades": "cities"
   }
 }

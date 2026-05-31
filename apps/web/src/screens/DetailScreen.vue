@@ -24,9 +24,9 @@
       <div v-if="velocidadHoy > 0" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.2);border-radius:var(--r);margin-bottom:8px">
         <div style="width:6px;height:6px;border-radius:50%;background:var(--accent2);animation:blink 1.5s infinite;flex-shrink:0"></div>
         <div style="font-size:11px;color:var(--accent2)">
-          <strong>+{{ velocidadHoy }}</strong> nuevas adhesiones hoy
-          <span v-if="tendenciaHoy > 0" style="color:var(--accent2)"> · ↑ más que ayer</span>
-          <span v-else-if="tendenciaHoy < 0" style="color:var(--accent4)"> · ↓ menos que ayer</span>
+          <strong>+{{ velocidadHoy }}</strong> {{ $t('detail.speedToday') }}
+          <span v-if="tendenciaHoy > 0" style="color:var(--accent2)"> · {{ $t('detail.trendUp') }}</span>
+          <span v-else-if="tendenciaHoy < 0" style="color:var(--accent4)"> · {{ $t('detail.trendDown') }}</span>
         </div>
       </div>
 
@@ -109,20 +109,20 @@
       <!-- Financiacion ciudadana -->
       <div v-if="donacionesInfo" style="width:100%;margin-bottom:10px;padding:12px;background:rgba(255,255,255,.04);border:.5px solid var(--border2);border-radius:var(--r2)">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div style="font-size:12px;font-weight:700;color:var(--text)">💰 Financiación ciudadana</div>
-          <div style="font-size:11px;color:var(--accent2)">{{ donacionesInfo.adhesiones_posibles }} adhesiones posibles</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text)">{{ $t('detail.donTitle') }}</div>
+          <div style="font-size:11px;color:var(--accent2)">{{ donacionesInfo.adhesiones_posibles }} {{ $t('detail.donPosibles') }}</div>
         </div>
         <div style="width:100%;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-bottom:6px">
           <div :style="{width: Math.min(100, (donacionesInfo.saldo_euros / 20) * 100) + '%', height: '100%', background: donacionesInfo.saldo_euros > 2 ? 'var(--accent2)' : 'var(--accent3)', borderRadius: '3px', transition: 'width .5s'}"></div>
         </div>
         <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-          <div style="font-size:10px;color:var(--text2)">Saldo: <strong style="color:var(--text)">{{ donacionesInfo.saldo_euros.toFixed(2) }}€</strong></div>
-          <div v-if="donacionesInfo.donaciones_count > 0" style="font-size:10px;color:var(--text2)">{{ donacionesInfo.donaciones_count }} donaciones · {{ donacionesInfo.donaciones_total.toFixed(2) }}€ total</div>
+          <div style="font-size:10px;color:var(--text2)">{{ $t('detail.donSaldo') }} <strong style="color:var(--text)">{{ donacionesInfo.saldo_euros.toFixed(2) }}€</strong></div>
+          <div v-if="donacionesInfo.donaciones_count > 0" style="font-size:10px;color:var(--text2)">{{ $t('detail.donCount', { count: donacionesInfo.donaciones_count, total: donacionesInfo.donaciones_total.toFixed(2) }) }}</div>
         </div>
-        <div v-if="donacionesInfo.saldo_euros <= 0" style="font-size:11px;color:var(--accent3);margin-bottom:8px;text-align:center">⚠️ Saldo agotado — esta convocatoria necesita tu apoyo</div>
+        <div v-if="donacionesInfo.saldo_euros <= 0" style="font-size:11px;color:var(--accent3);margin-bottom:8px;text-align:center">{{ $t('detail.donAgotado') }}</div>
         <a :href="`https://ko-fi.com/vozciudadana?description=Donacion+para:+${encodeURIComponent(protest.title)}`" target="_blank" rel="noopener"
           style="display:block;width:100%;padding:9px;background:#FF5E5B;border:none;border-radius:var(--r);color:#fff;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box;text-align:center">
-          ☕ Apoyar esta convocatoria
+          {{ $t('detail.donApoyar') }}
         </a>
       </div>
       <div class="btn-row">
@@ -133,7 +133,7 @@
           <button class="btn-viral" @click="ui.showShareModal = true">
             <div class="bv-inner">
               <div class="bv-left"><span class="bv-fire">🔥</span>
-                <div class="bv-text"><div class="bv-title">VIRAL</div><div class="bv-sub">Hazlo viral</div></div>
+                <div class="bv-text"><div class="bv-title">{{ $t('detail.viral') }}</div><div class="bv-sub">{{ $t('detail.viralMake') }}</div></div>
               </div>
               <div class="bv-right">
                 <div class="bv-count">{{ fmt(protest.viralCount || 0) }}</div>

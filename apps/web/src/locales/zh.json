@@ -255,7 +255,18 @@
     "myGroup": "👥 我的群组",
     "seeCensus": "👥 查看名册",
     "viralCount": "{count}人已使此活动病毒传播",
-    "viralCountSuffix": "人已使此活动病毒传播"
+    "viralCountSuffix": "人已使此活动病毒传播",
+    "aboutThisCall": "关于此次召集",
+    "whatWeDemand": "⚡ 我们的诉求",
+    "speedToday": "今日新增支持",
+    "trendUp": "↑ 比昨天多",
+    "trendDown": "↓ 比昨天少",
+    "donTitle": "💰 公民资助",
+    "donPosibles": "可能支持者",
+    "donSaldo": "余额：",
+    "donCount": "{count} 笔捐款 · 共 {total}€",
+    "donAgotado": "⚠️ 余额耗尽 — 此活动需要您的支持",
+    "donApoyar": "☕ 支持此活动"
   },
   "verify": {
     "spinVerifying": "正在验证您的参与...",
@@ -499,5 +510,24 @@
     "subtitle": "实时跟踪结果 · 无需App商店 · 无需任何人许可",
     "btn": "安装",
     "toastInstalled": "✓ Voz Ciudadana已安装。人民做主！"
+  },
+  "archivo": {
+    "title": "📁 档案",
+    "subtitle": "已关闭的召集 — 公民记忆",
+    "filterAll": "所有类型",
+    "filterNational": "全国",
+    "filterRegional": "地区",
+    "filterGlobal": "全球",
+    "filterAllCountries": "所有国家",
+    "sortDate": "最新",
+    "sortAdheridos": "支持最多",
+    "empty": "没有符合这些筛选条件的已关闭召集",
+    "seeReport": "查看最终报告 →",
+    "loading": "正在加载档案...",
+    "badgeNational": "全国",
+    "badgeRegional": "地区",
+    "badgeGlobal": "全球",
+    "metaAdheridos": "支持者",
+    "metaCiudades": "城市"
   }
 }

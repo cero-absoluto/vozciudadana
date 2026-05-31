@@ -103,6 +103,25 @@
           📍 <strong>Democracia verificada.</strong> Al adherirte se usará tu ubicación para acreditar que estás en el país correcto. Esto añade credibilidad al informe público. Tu identidad nunca se almacena.
         </span>
       </div>
+      <!-- Financiacion ciudadana -->
+      <div v-if="donacionesInfo" style="width:100%;margin-bottom:10px;padding:12px;background:rgba(255,255,255,.04);border:.5px solid var(--border2);border-radius:var(--r2)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:700;color:var(--text)">💰 Financiación ciudadana</div>
+          <div style="font-size:11px;color:var(--accent2)">{{ donacionesInfo.adhesiones_posibles }} adhesiones posibles</div>
+        </div>
+        <div style="width:100%;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-bottom:6px">
+          <div :style="{width: Math.min(100, (donacionesInfo.saldo_euros / 20) * 100) + '%', height: '100%', background: donacionesInfo.saldo_euros > 2 ? 'var(--accent2)' : 'var(--accent3)', borderRadius: '3px', transition: 'width .5s'}"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:10px;color:var(--text2)">Saldo: <strong style="color:var(--text)">{{ donacionesInfo.saldo_euros.toFixed(2) }}€</strong></div>
+          <div v-if="donacionesInfo.donaciones_count > 0" style="font-size:10px;color:var(--text2)">{{ donacionesInfo.donaciones_count }} donaciones · {{ donacionesInfo.donaciones_total.toFixed(2) }}€ total</div>
+        </div>
+        <div v-if="donacionesInfo.saldo_euros <= 0" style="font-size:11px;color:var(--accent3);margin-bottom:8px;text-align:center">⚠️ Saldo agotado — esta convocatoria necesita tu apoyo</div>
+        <a :href="`https://ko-fi.com/vozciudadana?description=Donacion+para:+${encodeURIComponent(protest.title)}`" target="_blank" rel="noopener"
+          style="display:block;width:100%;padding:9px;background:#FF5E5B;border:none;border-radius:var(--r);color:#fff;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box;text-align:center">
+          ☕ Apoyar esta convocatoria
+        </a>
+      </div>
       <div class="btn-row">
         <button class="btn-primary" :class="{sj: protest.joined}" :disabled="!cj.ok" @click="onJoin">
           {{ joinLabel }}
@@ -158,6 +177,7 @@ const grupoId = ref(null);
 const censoExiste = ref(false);
 const velocidadHoy = ref(0);
 const tendenciaHoy = ref(0);
+const donacionesInfo = ref(null);
 
 onMounted(async () => {
   if (protest.value?.requiere_censo) {
@@ -174,6 +194,10 @@ onMounted(async () => {
     const informe = await res.json();
     velocidadHoy.value = informe.velocidad?.adhesiones_hoy || 0;
     tendenciaHoy.value = informe.velocidad?.tendencia_hoy || 0;
+  } catch { /* silencioso */ }
+  try {
+    const res2 = await fetch(`${import.meta.env.VITE_API_URL}/api/protests/${route.params.id}/donaciones`);
+    donacionesInfo.value = await res2.json();
   } catch { /* silencioso */ }
 });
 

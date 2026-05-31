@@ -12,6 +12,7 @@ import MiGrupoScreen from '@/screens/MiGrupoScreen.vue';
 import UnirseGrupoScreen from '@/screens/UnirseGrupoScreen.vue';
 import InviteScreen from '@/screens/InviteScreen.vue';
 import ArchivoScreen from '@/screens/ArchivoScreen.vue';
+import ApiScreen from '@/screens/ApiScreen.vue';
 
 const routes = [
   { path: '/',          component: HomeScreen },
@@ -26,6 +27,7 @@ const routes = [
 { path: '/grupo/:protestId/unirse', component: UnirseGrupoScreen },
 { path: '/invite/:token', component: InviteScreen },
   { path: '/archivo', component: ArchivoScreen },
+  { path: '/api-docs', component: ApiScreen },
 ];
 
 export const router = createRouter({

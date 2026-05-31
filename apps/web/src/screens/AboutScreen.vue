@@ -40,6 +40,20 @@
         <div class="tcard"><div class="tcard-ico">🧅</div><div class="tcard-h">Tor — en desarrollo</div><div class="tcard-p">Para países de alto riesgo. Tu IP será invisible. Disponible en v2.0.</div></div>
         <div class="tcard"><div class="tcard-ico">⛓️</div><div class="tcard-h">Blockchain — en desarrollo</div><div class="tcard-p">Conteos inmutables y verificables públicamente. Disponible en v2.0.</div></div>
       </div>
+      <!-- API pública -->
+      <div class="section-head">Open Data</div>
+      <div class="tech-grid">
+        <div class="tcard" style="cursor:pointer" @click="$router.push('/api-docs')">
+          <div class="tcard-ico">🔌</div>
+          <div class="tcard-h">Public API</div>
+          <div class="tcard-p">Free API for researchers and journalists. Aggregated data, no authentication required. →</div>
+        </div>
+        <div class="tcard">
+          <div class="tcard-ico">📦</div>
+          <div class="tcard-h">Open Source</div>
+          <div class="tcard-p">Full source code available under AGPL 3.0 at <a href="https://github.com/cero-absoluto/vozciudadana" target="_blank" style="color:var(--accent)">GitHub</a>.</div>
+        </div>
+      </div>
     </div>
   </div>
 </template>

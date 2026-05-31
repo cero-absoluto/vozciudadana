@@ -18,7 +18,11 @@ const app = Fastify({
 
 await app.register(helmet);
 await app.register(cors, {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: (origin, cb) => {
+    // Public endpoints used by the embeddable widget — allow any origin
+    cb(null, true);
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
 });
 await app.register(sensible);
 await app.register(rateLimit, {

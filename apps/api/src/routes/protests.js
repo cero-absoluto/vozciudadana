@@ -161,6 +161,18 @@ export default async function protestRoutes(app) {
     if (protestErr || !protest) return reply.notFound('Protest not found');
     if (existing) return reply.conflict('Device already joined this protest');
 
+    // Nullifier check — evita doble adhesión con el mismo número aunque cambie el dispositivo
+    const nullifierCheck = createHmac('sha256', process.env.NULLIFIER_SECRET || 'dev-secret')
+      .update(phone_hash + req.params.id)
+      .digest('hex');
+    const { data: existingNullifier } = await supabase
+      .from('adhesions')
+      .select('id')
+      .eq('protest_id', req.params.id)
+      .eq('nullifier', nullifierCheck)
+      .maybeSingle();
+    if (existingNullifier) return reply.conflict('Phone already joined this protest');
+
     // Verificar saldo disponible (null = sin límite, 0 = agotado)
     if (protest.saldo_euros !== null && protest.saldo_euros <= 0) {
       return reply.status(402).send({ code: 'SALDO_AGOTADO', error: 'Esta convocatoria no tiene saldo. Apóyala con una donación.' });

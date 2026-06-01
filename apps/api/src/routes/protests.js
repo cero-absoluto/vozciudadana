@@ -192,16 +192,39 @@ export default async function protestRoutes(app) {
     }
 
    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
-  let ciudad = ip_ciudad || null;
-  let region = ip_region || null;
-  let pais = ip_pais || null;
+  let ciudad = null;
+  let region = null;
+  let pais   = null;
+
+  // Si hay GPS, usar geocodificación GPS (más precisa) ignorando IP
+  if (gps_lat != null && gps_lng != null) {
+    try {
+      const geoRes = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${gps_lat}&lon=${gps_lng}&format=json`,
+        { headers: { 'Accept-Language': 'es', 'User-Agent': 'VozCiudadana/1.0' } }
+      );
+      const geoData = await geoRes.json();
+      ciudad = geoData.address?.city || geoData.address?.town || geoData.address?.village || null;
+      region = geoData.address?.state || null;
+      pais   = geoData.address?.country || null;
+    } catch { /* silencioso */ }
+  }
+
+  // Si no hay GPS o falló, usar datos de IP enviados por el frontend
+  if (!ciudad) {
+    ciudad = ip_ciudad || null;
+    region = ip_region || null;
+    pais   = ip_pais   || null;
+  }
+
+  // Si tampoco hay datos del frontend, consultar ip-api como último recurso
   if (!ciudad) {
     try {
       const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country&lang=es`);
       const geo = await geoRes.json();
       ciudad = geo.city || null;
       region = geo.regionName || null;
-      pais = geo.country || null;
+      pais   = geo.country || null;
     } catch { /* silencioso */ }
   }
     const idioma = req.headers['accept-language']?.split(',')[0] || null;

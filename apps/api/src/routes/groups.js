@@ -331,7 +331,7 @@ export default async function gruposRoutes(app) {
 
     if (!miembro?.accredited_at) return reply.forbidden('Solo los miembros acreditados pueden invitar');
     // Comprobar límite de invitaciones según onda
-    const maxInvites = miembro.is_genesis ? 7 : 5;
+    const maxInvites = miembro.is_genesis ? 20 : 10;
     if (miembro.invites_sent >= maxInvites) {
       return reply.forbidden(`Has alcanzado el límite de ${maxInvites} invitaciones`);
     }

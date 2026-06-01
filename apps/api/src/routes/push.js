@@ -1,17 +1,23 @@
 import webpush from 'web-push';
 import { supabase } from '../services/supabase.js';
 
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL,
-  process.env.VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY,
-);
+function initVapid() {
+  if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_EMAIL) {
+    webpush.setVapidDetails(
+      process.env.VAPID_EMAIL,
+      process.env.VAPID_PUBLIC_KEY,
+      process.env.VAPID_PRIVATE_KEY,
+    );
+    return true;
+  }
+  return false;
+}
 
 export default async function pushRoutes(app) {
 
   // GET /api/push/vapid-public-key — frontend needs this to subscribe
   app.get('/vapid-public-key', async () => ({
-    publicKey: process.env.VAPID_PUBLIC_KEY,
+    publicKey: process.env.VAPID_PUBLIC_KEY || null,
   }));
 
   // POST /api/push/subscribe — save subscription
@@ -126,6 +132,8 @@ export default async function pushRoutes(app) {
       url:   url || 'https://cero-absoluto.github.io/vozciudadana',
     });
 
+    if (!initVapid()) return { sent: 0, error: 'VAPID not configured' };
+
     let sent = 0;
     const dead = [];
 
@@ -179,6 +187,7 @@ export default async function pushRoutes(app) {
         url:   `https://cero-absoluto.github.io/vozciudadana/#/informe/${protest.id}`,
       });
 
+      if (!initVapid()) continue;
       const dead = [];
       await Promise.allSettled(subs.map(async sub => {
         try {
@@ -209,5 +218,3 @@ export default async function pushRoutes(app) {
   setTimeout(hourlyJob, 5000);
 
 }
-
-

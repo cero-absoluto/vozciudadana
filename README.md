@@ -4,9 +4,9 @@
 
 > *"A street protest measures who can be there that day. We measure real support — with mathematical guarantees that each adhesion is a real person from the right country."*
 
-[![Live App](https://img.shields.io/badge/Live%20App-cero--absoluto.github.io-4CFFA4?style=flat-square)](https://cero-absoluto.github.io/vozciudadana/)
+[![Live App](https://img.shields.io/badge/Live%20App-cero--absoluto.github.io-4CFFA4?style=flat-square)](https://voiceprotest.org/)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue?style=flat-square)](https://www.gnu.org/licenses/agpl-3.0)
-[![API](https://img.shields.io/badge/Public%20API-Open%20Data-orange?style=flat-square)](https://vozciudadanaapi-production.up.railway.app/api/public/stats)
+[![API](https://img.shields.io/badge/Public%20API-Open%20Data-orange?style=flat-square)](https://api.voiceprotest.org/api/public/stats)
 
 ---
 

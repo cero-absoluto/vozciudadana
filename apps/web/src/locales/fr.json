@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Voz Ciudadana",
+    "name": "Voice Protest",
     "tagline1": "Protestation citoyenne vérifiée",
     "tagline2": "Sans identité · Sans censure",
     "anon": "Anonyme"
@@ -293,10 +293,10 @@
   },
   "about": {
     "heroTitle": "L'outil. Sans tromperie.",
-    "heroBody": "Voz Ciudadana n'a pas d'idéologie. C'est une infrastructure neutre d'expression démocratique, accessible de partout, sans risque physique.",
+    "heroBody": "Voice Protest n'a pas d'idéologie. C'est une infrastructure neutre d'expression démocratique, accessible de partout, sans risque physique.",
     "manifesto": "\"Une manifestation dans la rue mesure qui peut se déplacer ce jour-là. Nous mesurons le soutien réel, avec des garanties mathématiques que chaque adhésion est une vraie personne du bon pays.\"",
     "manifestoLabel": "Principe fondamental :",
-    "sec1Title": "Ce qu'est et n'est pas Voz Ciudadana",
+    "sec1Title": "Ce qu'est et n'est pas Voice Protest",
     "card1Title": "Dénonciation d'abus public",
     "card1Body": "Corruption, népotisme, négligence grave, répression, opacité. Contre des institutions utilisant l'argent ou le mandat public.",
     "card2Title": "Pas une plateforme de pétitions",
@@ -568,10 +568,10 @@
     "toastCopy": "📋 Copié ! Collez-le sur TikTok, Instagram ou où vous voulez"
   },
   "install": {
-    "title": "Installer Voz Ciudadana",
+    "title": "Installer Voice Protest",
     "subtitle": "Suivez le résultat en temps réel · Sans App Store · Sans autorisation",
     "btn": "Installer",
-    "toastInstalled": "✓ Voz Ciudadana installée. Le peuple commande !"
+    "toastInstalled": "✓ Voice Protest installée. Le peuple commande !"
   },
   "map": {
     "hint": "Cliquez sur un pays pour filtrer · molette pour zoomer",
@@ -604,7 +604,7 @@
   "api": {
     "openData": "Données ouvertes",
     "title": "API publique",
-    "desc": "Voz Ciudadana fournit une API gratuite et ouverte pour les chercheurs, journalistes et développeurs. Toutes les données sont agrégées et anonymisées — aucune donnée personnelle n'est jamais exposée.",
+    "desc": "Voice Protest fournit une API gratuite et ouverte pour les chercheurs, journalistes et développeurs. Toutes les données sont agrégées et anonymisées — aucune donnée personnelle n'est jamais exposée.",
     "badgeFree": "✅ Gratuite",
     "badgeNoAuth": "🔓 Sans authentification",
     "badgeAggregated": "📊 Agrégées uniquement",

@@ -5,7 +5,7 @@
     <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zM10 16.5v-9l6 4.5-6 4.5z"/></svg>
   </div>
   <div>
-    <div>Voz Ciudadana</div>
+    <div>{{ $t('app.name') }}</div>
    <div class="topbar-sub" style="font-size:9px;opacity:.5;font-weight:400;letter-spacing:.3px;line-height:1.4">
   {{ $t('app.tagline1') }}<br>
   {{ $t('app.tagline2') }}

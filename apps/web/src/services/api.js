@@ -1,5 +1,5 @@
 /**
- * API client for the Voz Ciudadana Fastify backend.
+ * API client for the Voice Protest Fastify backend.
  *
  * All functions return the parsed JSON body on success and throw an Error
  * with a human-readable message on failure.

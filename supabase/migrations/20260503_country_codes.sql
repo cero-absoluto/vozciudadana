@@ -1,5 +1,5 @@
 -- ============================================================
---  Voz Ciudadana — country_codes reference table
+--  Voice Protest — country_codes reference table
 -- ============================================================
 
 create table if not exists country_codes (

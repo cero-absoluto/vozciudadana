@@ -1,6 +1,6 @@
 {
-  "name": "VoiceProtest",
-  "short_name": "VoiceProtest",
+  "name": "Voice Protest",
+  "short_name": "Voice Protest",
   "description": "Plataforma de expresión ciudadana anónima, verificada y resistente a la censura. El pueblo manda.",
   "start_url": "./",
   "display": "standalone",

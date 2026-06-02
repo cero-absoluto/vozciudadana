@@ -67,7 +67,7 @@ GET /api/public/protests           # List all protests (filter by status, scope,
 GET /api/public/protests/:id       # Full data for a single protest
 ```
 
-Base URL: `Base URL: https://api.voiceprotest.org`
+Base URL: `https://api.voiceprotest.org`
 
 Interactive documentation available in-app under **INFO → Open Data → Public API**.
 

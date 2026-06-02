@@ -222,8 +222,8 @@ Please open an issue before submitting a pull request.
 
 ## Links
 
-- **Live app:** https://cero-absoluto.github.io/vozciudadana/
-- **Public API:** https://vozciudadanaapi-production.up.railway.app
+- **Live app:** https://voiceprotest.org
+- **Public API:** https://api.voiceprotest.org/api/public
 - **Repository:** https://github.com/cero-absoluto/vozciudadana
 
 ---

@@ -315,7 +315,7 @@ const showEmbed = ref(false);
 const copied = ref(false);
 
 const embedCode = computed(() =>
-  `<script src="https://cero-absoluto.github.io/vozciudadana/widget.js?id=${route.params.id}"><\/script>`
+  `<script src="https://www.voiceprotest.org/widget.js?id=${route.params.id}"><\/script>`
 );
 
 function copyEmbed() {
@@ -370,22 +370,23 @@ function downloadPDF() {
   const W = 210; const M = 18; const CW = W - M * 2;
   let y = 0;
 
-  function nl(h = 5) { y += h; }
-  function line() { doc.setDrawColor(60,60,80); doc.line(M, y, W - M, y); nl(4); }
-  function h1(txt) { doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(255,255,255); doc.text(txt, M, y); nl(9); }
-  function h2(txt) { doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(76,255,164); doc.text(txt, M, y); nl(6); }
+  function nl(h = 7) { y += h; }
+  function line() { doc.setDrawColor(76,255,164); doc.setLineWidth(0.3); doc.line(M, y, W - M, y); nl(6); }
+  function h1(txt) { doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(255,255,255); doc.text(txt, M, y); nl(12); }
+  function h2(txt) { doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(76,255,164); doc.text(txt.toUpperCase(), M, y); nl(8); }
   function body(txt, opts={}) {
     doc.setFont('helvetica', opts.bold ? 'bold' : 'normal');
-    doc.setFontSize(9); doc.setTextColor(180,178,200);
+    doc.setFontSize(11); doc.setTextColor(220,218,240);
     const lines = doc.splitTextToSize(txt, CW);
-    lines.forEach(l => { if (y > 270) { doc.addPage(); setPageBg(); y = 20; } doc.text(l, M, y); nl(5); });
+    lines.forEach(l => { if (y > 265) { doc.addPage(); setPageBg(); y = 22; } doc.text(l, M, y); nl(7); });
   }
   function kv(k, v) {
-    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(120,115,160);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(76,255,164);
     doc.text(k + ':', M, y);
-    doc.setFont('helvetica','normal'); doc.setTextColor(220,218,240);
-    doc.text(String(v), M + 45, y);
-    nl(5);
+    doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(240,238,255);
+    const val = doc.splitTextToSize(String(v), CW - 48);
+    doc.text(val[0], M + 48, y);
+    nl(7);
   }
   function setPageBg() { doc.setFillColor(12,11,20); doc.rect(0,0,210,297,'F'); }
 
@@ -395,16 +396,16 @@ function downloadPDF() {
 
   // Header band
   doc.setFillColor(30,27,50); doc.rect(0, 10, 210, 30, 'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(76,255,164);
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(76,255,164);
   doc.text('VOICE PROTEST — VERIFIED PUBLIC REPORT', M, 18);
-  doc.setFontSize(6); doc.setTextColor(120,115,160);
-  doc.text('www.voiceprotest.org', M, 23);
-  doc.setFontSize(6); doc.setTextColor(100,95,140);
-  doc.text('Generated: ' + new Date().toISOString(), M, 27);
+  doc.setFontSize(8); doc.setTextColor(180,178,200);
+  doc.text('www.voiceprotest.org', M, 24);
+  doc.setFontSize(8); doc.setTextColor(140,138,170);
+  doc.text('Generated: ' + new Date().toISOString(), M, 30);
   y = 46;
 
   // Title
-  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(255,255,255);
   const titleLines = doc.splitTextToSize(d.protest.title, CW);
   titleLines.forEach(l => { doc.text(l, M, y); nl(8); });
   nl(2);
@@ -412,7 +413,7 @@ function downloadPDF() {
   // Political headline
   if (d.protest.demands && d.protest.focal_point) {
     doc.setFillColor(20,18,35); doc.rect(M-2, y-4, CW+4, 14, 'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(255,179,71);
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255,179,71);
     const headline = d.total_adhesiones + ' verified citizens demand to ' + d.protest.focal_point + ': ' + d.protest.demands;
     const hl = doc.splitTextToSize(headline, CW);
     hl.forEach(l => { doc.text(l, M, y); nl(5); });
@@ -501,7 +502,7 @@ function downloadPDF() {
   if (d.protest.hash_integridad) {
     nl(1);
     body('Integrity hash (SHA-256 at closure):', {bold:true});
-    doc.setFont('courier','normal'); doc.setFontSize(7); doc.setTextColor(76,255,164);
+    doc.setFont('courier','normal'); doc.setFontSize(9); doc.setTextColor(76,255,164);
     const hashLines = doc.splitTextToSize(d.protest.hash_integridad, CW);
     hashLines.forEach(l => { doc.text(l, M, y); nl(4); });
   }
@@ -511,12 +512,12 @@ function downloadPDF() {
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFillColor(20,18,35); doc.rect(0, 285, 210, 12, 'F');
-    doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(80,75,120);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(140,138,170);
     doc.text('Voice Protest — Verified Citizen Protest Platform — AGPL 3.0', M, 291);
     doc.text('Page ' + i + ' of ' + totalPages, W - M, 291, {align:'right'});
   }
 
-  const filename = 'voiceprotest-report-' + d.protest.title.replace(/[^a-z0-9]/gi,'-').toLowerCase().slice(0,40) + '.pdf';
+  const filename = 'vozciudadana-report-' + d.protest.title.replace(/[^a-z0-9]/gi,'-').toLowerCase().slice(0,40) + '.pdf';
   doc.save(filename);
 }
 </script>

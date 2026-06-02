@@ -8,10 +8,10 @@
     <!-- Success -->
     <div v-if="success" class="success-scr on">
       <div class="suc-ico">✓</div>
-      <div class="suc-h">¡Adhesión registrada!</div>
-      <div class="suc-p">Tu voz ha sido contada de forma anónima y verificada.</div>
+      <div class="suc-h">{{ $t('verify.successTitle') }}</div>
+      <div class="suc-p">{{ $t('verify.successBody') }}</div>
       <div class="suc-hash">
-        <span style="color:var(--text3)">Comprobante:</span><br>
+        <span style="color:var(--text3)">{{ $t('verify.receipt') }}</span><br>
         <span>{{ receiptHash }}</span>
       </div>
             <!-- Escalera de acción -->
@@ -25,13 +25,13 @@
         <!-- Peldaño 2 — Notificación -->
         <button @click="activarNotificacion"
           style="width:100%;margin-bottom:10px;padding:10px;background:rgba(76,111,255,.12);border:.5px solid #4C6FFF;border-radius:var(--r);color:#4C6FFF;font-size:12px;font-weight:600;cursor:pointer">
-          🔔 {{ notiActivada ? '✅ Te avisaremos al cierre' : 'Avísame cuando cierre la convocatoria' }}
+          🔔 {{ notiActivada ? $t('verify.notiOn') : $t('verify.notiOff') }}
         </button>
 
         <!-- Peldaño 3 — Ver convocatoria (salida) -->
         <button @click="goDetail"
           style="width:100%;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:11px;cursor:pointer">
-          ← Ver la convocatoria
+          ← {{ $t('verify.backDetail') }}
         </button>
 
       </div>
@@ -45,6 +45,9 @@ import { useRouter } from 'vue-router';
 import { useProtestsStore } from '@/stores/protests.js';
 import { useDeviceStore }   from '@/stores/device.js';
 import { useUiStore }       from '@/stores/ui.js';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const router   = useRouter();
 const protests = useProtestsStore();
@@ -52,7 +55,7 @@ const device   = useDeviceStore();
 const ui       = useUiStore();
 
 const success    = ref(false);
-const spinMsg    = ref('Verificando código...');
+const spinMsg    = ref('');
 const receiptHash = ref('');
 const notiActivada = ref(false);
 
@@ -98,8 +101,6 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
 }
 
-const MSGS = ['Verificando código...', 'Registrando adhesión anónima...', 'Generando comprobante...'];
-
 onMounted(async () => {
   await protests.loadProtests();
   // Limpiar GPS después de usarlo
@@ -109,7 +110,7 @@ onMounted(async () => {
     localStorage.removeItem('vc_gps_accuracy');
     localStorage.removeItem('vc_gps_ts');
   }, 5000);
-  for (const msg of MSGS) {
+  for (const msg of [t('verify.spinVerifying'), t('verify.spinRegistering'), t('verify.spinGenerating')]) {
     spinMsg.value = msg;
     await new Promise(r => setTimeout(r, 850));
   }
@@ -142,7 +143,7 @@ const target = lastId
 );
     } catch (e) {
       if (e.code === 'NATIONAL_ONLY') {
-        ui.showToast('No puede adherirse, la protesta es únicamente para ciudadanos nacionales');
+        ui.showToast(t('verify.toastNational'));
         router.push('/');
         return;
       }
@@ -157,7 +158,7 @@ const target = lastId
   for (let i = 0; i < 64; i++) h += c[Math.floor(Math.random() * 16)];
   receiptHash.value = h;
   success.value = true;
-  ui.showToast('✓ Adhesión anónima registrada');
+  ui.showToast(t('verify.toast'));
   setTimeout(() => ui.revealInstallBanner(), 1500);
 });
 

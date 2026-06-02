@@ -70,6 +70,9 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useUiStore } from '@/stores/ui.js';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const route = useRoute();
 const router = useRouter();
@@ -89,7 +92,7 @@ onMounted(async () => {
     const res = await fetch(
       `${import.meta.env.VITE_API_URL}/api/grupos/invite/${token}`
     );
-    if (!res.ok) throw new Error('Invitación no válida');
+    if (!res.ok) throw new Error(t('invite.invalidTitle'));
     const data = await res.json();
     invitacion.value = {
       institucion: data.institucion,
@@ -109,7 +112,7 @@ async function aceptarInvitacion() {
     sessionStorage.setItem('vc_group_id', invitacion.value.group_id);
     router.push(`/grupo/${invitacion.value.protest_id}/unirse?invite=${token}`);
   } else {
-    ui.showToast('Error — invitación no válida');
+    ui.showToast(t('invite.errorInvalid'));
   }
 }
 </script>

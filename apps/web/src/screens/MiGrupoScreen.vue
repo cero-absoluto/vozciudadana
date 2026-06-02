@@ -97,7 +97,7 @@
         <div style="display:flex;align-items:center;gap:8px;padding:8px 0">
           <div style="width:10px;height:10px;border-radius:50%;background:var(--accent2)"></div>
           <div style="font-size:12px;font-weight:500">
-            {{ miEstado.es_genesis ? '⭐ Nodo génesis' : '✓ Acreditado' }}
+            {{ miEstado.es_genesis ? '⭐ ' + $t('migrupo.genesis') : '✓ ' + $t('migrupo.accredited') }}
           </div>
         </div>
         <div style="font-size:13px;color:var(--text2)">
@@ -167,7 +167,10 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useProtestsStore } from '@/stores/protests.js';
 import { useUiStore } from '@/stores/ui.js';
+import { useI18n } from 'vue-i18n';
 import * as api from '@/services/api.js';
+
+const { t } = useI18n();
 
 const route = useRoute();
 const router = useRouter();
@@ -207,7 +210,7 @@ async function enviarOtpGenesis() {
     await api.sendEmailOtp({ email: genesisEmail.value, protest_id: protestId });
     genesisOtpVisible.value = true;
   } catch (e) {
-    genesisError.value = e.message || 'Error al enviar el código.';
+    genesisError.value = e.message || t('migrupo.errorSend');
   } finally {
     loadingGenesis.value = false;
   }
@@ -216,7 +219,7 @@ async function enviarOtpGenesis() {
 async function verificarOtpGenesis() {
   genesisOtpError.value = '';
   if (!genesisOtp.value || genesisOtp.value.length < 6) {
-    genesisOtpError.value = 'Introduce el código de 6 dígitos';
+    genesisOtpError.value = t('migrupo.otpError');
     return;
   }
   loadingGenesis.value = true;
@@ -235,7 +238,7 @@ async function verificarOtpGenesis() {
     await cargarEstado();
     creandoGrupo.value = false;
     genesisOtpVisible.value = false;
-    ui.showToast('✓ Censo iniciado — eres el nodo génesis');
+    ui.showToast(t('migrupo.toastCreated'));
   } catch (e) {
     genesisOtpError.value = e.message || 'Error al crear el grupo.';
   } finally {
@@ -326,8 +329,8 @@ async function compartirLink() {
   if (navigator.share) {
     try {
       await navigator.share({
-        title: 'Únete al censo de ' + (protest.value?.convocatoria_institucion || 'nuestro grupo'),
-        text: 'Te invito a unirte al censo verificado. Solo para compañeros del grupo — no compartas este link fuera.',
+        title: t('migrupo.shareTitle', { name: protest.value?.convocatoria_institucion || t('migrupo.ourGroup') }),
+        text: t('migrupo.shareText'),
         url: linkInvitacion.value,
       });
     } catch {
@@ -335,7 +338,7 @@ async function compartirLink() {
     }
   } else {
     await copiarLink();
-    ui.showToast('✓ Link copiado — compártelo solo con tus compañeros');
+    ui.showToast(t('migrupo.linkCopied'));
   }
 }
   

@@ -58,7 +58,8 @@
     "worldIdSoon": "World ID — 即将推出",
     "wrongCountry": "此活动仅面向{country}的公民。请使用该国号码。",
     "otpError": "请输入全部6位数字",
-    "otpIncorrect": "验证码错误或已过期：{msg}"
+    "otpIncorrect": "验证码错误或已过期：{msg}",
+    "sendError": "发送验证码失败：{msg}"
   },
   "home": {
     "geoConfidence": "地理置信度：",
@@ -279,7 +280,11 @@
     "backDetail": "← 查看活动",
     "seeReport": "📊 查看完整报告",
     "goMap": "前往世界地图",
-    "toastError": "注册加入时出错：{msg}"
+    "toastError": "注册加入时出错：{msg}",
+    "toast": "\u2713 匿名加入已注册",
+    "toastNational": "无法加入，此活动仅面向本国公民",
+    "notiOn": "\u2705 关闭时将通知您",
+    "notiOff": "关闭时通知我"
   },
   "about": {
     "heroTitle": "工具。没有诈骗。",
@@ -402,7 +407,8 @@
     "reject": "拒绝",
     "invalidTitle": "无效邀请",
     "invalidBody": "此链接已过期、已被使用最大次数或不存在。",
-    "goMap": "前往地图 →"
+    "goMap": "前往地图 →",
+    "errorInvalid": "错误 — 邀请无效"
   },
   "migrupo": {
     "back": "← 返回",
@@ -452,7 +458,13 @@
     "toastCreated": "✓ 名册已启动 — 您是创始节点",
     "toastVouched": "✓ 担保已注册",
     "toastLoadError": "加载群组状态时出错",
-    "toastVouchError": "注册担保时出错：{msg}"
+    "toastVouchError": "注册担保时出错：{msg}",
+    "errorSend": "发送验证码时出错。",
+    "otpError": "请输入6位验证码",
+    "shareTitle": "加入 {name} 的名册",
+    "shareText": "我邀请您加入已验证的名册。仅限群组成员——请勿在群组外分享此链接。",
+    "ourGroup": "我们的群组",
+    "linkCopied": "\u2713 链接已复制——只与同事分享"
   },
   "unirse": {
     "back": "← 返回",
@@ -483,7 +495,11 @@
     "errEmail": "请输入您的机构电子邮件",
     "errDomain": "邮箱必须来自域名@{domain}",
     "errOtp": "请输入6位验证码",
-    "errOtpWrong": "验证码错误或已过期。"
+    "errOtpWrong": "验证码错误或已过期。",
+    "institution": "机构",
+    "yourInstitution": "您的机构",
+    "errorSend": "发送验证码时出错。",
+    "accreditedTitle": "已认证！"
   },
   "verificacional": {
     "title": "🏛️ 机构验证",
@@ -508,7 +524,9 @@
     "errEmailInvalid": "无效的电子邮件",
     "errDomain": "邮箱必须来自域名@{domain}",
     "errOtp": "请输入6位验证码",
-    "errOtpWrong": "验证码错误或已过期。"
+    "errOtpWrong": "验证码错误或已过期。",
+    "yourInstitution": "您的机构",
+    "errorSend": "发送验证码时出错。请重试。"
   },
   "share": {
     "previewLabel": "🔥 将要发送的消息",

@@ -69,7 +69,12 @@
     "filterGlobal": "🌍 全球",
     "tabActive": "活跃",
     "tabQueue": "排队",
-    "tabSlots": "时段"
+    "tabSlots": "时段",
+    "overlayTitle": "探索活跃抗议",
+    "overlayBody": "在地图上缩放以查看您所在国家的活动。点击标记查看详情。",
+    "overlayLive": "地图上的活跃活动",
+    "overlayTap": "点击探索 →",
+    "dotDocument": "证件"
   },
   "active": {
     "empty": "没有活跃的活动",
@@ -393,7 +398,23 @@
     "abusoNegligencia": "严重失职",
     "abusoRepresion": "镇压或审查",
     "abusoOpacidad": "不透明或缺乏问责",
-    "abusoOtro": "其他公权力滥用"
+    "abusoOtro": "其他公权力滥用",
+    "velocidadTitle": "📈 增长速度",
+    "velocidadMediaDiaria": "日均加入",
+    "velocidadPico": "峰值 —",
+    "velocidadPorDia": "每日加入次数",
+    "velocidadNoData": "没有可用的速度数据。",
+    "selloSourceDesc": "公开审计的源代码：",
+    "downloadPdf": "⬇ 下载PDF",
+    "embedBtn": "＜/＞ 嵌入",
+    "embedTitle": "＜/＞ 嵌入此抗议",
+    "embedDesc": "复制此代码行并粘贴到您的文章、博客或网站中。计数器实时更新。",
+    "embedCopied": "✅ 已复制！",
+    "embedCopy": "📋 复制代码",
+    "embedClose": "关闭",
+    "embedPreview": "预览",
+    "embedVerifiedCitizens": "名经验证公民",
+    "embedJoin": "🗳️ 匿名加入"
   },
   "invite": {
     "loading": "验证邀请中...",
@@ -464,7 +485,11 @@
     "shareTitle": "加入 {name} 的名册",
     "shareText": "我邀请您加入已验证的名册。仅限群组成员——请勿在群组外分享此链接。",
     "ourGroup": "我们的群组",
-    "linkCopied": "\u2713 链接已复制——只与同事分享"
+    "linkCopied": "\u2713 链接已复制——只与同事分享",
+    "errorDomain": "电子邮件必须属于 @{domain} 域",
+    "errorCreateGroup": "创建群组时出错。",
+    "toastLinkError": "生成链接时出错：{msg}",
+    "linkCopyError": "无法复制 — 请手动复制链接"
   },
   "unirse": {
     "back": "← 返回",
@@ -575,5 +600,25 @@
     "badgeGlobal": "全球",
     "metaAdheridos": "支持者",
     "metaCiudades": "城市"
+  },
+  "api": {
+    "openData": "开放数据",
+    "title": "公共API",
+    "desc": "Voz Ciudadana 为研究人员、记者和开发者提供免费开放的API。所有数据均经过汇总和匿名处理——不会暴露任何个人数据。",
+    "badgeFree": "✅ 免费",
+    "badgeNoAuth": "🔓 无需认证",
+    "badgeAggregated": "📊 仅汇总数据",
+    "baseUrlTitle": "基础URL",
+    "rateLimitTitle": "请求限制",
+    "rateLimitDesc": "每个IP每分钟120次请求。无需认证。",
+    "exampleResponse": "响应示例",
+    "tryIt": "▶ 试用",
+    "tryUtrecht": "▶ 用乌得勒支试用",
+    "endpoint1Desc": "平台全局统计数据——抗议总数、支持者数量、国家数量。",
+    "endpoint2Desc": "列出所有抗议及其汇总数据。",
+    "endpoint2Params": "查询参数：",
+    "endpoint3Desc": "单个抗议的完整数据，包括可信度分析、地理分布和增长统计。",
+    "attributionTitle": "署名",
+    "attributionDesc": "使用这些数据时，请注明出处："
   }
 }

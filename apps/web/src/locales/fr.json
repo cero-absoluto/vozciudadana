@@ -69,7 +69,12 @@
     "filterGlobal": "🌍 Mondial",
     "tabActive": "Actifs",
     "tabQueue": "File d'attente",
-    "tabSlots": "Créneaux"
+    "tabSlots": "Créneaux",
+    "overlayTitle": "Explorer les protestations actives",
+    "overlayBody": "Zoomez sur la carte pour voir les événements dans votre pays. Appuyez sur un point pour voir les détails.",
+    "overlayLive": "Événements actifs sur la carte",
+    "overlayTap": "Appuyer pour explorer →",
+    "dotDocument": "Document"
   },
   "active": {
     "empty": "Aucun événement actif",
@@ -393,7 +398,23 @@
     "abusoNegligencia": "Négligence grave",
     "abusoRepresion": "Répression ou censure",
     "abusoOpacidad": "Opacité ou manque de transparence",
-    "abusoOtro": "Autre abus de pouvoir public"
+    "abusoOtro": "Autre abus de pouvoir public",
+    "velocidadTitle": "📈 Vitesse de croissance",
+    "velocidadMediaDiaria": "Moyenne journalière",
+    "velocidadPico": "Pic —",
+    "velocidadPorDia": "Adhésions par jour",
+    "velocidadNoData": "Aucune donnée de vitesse disponible.",
+    "selloSourceDesc": "Code source audité publiquement :",
+    "downloadPdf": "⬇ Télécharger PDF",
+    "embedBtn": "＜/＞ Intégrer",
+    "embedTitle": "＜/＞ Intégrer cette protestation",
+    "embedDesc": "Copiez cette ligne de code et collez-la dans votre article, blog ou site web. Le compteur se met à jour en temps réel.",
+    "embedCopied": "✅ Copié !",
+    "embedCopy": "📋 Copier le code",
+    "embedClose": "Fermer",
+    "embedPreview": "Aperçu",
+    "embedVerifiedCitizens": "citoyens vérifiés",
+    "embedJoin": "🗳️ Rejoindre anonymement"
   },
   "invite": {
     "loading": "Validation de l'invitation...",
@@ -464,7 +485,11 @@
     "shareTitle": "Rejoins le recensement de {name}",
     "shareText": "Je t'invite à rejoindre le recensement vérifié. Uniquement pour les membres du groupe — ne partage pas ce lien en dehors.",
     "ourGroup": "notre groupe",
-    "linkCopied": "\u2713 Lien copié — partage-le uniquement avec tes collègues"
+    "linkCopied": "\u2713 Lien copié — partage-le uniquement avec tes collègues",
+    "errorDomain": "L'email doit être du domaine @{domain}",
+    "errorCreateGroup": "Erreur lors de la création du groupe.",
+    "toastLinkError": "Erreur lors de la génération du lien : {msg}",
+    "linkCopyError": "Impossible de copier — copiez le lien manuellement"
   },
   "unirse": {
     "back": "← Retour",
@@ -575,5 +600,25 @@
     "badgeGlobal": "Mondial",
     "metaAdheridos": "soutiens",
     "metaCiudades": "villes"
+  },
+  "api": {
+    "openData": "Données ouvertes",
+    "title": "API publique",
+    "desc": "Voz Ciudadana fournit une API gratuite et ouverte pour les chercheurs, journalistes et développeurs. Toutes les données sont agrégées et anonymisées — aucune donnée personnelle n'est jamais exposée.",
+    "badgeFree": "✅ Gratuite",
+    "badgeNoAuth": "🔓 Sans authentification",
+    "badgeAggregated": "📊 Agrégées uniquement",
+    "baseUrlTitle": "URL de base",
+    "rateLimitTitle": "Limite de requêtes",
+    "rateLimitDesc": "120 requêtes par minute par IP. Aucune authentification requise.",
+    "exampleResponse": "Exemple de réponse",
+    "tryIt": "▶ Essayer",
+    "tryUtrecht": "▶ Essayer avec Utrecht",
+    "endpoint1Desc": "Statistiques globales de la plateforme — total des protestations, adhésions, pays.",
+    "endpoint2Desc": "Liste toutes les protestations avec les données agrégées.",
+    "endpoint2Params": "Paramètres :",
+    "endpoint3Desc": "Données complètes d'une protestation : fiabilité, distribution géographique et statistiques de croissance.",
+    "attributionTitle": "Attribution",
+    "attributionDesc": "Lors de l'utilisation de ces données, veuillez citer :"
   }
 }

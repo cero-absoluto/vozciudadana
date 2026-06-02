@@ -183,19 +183,19 @@
 
           <!-- BLOQUE 4 — Velocidad de crecimiento -->
           <div class="block" style="margin-bottom:12px">
-            <div class="block-title">📈 Velocidad de crecimiento</div>
+            <div class="block-title">{{ $t('informe.velocidadTitle') }}</div>
             <div v-if="data.velocidad" style="margin-bottom:12px">
               <div style="display:flex;gap:8px;margin-bottom:12px">
                 <div style="flex:1;background:var(--bg3);border-radius:var(--r);padding:10px;text-align:center">
                   <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent2)">{{ data.velocidad.media_diaria }}</div>
-                  <div style="font-size:10px;color:var(--text3);margin-top:2px">Media diaria de adhesiones</div>
+                  <div style="font-size:10px;color:var(--text3);margin-top:2px">{{ $t('informe.velocidadMediaDiaria') }}</div>
                 </div>
                 <div v-if="data.velocidad.dia_pico" style="flex:1;background:var(--bg3);border-radius:var(--r);padding:10px;text-align:center">
                   <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent)">{{ data.velocidad.dia_pico.count }}</div>
-                  <div style="font-size:10px;color:var(--text3);margin-top:2px">Pico — {{ formatDate(data.velocidad.dia_pico.fecha) }}</div>
+                  <div style="font-size:10px;color:var(--text3);margin-top:2px">{{ $t('informe.velocidadPico') }} {{ formatDate(data.velocidad.dia_pico.fecha) }}</div>
                 </div>
               </div>
-              <div style="font-size:10px;color:var(--text3);margin-bottom:6px">Adhesiones por día</div>
+              <div style="font-size:10px;color:var(--text3);margin-bottom:6px">{{ $t('informe.velocidadPorDia') }}</div>
               <div style="display:flex;align-items:flex-end;gap:3px;height:80px">
                 <div v-for="d in data.velocidad.adhesiones_por_dia" :key="d.fecha"
                   :style="{
@@ -209,7 +209,7 @@
                 </div>
               </div>
             </div>
-            <div v-else style="font-size:12px;color:var(--text3)">Sin datos de velocidad disponibles.</div>
+            <div v-else style="font-size:12px;color:var(--text3)">{{ $t('informe.velocidadNoData') }}</div>
           </div>
 
           <!-- BLOQUE 6 — Cadena de verificación -->
@@ -228,7 +228,7 @@
               <div style="font-family:monospace;font-size:9px;color:var(--accent2);word-break:break-all">{{ data.protest.hash_integridad }}</div>
             </div>
             <div style="font-size:14px;color:var(--text2);line-height:1.8">
-              Código fuente auditado públicamente:<br>
+              {{ $t('informe.selloSourceDesc') }}<br>
               <button
                 onclick="window.open('https://github.com/cero-absoluto/vozciudadana','_blank')"
                 style="background:transparent;border:.5px solid var(--accent);border-radius:var(--r);padding:4px 10px;color:var(--accent);cursor:pointer;font-size:11px;margin-top:4px">
@@ -244,28 +244,28 @@
 
         <!-- Botón volver + PDF + Embed -->
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-          <button class="btn-primary" style="flex:1" @click="$router.back()">← Back</button>
-          <button class="btn-primary" style="flex:1;background:var(--accent2);color:#000" @click="downloadPDF">⬇ Download PDF</button>
-          <button class="btn-primary" style="flex:1;background:rgba(76,111,255,.2);border:.5px solid #4C6FFF;color:#4C6FFF" @click="showEmbed=true">＜/＞ Embed</button>
+          <button class="btn-primary" style="flex:1" @click="$router.back()">{{ $t('informe.back') }}</button>
+          <button class="btn-primary" style="flex:1;background:var(--accent2);color:#000" @click="downloadPDF">{{ $t('informe.downloadPdf') }}</button>
+          <button class="btn-primary" style="flex:1;background:rgba(76,111,255,.2);border:.5px solid #4C6FFF;color:#4C6FFF" @click="showEmbed=true">{{ $t('informe.embedBtn') }}</button>
         </div>
 
         <!-- Embed modal -->
         <div v-if="showEmbed" style="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px" @click.self="showEmbed=false">
           <div style="background:#13111F;border:.5px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;max-width:480px;width:100%">
-            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">＜/＞ Embed this protest</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">{{ $t('informe.embedTitle') }}</div>
             <div style="font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.6">
-              Copy this line of code and paste it anywhere in your article, blog or website. The counter updates in real time.
+              {{ $t('informe.embedDesc') }}
             </div>
             <div style="background:#0C0B14;border:.5px solid rgba(255,255,255,.08);border-radius:8px;padding:12px;font-family:monospace;font-size:10px;color:#4CFFA4;word-break:break-all;margin-bottom:12px;line-height:1.7">
               {{ embedCode }}
             </div>
             <div style="display:flex;gap:8px">
-              <button class="btn-primary" style="flex:1;background:#4C6FFF" @click="copyEmbed">{{ copied ? '✅ Copied!' : '📋 Copy code' }}</button>
-              <button class="btn-primary" style="flex:1;background:transparent;border:.5px solid var(--border2);color:var(--text2)" @click="showEmbed=false">Close</button>
+              <button class="btn-primary" style="flex:1;background:#4C6FFF" @click="copyEmbed">{{ copied ? $t('informe.embedCopied') : $t('informe.embedCopy') }}</button>
+              <button class="btn-primary" style="flex:1;background:transparent;border:.5px solid var(--border2);color:var(--text2)" @click="showEmbed=false">{{ $t('informe.embedClose') }}</button>
             </div>
             <!-- Preview -->
             <div style="margin-top:16px;padding-top:14px;border-top:.5px solid var(--border)">
-              <div style="font-size:10px;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Preview</div>
+              <div style="font-size:10px;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">{{ $t('informe.embedPreview') }}</div>
               <div style="background:#0C0B14;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px 20px;max-width:320px">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
                   <span style="font-size:11px;font-weight:700;color:#4CFFA4;text-transform:uppercase">🗳 Voz Ciudadana</span>
@@ -273,8 +273,8 @@
                 </div>
                 <div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:6px;line-height:1.4">{{ data?.protest?.title }}</div>
                 <div style="font-size:28px;font-weight:800;color:#4CFFA4;line-height:1">{{ data?.total_adhesiones?.toLocaleString('en') }}</div>
-                <div style="font-size:10px;color:#8884AA;margin-bottom:10px">verified citizens</div>
-                <div style="background:#4C6FFF;border-radius:8px;padding:8px;text-align:center;font-size:12px;font-weight:700;color:#fff">🗳️ Join anonymously</div>
+                <div style="font-size:10px;color:#8884AA;margin-bottom:10px">{{ $t('informe.embedVerifiedCitizens') }}</div>
+                <div style="background:#4C6FFF;border-radius:8px;padding:8px;text-align:center;font-size:12px;font-weight:700;color:#fff">{{ $t('informe.embedJoin') }}</div>
               </div>
             </div>
           </div>

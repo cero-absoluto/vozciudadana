@@ -58,7 +58,8 @@
     "worldIdSoon": "World ID — bientôt disponible",
     "wrongCountry": "Cet événement est réservé aux citoyens de {country}. Utilisez un numéro de ce pays.",
     "otpError": "Entrez les 6 chiffres",
-    "otpIncorrect": "Code incorrect ou expiré : {msg}"
+    "otpIncorrect": "Code incorrect ou expiré : {msg}",
+    "sendError": "Erreur d'envoi du code : {msg}"
   },
   "home": {
     "geoConfidence": "Confiance géographique :",
@@ -279,7 +280,11 @@
     "backDetail": "← Voir l'événement",
     "seeReport": "📊 Voir le rapport complet",
     "goMap": "Aller à la carte mondiale",
-    "toastError": "Erreur lors de l'enregistrement de l'adhésion : {msg}"
+    "toastError": "Erreur lors de l'enregistrement de l'adhésion : {msg}",
+    "toast": "\u2713 Adhésion anonyme enregistrée",
+    "toastNational": "Impossible de rejoindre, cet événement est uniquement pour les citoyens nationaux",
+    "notiOn": "\u2705 Nous vous notifierons à la clôture",
+    "notiOff": "Me notifier à la clôture"
   },
   "about": {
     "heroTitle": "L'outil. Sans tromperie.",
@@ -402,7 +407,8 @@
     "reject": "Refuser",
     "invalidTitle": "Invitation invalide",
     "invalidBody": "Ce lien a expiré, a été utilisé le nombre maximum de fois ou n'existe pas.",
-    "goMap": "Aller à la carte →"
+    "goMap": "Aller à la carte →",
+    "errorInvalid": "Erreur — invitation invalide"
   },
   "migrupo": {
     "back": "← Retour",
@@ -452,7 +458,13 @@
     "toastCreated": "✓ Recensement démarré — vous êtes le nœud genèse",
     "toastVouched": "✓ Parrainage enregistré",
     "toastLoadError": "Erreur lors du chargement du statut du groupe",
-    "toastVouchError": "Erreur lors de l'enregistrement du parrainage : {msg}"
+    "toastVouchError": "Erreur lors de l'enregistrement du parrainage : {msg}",
+    "errorSend": "Erreur lors de l'envoi du code.",
+    "otpError": "Entrez le code à 6 chiffres",
+    "shareTitle": "Rejoins le recensement de {name}",
+    "shareText": "Je t'invite à rejoindre le recensement vérifié. Uniquement pour les membres du groupe — ne partage pas ce lien en dehors.",
+    "ourGroup": "notre groupe",
+    "linkCopied": "\u2713 Lien copié — partage-le uniquement avec tes collègues"
   },
   "unirse": {
     "back": "← Retour",
@@ -483,7 +495,11 @@
     "errEmail": "Entrez votre email institutionnel",
     "errDomain": "L'email doit être du domaine @{domain}",
     "errOtp": "Entrez le code à 6 chiffres",
-    "errOtpWrong": "Code incorrect ou expiré."
+    "errOtpWrong": "Code incorrect ou expiré.",
+    "institution": "Institution",
+    "yourInstitution": "votre institution",
+    "errorSend": "Erreur lors de l'envoi du code.",
+    "accreditedTitle": "Accrédité(e) !"
   },
   "verificacional": {
     "title": "🏛️ Vérification institutionnelle",
@@ -508,7 +524,9 @@
     "errEmailInvalid": "Email invalide",
     "errDomain": "L'email doit être du domaine @{domain}",
     "errOtp": "Entrez le code à 6 chiffres",
-    "errOtpWrong": "Code incorrect ou expiré."
+    "errOtpWrong": "Code incorrect ou expiré.",
+    "yourInstitution": "votre institution",
+    "errorSend": "Erreur lors de l'envoi du code. Réessayez."
   },
   "share": {
     "previewLabel": "🔥 Message qui sera envoyé",

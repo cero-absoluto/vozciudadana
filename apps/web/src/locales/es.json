@@ -58,7 +58,8 @@
     "worldIdSoon": "World ID — próximamente",
     "wrongCountry": "Esta convocatoria es solo para ciudadanos de {country}. Usa un número de ese país.",
     "otpError": "Introduce los 6 dígitos",
-    "otpIncorrect": "Código incorrecto o expirado: {msg}"
+    "otpIncorrect": "Código incorrecto o expirado: {msg}",
+    "sendError": "Error al enviar el código: {msg}"
   },
   "home": {
     "geoConfidence": "Confianza geográfica:",
@@ -280,7 +281,9 @@
     "seeReport": "📄 Ver informe público",
     "goMap": "Ir al mapa mundial",
     "toast": "✓ Adhesión anónima registrada",
-    "toastNational": "No puede adherirse, la protesta es únicamente para ciudadanos nacionales"
+    "toastNational": "No puede adherirse, la protesta es únicamente para ciudadanos nacionales",
+    "notiOn": "✅ Te avisaremos al cierre",
+    "notiOff": "Avísame cuando cierre la convocatoria"
   },
   "about": {
     "heroTitle": "La herramienta. Sin trampa.",
@@ -403,7 +406,8 @@
     "reject": "Rechazar",
     "invalidTitle": "Invitación no válida",
     "invalidBody": "Este link ha caducado, ya ha sido usado el número máximo de veces o no existe.",
-    "goMap": "Ir al mapa →"
+    "goMap": "Ir al mapa →",
+    "errorInvalid": "Error — invitación no válida"
   },
   "migrupo": {
     "back": "← Volver",
@@ -453,7 +457,13 @@
     "toastCreated": "✓ Censo iniciado — eres el nodo génesis",
     "toastVouched": "✓ Aval registrado",
     "toastLoadError": "Error al cargar el estado del grupo",
-    "toastVouchError": "Error al registrar el aval: {msg}"
+    "toastVouchError": "Error al registrar el aval: {msg}",
+    "errorSend": "Error al enviar el código.",
+    "otpError": "Introduce el código de 6 dígitos",
+    "shareTitle": "Uúnete al censo de {name}",
+    "shareText": "Te invito a unirte al censo verificado. Solo para compañeros del grupo — no compartas este link fuera.",
+    "ourGroup": "nuestro grupo",
+    "linkCopied": "✓ Link copiado — compártelo solo con tus compañeros"
   },
   "unirse": {
     "back": "← Volver",
@@ -484,7 +494,11 @@
     "errEmail": "Introduce tu email institucional",
     "errDomain": "El email debe ser del dominio @{domain}",
     "errOtp": "Introduce el código de 6 dígitos",
-    "errOtpWrong": "Código incorrecto o caducado."
+    "errOtpWrong": "Código incorrecto o caducado.",
+    "institution": "Institución",
+    "yourInstitution": "tu institución",
+    "errorSend": "Error al enviar el código.",
+    "accreditedTitle": "¡Acreditado!"
   },
   "verificacional": {
     "title": "🏛️ Verificación institucional",
@@ -509,7 +523,9 @@
     "errEmailInvalid": "Email no válido",
     "errDomain": "El email debe ser del dominio @{domain}",
     "errOtp": "Introduce el código de 6 dígitos",
-    "errOtpWrong": "Código incorrecto o caducado."
+    "errOtpWrong": "Código incorrecto o caducado.",
+    "yourInstitution": "tu institución",
+    "errorSend": "Error al enviar el código. Inténtalo de nuevo."
   },
   "share": {
     "previewLabel": "🔥 Mensaje que se enviará",

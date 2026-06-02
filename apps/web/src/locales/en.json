@@ -58,7 +58,8 @@
     "worldIdSoon": "World ID — coming soon",
     "wrongCountry": "This event is only for citizens of {country}. Use a number from that country.",
     "otpError": "Enter all 6 digits",
-    "otpIncorrect": "Incorrect or expired code: {msg}"
+    "otpIncorrect": "Incorrect or expired code: {msg}",
+    "sendError": "Error sending the code: {msg}"
   },
   "home": {
     "geoConfidence": "Geographic confidence:",
@@ -279,7 +280,11 @@
     "backDetail": "← See the event",
     "seeReport": "📊 See full report",
     "goMap": "Go to world map",
-    "toastError": "Error registering adhesion: {msg}"
+    "toastError": "Error registering adhesion: {msg}",
+    "toast": "\u2713 Anonymous adhesion registered",
+    "toastNational": "Cannot join, this event is only for national citizens",
+    "notiOn": "\u2705 We'll notify you when it closes",
+    "notiOff": "Notify me when it closes"
   },
   "about": {
     "heroTitle": "The tool. No tricks.",
@@ -402,7 +407,8 @@
     "reject": "Decline",
     "invalidTitle": "Invalid invitation",
     "invalidBody": "This link has expired, has been used the maximum number of times, or doesn't exist.",
-    "goMap": "Go to map →"
+    "goMap": "Go to map →",
+    "errorInvalid": "Error — invalid invitation"
   },
   "migrupo": {
     "back": "← Back",
@@ -452,7 +458,13 @@
     "toastCreated": "✓ Census started — you are the genesis node",
     "toastVouched": "✓ Vouch registered",
     "toastLoadError": "Error loading group status",
-    "toastVouchError": "Error registering vouch: {msg}"
+    "toastVouchError": "Error registering vouch: {msg}",
+    "errorSend": "Error sending the code.",
+    "otpError": "Enter the 6-digit code",
+    "shareTitle": "Join the census of {name}",
+    "shareText": "I invite you to join the verified census. Only for group members — don't share this link outside.",
+    "ourGroup": "our group",
+    "linkCopied": "\u2713 Link copied — share it only with your colleagues"
   },
   "unirse": {
     "back": "← Back",
@@ -483,7 +495,11 @@
     "errEmail": "Enter your institutional email",
     "errDomain": "Email must be from domain @{domain}",
     "errOtp": "Enter the 6-digit code",
-    "errOtpWrong": "Incorrect or expired code."
+    "errOtpWrong": "Incorrect or expired code.",
+    "institution": "Institution",
+    "yourInstitution": "your institution",
+    "errorSend": "Error sending the code.",
+    "accreditedTitle": "Accredited!"
   },
   "verificacional": {
     "title": "🏛️ Institutional verification",
@@ -508,7 +524,9 @@
     "errEmailInvalid": "Invalid email",
     "errDomain": "Email must be from domain @{domain}",
     "errOtp": "Enter the 6-digit code",
-    "errOtpWrong": "Incorrect or expired code."
+    "errOtpWrong": "Incorrect or expired code.",
+    "yourInstitution": "your institution",
+    "errorSend": "Error sending the code. Please try again."
   },
   "share": {
     "previewLabel": "🔥 Message that will be sent",

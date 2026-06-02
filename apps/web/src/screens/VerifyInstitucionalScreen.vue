@@ -72,7 +72,7 @@ const ui       = useUiStore();
 
 const protestId = route.params.protestId;
 const protest   = computed(() => protests.protests.find(p => String(p.id) === protestId));
-const dominio   = computed(() => protest.value?.dominio_email || 'tu institución');
+const dominio   = computed(() => protest.value?.dominio_email || t('verificacional.yourInstitution'));
 
 const step       = ref(1);
 const email      = ref('');
@@ -97,7 +97,7 @@ async function sendOtp() {
     await api.sendEmailOtp({ email: email.value, protest_id: protestId });
     step.value = 2;
   } catch (e) {
-    emailError.value = e.message || 'Error al enviar el código. Inténtalo de nuevo.';
+    emailError.value = e.message || t('verificacional.errorSend');
   } finally {
     loading.value = false;
   }
@@ -105,16 +105,16 @@ async function sendOtp() {
 
 async function verifyOtp() {
   otpError.value = '';
-  if (!otp.value.trim() || otp.value.length < 6) { otpError.value = 'Introduce el código de 6 dígitos'; return; }
+  if (!otp.value.trim() || otp.value.length < 6) { otpError.value = t('verificacional.errOtp'); return; }
   loading.value = true;
   try {
     const api = await import('@/services/api.js');
     const result = await api.verifyEmailOtp({ email: email.value, otp: otp.value, protest_id: protestId });
     receiptHash.value = result.receipt || generarHashFalso();
     step.value = 3;
-    ui.showToast('✓ Adhesión anónima registrada');
+    ui.showToast(t('verify.toast'));
   } catch (e) {
-    otpError.value = e.message || 'Código incorrecto o caducado.';
+    otpError.value = e.message || t('verificacional.errOtpWrong');
   } finally {
     loading.value = false;
   }

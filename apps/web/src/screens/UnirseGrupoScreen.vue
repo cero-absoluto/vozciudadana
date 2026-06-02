@@ -9,7 +9,7 @@
           {{ $t('unirse.title') }}
         </div>
         <div style="font-size:11px;color:var(--text3)">
-          {{ protest?.convocatoria_institucion || 'Institución' }}
+          {{ protest?.convocatoria_institucion || $t('unirse.institution') }}
         </div>
       </div>
 
@@ -71,7 +71,7 @@
           {{ $t('unirse.successBody', { n: 2 - avalosRecibidos }) }}
         </div>
         <button class="btn-primary" style="width:100%" @click="$router.push('/')">
-          Ir al mapa →
+          {{ $t('unirse.goMap') }}
         </button>
       </div>
 
@@ -79,14 +79,13 @@
       <div v-if="paso === 4" style="text-align:center;padding:40px 20px">
         <div style="font-size:48px;margin-bottom:16px">🎉</div>
         <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--accent2);margin-bottom:8px">
-          ¡Acreditado!
+          {{ $t('unirse.accreditedTitle') }}
         </div>
         <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:24px">
-          Tu email ha sido verificado y has sido acreditado automáticamente como miembro del censo.<br><br>
-          Ya puedes adherirte a la convocatoria e invitar a otros compañeros.
+          {{ $t('unirse.step4Body') }}
         </div>
         <button class="btn-primary" style="width:100%" @click="$router.push('/')">
-          Ir al mapa →
+          {{ $t('unirse.goMap') }}
         </button>
       </div>
       
@@ -96,10 +95,13 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useProtestsStore } from '@/stores/protests.js';
 import { useUiStore } from '@/stores/ui.js';
 import * as api from '@/services/api.js';
+
+const { t } = useI18n();
 
 const route = useRoute();
 const router = useRouter();
@@ -108,7 +110,7 @@ const ui = useUiStore();
 
 const protestId = route.params.protestId;
 const protest = computed(() => protests.protests.find(p => String(p.id) === protestId));
-const dominio = computed(() => protest.value?.dominio_email || 'tu institución');
+const dominio = computed(() => protest.value?.dominio_email || t('unirse.yourInstitution'));
 
 const paso = ref(1);
 const email = ref('');
@@ -136,7 +138,7 @@ async function solicitarOtp() {
     await api.sendEmailOtp({ email: email.value, protest_id: protestId });
     paso.value = 2;
   } catch (e) {
-    emailError.value = e.message || 'Error al enviar el código.';
+    emailError.value = e.message || t('unirse.errorSend');
   } finally {
     loading.value = false;
   }
@@ -145,7 +147,7 @@ async function solicitarOtp() {
 async function verificarOtp() {
   otpError.value = '';
   if (!otp.value.trim() || otp.value.length < 6) {
-    otpError.value = 'Introduce el código de 6 dígitos';
+    otpError.value = t('unirse.errOtp');
     return;
   }
   loading.value = true;
@@ -193,7 +195,7 @@ async function verificarOtp() {
     }
   } catch (e) {
      console.log('Error verificarOtp:', e);
-    otpError.value = e.message || 'Código incorrecto o caducado.';
+    otpError.value = e.message || t('unirse.errOtpWrong');
   } finally {
     loading.value = false;
   }

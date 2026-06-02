@@ -67,7 +67,7 @@ GET /api/public/protests           # List all protests (filter by status, scope,
 GET /api/public/protests/:id       # Full data for a single protest
 ```
 
-Base URL: `https://vozciudadanaapi-production.up.railway.app`
+Base URL: `Base URL: https://api.voiceprotest.org`
 
 Interactive documentation available in-app under **INFO → Open Data → Public API**.
 
@@ -78,7 +78,7 @@ Interactive documentation available in-app under **INFO → Open Data → Public
 Any media outlet can embed a live protest counter with one line of HTML:
 
 ```html
-<script src="https://cero-absoluto.github.io/vozciudadana/widget.js?id=PROTEST_ID"></script>
+<script src="https://voiceprotest.org/widget.js?id=PROTEST_ID"></script>
 ```
 
 Shows: live counter · event title · cities · countries · "Join anonymously" button. Updates every 30 seconds.
@@ -129,7 +129,7 @@ npm run dev:api
 
 ### Web (`apps/web`)
 
-Built with Vite. The `base` is set to `/vozciudadana/` for GitHub Pages.
+Built with Vite. The base is set to / for GitHub Pages with a custom domain.
 
 | Command | Description |
 |---|---|
@@ -188,7 +188,7 @@ NULLIFIER_SECRET=
 ADMIN_SECRET=
 
 # CORS
-CORS_ORIGIN=https://cero-absoluto.github.io
+CORS_ORIGIN=https://voiceprotest.org
 ```
 
 ---

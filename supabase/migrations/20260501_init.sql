@@ -1,5 +1,5 @@
 -- ============================================================
---  Voz Ciudadana — initial schema
+--  Voice Protest — initial schema
 --  Run: supabase db push  (or paste into Supabase SQL editor)
 -- ============================================================
 

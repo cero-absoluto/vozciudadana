@@ -1,5 +1,5 @@
 -- ============================================================
---  Voz Ciudadana — add country_code to devices
+--  Voice Protest — add country_code to devices
 -- ============================================================
 
 alter table devices

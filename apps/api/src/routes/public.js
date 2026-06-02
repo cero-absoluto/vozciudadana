@@ -29,7 +29,7 @@ export default async function publicRoutes(app) {
 
     return {
       generated_at: new Date().toISOString(),
-      platform: 'Voz Ciudadana',
+      platform: 'Voice Protest',
       version: '1.0',
       source: 'https://github.com/cero-absoluto/vozciudadana',
       license: 'AGPL 3.0',

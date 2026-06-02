@@ -8,7 +8,7 @@
   const scripts = document.querySelectorAll('script[src*="widget.js"]');
   const src = scripts[scripts.length - 1].src;
   const id = new URL(src).searchParams.get('id');
-  if (!id) return console.warn('[VozCiudadana widget] Missing ?id= parameter');
+  if (!id) return console.warn('[VoiceProtest widget] Missing ?id= parameter');
 
   // --- Styles ---
   const style = document.createElement('style');
@@ -126,7 +126,7 @@
   container.className = 'vc-widget';
   container.innerHTML = `
     <div class="vc-header">
-      <a class="vc-logo" href="${APP}" target="_blank" rel="noopener">🗳 Voz Ciudadana</a>
+      <a class="vc-logo" href="${APP}" target="_blank" rel="noopener">🗳 Voice Protest</a>
       <span class="vc-live"><span class="vc-live-dot"></span>LIVE</span>
     </div>
     <div class="vc-title" id="vc-title-${id}">Loading...</div>
@@ -141,7 +141,7 @@
     </a>
     <div class="vc-footer">
       Anonymous · Verified · Uncensored ·
-      <a href="${APP}" target="_blank" rel="noopener">vozciudadana.org</a>
+      <a href="${APP}" target="_blank" rel="noopener">voiceprotest.org</a>
     </div>
   `;
 

@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Voz Ciudadana",
+    "name": "Voice Protest",
     "tagline1": "经过验证的公民抗议",
     "tagline2": "无身份 · 无审查",
     "anon": "匿名"
@@ -293,10 +293,10 @@
   },
   "about": {
     "heroTitle": "工具。没有诈骗。",
-    "heroBody": "Voz Ciudadana没有意识形态。它是民主表达的中立基础设施，可从任何地方访问，没有身体风险。",
+    "heroBody": "Voice Protest没有意识形态。它是民主表达的中立基础设施，可从任何地方访问，没有身体风险。",
     "manifesto": "\"街头示威衡量的是当天能出现的人。我们衡量真实的支持，并用数学保证每次加入都是正确国家的真实人。\"",
     "manifestoLabel": "核心原则：",
-    "sec1Title": "Voz Ciudadana是什么和不是什么",
+    "sec1Title": "Voice Protest是什么和不是什么",
     "card1Title": "举报公共滥权",
     "card1Body": "腐败、裙带关系、严重失职、镇压、不透明。针对使用公共资金或授权的机构。",
     "card2Title": "不是请愿平台",
@@ -568,10 +568,10 @@
     "toastCopy": "📋 已复制！粘贴到TikTok、Instagram或任何地方"
   },
   "install": {
-    "title": "安装Voz Ciudadana",
+    "title": "安装Voice Protest",
     "subtitle": "实时跟踪结果 · 无需App商店 · 无需任何人许可",
     "btn": "安装",
-    "toastInstalled": "✓ Voz Ciudadana已安装。人民做主！"
+    "toastInstalled": "✓ Voice Protest已安装。人民做主！"
   },
   "map": {
     "hint": "点击国家进行筛选 · 滚轮缩放",
@@ -604,7 +604,7 @@
   "api": {
     "openData": "开放数据",
     "title": "公共API",
-    "desc": "Voz Ciudadana 为研究人员、记者和开发者提供免费开放的API。所有数据均经过汇总和匿名处理——不会暴露任何个人数据。",
+    "desc": "Voice Protest 为研究人员、记者和开发者提供免费开放的API。所有数据均经过汇总和匿名处理——不会暴露任何个人数据。",
     "badgeFree": "✅ 免费",
     "badgeNoAuth": "🔓 无需认证",
     "badgeAggregated": "📊 仅汇总数据",

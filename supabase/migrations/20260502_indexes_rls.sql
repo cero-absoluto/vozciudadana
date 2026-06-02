@@ -1,5 +1,5 @@
 -- ============================================================
---  Voz Ciudadana — indexes, RLS hardening, updated_at column
+--  Voice Protest — indexes, RLS hardening, updated_at column
 -- ============================================================
 
 -- ── Indexes on adhesions ─────────────────────────────────────

@@ -1,4 +1,4 @@
-# 🗳️ Voz Ciudadana
+# 🗳️ Voice Protest
 
 **Verified, anonymous and uncensored citizen protest platform.**
 
@@ -10,9 +10,9 @@
 
 ---
 
-## What is Voz Ciudadana?
+## What is Voice Protest?
 
-Voz Ciudadana is a civic tech platform that allows citizens to adhere to verified protest events with full identity protection. It is **not a petition platform** — it only accepts formal complaints about public abuse (corruption, nepotism, negligence, repression) directed at institutions with public funds or mandate.
+Voice Protest is a civic tech platform that allows citizens to adhere to verified protest events with full identity protection. It is **not a petition platform** — it only accepts formal complaints about public abuse (corruption, nepotism, negligence, repression) directed at institutions with public funds or mandate.
 
 Every adhesion is:
 - **Anonymous** — phone number is SHA-256 hashed locally before leaving the device
@@ -195,7 +195,7 @@ CORS_ORIGIN=https://cero-absoluto.github.io
 
 ## Philosophy
 
-Voz Ciudadana has no ideology. It is neutral infrastructure for democratic expression, accessible from anywhere, without physical risk.
+Voice Protest has no ideology. It is neutral infrastructure for democratic expression, accessible from anywhere, without physical risk.
 
 - **No advertising** — ever
 - **No data sales** — ever  
@@ -230,7 +230,7 @@ Please open an issue before submitting a pull request.
 
 ## Authorship
 
-**Voz Ciudadana** is an original project by **Judith Galan Mayoral**.
+**Voice Protest** is an original project by **Judith Galan Mayoral**.
 
 Concept and development: Judith Galan Mayoral  
 Technical collaboration -Core Developer: JL - username: KIU - DD  

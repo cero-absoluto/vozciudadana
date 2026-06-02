@@ -268,7 +268,7 @@
               <div style="font-size:10px;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">{{ $t('informe.embedPreview') }}</div>
               <div style="background:#0C0B14;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px 20px;max-width:320px">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                  <span style="font-size:11px;font-weight:700;color:#4CFFA4;text-transform:uppercase">🗳 Voz Ciudadana</span>
+                  <span style="font-size:11px;font-weight:700;color:#4CFFA4;text-transform:uppercase">🗳 Voice Protest</span>
                   <span style="font-size:9px;color:#4CFFA4;background:rgba(76,255,164,.1);border-radius:20px;padding:2px 7px">● LIVE</span>
                 </div>
                 <div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:6px;line-height:1.4">{{ data?.protest?.title }}</div>
@@ -396,7 +396,7 @@ function downloadPDF() {
   // Header band
   doc.setFillColor(30,27,50); doc.rect(0, 10, 210, 30, 'F');
   doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(76,255,164);
-  doc.text('VOZ CIUDADANA — VERIFIED PUBLIC REPORT', M, 18);
+  doc.text('VOICE PROTEST — VERIFIED PUBLIC REPORT', M, 18);
   doc.setFontSize(6); doc.setTextColor(120,115,160);
   doc.text('cero-absoluto.github.io/vozciudadana', M, 23);
   doc.setFontSize(6); doc.setTextColor(100,95,140);
@@ -512,7 +512,7 @@ function downloadPDF() {
     doc.setPage(i);
     doc.setFillColor(20,18,35); doc.rect(0, 285, 210, 12, 'F');
     doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(80,75,120);
-    doc.text('Voz Ciudadana — Verified Citizen Protest Platform — AGPL 3.0', M, 291);
+    doc.text('Voice Protest — Verified Citizen Protest Platform — AGPL 3.0', M, 291);
     doc.text('Page ' + i + ' of ' + totalPages, W - M, 291, {align:'right'});
   }
 

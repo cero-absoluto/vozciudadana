@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Voz Ciudadana",
+    "name": "Voice Protest",
     "tagline1": "Verified citizen protest",
     "tagline2": "No identity · No censorship",
     "anon": "Anonymous"
@@ -293,10 +293,10 @@
   },
   "about": {
     "heroTitle": "The tool. No tricks.",
-    "heroBody": "Voz Ciudadana has no ideology. It is neutral infrastructure for democratic expression, accessible from anywhere, without physical risk.",
+    "heroBody": "Voice Protest has no ideology. It is neutral infrastructure for democratic expression, accessible from anywhere, without physical risk.",
     "manifesto": "\"A street protest measures who can be there that day. We measure real support, with mathematical guarantees that each adhesion is a real person from the right country.\"",
     "manifestoLabel": "Core principle:",
-    "sec1Title": "What Voz Ciudadana is — and isn't",
+    "sec1Title": "What Voice Protest is — and isn't",
     "card1Title": "Public abuse report",
     "card1Body": "Corruption, nepotism, serious negligence, repression, opacity. Against institutions using public money or mandate.",
     "card2Title": "Not a petition platform",
@@ -568,10 +568,10 @@
     "toastCopy": "📋 Copied! Paste it on TikTok, Instagram or wherever you want"
   },
   "install": {
-    "title": "Install Voz Ciudadana",
+    "title": "Install Voice Protest",
     "subtitle": "Follow the result in real time · No App Store · No one's permission",
     "btn": "Install",
-    "toastInstalled": "✓ Voz Ciudadana installed. The people command!"
+    "toastInstalled": "✓ Voice Protest installed. The people command!"
   },
   "map": {
     "hint": "Click a country to filter · scroll to zoom",
@@ -604,7 +604,7 @@
   "api": {
     "openData": "Open Data",
     "title": "Public API",
-    "desc": "Voz Ciudadana provides a free, open API for researchers, journalists and developers. All data is aggregated and anonymised — no personal data is ever exposed.",
+    "desc": "Voice Protest provides a free, open API for researchers, journalists and developers. All data is aggregated and anonymised — no personal data is ever exposed.",
     "badgeFree": "✅ Free",
     "badgeNoAuth": "🔓 No auth required",
     "badgeAggregated": "📊 Aggregated only",

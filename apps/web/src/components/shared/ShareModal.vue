@@ -53,7 +53,7 @@ const ui       = useUiStore();
 const protests = useProtestsStore();
 const route    = useRoute();
 
-const BASE_URL = 'https://cero-absoluto.github.io/vozciudadana';
+const BASE_URL = 'https://www.voiceprotest.org';
 
 const currentProtest = computed(() => {
   const id = Number(route.params.id);
@@ -66,7 +66,7 @@ const fullMsg = computed(() => {
 });
 
 const previewMsg = computed(() =>
-  fullMsg.value.replace(/https?:\/\/\S+/g, '').replace('#VozCiudadana #ElPuebloManda', '').trim()
+  fullMsg.value.replace(/https?:\/\/\S+/g, '').replace('#VoiceProtest #ElPuebloManda', '').trim()
 );
 
 function incrementViral() {

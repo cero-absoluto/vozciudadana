@@ -19,7 +19,7 @@
 
         <!-- Peldaño 1 — VIRAL -->
         <button class="suc-share" style="width:100%;margin-bottom:10px" @click="ui.showShareModal = true">
-          🔥 VIRAL — Hazlo viral ahora
+          {{ $t('verify.viral') }}
         </button>
 
         <!-- Peldaño 2 — Notificación -->

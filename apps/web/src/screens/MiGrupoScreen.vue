@@ -6,7 +6,7 @@
       <div style="margin-bottom:20px">
         <button class="back" @click="$router.back()">{{ $t('migrupo.back') }}</button>
         <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin-bottom:4px">
-          Mi Grupo — {{ protest?.convocatoria_institucion || 'Mi Grupo' }}
+          {{ $t('migrupo.title') }} {{ protest?.convocatoria_institucion || $t('migrupo.ourGroup') }}
         </div>
         <div style="font-size:11px;color:var(--text3)">
           {{ protest?.convocatoria_region || '' }} {{ protest?.dominio_email ? '· @' + protest.dominio_email : '' }}
@@ -81,19 +81,19 @@
           </div>
         </div>
         <div style="margin-top:10px">
-          <div style="font-size:8px;color:var(--text3);margin-bottom:4px">Progreso del censo</div>
+          <div style="font-size:8px;color:var(--text3);margin-bottom:4px">{{ $t('migrupo.progressLabel') }}</div>
           <div style="background:var(--bg4);border-radius:4px;height:6px;overflow:hidden">
             <div :style="{width: progresoPercent + '%', background:'var(--accent)', height:'100%', borderRadius:'4px', transition:'width .5s'}"></div>
           </div>
           <div style="font-size:8px;color:var(--text3);margin-top:3px;text-align:right">
-            {{ grupo.acreditados }} / {{ grupo.objetivo }} objetivo
+            {{ grupo.acreditados }} / {{ grupo.objetivo }} {{ $t('migrupo.progressGoal') }}
           </div>
         </div>
       </div>
 
       <!-- Mi estado -->
       <div class="block" style="margin-bottom:12px">
-        <div class="block-title">👤 Mi estado</div>
+        <div class="block-title">{{ $t('migrupo.myStatusTitle') }}</div>
         <div style="display:flex;align-items:center;gap:8px;padding:8px 0">
           <div style="width:10px;height:10px;border-radius:50%;background:var(--accent2)"></div>
           <div style="font-size:12px;font-weight:500">
@@ -101,20 +101,20 @@
           </div>
         </div>
         <div style="font-size:13px;color:var(--text2)">
-          Has dado {{ miEstado.vouches_dados }} avales · Puedes dar {{ grupo.mis_vouches_restantes }} más
+          {{ $t('migrupo.vouchesGiven', { given: miEstado.vouches_dados, remaining: grupo.mis_vouches_restantes }) }}
         </div>
       </div>
 
       <!-- Solicitudes pendientes -->
       <div class="block" style="margin-bottom:12px">
-        <div class="block-title">🔔 Solicitudes pendientes ({{ solicitudes.length }})</div>
+        <div class="block-title">{{ $t('migrupo.pendingTitle', { count: solicitudes.length }) }}</div>
         <div v-if="solicitudes.length === 0" style="font-size:13px;color:var(--text2);padding:8px 0">
-          No hay solicitudes pendientes.
+          {{ $t('migrupo.noPending') }}
         </div>
         <div v-for="s in solicitudes" :key="s.id" style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:.5px solid var(--border)">
           <div style="flex:1">
-            <div style="font-size:11px;font-weight:500">{{ s.candidate_email || 'Candidato anónimo' }}</div>
-            <div style="font-size:9px;color:var(--text3)">{{ s.vouches_recibidos }}/2 avales · Solicitó {{ formatFecha(s.requested_at) }}</div>
+            <div style="font-size:11px;font-weight:500">{{ s.candidate_email || $t('migrupo.anonymousCandidate') }}</div>
+            <div style="font-size:9px;color:var(--text3)">{{ $t('migrupo.vouchesReceived', { received: s.vouches_recibidos, date: formatFecha(s.requested_at) }) }}</div>
             <div style="background:var(--bg4);border-radius:4px;height:4px;overflow:hidden;margin-top:4px;width:80px">
               <div :style="{width: (s.vouches_recibidos/2*100)+'%',background:'var(--accent4)',height:'100%',borderRadius:'4px'}"></div>
             </div>
@@ -123,24 +123,24 @@
             v-if="grupo.mis_vouches_restantes > 0 && !s.ya_avalado"
             @click="darVouch(s)"
             style="padding:6px 12px;background:var(--accent);border:none;border-radius:var(--r);color:white;font-size:10px;font-weight:600;cursor:pointer">
-            Avalar
+            {{ $t('migrupo.vouch') }}
           </button>
-          <div v-else-if="s.ya_avalado" style="font-size:10px;color:var(--accent2)">✓ Avalado</div>
-          <div v-else style="font-size:10px;color:var(--text3)">Sin avales</div>
+          <div v-else-if="s.ya_avalado" style="font-size:10px;color:var(--accent2)">{{ $t('migrupo.vouched') }}</div>
+          <div v-else style="font-size:10px;color:var(--text3)">{{ $t('migrupo.noVouches') }}</div>
         </div>
       </div>
 
       <!-- Invitar -->
       <div class="block" style="margin-bottom:20px">
-        <div class="block-title">🔗 Invitar a compañeros</div>
+        <div class="block-title">{{ $t('migrupo.inviteTitle') }}</div>
         <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">
-          Genera un link personal para cada compañero de tu grupo que quieras invitar. Cada link es de <strong>un solo uso</strong> y caduca en <strong>48 horas</strong>.
+          {{ $t('migrupo.inviteDesc') }}
         </div>
         <div style="font-size:12px;padding:6px 8px;background:rgba(255,107,107,.06);border:.5px solid rgba(255,107,107,.2);border-radius:var(--r);color:var(--accent3);margin-bottom:10px;line-height:1.5">
-          ⚠️ Este link es personal e intransferible. Si lo reenvías y alguien externo al grupo lo usa, comprometes la integridad del censo.
+          {{ $t('migrupo.inviteWarning') }}
         </div>
         <div style="font-size:9px;padding:6px 8px;background:rgba(124,111,255,.06);border:.5px solid var(--border);border-radius:var(--r);color:var(--text2);margin-bottom:10px;line-height:1.5">
-          📊 Invitaciones disponibles: {{ grupo.mis_vouches_restantes }} restantes
+          {{ $t('migrupo.invitesLeft', { n: grupo.mis_vouches_restantes }) }}
         </div>
         <div v-if="linkInvitacion" style="background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:8px 10px;font-family:monospace;font-size:9px;color:var(--accent);word-break:break-all;margin-bottom:8px">
           {{ linkInvitacion }}
@@ -148,11 +148,11 @@
        <div style="display:flex;gap:8px">
           <button @click="generarYCompartirLink"
             style="flex:1;padding:9px;background:var(--accent);border:none;border-radius:var(--r);color:white;font-size:11px;font-weight:600;cursor:pointer">
-            {{ linkInvitacion ? '↺ Regenerar y compartir' : '🔗 Generar y compartir link' }}
+            {{ linkInvitacion ? $t('migrupo.regenerate') : $t('migrupo.generateLink') }}
           </button>
           <button v-if="linkInvitacion" @click="copiarLink"
             style="padding:9px 14px;background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:11px;cursor:pointer">
-            📋
+            {{ $t('migrupo.copyBtn') }}
           </button>
         </div>
       </div>
@@ -202,7 +202,7 @@ async function enviarOtpGenesis() {
   const dominio = protest.value?.dominio_email || '';
   const partes = genesisEmail.value.split('@');
   if (partes[1]?.toLowerCase() !== dominio.toLowerCase()) {
-    genesisError.value = `El email debe ser del dominio @${dominio}`;
+    genesisError.value = `${t('migrupo.errorDomain', { domain: dominio })}`;
     return;
   }
   loadingGenesis.value = true;
@@ -240,7 +240,7 @@ async function verificarOtpGenesis() {
     genesisOtpVisible.value = false;
     ui.showToast(t('migrupo.toastCreated'));
   } catch (e) {
-    genesisOtpError.value = e.message || 'Error al crear el grupo.';
+    genesisOtpError.value = e.message || t('migrupo.errorCreateGroup');
   } finally {
     loadingGenesis.value = false;
   }
@@ -283,7 +283,7 @@ async function cargarEstado() {
     miEstado.value = data.mi_estado;
     solicitudes.value = data.solicitudes;
   } catch (e) {
-    ui.showToast('Error al cargar el estado del grupo');
+    ui.showToast(t('migrupo.toastLoadError'));
   }
 }
 
@@ -294,10 +294,10 @@ async function darVouch(solicitud) {
       voucher_hash:   emailHash.value,
       candidate_hash: solicitud.candidate_hash,
     });
-    ui.showToast('✓ Aval registrado');
+    ui.showToast(t('migrupo.toastVouched'));
     await cargarEstado();
   } catch (e) {
-    ui.showToast('Error al registrar el aval: ' + e.message);
+    ui.showToast(t('migrupo.toastVouchError', { msg: e.message }));
   }
 }
 
@@ -307,7 +307,7 @@ async function generarLink() {
     const data = await api.generarInvite(groupId.value, { inviter_hash: emailHash.value });
     linkInvitacion.value = data.url;
   } catch (e) {
-    ui.showToast('Error al generar el link: ' + e.message);
+    ui.showToast(t('migrupo.toastLinkError', { msg: e.message }));
   }
 }
   async function generarYCompartirLink() {
@@ -320,9 +320,9 @@ async function generarLink() {
 async function copiarLink() {
   try {
     await navigator.clipboard.writeText(linkInvitacion.value);
-    ui.showToast('✓ Link copiado al portapapeles');
+    ui.showToast(t('migrupo.linkCopied'));
   } catch {
-    ui.showToast('No se pudo copiar — copia el link manualmente');
+    ui.showToast(t('migrupo.linkCopyError'));
   }
 }
 async function compartirLink() {

@@ -69,7 +69,12 @@
     "filterGlobal": "🌍 Global",
     "tabActive": "Active",
     "tabQueue": "Queue",
-    "tabSlots": "Slots"
+    "tabSlots": "Slots",
+    "overlayTitle": "Explore active protests",
+    "overlayBody": "Zoom in on the map to see events in your country. Tap a dot to view details.",
+    "overlayLive": "Active events on the map",
+    "overlayTap": "Tap to explore →",
+    "dotDocument": "Document"
   },
   "active": {
     "empty": "No active events",
@@ -393,7 +398,23 @@
     "abusoNegligencia": "Serious negligence",
     "abusoRepresion": "Repression or censorship",
     "abusoOpacidad": "Opacity or lack of accountability",
-    "abusoOtro": "Other public power abuse"
+    "abusoOtro": "Other public power abuse",
+    "velocidadTitle": "📈 Growth speed",
+    "velocidadMediaDiaria": "Daily average",
+    "velocidadPico": "Peak —",
+    "velocidadPorDia": "Adhesions per day",
+    "velocidadNoData": "No speed data available.",
+    "selloSourceDesc": "Publicly audited source code:",
+    "downloadPdf": "⬇ Download PDF",
+    "embedBtn": "＜/＞ Embed",
+    "embedTitle": "＜/＞ Embed this protest",
+    "embedDesc": "Copy this line of code and paste it anywhere in your article, blog or website. The counter updates in real time.",
+    "embedCopied": "✅ Copied!",
+    "embedCopy": "📋 Copy code",
+    "embedClose": "Close",
+    "embedPreview": "Preview",
+    "embedVerifiedCitizens": "verified citizens",
+    "embedJoin": "🗳️ Join anonymously"
   },
   "invite": {
     "loading": "Validating invitation...",
@@ -464,7 +485,11 @@
     "shareTitle": "Join the census of {name}",
     "shareText": "I invite you to join the verified census. Only for group members — don't share this link outside.",
     "ourGroup": "our group",
-    "linkCopied": "\u2713 Link copied — share it only with your colleagues"
+    "linkCopied": "\u2713 Link copied \u2014 share it only with your colleagues",
+    "errorDomain": "The email must be from the @{domain} domain",
+    "errorCreateGroup": "Error creating the group.",
+    "toastLinkError": "Error generating the link: {msg}",
+    "linkCopyError": "Could not copy \u2014 copy the link manually"
   },
   "unirse": {
     "back": "← Back",
@@ -575,5 +600,25 @@
     "badgeGlobal": "Global",
     "metaAdheridos": "supporters",
     "metaCiudades": "cities"
+  },
+  "api": {
+    "openData": "Open Data",
+    "title": "Public API",
+    "desc": "Voz Ciudadana provides a free, open API for researchers, journalists and developers. All data is aggregated and anonymised — no personal data is ever exposed.",
+    "badgeFree": "✅ Free",
+    "badgeNoAuth": "🔓 No auth required",
+    "badgeAggregated": "📊 Aggregated only",
+    "baseUrlTitle": "Base URL",
+    "rateLimitTitle": "Rate limit",
+    "rateLimitDesc": "120 requests per minute per IP. No authentication required.",
+    "exampleResponse": "Example response",
+    "tryIt": "▶ Try it",
+    "tryUtrecht": "▶ Try with Utrecht",
+    "endpoint1Desc": "Global platform statistics — total protests, adhesions, countries.",
+    "endpoint2Desc": "List all protests with aggregated data.",
+    "endpoint2Params": "Query params:",
+    "endpoint3Desc": "Full data for a single protest including reliability breakdown, geographic distribution and growth stats.",
+    "attributionTitle": "Attribution",
+    "attributionDesc": "When using this data, please credit:"
   }
 }

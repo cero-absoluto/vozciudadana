@@ -69,7 +69,12 @@
     "filterGlobal": "🌍 Global",
     "tabActive": "Activas",
     "tabQueue": "Cola",
-    "tabSlots": "Slots"
+    "tabSlots": "Slots",
+    "overlayTitle": "Explora protestas activas",
+    "overlayBody": "Haz zoom en el mapa para ver las convocatorias de tu país. Toca un punto para ver los detalles.",
+    "overlayLive": "Convocatorias activas en el mapa",
+    "overlayTap": "Toca para explorar →",
+    "dotDocument": "Documento"
   },
   "active": {
     "empty": "Sin convocatorias activas",
@@ -392,7 +397,23 @@
     "abusoNegligencia": "Negligencia grave",
     "abusoRepresion": "Represión o censura",
     "abusoOpacidad": "Opacidad o falta de rendición de cuentas",
-    "abusoOtro": "Otro abuso de poder público"
+    "abusoOtro": "Otro abuso de poder público",
+    "velocidadTitle": "📈 Velocidad de crecimiento",
+    "velocidadMediaDiaria": "Media diaria",
+    "velocidadPico": "Pico —",
+    "velocidadPorDia": "Adhesiones por día",
+    "velocidadNoData": "Sin datos de velocidad disponibles.",
+    "selloSourceDesc": "Código fuente auditado públicamente:",
+    "downloadPdf": "⬇ Descargar PDF",
+    "embedBtn": "＜/＞ Insertar",
+    "embedTitle": "＜/＞ Insertar esta convocatoria",
+    "embedDesc": "Copia esta línea de código y pégala en tu artículo, blog o sitio web. El contador se actualiza en tiempo real.",
+    "embedCopied": "✅ ¡Copiado!",
+    "embedCopy": "📋 Copiar código",
+    "embedClose": "Cerrar",
+    "embedPreview": "Vista previa",
+    "embedVerifiedCitizens": "ciudadanos verificados",
+    "embedJoin": "🗳️ Adherirme de forma anónima"
   },
   "invite": {
     "loading": "Validando invitación...",
@@ -463,7 +484,11 @@
     "shareTitle": "Uúnete al censo de {name}",
     "shareText": "Te invito a unirte al censo verificado. Solo para compañeros del grupo — no compartas este link fuera.",
     "ourGroup": "nuestro grupo",
-    "linkCopied": "✓ Link copiado — compártelo solo con tus compañeros"
+    "linkCopied": "✓ Link copiado — compártelo solo con tus compañeros",
+    "errorDomain": "El email debe ser del dominio @{domain}",
+    "errorCreateGroup": "Error al crear el grupo.",
+    "toastLinkError": "Error al generar el link: {msg}",
+    "linkCopyError": "No se pudo copiar — copia el link manualmente"
   },
   "unirse": {
     "back": "← Volver",
@@ -574,5 +599,25 @@
     "badgeGlobal": "Global",
     "metaAdheridos": "adheridos",
     "metaCiudades": "ciudades"
+  },
+  "api": {
+    "openData": "Datos abiertos",
+    "title": "API pública",
+    "desc": "Voz Ciudadana ofrece una API gratuita y abierta para investigadores, periodistas y desarrolladores. Todos los datos son agregados y anonimizados — nunca se exponen datos personales.",
+    "badgeFree": "✅ Gratuita",
+    "badgeNoAuth": "🔓 Sin autenticación",
+    "badgeAggregated": "📊 Solo agregados",
+    "baseUrlTitle": "URL base",
+    "rateLimitTitle": "Límite de peticiones",
+    "rateLimitDesc": "120 peticiones por minuto por IP. No se requiere autenticación.",
+    "exampleResponse": "Ejemplo de respuesta",
+    "tryIt": "▶ Probar",
+    "tryUtrecht": "▶ Probar con Utrecht",
+    "endpoint1Desc": "Estadísticas globales de la plataforma — total de convocatorias, adhesiones, países.",
+    "endpoint2Desc": "Lista todas las convocatorias con datos agregados.",
+    "endpoint2Params": "Parámetros:",
+    "endpoint3Desc": "Datos completos de una convocatoria: desglose de fiabilidad, distribución geográfica y estadísticas de crecimiento.",
+    "attributionTitle": "Atribución",
+    "attributionDesc": "Al usar estos datos, por favor cita:"
   }
 }

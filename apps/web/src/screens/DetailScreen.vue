@@ -2,7 +2,7 @@
   <div class="screen active" id="s-detail" v-if="protest">
     <!-- Header -->
     <div class="detail-hdr">
-      <button class="back" @click="$router.back()">← Volver al mapa</button>
+      <button class="back" @click="$router.back()">{{ $t('detail.back') }}</button>
       <div class="d-title">{{ protest.title }}</div>
       <div class="d-loc">
         <span class="scope-badge" :class="store.scopeBadge(protest).cls">{{ store.scopeBadge(protest).icon }} {{ store.scopeBadge(protest).label }}</span>
@@ -16,37 +16,37 @@
     <div class="d-scroll">
       <!-- Stats -->
       <div class="stats-row">
-        <div class="sc"><div class="sc-n" style="color:var(--accent)">{{ fmt(protest.count) }}</div><div class="sc-l">Adheridos</div></div>
-        <div class="sc"><div class="sc-n" style="color:var(--accent2)">{{ protest.cities }}</div><div class="sc-l">Ciudades</div></div>
-        <div class="sc"><div class="sc-n" style="color:var(--accent3)">{{ fmtTime(protest.timer) }}</div><div class="sc-l">Restante</div></div>
+        <div class="sc"><div class="sc-n" style="color:var(--accent)">{{ fmt(protest.count) }}</div><div class="sc-l">{{ $t('detail.statAdheridos') }}</div></div>
+        <div class="sc"><div class="sc-n" style="color:var(--accent2)">{{ protest.cities }}</div><div class="sc-l">{{ $t('detail.statCiudades') }}</div></div>
+        <div class="sc"><div class="sc-n" style="color:var(--accent3)">{{ fmtTime(protest.timer) }}</div><div class="sc-l">{{ $t('detail.statRestante') }}</div></div>
       </div>
       <!-- Velocidad — solo si hay datos de hoy -->
       <div v-if="velocidadHoy > 0" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.2);border-radius:var(--r);margin-bottom:8px">
         <div style="width:6px;height:6px;border-radius:50%;background:var(--accent2);animation:blink 1.5s infinite;flex-shrink:0"></div>
         <div style="font-size:11px;color:var(--accent2)">
-          <strong>+{{ velocidadHoy }}</strong> nuevas adhesiones hoy
-          <span v-if="tendenciaHoy > 0" style="color:var(--accent2)"> · ↑ más que ayer</span>
-          <span v-else-if="tendenciaHoy < 0" style="color:var(--accent4)"> · ↓ menos que ayer</span>
+          <strong>+{{ velocidadHoy }}</strong> {{ $t('detail.speedToday') }}
+          <span v-if="tendenciaHoy > 0" style="color:var(--accent2)"> · {{ $t('detail.trendUp') }}</span>
+          <span v-else-if="tendenciaHoy < 0" style="color:var(--accent4)"> · {{ $t('detail.trendDown') }}</span>
         </div>
       </div>
 
       <!-- Geo validation — colapsable en movil -->
       <div v-if="protest.scope !== 'global'" class="geo-validation">
         <div class="gv-title" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center" @click="geoOpen = !geoOpen">
-          <span>Validación geográfica</span>
+          <span>{{ $t('detail.geoValidation') }}</span>
           <span style="font-size:10px;color:var(--text2)">{{ geoOpen ? '▲' : '▼' }}</span>
         </div>
         <div v-if="geoOpen">
           <div class="gv-row">
             <div class="gv-dot" :style="{background: simOk ? 'var(--accent2)' : 'var(--accent3)'}"></div>
-            <div class="gv-label">SIM / Prefijo</div>
+            <div class="gv-label">{{ $t('detail.geoSim') }}</div>
             <div class="gv-val" :class="simOk ? 'gv-ok' : 'gv-no'">
               {{ simOk ? '✓ ' + device.simPrefix + ' (' + device.simName + ')' : $t('detail.geoDiff') }}
             </div>
           </div>
           <div class="gv-row">
             <div class="gv-dot" :style="{background: simOk ? 'var(--accent2)' : 'var(--accent3)'}"></div>
-            <div class="gv-label">IP / Ubicación</div>
+            <div class="gv-label">{{ $t('detail.geoIp') }}</div>
             <div class="gv-val" :class="simOk ? 'gv-ok' : 'gv-no'">
               {{ simOk ? '✓ ' + device.ipCity : $t('detail.geoDiff') }}
             </div>

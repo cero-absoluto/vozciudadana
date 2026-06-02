@@ -398,7 +398,7 @@ function downloadPDF() {
   doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(76,255,164);
   doc.text('VOICE PROTEST — VERIFIED PUBLIC REPORT', M, 18);
   doc.setFontSize(6); doc.setTextColor(120,115,160);
-  doc.text('cero-absoluto.github.io/vozciudadana', M, 23);
+  doc.text('www.voiceprotest.org', M, 23);
   doc.setFontSize(6); doc.setTextColor(100,95,140);
   doc.text('Generated: ' + new Date().toISOString(), M, 27);
   y = 46;
@@ -516,7 +516,7 @@ function downloadPDF() {
     doc.text('Page ' + i + ' of ' + totalPages, W - M, 291, {align:'right'});
   }
 
-  const filename = 'vozciudadana-report-' + d.protest.title.replace(/[^a-z0-9]/gi,'-').toLowerCase().slice(0,40) + '.pdf';
+  const filename = 'voiceprotest-report-' + d.protest.title.replace(/[^a-z0-9]/gi,'-').toLowerCase().slice(0,40) + '.pdf';
   doc.save(filename);
 }
 </script>

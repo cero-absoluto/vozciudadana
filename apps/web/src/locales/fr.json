@@ -74,7 +74,8 @@
     "overlayBody": "Zoomez sur la carte pour voir les événements dans votre pays. Appuyez sur un point pour voir les détails.",
     "overlayLive": "Événements actifs sur la carte",
     "overlayTap": "Appuyer pour explorer →",
-    "dotDocument": "Document"
+    "dotDocument": "Document",
+    "improveConfidence": "Améliorez votre confiance géographique"
   },
   "active": {
     "empty": "Aucun événement actif",
@@ -286,9 +287,9 @@
     "seeReport": "📊 Voir le rapport complet",
     "goMap": "Aller à la carte mondiale",
     "toastError": "Erreur lors de l'enregistrement de l'adhésion : {msg}",
-    "toast": "\u2713 Adhésion anonyme enregistrée",
+    "toast": "✓ Adhésion anonyme enregistrée",
     "toastNational": "Impossible de rejoindre, cet événement est uniquement pour les citoyens nationaux",
-    "notiOn": "\u2705 Nous vous notifierons à la clôture",
+    "notiOn": "✅ Nous vous notifierons à la clôture",
     "notiOff": "Me notifier à la clôture"
   },
   "about": {
@@ -340,7 +341,7 @@
     "seg4Body": "Comptages immuables et vérifiables publiquement. Disponible en v2.0.",
     "openTitle": "Données ouvertes",
     "openCard1Title": "API publique",
-    "openCard1Body": "API gratuite pour chercheurs et journalistes. Données agrégées, aucune authentification requise. \u2192",
+    "openCard1Body": "API gratuite pour chercheurs et journalistes. Données agrégées, aucune authentification requise. →",
     "openCard2Title": "Code source ouvert",
     "openCard2Body": "Code source complet disponible sous AGPL 3.0 sur <a href=\"https://github.com/cero-absoluto/vozciudadana\" target=\"_blank\" style=\"color:var(--accent)\">GitHub</a>."
   },
@@ -485,7 +486,7 @@
     "shareTitle": "Rejoins le recensement de {name}",
     "shareText": "Je t'invite à rejoindre le recensement vérifié. Uniquement pour les membres du groupe — ne partage pas ce lien en dehors.",
     "ourGroup": "notre groupe",
-    "linkCopied": "\u2713 Lien copié — partage-le uniquement avec tes collègues",
+    "linkCopied": "✓ Lien copié — partage-le uniquement avec tes collègues",
     "errorDomain": "L'email doit être du domaine @{domain}",
     "errorCreateGroup": "Erreur lors de la création du groupe.",
     "toastLinkError": "Erreur lors de la génération du lien : {msg}",
@@ -562,7 +563,7 @@
     "copy": "Copier lien + message",
     "copyDesc": "Pour TikTok, Instagram, X, Facebook ou où vous voulez",
     "close": "Fermer",
-    "viralMsg": "LE PEUPLE COMMANDE.\n{count} voix. Sans violence. Sans peur.\nJuste des citoyens leur rappelant qui détient le vrai pouvoir.\nRejoignez : {url}\n#VozCiudadana #LePeupleCommande",
+    "viralMsg": "LE PEUPLE COMMANDE.\n{count} voix. Sans violence. Sans peur.\nJuste des citoyens leur rappelant qui détient le vrai pouvoir.\nRejoignez : {url}\n#VoiceProtest #LePeupleCommande",
     "toastWA": "🔥 Le peuple commande ! Partagé via WhatsApp",
     "toastTG": "🔥 Le peuple commande ! Partagé via Telegram",
     "toastCopy": "📋 Copié ! Collez-le sur TikTok, Instagram ou où vous voulez"

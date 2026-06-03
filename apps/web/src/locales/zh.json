@@ -74,7 +74,8 @@
     "overlayBody": "在地图上缩放以查看您所在国家的活动。点击标记查看详情。",
     "overlayLive": "地图上的活跃活动",
     "overlayTap": "点击探索 →",
-    "dotDocument": "证件"
+    "dotDocument": "证件",
+    "improveConfidence": "提高您的地理置信度"
   },
   "active": {
     "empty": "没有活跃的活动",
@@ -286,9 +287,9 @@
     "seeReport": "📊 查看完整报告",
     "goMap": "前往世界地图",
     "toastError": "注册加入时出错：{msg}",
-    "toast": "\u2713 匿名加入已注册",
+    "toast": "✓ 匿名加入已注册",
     "toastNational": "无法加入，此活动仅面向本国公民",
-    "notiOn": "\u2705 关闭时将通知您",
+    "notiOn": "✅ 关闭时将通知您",
     "notiOff": "关闭时通知我"
   },
   "about": {
@@ -485,7 +486,7 @@
     "shareTitle": "加入 {name} 的名册",
     "shareText": "我邀请您加入已验证的名册。仅限群组成员——请勿在群组外分享此链接。",
     "ourGroup": "我们的群组",
-    "linkCopied": "\u2713 链接已复制——只与同事分享",
+    "linkCopied": "✓ 链接已复制——只与同事分享",
     "errorDomain": "电子邮件必须属于 @{domain} 域",
     "errorCreateGroup": "创建群组时出错。",
     "toastLinkError": "生成链接时出错：{msg}",
@@ -562,7 +563,7 @@
     "copy": "复制链接 + 消息",
     "copyDesc": "用于TikTok、Instagram、微博、微信或任何您想要的地方",
     "close": "关闭",
-    "viralMsg": "人民做主。\n{count}个声音。无暴力。无恐惧。\n只是公民提醒他们谁拥有真正的权力。\n加入：{url}\n#VozCiudadana #人民做主",
+    "viralMsg": "人民做主。\n{count}个声音。无暴力。无恐惧。\n只是公民提醒他们谁拥有真正的权力。\n加入：{url}\n#VoiceProtest #人民做主",
     "toastWA": "🔥 人民做主！通过WhatsApp分享",
     "toastTG": "🔥 人民做主！通过Telegram分享",
     "toastCopy": "📋 已复制！粘贴到TikTok、Instagram或任何地方"

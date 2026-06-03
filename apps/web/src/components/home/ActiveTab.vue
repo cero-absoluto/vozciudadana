@@ -23,15 +23,13 @@
           </div>
           <div class="pi-bar" :style="{ width: p.heat + '%', background: p.color }"></div>
         </div>
-        <div class="pi-right">
-  <div style="display:flex;align-items:center;gap:4px">
-  <div @click.stop="router.push(`/informe/${p.id}`)"
-    style="cursor:pointer;font-size:14px;opacity:.6" title="Ver informe público">📄</div>
-  <div class="pi-count">{{ fmt(p.count) }}</div>
- </div>
-  <div class="pi-timer">{{ fmtTime(p.timer) }}</div>
-</div>
-        <div v-if="isBlocked(p)" class="pi-lock">🔒</div>
+        <div class="pi-right" style="display:flex;align-items:center;gap:8px;padding-top:4px">
+          <div @click.stop="router.push(`/informe/${p.id}`)"
+            style="cursor:pointer;font-size:16px;opacity:.7" title="Ver informe público">📄</div>
+          <div v-if="isBlocked(p)" style="font-size:16px">🔒</div>
+          <div class="pi-count">{{ fmt(p.count) }}</div>
+          <div class="pi-timer" style="font-size:9px;color:var(--text3)">{{ fmtTime(p.timer) }}</div>
+        </div>
       </div>
       <!-- status strips -->
       <div v-if="p.joined"                  class="joined-strip">{{ $t('active.joined', { time: fmtTime(p.timer) }) }}</div>

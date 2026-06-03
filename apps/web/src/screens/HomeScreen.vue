@@ -131,15 +131,15 @@ const deviceFlag = computed(() => {
   const flags = { ES:'🇪🇸', FR:'🇫🇷', MX:'🇲🇽', DE:'🇩🇪', US:'🇺🇸', IR:'🇮🇷', RU:'🇷🇺' };
   return flags[device.simCountry] || '🌍';
 });
-const confColor = computed(() => {
-  const strengtheningGps = ref(false);
-  async function strengthenGps() {
-    if (strengtheningGps.value || device.gpsReady) return;
-    strengtheningGps.value = true;
-    await device.requestGps();
-    strengtheningGps.value = false;
-  }
+const strengtheningGps = ref(false);
+async function strengthenGps() {
+  if (strengtheningGps.value || device.gpsReady) return;
+  strengtheningGps.value = true;
+  await device.requestGps();
+  strengtheningGps.value = false;
+}
 
+const confColor = computed(() => {
   const c = device.confidence;
   return c >= 75 ? 'var(--accent2)' : c >= 50 ? 'var(--accent4)' : 'var(--accent3)';
 });

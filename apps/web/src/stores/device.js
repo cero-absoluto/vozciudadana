@@ -16,11 +16,20 @@ export const useDeviceStore = defineStore('device', () => {
   const langCountry = ref(null);
 
   const confidence = computed(() => {
+    // GPS is the strongest signal — if available, dominates the score
+    if (gpsReady.value) {
+      let score = 60; // GPS base
+      if (ipCountry.value) score += 25;  // IP also present
+      if (tzCountry.value && tzCountry.value === ipCountry.value) score += 10;
+      if (langCountry.value && langCountry.value === ipCountry.value) score += 5;
+      return Math.min(100, score);
+    }
+    // Without GPS: IP + secondary signals
     let score = 0;
-    if (simCountry.value)  score += 50;
-    if (ipCountry.value && ipCountry.value === simCountry.value)  score += 30;
-    if (tzCountry.value  && tzCountry.value  === simCountry.value) score += 12;
-    if (langCountry.value && langCountry.value === simCountry.value) score += 8;
+    if (ipCountry.value) score += 40;
+    if (tzCountry.value  && tzCountry.value  === ipCountry.value) score += 30;
+    if (langCountry.value && langCountry.value === ipCountry.value) score += 20;
+    if (tzCountry.value && langCountry.value && tzCountry.value === langCountry.value) score += 10;
     return Math.min(100, score);
   });
   async function detectCountryByIp() {
@@ -32,7 +41,9 @@ export const useDeviceStore = defineStore('device', () => {
         ipCity.value = data.city || '';
         ipRegion.value = data.region || null;
         ipCountryName.value = data.country_name || null;
-        simCountry.value = data.country_code;
+        // NOTE: simCountry must NOT be overwritten with IP country.
+        // simCountry reflects the phone prefix chosen by the user.
+        // IP country is stored separately in ipCountry for confidence calculation.
         // Actualizar nombre y prefijo según país detectado
         const countryNames = {
           'MT': 'Malta', 'ES': 'España', 'NL': 'Países Bajos', 'GB': 'Reino Unido',
@@ -54,6 +65,9 @@ export const useDeviceStore = defineStore('device', () => {
           'DK': '+45', 'FI': '+358', 'PL': '+48', 'UA': '+380',
           'RU': '+7', 'TR': '+90', 'ZA': '+27', 'IN': '+91',
         };
+        // Update simName and simPrefix for UI display (country selector default)
+        // but simCountry stays independent from IP
+        simCountry.value = data.country_code;
         simName.value = countryNames[data.country_code] || data.country_code;
         simPrefix.value = countryPrefixes[data.country_code] || '';
       }
@@ -122,10 +136,48 @@ export const useDeviceStore = defineStore('device', () => {
     localStorage.setItem('vc_device_id', id);
   }
 
+  // ── GPS boost ────────────────────────────────────────────────────────────
+  const gpsLat      = ref(null);
+  const gpsLng      = ref(null);
+  const gpsAccuracy = ref(null);
+  const gpsCity     = ref(null);
+  const gpsRegion   = ref(null);
+  const gpsPais     = ref(null);
+  const gpsReady    = ref(false);
+
+  async function requestGps() {
+    return new Promise((resolve) => {
+      if (!('geolocation' in navigator)) return resolve(false);
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          gpsLat.value      = pos.coords.latitude;
+          gpsLng.value      = pos.coords.longitude;
+          gpsAccuracy.value = pos.coords.accuracy;
+          // Reverse geocode via Nominatim
+          try {
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?lat=${gpsLat.value}&lon=${gpsLng.value}&format=json`,
+              { headers: { 'Accept-Language': 'es', 'User-Agent': 'VoiceProtest/1.0' } }
+            );
+            const geo = await res.json();
+            gpsCity.value   = geo.address?.city || geo.address?.town || geo.address?.village || null;
+            gpsRegion.value = geo.address?.state || null;
+            gpsPais.value   = geo.address?.country || null;
+          } catch { /* silencioso */ }
+          gpsReady.value = true;
+          resolve(true);
+        },
+        () => resolve(false),
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
+  }
+
   return {
     simPrefix, simCountry, simName, ipCountry, ipCity, docCountry,
     confidence, myRegions, regionLabel,
     setDocCountry, getLocks, setLock, getDeviceId, setDeviceId,
     tzCountry, langCountry, detectSecondarySignals, detectCountryByIp, ipRegion, ipCountryName,
+    gpsLat, gpsLng, gpsAccuracy, gpsCity, gpsRegion, gpsPais, gpsReady, requestGps,
   };
 });

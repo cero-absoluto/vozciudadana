@@ -8,7 +8,15 @@
         <div class="dev-flag">{{ deviceFlag }}</div>
         <div class="dev-info">
           <div class="dev-country">{{ device.simName }}{{ device.regionLabel ? ' · ' + device.regionLabel : '' }}</div>
-          <div class="dev-conf">{{ $t('home.geoConfidence') }} <span :style="{color: confColor}">{{ device.confidence }}%</span></div>
+          <div class="dev-conf">
+            {{ $t('home.geoConfidence') }} <span :style="{color: confColor}">{{ device.confidence }}%</span>
+            <span v-if="!device.gpsReady"
+              @click="strengthenGps"
+              style="margin-left:8px;font-size:10px;color:var(--accent2);cursor:pointer;text-decoration:underline;font-weight:600">
+              📍 {{ strengtheningGps ? '...' : 'Strengthen' }}
+            </span>
+            <span v-else style="margin-left:8px;font-size:10px;color:var(--accent);font-weight:600">📍 GPS ✓</span>
+          </div>
         </div>
         <div class="dev-dots">
           <div class="dev-dot" :style="{background:'var(--accent2)'}" title="SIM"></div>
@@ -124,6 +132,14 @@ const deviceFlag = computed(() => {
   return flags[device.simCountry] || '🌍';
 });
 const confColor = computed(() => {
+  const strengtheningGps = ref(false);
+  async function strengthenGps() {
+    if (strengtheningGps.value || device.gpsReady) return;
+    strengtheningGps.value = true;
+    await device.requestGps();
+    strengtheningGps.value = false;
+  }
+
   const c = device.confidence;
   return c >= 75 ? 'var(--accent2)' : c >= 50 ? 'var(--accent4)' : 'var(--accent3)';
 });

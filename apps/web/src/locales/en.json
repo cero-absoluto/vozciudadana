@@ -74,7 +74,8 @@
     "overlayBody": "Zoom in on the map to see events in your country. Tap a dot to view details.",
     "overlayLive": "Active events on the map",
     "overlayTap": "Tap to explore →",
-    "dotDocument": "Document"
+    "dotDocument": "Document",
+    "improveConfidence": "Improve your geographic confidence"
   },
   "active": {
     "empty": "No active events",
@@ -286,9 +287,9 @@
     "seeReport": "📊 See full report",
     "goMap": "Go to world map",
     "toastError": "Error registering adhesion: {msg}",
-    "toast": "\u2713 Anonymous adhesion registered",
+    "toast": "✓ Anonymous adhesion registered",
     "toastNational": "Cannot join, this event is only for national citizens",
-    "notiOn": "\u2705 We'll notify you when it closes",
+    "notiOn": "✅ We'll notify you when it closes",
     "notiOff": "Notify me when it closes"
   },
   "about": {
@@ -340,7 +341,7 @@
     "seg4Body": "Immutable and publicly verifiable counts. Available in v2.0.",
     "openTitle": "Open Data",
     "openCard1Title": "Public API",
-    "openCard1Body": "Free API for researchers and journalists. Aggregated data, no authentication required. \u2192",
+    "openCard1Body": "Free API for researchers and journalists. Aggregated data, no authentication required. →",
     "openCard2Title": "Open Source",
     "openCard2Body": "Full source code available under AGPL 3.0 at <a href=\"https://github.com/cero-absoluto/vozciudadana\" target=\"_blank\" style=\"color:var(--accent)\">GitHub</a>."
   },
@@ -485,11 +486,11 @@
     "shareTitle": "Join the census of {name}",
     "shareText": "I invite you to join the verified census. Only for group members — don't share this link outside.",
     "ourGroup": "our group",
-    "linkCopied": "\u2713 Link copied \u2014 share it only with your colleagues",
+    "linkCopied": "✓ Link copied — share it only with your colleagues",
     "errorDomain": "The email must be from the @{domain} domain",
     "errorCreateGroup": "Error creating the group.",
     "toastLinkError": "Error generating the link: {msg}",
-    "linkCopyError": "Could not copy \u2014 copy the link manually"
+    "linkCopyError": "Could not copy — copy the link manually"
   },
   "unirse": {
     "back": "← Back",

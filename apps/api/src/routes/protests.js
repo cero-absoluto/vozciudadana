@@ -78,20 +78,27 @@ export default async function protestRoutes(app) {
           starts_at:    { type: 'string', format: 'date-time', nullable: true },
           risk_level:   { type: 'string', enum: VALID_RISK },
           convocatoria_pais:        { type: 'string', nullable: true },
-         convocatoria_region:      { type: 'string', nullable: true },
-         convocatoria_institucion: { type: 'string', nullable: true },
-         dominio_email:            { type: 'string', nullable: true },
-         fuente_url:  { type: 'string', nullable: true },
-         tipo_abuso:  { type: 'string', nullable: true },
-         requiere_censo: { type: 'boolean', nullable: true },
+          convocatoria_region:      { type: 'string', nullable: true },
+          convocatoria_institucion: { type: 'string', nullable: true },
+          dominio_email:            { type: 'string', nullable: true },
+          fuente_url:               { type: 'string', nullable: true },
+          tipo_abuso:               { type: 'string', nullable: true },
+          requiere_censo:           { type: 'boolean', nullable: true },
+          // ── Wikidata target validation ──────────────────────────────────
+          target_wikidata_id: { type: 'string', nullable: true },
+          target_type:        { type: 'string', nullable: true },
+          target_country:     { type: 'string', nullable: true },
+          target_validation:  { type: 'string', nullable: true },
         },
         additionalProperties: false,
       },
     },
   }, async (req, reply) => {
     const { title, description, demands, country, country_name, scope, region,
-        focal_point, category, duration_h, starts_at, risk_level, convocatoria_pais, convocatoria_region, convocatoria_institucion, dominio_email,
-        fuente_url, tipo_abuso, requiere_censo  } = req.body;
+        focal_point, category, duration_h, starts_at, risk_level,
+        convocatoria_pais, convocatoria_region, convocatoria_institucion, dominio_email,
+        fuente_url, tipo_abuso, requiere_censo,
+        target_wikidata_id, target_type, target_country, target_validation } = req.body;
 
     const ends_at = new Date(
       new Date(starts_at ?? Date.now()).getTime() + duration_h * 3_600_000
@@ -99,22 +106,29 @@ export default async function protestRoutes(app) {
 
     const { data, error } = await supabase
       .from('protests')
-      .insert({ title, description, demands,
-                country: country ? country.toUpperCase() : null,
-                country_name, scope, region: region ?? null,
-                focal_point: focal_point ?? null,
-                category: category ?? null,
-                risk_level: risk_level ?? 'low',
-                starts_at: starts_at ?? new Date().toISOString(),
-                ends_at,
-              convocatoria_pais: convocatoria_pais ?? null,
-            convocatoria_region: convocatoria_region ?? null,
-            convocatoria_institucion: convocatoria_institucion ?? null,
-            dominio_email: dominio_email ?? null, 
-           fuente_url: fuente_url ?? null,
-           tipo_abuso: tipo_abuso ?? null,
-           requiere_censo: requiere_censo ?? false})
-           .select()
+      .insert({
+        title, description, demands,
+        country: country ? country.toUpperCase() : null,
+        country_name, scope, region: region ?? null,
+        focal_point: focal_point ?? null,
+        category: category ?? null,
+        risk_level: risk_level ?? 'low',
+        starts_at: starts_at ?? new Date().toISOString(),
+        ends_at,
+        convocatoria_pais: convocatoria_pais ?? null,
+        convocatoria_region: convocatoria_region ?? null,
+        convocatoria_institucion: convocatoria_institucion ?? null,
+        dominio_email: dominio_email ?? null,
+        fuente_url: fuente_url ?? null,
+        tipo_abuso: tipo_abuso ?? null,
+        requiere_censo: requiere_censo ?? false,
+        // ── Wikidata target validation ──────────────────────────────────
+        target_wikidata_id: target_wikidata_id ?? null,
+        target_type:        target_type ?? null,
+        target_country:     target_country ?? null,
+        target_validation:  target_validation ?? 'NEEDS_REVIEW',
+      })
+      .select()
       .single();
 
     if (error) throw error;
@@ -133,23 +147,23 @@ export default async function protestRoutes(app) {
       body: {
         type: 'object',
         required: ['phone_hash', 'device_id', 'recaptcha_token'],
-       properties: {
-  phone_hash:      { type: 'string', minLength: 64, maxLength: 64 },
-  doc_hash:        { type: 'string', minLength: 64, maxLength: 64, nullable: true },
-  device_id:       { type: 'string', minLength: 8, maxLength: 128 },
-  recaptcha_token: { type: 'string', minLength: 1 },
-  gps_lat:         { type: 'number', nullable: true },
-  gps_lng:         { type: 'number', nullable: true },
-  gps_accuracy:    { type: 'number', nullable: true },
-  ip_ciudad:       { type: 'string', nullable: true },
-  ip_pais:         { type: 'string', nullable: true },
-  ip_region:       { type: 'string', nullable: true },
-},
+        properties: {
+          phone_hash:      { type: 'string', minLength: 64, maxLength: 64 },
+          doc_hash:        { type: 'string', minLength: 64, maxLength: 64, nullable: true },
+          device_id:       { type: 'string', minLength: 8, maxLength: 128 },
+          recaptcha_token: { type: 'string', minLength: 1 },
+          gps_lat:         { type: 'number', nullable: true },
+          gps_lng:         { type: 'number', nullable: true },
+          gps_accuracy:    { type: 'number', nullable: true },
+          ip_ciudad:       { type: 'string', nullable: true },
+          ip_pais:         { type: 'string', nullable: true },
+          ip_region:       { type: 'string', nullable: true },
+        },
         additionalProperties: false,
       },
     },
   }, async (req, reply) => {
-   const { phone_hash, doc_hash, device_id, recaptcha_token, gps_lat, gps_lng, gps_accuracy, ip_ciudad, ip_pais, ip_region } = req.body;
+    const { phone_hash, doc_hash, device_id, recaptcha_token, gps_lat, gps_lng, gps_accuracy, ip_ciudad, ip_pais, ip_region } = req.body;
     await verifyRecaptcha(recaptcha_token, 'join_protest', reply);
 
     // Fetch protest metadata and idempotency check in parallel
@@ -191,86 +205,89 @@ export default async function protestRoutes(app) {
       }
     }
 
-   const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
-  let ciudad = null;
-  let region = null;
-  let pais   = null;
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
+    let ciudad = null;
+    let region = null;
+    let pais   = null;
 
-  // Si hay GPS, usar geocodificación GPS (más precisa) ignorando IP
-  if (gps_lat != null && gps_lng != null) {
-    try {
-      const geoRes = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${gps_lat}&lon=${gps_lng}&format=json`,
-        { headers: { 'Accept-Language': 'es', 'User-Agent': 'VozCiudadana/1.0' } }
-      );
-      const geoData = await geoRes.json();
-      ciudad = geoData.address?.city || geoData.address?.town || geoData.address?.village || null;
-      region = geoData.address?.state || null;
-      pais   = geoData.address?.country || null;
-    } catch { /* silencioso */ }
-  }
+    // Si hay GPS, usar geocodificación GPS (más precisa) ignorando IP
+    if (gps_lat != null && gps_lng != null) {
+      try {
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${gps_lat}&lon=${gps_lng}&format=json`,
+          { headers: { 'Accept-Language': 'es', 'User-Agent': 'VozCiudadana/1.0' } }
+        );
+        const geoData = await geoRes.json();
+        ciudad = geoData.address?.city || geoData.address?.town || geoData.address?.village || null;
+        region = geoData.address?.state || null;
+        pais   = geoData.address?.country || null;
+      } catch { /* silencioso */ }
+    }
 
-  // Si no hay GPS o falló, usar datos de IP enviados por el frontend
-  if (!ciudad) {
-    ciudad = ip_ciudad || null;
-    region = ip_region || null;
-    pais   = ip_pais   || null;
-  }
+    // Si no hay GPS o falló, usar datos de IP enviados por el frontend
+    if (!ciudad) {
+      ciudad = ip_ciudad || null;
+      region = ip_region || null;
+      pais   = ip_pais   || null;
+    }
 
-  // Si tampoco hay datos del frontend, consultar ip-api como último recurso
-  if (!ciudad) {
-    try {
-      const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country&lang=es`);
-      const geo = await geoRes.json();
-      ciudad = geo.city || null;
-      region = geo.regionName || null;
-      pais   = geo.country || null;
-    } catch { /* silencioso */ }
-  }
+    // Si tampoco hay datos del frontend, consultar ip-api como último recurso
+    if (!ciudad) {
+      try {
+        const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country&lang=es`);
+        const geo = await geoRes.json();
+        ciudad = geo.city || null;
+        region = geo.regionName || null;
+        pais   = geo.country || null;
+      } catch { /* silencioso */ }
+    }
+
     const idioma = req.headers['accept-language']?.split(',')[0] || null;
-   // Nullifier: HMAC-SHA256(phone_hash, protest_id) — evita correlación entre convocatorias
-const nullifier = createHmac('sha256', process.env.NULLIFIER_SECRET || 'dev-secret')
-  .update(phone_hash + req.params.id)
-  .digest('hex');
 
-// Timestamp redondeado a la hora — evita correlación temporal
-const created_at = new Date(
-  Math.floor(Date.now() / 3_600_000) * 3_600_000
-).toISOString();
+    // Nullifier: HMAC-SHA256(phone_hash, protest_id) — evita correlación entre convocatorias
+    const nullifier = createHmac('sha256', process.env.NULLIFIER_SECRET || 'dev-secret')
+      .update(phone_hash + req.params.id)
+      .digest('hex');
 
-// Calcular fiabilidad según señales disponibles
-const tieneGps = gps_lat != null && gps_lng != null;
-const tieneSim = !!phone_hash;
-const tieneIpPais = !!pais;
+    // Timestamp redondeado a la hora — evita correlación temporal
+    const created_at = new Date(
+      Math.floor(Date.now() / 3_600_000) * 3_600_000
+    ).toISOString();
 
-let fiabilidad = 60;
-let senales = [];
+    // Calcular fiabilidad según señales disponibles
+    const tieneGps = gps_lat != null && gps_lng != null;
+    const tieneSim = !!phone_hash;
+    const tieneIpPais = !!pais;
 
-if (tieneGps && tieneSim && tieneIpPais) {
-  fiabilidad = 95;
-  senales = ['gps', 'sim', 'ip'];
-} else if (tieneGps && tieneSim) {
-  fiabilidad = 92;
-  senales = ['gps', 'sim'];
-} else if (tieneSim && tieneIpPais) {
-  fiabilidad = 85;
-  senales = ['sim', 'ip'];
-} else if (tieneSim) {
-  fiabilidad = 75;
-  senales = ['sim'];
-} else if (tieneIpPais) {
-  fiabilidad = 60;
-  senales = ['ip'];
-}
+    let fiabilidad = 60;
+    let senales = [];
 
-const { data, error } = await supabase
-  .from('adhesions')
-  .insert({ protest_id: req.params.id, phone_hash, doc_hash: doc_hash ?? null,
-            device_id, ciudad, region, pais, idioma, nullifier, created_at,
-            gps_lat: gps_lat ?? null, gps_lng: gps_lng ?? null, gps_accuracy: gps_accuracy ?? null,
-            fiabilidad, senales: senales.join(',') })
-  .select()
-  .single();
+    if (tieneGps && tieneSim && tieneIpPais) {
+      fiabilidad = 95;
+      senales = ['gps', 'sim', 'ip'];
+    } else if (tieneGps && tieneSim) {
+      fiabilidad = 92;
+      senales = ['gps', 'sim'];
+    } else if (tieneSim && tieneIpPais) {
+      fiabilidad = 85;
+      senales = ['sim', 'ip'];
+    } else if (tieneSim) {
+      fiabilidad = 75;
+      senales = ['sim'];
+    } else if (tieneIpPais) {
+      fiabilidad = 60;
+      senales = ['ip'];
+    }
+
+    const { data, error } = await supabase
+      .from('adhesions')
+      .insert({ protest_id: req.params.id, phone_hash, doc_hash: doc_hash ?? null,
+                device_id, ciudad, region, pais, idioma, nullifier, created_at,
+                gps_lat: gps_lat ?? null, gps_lng: gps_lng ?? null, gps_accuracy: gps_accuracy ?? null,
+                fiabilidad, senales: senales.join(',') })
+      .select()
+      .single();
+
     if (error) throw error;
 
     const { error: rpcErr } = await supabase.rpc('increment_protest_count', { protest_id: req.params.id });
@@ -323,6 +340,7 @@ const { data, error } = await supabase
     if (error) req.log.error({ error }, 'increment_viral_count failed');
     return { ok: true };
   });
+
   // GET /api/protests/:id/donaciones — historial publico anonimo
   app.get('/:id/donaciones', {
     schema: {
@@ -426,109 +444,100 @@ const { data, error } = await supabase
   });
 
   // GET /api/protests/:id/informe — datos para el informe público
-app.get('/:id/informe', {
-  schema: {
-    params: {
-      type: 'object',
-      properties: { id: { type: 'string', format: 'uuid' } },
-      required: ['id'],
+  app.get('/:id/informe', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string', format: 'uuid' } },
+        required: ['id'],
+      },
     },
-  },
-}, async (req, reply) => {
-  const { data: protest, error } = await supabase
-    .from('protests')
-    .select('*')
-    .eq('id', req.params.id)
-    .single();
+  }, async (req, reply) => {
+    const { data: protest, error } = await supabase
+      .from('protests')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
 
-  if (error) return reply.notFound('Convocatoria no encontrada');
+    if (error) return reply.notFound('Convocatoria no encontrada');
 
-  const { data: adhesions } = await supabase
-    .from('adhesions')
-    .select('ciudad, region, pais, idioma, created_at, gps_lat, fiabilidad, senales')
-    .eq('protest_id', req.params.id)
-    .order('created_at', { ascending: true });
+    const { data: adhesions } = await supabase
+      .from('adhesions')
+      .select('ciudad, region, pais, idioma, created_at, gps_lat, fiabilidad, senales')
+      .eq('protest_id', req.params.id)
+      .order('created_at', { ascending: true });
 
-  const ciudades = [...new Set(adhesions.map(a => a.ciudad).filter(Boolean))];
-  const paises = [...new Set(adhesions.map(a => a.pais).filter(Boolean))];
-  const idiomas = [...new Set(adhesions.map(a => a.idioma).filter(Boolean))];
-  // Distribución por región
-const distribucion_regiones = adhesions.reduce((acc, a) => {
-  if (a.region) acc[a.region] = (acc[a.region] || 0) + 1;
-  
-  return acc;
-}, {});
+    const ciudades = [...new Set(adhesions.map(a => a.ciudad).filter(Boolean))];
+    const paises = [...new Set(adhesions.map(a => a.pais).filter(Boolean))];
+    const idiomas = [...new Set(adhesions.map(a => a.idioma).filter(Boolean))];
 
-  const adhesiones_con_gps = adhesions.filter(a => a.gps_lat !== null).length;
+    const distribucion_regiones = adhesions.reduce((acc, a) => {
+      if (a.region) acc[a.region] = (acc[a.region] || 0) + 1;
+      return acc;
+    }, {});
 
-  // Desglose de fiabilidad
-  const fiabilidad_alta    = adhesions.filter(a => a.fiabilidad >= 85).length;
-  const fiabilidad_media   = adhesions.filter(a => a.fiabilidad >= 75 && a.fiabilidad < 85).length;
-  const fiabilidad_base    = adhesions.filter(a => a.fiabilidad >= 60 && a.fiabilidad < 75).length;
-  const fiabilidad_sin_dato = adhesions.filter(a => !a.fiabilidad).length;
-  // Adhesiones agrupadas por día
-  const porDia = {};
-  adhesions.forEach(a => {
-    const dia = a.created_at?.substring(0, 10);
-    if (dia) porDia[dia] = (porDia[dia] || 0) + 1;
+    const adhesiones_con_gps = adhesions.filter(a => a.gps_lat !== null).length;
+
+    const fiabilidad_alta    = adhesions.filter(a => a.fiabilidad >= 85).length;
+    const fiabilidad_media   = adhesions.filter(a => a.fiabilidad >= 75 && a.fiabilidad < 85).length;
+    const fiabilidad_base    = adhesions.filter(a => a.fiabilidad >= 60 && a.fiabilidad < 75).length;
+    const fiabilidad_sin_dato = adhesions.filter(a => !a.fiabilidad).length;
+
+    const porDia = {};
+    adhesions.forEach(a => {
+      const dia = a.created_at?.substring(0, 10);
+      if (dia) porDia[dia] = (porDia[dia] || 0) + 1;
+    });
+    const diasOrdenados = Object.keys(porDia).sort();
+    const adhesionesPorDia = diasOrdenados.map(d => ({ fecha: d, count: porDia[d] }));
+
+    const mediaDiaria = adhesionesPorDia.length > 0
+      ? Math.round((adhesions.length / adhesionesPorDia.length) * 10) / 10
+      : 0;
+
+    const diaPico = adhesionesPorDia.reduce((max, d) => d.count > (max?.count || 0) ? d : max, null);
+
+    const hoy = new Date().toISOString().substring(0, 10);
+    const ayer = new Date(Date.now() - 86400000).toISOString().substring(0, 10);
+    const adhesionesHoy = porDia[hoy] || 0;
+    const adhesionesAyer = porDia[ayer] || 0;
+
+    return {
+      protest,
+      total_adhesiones: protest.count,
+      adhesiones_con_gps,
+      adhesiones_sin_gps: protest.count - adhesiones_con_gps,
+      ciudades_distintas: ciudades.length,
+      paises_distintos: paises.length,
+      idiomas_distintos: idiomas.length,
+      distribucion_paises: paises,
+      distribucion_ciudades: ciudades,
+      distribucion_regiones,
+      primera_adhesion: adhesions[0]?.created_at || null,
+      ultima_adhesion: adhesions[adhesions.length - 1]?.created_at || null,
+      desglose_fiabilidad: {
+        alta:     { count: fiabilidad_alta,     rango: '85-95%', descripcion: 'GPS + SIM + IP verificados' },
+        media:    { count: fiabilidad_media,    rango: '75-84%', descripcion: 'SIM verificada' },
+        base:     { count: fiabilidad_base,     rango: '60-74%', descripcion: 'Solo IP verificada' },
+        sin_dato: { count: fiabilidad_sin_dato, rango: '—',      descripcion: 'Adhesiones anteriores al sistema' },
+      },
+      velocidad: {
+        adhesiones_por_dia: adhesionesPorDia,
+        media_diaria:       mediaDiaria,
+        dia_pico:           diaPico,
+        adhesiones_hoy:     adhesionesHoy,
+        tendencia_hoy:      adhesionesHoy - adhesionesAyer,
+      },
+    };
   });
-  const diasOrdenados = Object.keys(porDia).sort();
-  const adhesionesPorDia = diasOrdenados.map(d => ({ fecha: d, count: porDia[d] }));
-
-  // Media diaria
-  const mediaDiaria = adhesionesPorDia.length > 0
-    ? Math.round((adhesions.length / adhesionesPorDia.length) * 10) / 10
-    : 0;
-
-  // Día de mayor actividad
-  const diaPico = adhesionesPorDia.reduce((max, d) => d.count > (max?.count || 0) ? d : max, null);
-
-  // Adhesiones hoy
-  const hoy = new Date().toISOString().substring(0, 10);
-  const ayer = new Date(Date.now() - 86400000).toISOString().substring(0, 10);
-  const adhesionesHoy = porDia[hoy] || 0;
-  const adhesionesAyer = porDia[ayer] || 0;
-
-  return {
-    protest,
-    total_adhesiones: protest.count,
-    adhesiones_con_gps,
-    adhesiones_sin_gps: protest.count - adhesiones_con_gps,
-    ciudades_distintas: ciudades.length,
-    paises_distintos: paises.length,
-    idiomas_distintos: idiomas.length,
-    distribucion_paises: paises,
-    distribucion_ciudades: ciudades,
-    distribucion_regiones,
-    primera_adhesion: adhesions[0]?.created_at || null,
-    ultima_adhesion: adhesions[adhesions.length - 1]?.created_at || null,
-    desglose_fiabilidad: {
-      alta:     { count: fiabilidad_alta,     rango: '85-95%', descripcion: 'GPS + SIM + IP verificados' },
-      media:    { count: fiabilidad_media,    rango: '75-84%', descripcion: 'SIM verificada' },
-      base:     { count: fiabilidad_base,     rango: '60-74%', descripcion: 'Solo IP verificada' },
-      sin_dato: { count: fiabilidad_sin_dato, rango: '—',      descripcion: 'Adhesiones anteriores al sistema' },
-    },
-    velocidad: {
-      adhesiones_por_dia: adhesionesPorDia,
-      media_diaria:       mediaDiaria,
-      dia_pico:           diaPico,
-      adhesiones_hoy:     adhesionesHoy,
-      tendencia_hoy:      adhesionesHoy - adhesionesAyer,
-    },
-  };
-});
 }
 
 /**
  * Verify a reCAPTCHA v3 token server-side.
- * Throws a 400 error if the token is missing or the score is too low.
- * @param {string} token
- * @param {string} expectedAction
- * @param {import('fastify').FastifyReply} reply
  */
 async function verifyRecaptcha(token, expectedAction, reply) {
   const secret = process.env.RECAPTCHA_SECRET;
-  if (!secret) return; // Skip in dev when secret is not configured
+  if (!secret) return;
 
   const res = await fetch(
     `https://www.google.com/recaptcha/api/siteverify?secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}`,

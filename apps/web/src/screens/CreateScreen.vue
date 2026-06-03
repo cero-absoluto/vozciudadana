@@ -30,14 +30,47 @@
       <textarea v-model="form.demands" rows="2" maxlength="300" :placeholder="$t('create.demandsPlaceholder')"></textarea>
       <div class="char-c">{{ form.demands.length }}/300</div>
     </div>
-    <div class="fg">
+
+    <!-- ── CAMPO WIKIDATA: Who is it directed at? ── -->
+    <div class="fg" style="position:relative">
   <label>{{ $t('create.focalLabel') }}
     <span class="info-icon" @mouseenter="showTooltip('focal')" @mouseleave="hideTooltip()">ℹ️
       <div v-if="tooltip === 'focal'" class="tooltip-box">{{ $t('create.focalTooltip') }}</div>
     </span>
   </label>
-      <input type="text" v-model="form.focal_point" :placeholder="$t('create.focalPlaceholder')">
+  <div style="position:relative">
+    <input type="text"
+      v-model="targetQuery"
+      @input="onTargetInput"
+      @blur="onTargetBlur"
+      :placeholder="$t('create.focalPlaceholder')"
+      autocomplete="off">
+    <!-- Validation status badge -->
+    <div v-if="targetStatus" style="margin-top:6px;font-size:11px;padding:6px 10px;border-radius:6px"
+      :style="{
+        background: targetStatus==='ALLOWED' ? 'rgba(76,255,164,.1)' : targetStatus==='REJECTED' ? 'rgba(255,94,91,.1)' : targetStatus==='CHECKING' ? 'rgba(255,255,255,.05)' : 'rgba(255,179,71,.1)',
+        border: targetStatus==='ALLOWED' ? '1px solid rgba(76,255,164,.3)' : targetStatus==='REJECTED' ? '1px solid rgba(255,94,91,.3)' : targetStatus==='CHECKING' ? '1px solid var(--border)' : '1px solid rgba(255,179,71,.3)',
+        color: targetStatus==='ALLOWED' ? 'var(--accent2)' : targetStatus==='REJECTED' ? 'var(--accent3)' : targetStatus==='CHECKING' ? 'var(--text3)' : 'var(--accent4)'
+      }">
+      <span v-if="targetStatus==='ALLOWED'">✅ {{ targetName }} — {{ targetType }} — {{ targetCountry }}</span>
+      <span v-else-if="targetStatus==='REJECTED'">❌ {{ targetName }} — {{ targetType }} — Not allowed on Voice Protest</span>
+      <span v-else-if="targetStatus==='NEEDS_REVIEW'">⚠️ {{ targetName }} — Needs manual review before publishing</span>
+      <span v-else-if="targetStatus==='CHECKING'">🔍 Verifying with Wikidata...</span>
     </div>
+    <!-- Autocomplete dropdown -->
+    <div v-if="targetSuggestions.length > 0"
+      style="position:absolute;top:100%;left:0;right:0;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);z-index:100;max-height:200px;overflow-y:auto;margin-top:2px">
+      <div v-for="s in targetSuggestions" :key="s.id"
+        @mousedown.prevent="selectTarget(s)"
+        style="padding:10px 14px;cursor:pointer;font-size:12px;border-bottom:.5px solid var(--border)"
+        @mouseenter="e => e.target.style.background='var(--bg3)'"
+        @mouseleave="e => e.target.style.background='transparent'">
+        <div style="font-weight:600">{{ s.label }}</div>
+        <div style="font-size:10px;color:var(--text2)">{{ s.description }}</div>
+      </div>
+    </div>
+  </div>
+</div>
     
     <div class="fg"><label>{{ $t('create.abusoLabel') }}</label>
   <select v-model="form.tipo_abuso">
@@ -296,6 +329,7 @@ const { t }    = useI18n();
 const minDate = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 const form = reactive({
   title: '', description: '', demands: '', focal_point: '',
+  target_wikidata_id: '', target_type: '', target_country: '', target_validation: '',
   scope: 'national', region: null,
   duration_h: 36, risk_level: 'low', starts_at: '',
   convocatoria_pais: '',
@@ -305,20 +339,108 @@ const form = reactive({
   tipo_abuso: '',
   fuente_url: '',
   requiere_censo: false,
-  
 });
-  const tooltip = ref(null);
-  const fuenteStatus = ref(null);
-  const fuenteName = ref('');
+
+const tooltip = ref(null);
+const fuenteStatus = ref(null);
+const fuenteName = ref('');
+
+// ── Wikidata target validation ─────────────────────────────────────────────
+const targetQuery       = ref('');
+const targetSuggestions = ref([]);
+const targetStatus      = ref(null);
+const targetName        = ref('');
+const targetType        = ref('');
+const targetCountry     = ref('');
+const targetWikiId      = ref('');
+let targetDebounce      = null;
+
+const ALLOWED_TYPES = new Set([
+  'Q1193236','Q11033','Q1004705','Q7275','Q2297946','Q1002697',
+  'Q327333','Q37260','Q35749','Q637846','Q11204','Q15284',
+  'Q6465','Q7278','Q2659904','Q178706','Q1639634','Q270791',
+  'Q15265344','Q3918','Q16917','Q178790','Q190928','Q35120','Q43229',
+]);
+
+const REJECTED_TYPES = new Set([
+  'Q5','Q4830453','Q431289','Q476028','Q215380','Q11424',
+]);
+
+async function searchWikidata(q) {
+  if (!q || q.length < 2) { targetSuggestions.value = []; return; }
+  try {
+    const url = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(q)}&language=en&limit=6&format=json&origin=*`;
+    const res = await fetch(url);
+    const data = await res.json();
+    targetSuggestions.value = (data.search || []).map(s => ({
+      id: s.id, label: s.label || s.id, description: s.description || '',
+    }));
+  } catch { targetSuggestions.value = []; }
+}
+
+async function validateTarget(wikidataId, label) {
+  targetStatus.value = 'CHECKING';
+  targetWikiId.value = wikidataId;
+  targetName.value   = label;
+  try {
+    const sparql = `SELECT ?type ?typeLabel ?countryLabel WHERE {
+      wd:${wikidataId} wdt:P31 ?type .
+      OPTIONAL { wd:${wikidataId} wdt:P17 ?country . }
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "en" . }
+    } LIMIT 10`;
+    const res = await fetch('https://query.wikidata.org/sparql?query=' + encodeURIComponent(sparql) + '&format=json');
+    const data = await res.json();
+    const bindings = data.results.bindings;
+    if (bindings.length === 0) { targetStatus.value = 'NEEDS_REVIEW'; targetType.value = 'Unknown entity'; return; }
+    const countryBinding = bindings.find(b => b.countryLabel);
+    targetCountry.value = countryBinding?.countryLabel?.value || '';
+    let allowed = false, rejected = false, typeLabel = '';
+    for (const b of bindings) {
+      const typeId = b.type.value.split('/').pop();
+      const tLabel = b.typeLabel?.value || typeId;
+      if (!typeLabel) typeLabel = tLabel;
+      if (REJECTED_TYPES.has(typeId)) { rejected = true; typeLabel = tLabel; break; }
+      if (ALLOWED_TYPES.has(typeId))  { allowed  = true; typeLabel = tLabel; }
+    }
+    targetType.value = typeLabel;
+    if (rejected) {
+      targetStatus.value = 'REJECTED';
+      form.focal_point = ''; form.target_wikidata_id = ''; form.target_type = ''; form.target_country = ''; form.target_validation = 'REJECTED';
+    } else if (allowed) {
+      targetStatus.value = 'ALLOWED';
+      form.focal_point = label; form.target_wikidata_id = wikidataId; form.target_type = typeLabel; form.target_country = targetCountry.value; form.target_validation = 'ALLOWED';
+    } else {
+      targetStatus.value = 'NEEDS_REVIEW';
+      form.focal_point = label; form.target_wikidata_id = wikidataId; form.target_type = typeLabel; form.target_country = targetCountry.value; form.target_validation = 'NEEDS_REVIEW';
+    }
+  } catch {
+    targetStatus.value = 'NEEDS_REVIEW';
+    form.focal_point = label; form.target_validation = 'NEEDS_REVIEW';
+  }
+}
+
+function onTargetInput() {
+  targetStatus.value = null; form.focal_point = '';
+  clearTimeout(targetDebounce);
+  targetDebounce = setTimeout(() => searchWikidata(targetQuery.value), 350);
+}
+
+function onTargetBlur() {
+  setTimeout(() => { targetSuggestions.value = []; }, 200);
+}
+
+async function selectTarget(s) {
+  targetQuery.value = s.label;
+  targetSuggestions.value = [];
+  await validateTarget(s.id, s.label);
+}
 
 async function verificarFuente(domain) {
   const oficiales = ['.gov', '.gob', '.edu', '.europa.eu', '.un.org', '.who.int', '.gc.ca', '.gouv.fr', '.gob.es', '.gov.uk', '.gob.mx', '.gov.au', '.gov.br', '.gouv.be'];
   const dominiosOficiales = ['boe.es', 'sepe.es', 'congreso.es', 'senado.es', 'poderjudicial.es', 'ine.es', 'europarl.europa.eu', 'eur-lex.europa.eu', 'un.org', 'who.int', 'oecd.org', 'worldbank.org', 'imf.org', 'rtve.es'];
   if (dominiosOficiales.includes(domain)) return 'oficial';
   if (oficiales.some(tld => domain.endsWith(tld))) return 'oficial';
-
   const query = 'SELECT ?label WHERE { ?item wdt:P856 ?url . ?item wdt:P31 ?type . VALUES ?type { wd:Q1193236 wd:Q11033 wd:Q1004705 wd:Q7275 wd:Q2297946 wd:Q1002697 wd:Q35127 } FILTER(CONTAINS(LCASE(str(?url)), "' + domain + '")) ?item rdfs:label ?label FILTER(LANG(?label) = "es" || LANG(?label) = "en") } LIMIT 1';
-
   try {
     const res = await fetch('https://query.wikidata.org/sparql?query=' + encodeURIComponent(query) + '&format=json');
     const data = await res.json();
@@ -329,14 +451,15 @@ async function verificarFuente(domain) {
   } catch { /* silencioso */ }
   return 'unknown';
 }
+
 watch(() => form.fuente_url, async (url) => {
   fuenteStatus.value = null;
   fuenteName.value = '';
   if (!url || url.length < 10) return;
   try {
-      const fullUrl = url.startsWith('http') ? url : `https://${url}`;
-      new URL(fullUrl); // valida que sea URL válida
-      const domain = new URL(fullUrl).hostname.replace('www.', '');
+    const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+    new URL(fullUrl);
+    const domain = new URL(fullUrl).hostname.replace('www.', '');
     fuenteStatus.value = 'checking';
     fuenteStatus.value = await verificarFuente(domain);
   } catch {
@@ -366,61 +489,66 @@ function submit() {
   if (!form.description.trim()) { ui.showToast(t('create.errDesc')); return; }
   if (!form.demands.trim())     { ui.showToast(t('create.errDemands')); return; }
   if (!form.focal_point.trim()) { ui.showToast(t('create.errFocal')); return; }
+  if (targetStatus.value === 'REJECTED') { ui.showToast('This entity is not allowed. Voice Protest only accepts public institutions.'); return; }
+  if (targetStatus.value === 'CHECKING') { ui.showToast('Please wait while we verify the entity.'); return; }
   if (!form.starts_at) { ui.showToast(t('create.errDate')); return; }
   if (form.scope === 'national' && !form.convocatoria_pais) { ui.showToast(t('create.errPais')); return; }
   if (form.scope === 'regional' && !form.convocatoria_pais) { ui.showToast(t('create.errPais')); return; }
   if (form.scope === 'regional' && !form.convocatoria_region.trim()) { ui.showToast(t('create.errRegion')); return; }
   if (form.scope === 'regional' && form.convocatoria_institucion && !form.dominio_email.trim()) { ui.showToast(t('create.errDominio')); return; }
   if (!form.tipo_abuso) { ui.showToast(t('create.errAbuso')); return; }
-if (!form.fuente_url.trim()) { ui.showToast(t('create.errFuente')); return; }
+  if (!form.fuente_url.trim()) { ui.showToast(t('create.errFuente')); return; }
+
   const VERBOS_PROHIBIDOS = ['apoyar','respaldar','celebrar','felicitar','pedir','solicitar','rogar','desear','esperar','agradecer','proponer','sugerir','recomendar','mejorar','support','endorse','celebrate','congratulate','ask','request','beg','wish','hope','thank','propose','suggest','recommend','improve'];
-const VERBOS_PERMITIDOS = ['exigi','denuncia','demanda','rechaza','condena','ces','dimt','investig','public','revel','restitu','par','deten','suspend','demand','denounce','reject','condemn','dismiss','resign','investigate','publish','reveal','restore','stop','halt','suspend'];
+  const VERBOS_PERMITIDOS = ['exigi','denuncia','demanda','rechaza','condena','ces','dimt','investig','public','revel','restitu','par','deten','suspend','demand','denounce','reject','condemn','dismiss','resign','investigate','publish','reveal','restore','stop','halt','suspend'];
 
-const demandsLower = form.demands.toLowerCase();
-const tieneProhibido = VERBOS_PROHIBIDOS.some(v => demandsLower.includes(v));
-const tienePermitido = VERBOS_PERMITIDOS.some(v => demandsLower.includes(v));
+  const demandsLower = form.demands.toLowerCase();
+  const tieneProhibido = VERBOS_PROHIBIDOS.some(v => demandsLower.includes(v));
+  const tienePermitido = VERBOS_PERMITIDOS.some(v => demandsLower.includes(v));
 
-if (tieneProhibido && !window.confirm(t('create.confirmWeakVerb'))) return;
-if (!tienePermitido) { ui.showToast(t('create.errVerb')); return; }
-const confirmMsg = t('create.confirmPublish', { title: form.title });
+  if (tieneProhibido && !window.confirm(t('create.confirmWeakVerb'))) return;
+  if (!tienePermitido) { ui.showToast(t('create.errVerb')); return; }
+
+  const confirmMsg = t('create.confirmPublish', { title: form.title });
   if (!window.confirm(confirmMsg)) return;
-  // Mapa de códigos ISO a nombres de país
-const PAIS_NOMBRES = {
-  'NL': 'Países Bajos', 'ES': 'España', 'DE': 'Alemania', 'FR': 'Francia',
-  'GB': 'Reino Unido', 'IT': 'Italia', 'PT': 'Portugal', 'BE': 'Bélgica',
-  'CH': 'Suiza', 'AT': 'Austria', 'SE': 'Suecia', 'NO': 'Noruega',
-  'DK': 'Dinamarca', 'FI': 'Finlandia', 'PL': 'Polonia', 'CZ': 'República Checa',
-  'SK': 'Eslovaquia', 'HU': 'Hungría', 'RO': 'Rumanía', 'BG': 'Bulgaria',
-  'HR': 'Croacia', 'SI': 'Eslovenia', 'EE': 'Estonia', 'LV': 'Letonia',
-  'LT': 'Lituania', 'LU': 'Luxemburgo', 'IE': 'Irlanda', 'GR': 'Grecia',
-  'US': 'Estados Unidos', 'CA': 'Canadá', 'MX': 'México', 'AR': 'Argentina',
-  'BR': 'Brasil', 'CL': 'Chile', 'CO': 'Colombia', 'PE': 'Perú',
-  'VE': 'Venezuela', 'EC': 'Ecuador', 'BO': 'Bolivia', 'PY': 'Paraguay',
-  'UY': 'Uruguay', 'CR': 'Costa Rica', 'PA': 'Panamá', 'GT': 'Guatemala',
-  'HN': 'Honduras', 'SV': 'El Salvador', 'CU': 'Cuba', 'DO': 'República Dominicana',
-  'JP': 'Japón', 'CN': 'China', 'KR': 'Corea del Sur', 'IN': 'India',
-  'AU': 'Australia', 'NZ': 'Nueva Zelanda', 'ZA': 'Sudáfrica', 'NG': 'Nigeria',
-  'EG': 'Egipto', 'MA': 'Marruecos', 'KE': 'Kenia', 'ET': 'Etiopía',
-  'GH': 'Ghana', 'SN': 'Senegal', 'TZ': 'Tanzania', 'UG': 'Uganda',
-  'TR': 'Turquía', 'SA': 'Arabia Saudí', 'AE': 'Emiratos Árabes', 'IL': 'Israel',
-  'IQ': 'Irak', 'IR': 'Irán', 'JO': 'Jordania', 'LB': 'Líbano',
-  'RU': 'Rusia', 'UA': 'Ucrania', 'RS': 'Serbia', 'AF': 'Afganistán',
-  'PK': 'Pakistán', 'ID': 'Indonesia', 'PH': 'Filipinas', 'VN': 'Vietnam',
-  'TH': 'Tailandia', 'TW': 'Taiwán', 'KZ': 'Kazajistán',
-};
+
+  const PAIS_NOMBRES = {
+    'NL': 'Países Bajos', 'ES': 'España', 'DE': 'Alemania', 'FR': 'Francia',
+    'GB': 'Reino Unido', 'IT': 'Italia', 'PT': 'Portugal', 'BE': 'Bélgica',
+    'CH': 'Suiza', 'AT': 'Austria', 'SE': 'Suecia', 'NO': 'Noruega',
+    'DK': 'Dinamarca', 'FI': 'Finlandia', 'PL': 'Polonia', 'CZ': 'República Checa',
+    'SK': 'Eslovaquia', 'HU': 'Hungría', 'RO': 'Rumanía', 'BG': 'Bulgaria',
+    'HR': 'Croacia', 'SI': 'Eslovenia', 'EE': 'Estonia', 'LV': 'Letonia',
+    'LT': 'Lituania', 'LU': 'Luxemburgo', 'IE': 'Irlanda', 'GR': 'Grecia',
+    'US': 'Estados Unidos', 'CA': 'Canadá', 'MX': 'México', 'AR': 'Argentina',
+    'BR': 'Brasil', 'CL': 'Chile', 'CO': 'Colombia', 'PE': 'Perú',
+    'VE': 'Venezuela', 'EC': 'Ecuador', 'BO': 'Bolivia', 'PY': 'Paraguay',
+    'UY': 'Uruguay', 'CR': 'Costa Rica', 'PA': 'Panamá', 'GT': 'Guatemala',
+    'HN': 'Honduras', 'SV': 'El Salvador', 'CU': 'Cuba', 'DO': 'República Dominicana',
+    'JP': 'Japón', 'CN': 'China', 'KR': 'Corea del Sur', 'IN': 'India',
+    'AU': 'Australia', 'NZ': 'Nueva Zelanda', 'ZA': 'Sudáfrica', 'NG': 'Nigeria',
+    'EG': 'Egipto', 'MA': 'Marruecos', 'KE': 'Kenia', 'ET': 'Etiopía',
+    'GH': 'Ghana', 'SN': 'Senegal', 'TZ': 'Tanzania', 'UG': 'Uganda',
+    'TR': 'Turquía', 'SA': 'Arabia Saudí', 'AE': 'Emiratos Árabes', 'IL': 'Israel',
+    'IQ': 'Irak', 'IR': 'Irán', 'JO': 'Jordania', 'LB': 'Líbano',
+    'RU': 'Rusia', 'UA': 'Ucrania', 'RS': 'Serbia', 'AF': 'Afganistán',
+    'PK': 'Pakistán', 'ID': 'Indonesia', 'PH': 'Filipinas', 'VN': 'Vietnam',
+    'TH': 'Tailandia', 'TW': 'Taiwán', 'KZ': 'Kazajistán',
+  };
+
   protests.createProtest({
-  ...form,
-  starts_at: form.starts_at ? form.starts_at + 'T08:00:00.000Z' : null,
-  convocatoria_pais: form.convocatoria_pais || null,
-  convocatoria_region: form.convocatoria_region || null,
-  convocatoria_institucion: form.convocatoria_institucion || null,
-  dominio_email: form.dominio_email || null,
-  tipo_abuso: form.tipo_abuso || null,
-  fuente_url: form.fuente_url || null,
-  requiere_censo: form.requiere_censo || false,
-  country: form.convocatoria_pais || null,
-  country_name: PAIS_NOMBRES[form.convocatoria_pais] || form.convocatoria_pais || 'regional',
-});
+    ...form,
+    starts_at: form.starts_at ? form.starts_at + 'T08:00:00.000Z' : null,
+    convocatoria_pais: form.convocatoria_pais || null,
+    convocatoria_region: form.convocatoria_region || null,
+    convocatoria_institucion: form.convocatoria_institucion || null,
+    dominio_email: form.dominio_email || null,
+    tipo_abuso: form.tipo_abuso || null,
+    fuente_url: form.fuente_url || null,
+    requiere_censo: form.requiere_censo || false,
+    country: form.convocatoria_pais || null,
+    country_name: PAIS_NOMBRES[form.convocatoria_pais] || form.convocatoria_pais || 'regional',
+  });
   ui.showToast('✓ Convocatoria creada — ya aparece en el mapa');
   router.push('/');
 }

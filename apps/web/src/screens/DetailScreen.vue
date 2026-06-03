@@ -110,7 +110,7 @@
           <div v-if="donacionesInfo.donaciones_count > 0" style="font-size:10px;color:var(--text2)">{{ $t('detail.donCount', { count: donacionesInfo.donaciones_count, total: donacionesInfo.donaciones_total.toFixed(2) }) }}</div>
         </div>
         <div v-if="donacionesInfo.saldo_euros <= 0" style="font-size:11px;color:var(--accent3);margin-bottom:8px;text-align:center">{{ $t('detail.donAgotado') }}</div>
-        <a :href="`https://ko-fi.com/vozciudadana?description=Donacion+para:+${encodeURIComponent(protest.title)}`" target="_blank" rel="noopener"
+        <a :href="`https://ko-fi.com/voiceprotest?description=Support:+${encodeURIComponent(protest.title)}`" target="_blank" rel="noopener"
           style="display:block;width:100%;padding:9px;background:#FF5E5B;border:none;border-radius:var(--r);color:#fff;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box;text-align:center">
           {{ $t('detail.donApoyar') }}
         </a>

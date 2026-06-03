@@ -209,44 +209,55 @@ async function sendSMS() {
     }
   }
 
-  // Solicitar GPS si la convocatoria es nacional de riesgo bajo/medio
+  // GPS: if already obtained from homescreen strengthen button, use it directly
   const riskLevel = sessionStorage.getItem('vc_risk_level') || 'low';
   const scope = sessionStorage.getItem('vc_protest_scope') || 'national';
-  
+
   if (scope === 'national' && (riskLevel === 'low' || riskLevel === 'med')) {
-    const accepted = await new Promise(resolve => {
-      gpsResolve = resolve;
-      showGpsModal.value = true;
-    });
-    if (accepted) {
-      try {
-        const pos = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 });
-        });
-        ui.setGps(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
-        localStorage.setItem('vc_gps_lat', pos.coords.latitude);
-        localStorage.setItem('vc_gps_lng', pos.coords.longitude);
-        localStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
-        localStorage.setItem('vc_gps_ts', Date.now());
-        // Geocodificación inversa — obtener ciudad/región/país real del GPS
+    if (device.gpsReady) {
+      // GPS already obtained from the Strengthen button on the home screen — use it
+      ui.setGps(device.gpsLat, device.gpsLng, device.gpsAccuracy);
+      localStorage.setItem('vc_gps_lat', device.gpsLat);
+      localStorage.setItem('vc_gps_lng', device.gpsLng);
+      localStorage.setItem('vc_gps_accuracy', device.gpsAccuracy);
+      localStorage.setItem('vc_gps_ts', Date.now());
+      localStorage.setItem('vc_geo_ciudad', device.gpsCity || '');
+      localStorage.setItem('vc_geo_region', device.gpsRegion || '');
+      localStorage.setItem('vc_geo_pais', device.gpsPais || '');
+    } else {
+      // GPS not yet obtained — show modal to ask
+      const accepted = await new Promise(resolve => {
+        gpsResolve = resolve;
+        showGpsModal.value = true;
+      });
+      if (accepted) {
         try {
-          const geoRes = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`,
-            { headers: { 'Accept-Language': 'es' } }
-          );
-          const geoData = await geoRes.json();
-          const gpsCiudad = geoData.address?.city || geoData.address?.town || geoData.address?.village || null;
-          const gpsRegion = geoData.address?.state || null;
-          const gpsPais = geoData.address?.country || null;
-          localStorage.setItem('vc_geo_ciudad', gpsCiudad || '');
-          localStorage.setItem('vc_geo_region', gpsRegion || '');
-          localStorage.setItem('vc_geo_pais', gpsPais || '');
-        } catch { /* silencioso */ }
-     } catch (gpsErr) {
-        console.log('GPS error:', gpsErr);
-        ui.clearGps();
+          const pos = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 });
+          });
+          ui.setGps(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+          localStorage.setItem('vc_gps_lat', pos.coords.latitude);
+          localStorage.setItem('vc_gps_lng', pos.coords.longitude);
+          localStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
+          localStorage.setItem('vc_gps_ts', Date.now());
+          try {
+            const geoRes = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`,
+              { headers: { 'Accept-Language': 'es' } }
+            );
+            const geoData = await geoRes.json();
+            const gpsCiudad = geoData.address?.city || geoData.address?.town || geoData.address?.village || null;
+            const gpsRegion = geoData.address?.state || null;
+            const gpsPais = geoData.address?.country || null;
+            localStorage.setItem('vc_geo_ciudad', gpsCiudad || '');
+            localStorage.setItem('vc_geo_region', gpsRegion || '');
+            localStorage.setItem('vc_geo_pais', gpsPais || '');
+          } catch { /* silencioso */ }
+        } catch (gpsErr) {
+          console.log('GPS error:', gpsErr);
+          ui.clearGps();
+        }
       }
-    }
     
   }
 // Esperar a que el GPS se guarde completamente

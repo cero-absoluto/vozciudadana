@@ -48,7 +48,7 @@
             <div class="gv-dot" :style="{background: simOk ? 'var(--accent2)' : 'var(--accent3)'}"></div>
             <div class="gv-label">{{ $t('detail.geoIp') }}</div>
             <div class="gv-val" :class="simOk ? 'gv-ok' : 'gv-no'">
-              {{ simOk ? '✓ ' + device.ipCity : $t('detail.geoDiff') }}
+              {{ simOk ? '✓ ' + (device.gpsReady && device.gpsCity ? device.gpsCity : device.ipCity) : $t('detail.geoDiff') }}
             </div>
           </div>
           <div class="conf-bar"><div class="conf-fill" :style="{ width: device.confidence + '%', background: confFillColor }"></div></div>
@@ -253,4 +253,5 @@ function onJoin() {
   }
 }
 </script>
+
 

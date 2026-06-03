@@ -15,20 +15,19 @@
         @click="handleClick(p)">
         <div class="pi-heat" :style="{ background: p.color+'18', color: p.color }">{{ p.heat }}°</div>
         <div class="pi-info">
-          <div class="pi-title">{{ p.title }}</div>
+          <div class="pi-title" style="white-space:normal;overflow:visible;text-overflow:unset">{{ p.title }}</div>
           <div class="pi-meta">
             <span class="scope-badge" :class="store.scopeBadge(p).cls">{{ store.scopeBadge(p).icon }} {{ store.scopeBadge(p).label }}</span>
             <span>{{ p.countryName }}</span>
-            <span>{{ fmtTime(p.timer) }}</span>
           </div>
           <div class="pi-bar" :style="{ width: p.heat + '%', background: p.color }"></div>
-        </div>
-        <div class="pi-right" style="display:flex;align-items:center;gap:8px;padding-top:4px">
-          <div @click.stop="router.push(`/informe/${p.id}`)"
-            style="cursor:pointer;font-size:16px;opacity:.7" title="Ver informe público">📄</div>
-          <div v-if="isBlocked(p)" style="font-size:16px">🔒</div>
-          <div class="pi-count">{{ fmt(p.count) }}</div>
-          <div class="pi-timer" style="font-size:9px;color:var(--text3)">{{ fmtTime(p.timer) }}</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:5px">
+            <div @click.stop="router.push(`/informe/${p.id}`)"
+              style="cursor:pointer;font-size:14px;opacity:.7" title="Ver informe público">📄</div>
+            <div v-if="isBlocked(p)" style="font-size:14px">🔒</div>
+            <div class="pi-count" style="font-size:13px">{{ fmt(p.count) }}</div>
+            <div style="font-size:9px;color:var(--text3)">{{ fmtTime(p.timer) }}</div>
+          </div>
         </div>
       </div>
       <!-- status strips -->

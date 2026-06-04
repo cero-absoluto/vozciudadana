@@ -556,7 +556,9 @@ const COUNTRIES = [
 const sortedCountries = computed(() => {
   const lang = (locale.value || 'en').substring(0, 2);
   const key = ['es','fr','zh'].includes(lang) ? lang : 'en';
-  return [...COUNTRIES].sort((a, b) => a[key].localeCompare(b[key]));
+  return [...COUNTRIES]
+    .map(c => ({ code: c.code, name: c[key] }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 });
 
 const scopes = computed(() => [

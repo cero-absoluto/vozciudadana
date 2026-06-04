@@ -291,7 +291,7 @@ import { REGIONS }          from '@/constants.js';
 const router   = useRouter();
 const protests = useProtestsStore();
 const ui       = useUiStore();
-const { t, locale } = useI18n();
+const { t, locale } = useI18n({ useScope: 'global' });
 
 const minDate = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 const form = reactive({
@@ -554,7 +554,7 @@ const COUNTRIES = [
 ];
 
 const sortedCountries = computed(() => {
-  const lang = locale.value?.substring(0, 2) || 'en';
+  const lang = (locale.value || 'en').substring(0, 2);
   const key = ['es','fr','zh'].includes(lang) ? lang : 'en';
   return [...COUNTRIES].sort((a, b) => a[key].localeCompare(b[key]));
 });

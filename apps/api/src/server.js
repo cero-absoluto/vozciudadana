@@ -12,6 +12,7 @@ import userRoutes       from './routes/users.js';
 import countryCodeRoutes from './routes/countryCodes.js';
 import publicRoutes     from './routes/public.js';
 import pushRoutes       from './routes/push.js';
+import sourceRoutes     from './routes/source.js';
 
 const app = Fastify({
   logger: true,
@@ -49,6 +50,7 @@ app.register(userRoutes,        { prefix: '/api/users' });
 app.register(countryCodeRoutes, { prefix: '/api/country-codes' });
 app.register(publicRoutes,      { prefix: '/api/public' });
 app.register(pushRoutes,        { prefix: '/api/push' });
+app.register(sourceRoutes,      { prefix: '/api/source' });
 
 app.get('/health', async () => ({ status: 'ok' }));
 

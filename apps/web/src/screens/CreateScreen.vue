@@ -90,22 +90,69 @@
       <div v-if="tooltip === 'fuente'" class="tooltip-box">{{ $t('create.fuenteTooltip') }}</div>
     </span>
   </label>
- <input type="text" v-model="form.fuente_url" :placeholder="$t('create.fuentePlaceholder')">
-  <div v-if="fuenteStatus === 'checking'" style="font-size:11px;color:var(--text3);margin-top:4px">
-    🔄 {{ $t('create.fuenteChecking') }}
+  <input type="text" v-model="form.fuente_url" :placeholder="$t('create.fuentePlaceholder')">
+
+  <!-- Checking spinner -->
+  <div v-if="sourceChecking" style="font-size:11px;color:var(--text3);margin-top:6px;display:flex;align-items:center;gap:6px">
+    <span style="animation:spin 1s linear infinite;display:inline-block">🔄</span> Verifying source...
   </div>
-  <div v-else-if="fuenteStatus === 'oficial'" style="font-size:11px;color:var(--accent2);margin-top:4px">
-    ✅ {{ $t('create.fuenteOficial') }}
+
+  <!-- Validation card -->
+  <div v-else-if="sourceResult" style="margin-top:8px;border-radius:10px;overflow:hidden;border:.5px solid var(--border2)">
+    <!-- Header bar -->
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px"
+      :style="{
+        background: sourceResult.source_validation_status === 'VERIFIED_SOURCE' ? 'rgba(76,255,164,.08)' :
+                    sourceResult.source_validation_status === 'RELEVANT_SOURCE'  ? 'rgba(76,255,164,.06)' :
+                    sourceResult.source_validation_status === 'WEAK_SOURCE'      ? 'rgba(255,179,71,.08)' :
+                    sourceResult.source_validation_status === 'PAYWALLED_SOURCE' ? 'rgba(255,179,71,.06)' :
+                    sourceResult.source_validation_status === 'BLOCKED_SOURCE'   ? 'rgba(255,94,91,.08)'  :
+                    'rgba(255,255,255,.04)'
+      }">
+      <span style="font-size:18px">
+        {{ sourceResult.source_validation_status === 'VERIFIED_SOURCE' ? '✅' :
+           sourceResult.source_validation_status === 'RELEVANT_SOURCE'  ? '✅' :
+           sourceResult.source_validation_status === 'WEAK_SOURCE'      ? '⚠️' :
+           sourceResult.source_validation_status === 'PAYWALLED_SOURCE' ? '🔒' :
+           sourceResult.source_validation_status === 'BLOCKED_SOURCE'   ? '❌' :
+           sourceResult.source_validation_status === 'UNAVAILABLE_SOURCE' ? '⚠️' : '🔍' }}
+      </span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;font-weight:700;margin-bottom:1px"
+          :style="{
+            color: ['VERIFIED_SOURCE','RELEVANT_SOURCE'].includes(sourceResult.source_validation_status) ? 'var(--accent2)' :
+                   ['WEAK_SOURCE','PAYWALLED_SOURCE','UNAVAILABLE_SOURCE'].includes(sourceResult.source_validation_status) ? 'var(--accent4)' :
+                   'var(--accent3)'
+          }">
+          {{ sourceResult.source_domain }}
+          <span style="font-weight:400;opacity:.6;text-transform:capitalize"> · {{ sourceResult.source_type?.replace(/_/g,' ') }}</span>
+        </div>
+        <div style="font-size:10px;color:var(--text2);line-height:1.4">{{ sourceResult.message }}</div>
+      </div>
+      <!-- Confidence score badge -->
+      <div style="flex-shrink:0;text-align:center">
+        <div style="font-size:14px;font-weight:800;line-height:1"
+          :style="{color: sourceResult.source_confidence_score >= 60 ? 'var(--accent2)' : sourceResult.source_confidence_score >= 40 ? 'var(--accent4)' : 'var(--accent3)'}">
+          {{ sourceResult.source_confidence_score ?? '—' }}
+        </div>
+        <div style="font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">score</div>
+      </div>
+    </div>
+    <!-- Article preview if available -->
+    <div v-if="sourceResult.source_title" style="padding:8px 14px;border-top:.5px solid var(--border);background:var(--bg2)">
+      <div style="font-size:11px;font-weight:600;margin-bottom:2px;color:var(--text)">{{ sourceResult.source_title }}</div>
+      <div v-if="sourceResult.source_description" style="font-size:10px;color:var(--text2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
+        {{ sourceResult.source_description }}
+      </div>
+      <div style="display:flex;gap:12px;margin-top:5px;font-size:9px;color:var(--text3)">
+        <span v-if="sourceResult.published_at">📅 {{ sourceResult.published_at?.substring(0,10) }}</span>
+        <span v-if="sourceResult.source_author">✍️ {{ sourceResult.source_author }}</span>
+        <span v-if="sourceResult.language">🌐 {{ sourceResult.language }}</span>
+      </div>
+    </div>
   </div>
-  <div v-else-if="fuenteStatus === 'verified'" style="font-size:11px;color:var(--accent2);margin-top:4px">
-    ✅ {{ $t('create.fuenteVerified') }} — {{ fuenteName }}
-  </div>
-  <div v-else-if="fuenteStatus === 'unknown'" style="font-size:11px;color:var(--accent4);margin-top:4px">
-    ⚠️ {{ $t('create.fuenteUnknown') }}
-  </div>
-  <div v-else-if="fuenteStatus === 'invalid'" style="font-size:11px;color:var(--accent3);margin-top:4px">
-    ❌ {{ $t('create.fuenteInvalid') }}
-  </div>
+
+  <!-- Default hint -->
   <div v-else style="font-size:10px;color:var(--text3);margin-top:4px;opacity:.6">
     {{ $t('create.fuenteHint') }}
   </div>
@@ -311,6 +358,7 @@
   font-size: 10px; color: var(--text2); width: 220px;
   line-height: 1.5; font-weight: 400;
 }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 </style>
 
 <script setup>
@@ -344,6 +392,9 @@ const form = reactive({
 const tooltip = ref(null);
 const fuenteStatus = ref(null);
 const fuenteName = ref('');
+// New source validation
+const sourceChecking = ref(false);
+const sourceResult   = ref(null);
 
 // ── Wikidata target validation ─────────────────────────────────────────────
 const targetQuery       = ref('');
@@ -456,37 +507,43 @@ async function selectTarget(s) {
   await validateTarget(s.id, s.label);
 }
 
-async function verificarFuente(domain) {
-  const oficiales = ['.gov', '.gob', '.edu', '.europa.eu', '.un.org', '.who.int', '.gc.ca', '.gouv.fr', '.gob.es', '.gov.uk', '.gob.mx', '.gov.au', '.gov.br', '.gouv.be'];
-  const dominiosOficiales = ['boe.es', 'sepe.es', 'congreso.es', 'senado.es', 'poderjudicial.es', 'ine.es', 'europarl.europa.eu', 'eur-lex.europa.eu', 'un.org', 'who.int', 'oecd.org', 'worldbank.org', 'imf.org', 'rtve.es'];
-  if (dominiosOficiales.includes(domain)) return 'oficial';
-  if (oficiales.some(tld => domain.endsWith(tld))) return 'oficial';
-  const query = 'SELECT ?label WHERE { ?item wdt:P856 ?url . ?item wdt:P31 ?type . VALUES ?type { wd:Q1193236 wd:Q11033 wd:Q1004705 wd:Q7275 wd:Q2297946 wd:Q1002697 wd:Q35127 } FILTER(CONTAINS(LCASE(str(?url)), "' + domain + '")) ?item rdfs:label ?label FILTER(LANG(?label) = "es" || LANG(?label) = "en") } LIMIT 1';
-  try {
-    const res = await fetch('https://query.wikidata.org/sparql?query=' + encodeURIComponent(query) + '&format=json');
-    const data = await res.json();
-    if (data.results.bindings.length > 0) {
-      fuenteName.value = data.results.bindings[0].label.value;
-      return 'verified';
-    }
-  } catch { /* silencioso */ }
-  return 'unknown';
-}
+const API_BASE = import.meta.env.VITE_API_URL || 'https://vozciudadanaapi-production.up.railway.app';
+let sourceDebounce = null;
 
-watch(() => form.fuente_url, async (url) => {
-  fuenteStatus.value = null;
-  fuenteName.value = '';
+watch(() => form.fuente_url, (url) => {
+  sourceResult.value  = null;
+  fuenteStatus.value  = null;
+  clearTimeout(sourceDebounce);
   if (!url || url.length < 10) return;
-  try {
-    const fullUrl = url.startsWith('http') ? url : `https://${url}`;
-    new URL(fullUrl);
-    const domain = new URL(fullUrl).hostname.replace('www.', '');
-    fuenteStatus.value = 'checking';
-    fuenteStatus.value = await verificarFuente(domain);
-  } catch {
-    fuenteStatus.value = 'invalid';
-  }
+  sourceDebounce = setTimeout(() => validateSource(url), 800);
 });
+
+async function validateSource(url) {
+  sourceChecking.value = true;
+  sourceResult.value   = null;
+  try {
+    const res = await fetch(`${API_BASE}/api/source/validate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        source_url:  url,
+        title:       form.title       || '',
+        demands:     form.demands     || '',
+        tipo_abuso:  form.tipo_abuso  || '',
+        target_name: form.focal_point || '',
+      }),
+    });
+    const data = await res.json();
+    sourceResult.value = data;
+    // Keep fuenteStatus compatible for submit validation
+    fuenteStatus.value = ['VERIFIED_SOURCE','RELEVANT_SOURCE','WEAK_SOURCE','PAYWALLED_SOURCE'].includes(data.source_validation_status)
+      ? 'verified' : 'unknown';
+  } catch {
+    fuenteStatus.value = 'unknown';
+  } finally {
+    sourceChecking.value = false;
+  }
+}
 
 function showTooltip(id) { tooltip.value = id; }
 function hideTooltip() { tooltip.value = null; }

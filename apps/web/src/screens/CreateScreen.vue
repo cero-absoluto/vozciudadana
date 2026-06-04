@@ -356,10 +356,31 @@ const targetWikiId      = ref('');
 let targetDebounce      = null;
 
 const ALLOWED_TYPES = new Set([
+  // Institutions & organisations
   'Q1193236','Q11033','Q1004705','Q7275','Q2297946','Q1002697',
   'Q327333','Q37260','Q35749','Q637846','Q11204','Q15284',
   'Q6465','Q7278','Q2659904','Q178706','Q1639634','Q270791',
   'Q15265344','Q3918','Q16917','Q178790','Q190928','Q35120','Q43229',
+  // Political offices & positions (POLITICAL_OFFICE)
+  'Q30185',  // president of a country
+  'Q1255921',// public office
+  'Q294414', // public office (alt)
+  'Q4164871',// position
+  'Q699567', // government minister
+  'Q83307',  // minister
+  'Q372436', // secretary of state
+  'Q107363442',// head of government
+  'Q48352',  // head of state
+  'Q2101',   // chancellor
+  'Q212238', // mayor
+  'Q13218630',// governor
+  'Q16533',  // judge
+  'Q193391', // diplomat
+  'Q82955',  // politician
+  'Q1097498',// prime minister
+  'Q15275719',// elected official
+  'Q42178',  // commissioner
+  'Q486839', // member of parliament
 ]);
 
 const REJECTED_TYPES = new Set([

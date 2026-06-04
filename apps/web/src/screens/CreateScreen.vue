@@ -180,88 +180,7 @@
   <label>{{ $t('create.paisLabel') }}</label>
   <select v-model="form.convocatoria_pais">
     <option value="">{{ $t('create.paisPlaceholder') }}</option>
-    <option value="AF">Afganistán</option>
-    <option value="DE">Alemania</option>
-    <option value="AR">Argentina</option>
-    <option value="AU">Australia</option>
-    <option value="AT">Austria</option>
-    <option value="BE">Bélgica</option>
-    <option value="BO">Bolivia</option>
-    <option value="BR">Brasil</option>
-    <option value="CA">Canadá</option>
-    <option value="CL">Chile</option>
-    <option value="CN">China</option>
-    <option value="CO">Colombia</option>
-    <option value="KR">Corea del Sur</option>
-    <option value="CR">Costa Rica</option>
-    <option value="CU">Cuba</option>
-    <option value="DK">Dinamarca</option>
-    <option value="EC">Ecuador</option>
-    <option value="EG">Egipto</option>
-    <option value="SV">El Salvador</option>
-    <option value="AE">Emiratos Árabes</option>
-    <option value="SK">Eslovaquia</option>
-    <option value="SI">Eslovenia</option>
-    <option value="ES">España</option>
-    <option value="US">Estados Unidos</option>
-    <option value="EE">Estonia</option>
-    <option value="ET">Etiopía</option>
-    <option value="PH">Filipinas</option>
-    <option value="FI">Finlandia</option>
-    <option value="FR">Francia</option>
-    <option value="GH">Ghana</option>
-    <option value="GR">Grecia</option>
-    <option value="GT">Guatemala</option>
-    <option value="HN">Honduras</option>
-    <option value="HU">Hungría</option>
-    <option value="IN">India</option>
-    <option value="ID">Indonesia</option>
-    <option value="IQ">Irak</option>
-    <option value="IR">Irán</option>
-    <option value="IE">Irlanda</option>
-    <option value="IL">Israel</option>
-    <option value="IT">Italia</option>
-    <option value="JP">Japón</option>
-    <option value="JO">Jordania</option>
-    <option value="KZ">Kazajistán</option>
-    <option value="KE">Kenia</option>
-    <option value="LV">Letonia</option>
-    <option value="LB">Líbano</option>
-    <option value="LT">Lituania</option>
-    <option value="LU">Luxemburgo</option>
-    <option value="MX">México</option>
-    <option value="MA">Marruecos</option>
-    <option value="MT">Malta</option>
-    <option value="NL">Países Bajos</option>
-    <option value="NG">Nigeria</option>
-    <option value="NO">Noruega</option>
-    <option value="NZ">Nueva Zelanda</option>
-    <option value="PK">Pakistán</option>
-    <option value="PA">Panamá</option>
-    <option value="PY">Paraguay</option>
-    <option value="PE">Perú</option>
-    <option value="PL">Polonia</option>
-    <option value="PT">Portugal</option>
-    <option value="GB">Reino Unido</option>
-    <option value="CZ">República Checa</option>
-    <option value="DO">República Dominicana</option>
-    <option value="RO">Rumanía</option>
-    <option value="RU">Rusia</option>
-    <option value="SA">Arabia Saudí</option>
-    <option value="SN">Senegal</option>
-    <option value="RS">Serbia</option>
-    <option value="ZA">Sudáfrica</option>
-    <option value="SE">Suecia</option>
-    <option value="CH">Suiza</option>
-    <option value="TH">Tailandia</option>
-    <option value="TW">Taiwán</option>
-    <option value="TZ">Tanzania</option>
-    <option value="TR">Turquía</option>
-    <option value="UA">Ucrania</option>
-    <option value="UG">Uganda</option>
-    <option value="UY">Uruguay</option>
-    <option value="VE">Venezuela</option>
-    <option value="VN">Vietnam</option>
+    <option v-for="c in sortedCountries" :key="c.code" :value="c.code">{{ c.name }}</option>
   </select>
 </div>
 
@@ -372,7 +291,7 @@ import { REGIONS }          from '@/constants.js';
 const router   = useRouter();
 const protests = useProtestsStore();
 const ui       = useUiStore();
-const { t }    = useI18n();
+const { t, locale } = useI18n();
 
 const minDate = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 const form = reactive({
@@ -547,6 +466,98 @@ async function validateSource(url) {
 
 function showTooltip(id) { tooltip.value = id; }
 function hideTooltip() { tooltip.value = null; }
+
+// ── Country list with translations ────────────────────────────────────────
+const COUNTRIES = [
+  { code:'AF', en:'Afghanistan',        es:'Afganistán',      fr:'Afghanistan',        zh:'阿富汗' },
+  { code:'DE', en:'Germany',            es:'Alemania',        fr:'Allemagne',          zh:'德国' },
+  { code:'AR', en:'Argentina',          es:'Argentina',       fr:'Argentine',          zh:'阿根廷' },
+  { code:'AU', en:'Australia',          es:'Australia',       fr:'Australie',          zh:'澳大利亚' },
+  { code:'AT', en:'Austria',            es:'Austria',         fr:'Autriche',           zh:'奥地利' },
+  { code:'BE', en:'Belgium',            es:'Bélgica',         fr:'Belgique',           zh:'比利时' },
+  { code:'BO', en:'Bolivia',            es:'Bolivia',         fr:'Bolivie',            zh:'玻利维亚' },
+  { code:'BR', en:'Brazil',             es:'Brasil',          fr:'Brésil',             zh:'巴西' },
+  { code:'CA', en:'Canada',             es:'Canadá',          fr:'Canada',             zh:'加拿大' },
+  { code:'CL', en:'Chile',              es:'Chile',           fr:'Chili',              zh:'智利' },
+  { code:'CN', en:'China',              es:'China',           fr:'Chine',              zh:'中国' },
+  { code:'CO', en:'Colombia',           es:'Colombia',        fr:'Colombie',           zh:'哥伦比亚' },
+  { code:'KR', en:'South Korea',        es:'Corea del Sur',   fr:'Corée du Sud',       zh:'韩国' },
+  { code:'CR', en:'Costa Rica',         es:'Costa Rica',      fr:'Costa Rica',         zh:'哥斯达黎加' },
+  { code:'CU', en:'Cuba',               es:'Cuba',            fr:'Cuba',               zh:'古巴' },
+  { code:'DK', en:'Denmark',            es:'Dinamarca',       fr:'Danemark',           zh:'丹麦' },
+  { code:'EC', en:'Ecuador',            es:'Ecuador',         fr:'Équateur',           zh:'厄瓜多尔' },
+  { code:'EG', en:'Egypt',              es:'Egipto',          fr:'Égypte',             zh:'埃及' },
+  { code:'SV', en:'El Salvador',        es:'El Salvador',     fr:'Salvador',           zh:'萨尔瓦多' },
+  { code:'AE', en:'UAE',                es:'Emiratos Árabes', fr:'Émirats arabes',     zh:'阿联酋' },
+  { code:'SK', en:'Slovakia',           es:'Eslovaquia',      fr:'Slovaquie',          zh:'斯洛伐克' },
+  { code:'SI', en:'Slovenia',           es:'Eslovenia',       fr:'Slovénie',           zh:'斯洛文尼亚' },
+  { code:'ES', en:'Spain',              es:'España',          fr:'Espagne',            zh:'西班牙' },
+  { code:'US', en:'United States',      es:'Estados Unidos',  fr:'États-Unis',         zh:'美国' },
+  { code:'EE', en:'Estonia',            es:'Estonia',         fr:'Estonie',            zh:'爱沙尼亚' },
+  { code:'ET', en:'Ethiopia',           es:'Etiopía',         fr:'Éthiopie',           zh:'埃塞俄比亚' },
+  { code:'PH', en:'Philippines',        es:'Filipinas',       fr:'Philippines',        zh:'菲律宾' },
+  { code:'FI', en:'Finland',            es:'Finlandia',       fr:'Finlande',           zh:'芬兰' },
+  { code:'FR', en:'France',             es:'Francia',         fr:'France',             zh:'法国' },
+  { code:'GH', en:'Ghana',              es:'Ghana',           fr:'Ghana',              zh:'加纳' },
+  { code:'GR', en:'Greece',             es:'Grecia',          fr:'Grèce',              zh:'希腊' },
+  { code:'GT', en:'Guatemala',          es:'Guatemala',       fr:'Guatemala',          zh:'危地马拉' },
+  { code:'HN', en:'Honduras',           es:'Honduras',        fr:'Honduras',           zh:'洪都拉斯' },
+  { code:'HU', en:'Hungary',            es:'Hungría',         fr:'Hongrie',            zh:'匈牙利' },
+  { code:'IN', en:'India',              es:'India',           fr:'Inde',               zh:'印度' },
+  { code:'ID', en:'Indonesia',          es:'Indonesia',       fr:'Indonésie',          zh:'印度尼西亚' },
+  { code:'IQ', en:'Iraq',               es:'Irak',            fr:'Irak',               zh:'伊拉克' },
+  { code:'IR', en:'Iran',               es:'Irán',            fr:'Iran',               zh:'伊朗' },
+  { code:'IE', en:'Ireland',            es:'Irlanda',         fr:'Irlande',            zh:'爱尔兰' },
+  { code:'IL', en:'Israel',             es:'Israel',          fr:'Israël',             zh:'以色列' },
+  { code:'IT', en:'Italy',              es:'Italia',          fr:'Italie',             zh:'意大利' },
+  { code:'JP', en:'Japan',              es:'Japón',           fr:'Japon',              zh:'日本' },
+  { code:'JO', en:'Jordan',             es:'Jordania',        fr:'Jordanie',           zh:'约旦' },
+  { code:'KZ', en:'Kazakhstan',         es:'Kazajistán',      fr:'Kazakhstan',         zh:'哈萨克斯坦' },
+  { code:'KE', en:'Kenya',              es:'Kenia',           fr:'Kenya',              zh:'肯尼亚' },
+  { code:'LV', en:'Latvia',             es:'Letonia',         fr:'Lettonie',           zh:'拉脱维亚' },
+  { code:'LB', en:'Lebanon',            es:'Líbano',          fr:'Liban',              zh:'黎巴嫩' },
+  { code:'LT', en:'Lithuania',          es:'Lituania',        fr:'Lituanie',           zh:'立陶宛' },
+  { code:'LU', en:'Luxembourg',         es:'Luxemburgo',      fr:'Luxembourg',         zh:'卢森堡' },
+  { code:'MX', en:'Mexico',             es:'México',          fr:'Mexique',            zh:'墨西哥' },
+  { code:'MA', en:'Morocco',            es:'Marruecos',       fr:'Maroc',              zh:'摩洛哥' },
+  { code:'MT', en:'Malta',              es:'Malta',           fr:'Malte',              zh:'马耳他' },
+  { code:'NL', en:'Netherlands',        es:'Países Bajos',    fr:'Pays-Bas',           zh:'荷兰' },
+  { code:'NG', en:'Nigeria',            es:'Nigeria',         fr:'Nigéria',            zh:'尼日利亚' },
+  { code:'NO', en:'Norway',             es:'Noruega',         fr:'Norvège',            zh:'挪威' },
+  { code:'NZ', en:'New Zealand',        es:'Nueva Zelanda',   fr:'Nouvelle-Zélande',   zh:'新西兰' },
+  { code:'PK', en:'Pakistan',           es:'Pakistán',        fr:'Pakistan',           zh:'巴基斯坦' },
+  { code:'PA', en:'Panama',             es:'Panamá',          fr:'Panama',             zh:'巴拿马' },
+  { code:'PY', en:'Paraguay',           es:'Paraguay',        fr:'Paraguay',           zh:'巴拉圭' },
+  { code:'PE', en:'Peru',               es:'Perú',            fr:'Pérou',              zh:'秘鲁' },
+  { code:'PL', en:'Poland',             es:'Polonia',         fr:'Pologne',            zh:'波兰' },
+  { code:'PT', en:'Portugal',           es:'Portugal',        fr:'Portugal',           zh:'葡萄牙' },
+  { code:'GB', en:'United Kingdom',     es:'Reino Unido',     fr:'Royaume-Uni',        zh:'英国' },
+  { code:'CZ', en:'Czech Republic',     es:'República Checa', fr:'République tchèque', zh:'捷克' },
+  { code:'DO', en:'Dominican Republic', es:'Rep. Dominicana', fr:'Rép. dominicaine',   zh:'多米尼加' },
+  { code:'RO', en:'Romania',            es:'Rumanía',         fr:'Roumanie',           zh:'罗马尼亚' },
+  { code:'RU', en:'Russia',             es:'Rusia',           fr:'Russie',             zh:'俄罗斯' },
+  { code:'SA', en:'Saudi Arabia',       es:'Arabia Saudí',    fr:'Arabie saoudite',    zh:'沙特阿拉伯' },
+  { code:'SN', en:'Senegal',            es:'Senegal',         fr:'Sénégal',            zh:'塞内加尔' },
+  { code:'RS', en:'Serbia',             es:'Serbia',          fr:'Serbie',             zh:'塞尔维亚' },
+  { code:'ZA', en:'South Africa',       es:'Sudáfrica',       fr:'Afrique du Sud',     zh:'南非' },
+  { code:'SE', en:'Sweden',             es:'Suecia',          fr:'Suède',              zh:'瑞典' },
+  { code:'CH', en:'Switzerland',        es:'Suiza',           fr:'Suisse',             zh:'瑞士' },
+  { code:'TH', en:'Thailand',           es:'Tailandia',       fr:'Thaïlande',          zh:'泰国' },
+  { code:'TW', en:'Taiwan',             es:'Taiwán',          fr:'Taïwan',             zh:'台湾' },
+  { code:'TZ', en:'Tanzania',           es:'Tanzania',        fr:'Tanzanie',           zh:'坦桑尼亚' },
+  { code:'TR', en:'Turkey',             es:'Turquía',         fr:'Turquie',            zh:'土耳其' },
+  { code:'UA', en:'Ukraine',            es:'Ucrania',         fr:'Ukraine',            zh:'乌克兰' },
+  { code:'UG', en:'Uganda',             es:'Uganda',          fr:'Ouganda',            zh:'乌干达' },
+  { code:'UY', en:'Uruguay',            es:'Uruguay',         fr:'Uruguay',            zh:'乌拉圭' },
+  { code:'VE', en:'Venezuela',          es:'Venezuela',       fr:'Venezuela',          zh:'委内瑞拉' },
+  { code:'VN', en:'Vietnam',            es:'Vietnam',         fr:'Viêt Nam',           zh:'越南' },
+];
+
+const sortedCountries = computed(() => {
+  const lang = locale.value?.substring(0, 2) || 'en';
+  const key = ['es','fr','zh'].includes(lang) ? lang : 'en';
+  return [...COUNTRIES].sort((a, b) => a[key].localeCompare(b[key]));
+});
 
 const scopes = computed(() => [
   { key:'national', icon:'🏧', label: t('create.scopeNational'), badgeClass:'sb-national', badgeLabel: t('create.scopeNationalBadge'), bg:'rgba(124,111,255,.08)', desc: t('create.scopeNationalDesc') },

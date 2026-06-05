@@ -2,7 +2,7 @@
   <div class="topbar">
     <div class="logo">
   <div class="logo-mark">
-    <svg viewBox="0 0 40 40" width="32" height="32">
+    <svg viewBox="0 0 40 40" width="44" height="44">
       <circle cx="20" cy="20" r="19" fill="none" stroke="#4CFFA4" stroke-width="1.2"/>
       <circle cx="20" cy="20" r="16" fill="#1A7A4C"/>
       <rect x="11" y="9" width="18" height="13" rx="2" fill="none" stroke="#ffffff" stroke-width="1.2"/>

@@ -652,8 +652,10 @@
     "cookiesTitle": "Cookies",
     "cookiesBody": "Voice Protest n'utilise pas de cookies de suivi ou publicitaires. Les préférences de langue et d'interface sont stockées dans le localStorage de votre navigateur — elles ne quittent jamais votre appareil et ne nécessitent pas de bannière de consentement.",
     "retentionTitle": "Conservation des données",
-    "retentionBody": "Les données d'adhésion (hash du téléphone, localisation approximative, score de fiabilité) sont conservées pendant la durée de la protestation plus 90 jours, après quoi elles sont définitivement supprimées. Aucune donnée personnelle n'est conservée au-delà de cette période.",
+    "retentionBody": "Les données d'adhésion individuelles (hash du téléphone, localisation approximative, score de fiabilité) sont supprimées de manière logique 90 jours après la clôture d'une protestation — c'est-à-dire qu'elles sont marquées comme supprimées et exclues de toutes les requêtes. Le rapport public n'est jamais supprimé : il ne contient que des agrégats statistiques et aucune donnée personnelle. Aucune adhésion individuelle ne peut être retracée à partir du rapport public.",
     "controllerTitle": "Responsable du traitement",
-    "sourceNote": "Tout le code source est publiquement auditable sous licence AGPL 3.0."
+    "sourceNote": "Tout le code source est publiquement auditable sous licence AGPL 3.0.",
+    "reportNote": "Le rapport public vérifié",
+    "reportNoteBody": "Le rapport public généré par chaque protestation ne contient que des statistiques agrégées et anonymisées — adhésions totales, distribution géographique, répartition de la fiabilité. Il ne contient aucune donnée personnelle et n'est jamais sujet à suppression. C'est le registre permanent et auditable de la participation citoyenne vérifiée."
   }
 }

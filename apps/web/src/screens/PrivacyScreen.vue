@@ -73,6 +73,12 @@
         </div>
       </div>
 
+      <!-- Public report note -->
+      <div style="background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.2);border-radius:12px;padding:14px 16px;margin-bottom:20px">
+        <div style="font-size:13px;font-weight:700;color:var(--accent2);margin-bottom:6px">📊 {{ $t('privacy.reportNote') }}</div>
+        <div style="font-size:14px;color:var(--text2);line-height:1.7">{{ $t('privacy.reportNoteBody') }}</div>
+      </div>
+
       <!-- Source code -->
       <div style="text-align:center;font-size:13px;color:var(--text3);line-height:1.8">
         {{ $t('privacy.sourceNote') }}<br>

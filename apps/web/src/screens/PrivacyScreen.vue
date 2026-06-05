@@ -69,7 +69,7 @@
         <div style="font-size:12px;color:var(--text2);line-height:1.8">
           Stichting Voice Protest<br>
           Utrecht, Netherlands<br>
-          <a href="mailto:privacy@voiceprotest.org" style="color:var(--accent)">privacy@voiceprotest.org</a>
+          <a href="mailto:voice@voiceprotest.org" style="color:var(--accent)">voice@voiceprotest.org</a>
         </div>
       </div>
 

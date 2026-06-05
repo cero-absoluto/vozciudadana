@@ -53,13 +53,10 @@
           <div class="tcard-h">{{ $t('about.openCard2Title') }}</div>
           <div class="tcard-p" v-html="$t('about.openCard2Body')"></div>
         </div>
-      </div>
-
-      <!-- Privacy Policy link -->
-      <div style="margin-top:28px;padding-top:20px;border-top:.5px solid var(--border);text-align:center">
-        <div @click="$router.push('/privacy')"
-          style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:10px 20px;border-radius:20px;border:.5px solid var(--border2);color:var(--text2);font-size:12px">
-          🔒 {{ $t('privacy.title') }}
+        <div class="tcard" style="cursor:pointer" @click="$router.push('/privacy')">
+          <div class="tcard-ico">🔒</div>
+          <div class="tcard-h">{{ $t('privacy.title') }}</div>
+          <div class="tcard-p">{{ $t('privacy.principleTitle') }}</div>
         </div>
       </div>
 

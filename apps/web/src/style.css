@@ -83,8 +83,8 @@ a:hover{opacity:.8}
   .topbar{max-width:100%;border-bottom:1px solid var(--border);padding:12px 24px}
   .bottom-nav{max-width:100%;padding:0 24px}
   .topbar-sub{font-size:13px !important;opacity:1 !important;color:var(--text) !important}
-  .logo-mark{width:30px;height:30px}
-  .logo-mark svg{width:17px;height:17px}
+  .logo-mark{width:44px;height:44px}
+  .logo-mark svg{width:44px;height:44px}
   /* Modal wider on desktop */
   .modal{max-width:480px}
   #install-banner{max-width:860px}
@@ -122,8 +122,8 @@ a:hover{opacity:.8}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg);gap:6px}
 .logo{display:flex;align-items:center;gap:7px;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;letter-spacing:-.5px;flex-shrink:0}
 @media(min-width:900px){.logo{font-size:18px}}
-.logo-mark{width:24px;height:24px;border-radius:6px;background:var(--accent);display:flex;align-items:center;justify-content:center}
-.logo-mark svg{width:13px;height:13px;fill:white}
+.logo-mark{width:44px;height:44px;border-radius:0;background:transparent;display:flex;align-items:center;justify-content:center}
+.logo-mark svg{width:44px;height:44px;fill:none}
 .topbar-right{display:flex;align-items:center;gap:5px}
 .lang-switcher{display:flex;gap:2px;background:var(--bg3);border-radius:8px;padding:2px}
 .lang-btn{padding:3px 6px;border-radius:6px;font-size:9px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text3);transition:all .15s}

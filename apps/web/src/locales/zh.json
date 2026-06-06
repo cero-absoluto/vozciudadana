@@ -273,10 +273,8 @@
     "donPosibles": "可能支持者",
     "donSaldo": "余额：",
     "donCount": "{count} 笔捐款 · 共 {total}€",
-    "donAgotado": "此抗议活动没有可用资金。",
-    "donApoyar": "☕ 支持此活动",
-    "joinSinSaldo": "无资金 — 支持此抗议",
-    "donAgotadoHint": "用€1支付20次验证费用，并邀请其他人贡献。"
+    "donAgotado": "⚠️ 余额耗尽 — 此活动需要您的支持",
+    "donApoyar": "☕ 支持此活动"
   },
   "verify": {
     "spinVerifying": "正在验证您的参与...",
@@ -289,13 +287,11 @@
     "backDetail": "← 查看活动",
     "seeReport": "📊 查看完整报告",
     "goMap": "前往世界地图",
-    "toastError": "出了点问题，请再试一次。",
+    "toastError": "注册加入时出错：{msg}",
     "toast": "✓ 匿名加入已注册",
     "toastNational": "无法加入，此活动仅面向本国公民",
     "notiOn": "✅ 关闭时将通知您",
-    "notiOff": "关闭时通知我",
-    "toastAlready": "您已使用此手机号码参与了此抗议活动。",
-    "toastSinSaldo": "此抗议活动没有资金。支持它以启用参与。"
+    "notiOff": "关闭时通知我"
   },
   "about": {
     "heroTitle": "工具。没有诈骗。",

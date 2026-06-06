@@ -218,7 +218,8 @@
     "errVerb": "诉求必须包含行动动词，如「要求」、「谴责」或「强制」。",
     "errNoActionVerb": "诉求必须包含行动动词，如「要求」、「谴责」或「强制」。",
     "confirmPublish": "确认要发布此活动吗？\n\n\"{title}\"\n\n发布后将无法编辑或删除。",
-    "successToast": "✓ 活动已创建 — 现在显示在地图上"
+    "successToast": "✓ 活动已创建 — 现在显示在地图上",
+    "createdSaldo": "✓ 抗议已创建 — 从抗议页面为其提供资金以开始接收经过验证的参与。"
   },
   "detail": {
     "back": "← 返回地图",
@@ -272,8 +273,10 @@
     "donPosibles": "可能支持者",
     "donSaldo": "余额：",
     "donCount": "{count} 笔捐款 · 共 {total}€",
-    "donAgotado": "⚠️ 余额耗尽 — 此活动需要您的支持",
-    "donApoyar": "☕ 支持此活动"
+    "donAgotado": "此抗议活动没有可用资金。",
+    "donApoyar": "☕ 支持此活动",
+    "joinSinSaldo": "无资金 — 支持此抗议",
+    "donAgotadoHint": "用€1支付20次验证费用，并邀请其他人贡献。"
   },
   "verify": {
     "spinVerifying": "正在验证您的参与...",

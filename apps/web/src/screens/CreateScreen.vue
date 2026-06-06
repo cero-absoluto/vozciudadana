@@ -1,4 +1,4 @@
-<template>
+<<template>
   <div class="screen active" id="s-create">
     <div class="create-scroll">
   <!-- COLUMNA IZQUIERDA -->
@@ -331,7 +331,8 @@ const ALLOWED_TYPES = new Set([
   'Q327333','Q37260','Q35749','Q637846','Q11204','Q15284',
   'Q6465','Q7278','Q2659904','Q178706','Q1639634','Q270791',
   'Q15265344','Q3918','Q16917','Q178790','Q190928','Q35120','Q43229',
-  'Q902522', // public research university
+  'Q902522', // public research university (alt)
+  'Q62078547',// public research university (Wikidata exact)
   'Q875538', // public university
   'Q38723',  // higher education institution
   'Q189004', // college
@@ -379,11 +380,13 @@ async function validateTarget(wikidataId, label) {
   targetWikiId.value = wikidataId;
   targetName.value   = label;
   try {
-    const sparql = `SELECT ?type ?typeLabel ?countryLabel WHERE {
-      wd:${wikidataId} wdt:P31 ?type .
+    const sparql = `SELECT DISTINCT ?type ?typeLabel ?countryLabel WHERE {
+      { wd:${wikidataId} wdt:P31 ?type . }
+      UNION
+      { wd:${wikidataId} wdt:P31 ?mid . ?mid wdt:P279* ?type . }
       OPTIONAL { wd:${wikidataId} wdt:P17 ?country . }
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en" . }
-    } LIMIT 10`;
+    } LIMIT 15`;
     const res = await fetch('https://query.wikidata.org/sparql?query=' + encodeURIComponent(sparql) + '&format=json');
     const data = await res.json();
     const bindings = data.results.bindings;
@@ -649,4 +652,3 @@ function submit() {
   router.push('/');
 }
 </script>
-

@@ -147,7 +147,19 @@ const target = lastId
         router.push('/');
         return;
       }
-      /* silencioso para otros errores */
+      if (e.status === 409 || e.message?.includes('409') || e.message?.includes('already')) {
+        ui.showToast(t('verify.toastAlready'));
+        router.push('/');
+        return;
+      }
+      if (e.status === 402 || e.message?.includes('402') || e.message?.includes('SALDO')) {
+        ui.showToast(t('verify.toastSinSaldo'));
+        router.push('/');
+        return;
+      }
+      ui.showToast(t('verify.toastError'));
+      router.push('/');
+      return;
     }
     protests.joinProtest(target.id);
     await protests.loadProtests();

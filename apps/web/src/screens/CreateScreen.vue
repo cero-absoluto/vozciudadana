@@ -195,7 +195,7 @@
   <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">{{ $t('create.institucionHint') }}</div>
 </div>
 
-<div v-show="form.scope === 'regional' && form.convocatoria_institucion" class="fg" style="margin-top:12px">
+<div v-if="form.scope === 'regional' && form.convocatoria_institucion" class="fg" style="margin-top:12px">
  <label>{{ $t('create.dominioLabel') }}</label>
 <div style="display:flex;align-items:center;gap:0">
   <div style="padding:9px 10px;background:var(--bg3);border:.5px solid var(--border);border-right:none;border-radius:var(--r) 0 0 var(--r);font-size:15px;color:var(--text3);font-family:'DM Sans',sans-serif">@</div>
@@ -203,7 +203,7 @@
 </div>
 <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">{{ $t('create.dominioHint') }}</div>
 </div>
-      <div v-show="form.scope === 'regional' && form.convocatoria_institucion && form.dominio_email" 
+      <div v-if="form.scope === 'regional' && form.convocatoria_institucion && form.dominio_email" 
   style="background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r2);padding:12px;margin-top:12px">
   <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px">
     {{ $t('create.censoTitle') }}
@@ -331,12 +331,6 @@ const ALLOWED_TYPES = new Set([
   'Q327333','Q37260','Q35749','Q637846','Q11204','Q15284',
   'Q6465','Q7278','Q2659904','Q178706','Q1639634','Q270791',
   'Q15265344','Q3918','Q16917','Q178790','Q190928','Q35120','Q43229',
-  'Q902522', // public research university (alt)
-  'Q62078547',// public research university (Wikidata exact)
-  'Q875538', // public university
-  'Q38723',  // higher education institution
-  'Q189004', // college
-  'Q23002054',// national university
   // Political offices & positions (POLITICAL_OFFICE)
   'Q30185',  // president of a country
   'Q1255921',// public office
@@ -380,13 +374,11 @@ async function validateTarget(wikidataId, label) {
   targetWikiId.value = wikidataId;
   targetName.value   = label;
   try {
-    const sparql = `SELECT DISTINCT ?type ?typeLabel ?countryLabel WHERE {
-      { wd:${wikidataId} wdt:P31 ?type . }
-      UNION
-      { wd:${wikidataId} wdt:P31 ?mid . ?mid wdt:P279* ?type . }
+    const sparql = `SELECT ?type ?typeLabel ?countryLabel WHERE {
+      wd:${wikidataId} wdt:P31 ?type .
       OPTIONAL { wd:${wikidataId} wdt:P17 ?country . }
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en" . }
-    } LIMIT 15`;
+    } LIMIT 10`;
     const res = await fetch('https://query.wikidata.org/sparql?query=' + encodeURIComponent(sparql) + '&format=json');
     const data = await res.json();
     const bindings = data.results.bindings;
@@ -588,8 +580,8 @@ function submit() {
   if (!form.description.trim()) { ui.showToast(t('create.errDesc')); return; }
   if (!form.demands.trim())     { ui.showToast(t('create.errDemands')); return; }
   if (!form.focal_point.trim()) { ui.showToast(t('create.errFocal')); return; }
-  if (targetStatus.value === 'REJECTED') { ui.showToast('This entity is not allowed. Voice Protest only accepts public institutions.'); return; }
-  if (targetStatus.value === 'CHECKING') { ui.showToast('Please wait while we verify the entity.'); return; }
+  if (targetStatus.value === 'REJECTED') { ui.showToast(t('create.errTargetRejected')); return; }
+  if (targetStatus.value === 'CHECKING') { ui.showToast(t('create.errTargetChecking')); return; }
   if (!form.starts_at) { ui.showToast(t('create.errDate')); return; }
   if (form.scope === 'national' && !form.convocatoria_pais) { ui.showToast(t('create.errPais')); return; }
   if (form.scope === 'regional' && !form.convocatoria_pais) { ui.showToast(t('create.errPais')); return; }

@@ -273,10 +273,8 @@
     "donPosibles": "adhesiones posibles",
     "donSaldo": "Saldo:",
     "donCount": "{count} donaciones · {total}€ total",
-    "donAgotado": "Esta convocatoria no tiene saldo disponible.",
-    "donApoyar": "☕ Apoyar esta convocatoria",
-    "joinSinSaldo": "Sin saldo — apoya esta protesta",
-    "donAgotadoHint": "Cubre 20 verificaciones por €1 e invita a otros a contribuir."
+    "donAgotado": "⚠️ Saldo agotado — esta convocatoria necesita tu apoyo",
+    "donApoyar": "☕ Apoyar esta convocatoria"
   },
   "verify": {
     "spinVerifying": "Verificando código...",
@@ -292,10 +290,7 @@
     "toast": "✓ Adhesión anónima registrada",
     "toastNational": "No puede adherirse, la protesta es únicamente para ciudadanos nacionales",
     "notiOn": "✅ Te avisaremos al cierre",
-    "notiOff": "Avísame cuando cierre la convocatoria",
-    "toastAlready": "Ya te has adherido a esta convocatoria con este número de teléfono.",
-    "toastSinSaldo": "Esta convocatoria no tiene saldo. Apóyala para activar las adhesiones.",
-    "toastError": "Algo salió mal. Por favor inténtalo de nuevo."
+    "notiOff": "Avísame cuando cierre la convocatoria"
   },
   "about": {
     "heroTitle": "La herramienta. Sin trampa.",

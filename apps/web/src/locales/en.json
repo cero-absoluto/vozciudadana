@@ -219,7 +219,9 @@
     "errNoActionVerb": "Demands must include action verbs like \"demand\", \"denounce\" or \"require\".",
     "confirmPublish": "Confirm you want to publish this event?\n\n\"{title}\"\n\nOnce published it cannot be edited or deleted.",
     "successToast": "✓ Event created — it now appears on the map",
-    "createdSaldo": "✓ Protest created — fund it from the protest page to start receiving verified adhesions."
+    "errTargetRejected": "This entity is not allowed. Voice Protest only accepts public institutions.",
+    "errTargetChecking": "Please wait while we verify the entity.",
+    "createdOk": "✓ Protest created — it now appears on the map."
   },
   "detail": {
     "back": "← Back to map",

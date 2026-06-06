@@ -337,7 +337,7 @@
     "censo4Body": "El censo emerge de las adhesiones verificadas. Nadie tiene una lista previa de miembros.",
     "sec4Title": "Seguridad",
     "seg1Title": "Hash local",
-    "seg1Body": "SHA-256 en tu dispositivo. Tu número o email nunca sale en texto claro — solo su huella matemática irreversible.",
+    "seg1Body": "Tras la verificación, tu número o email se transforma en una huella matemática irreversible mediante SHA-256. Los datos originales no se almacenan.",
     "seg2Title": "SMS verificado",
     "seg2Body": "Un número real, una adhesión por convocatoria. Imposible participar dos veces ni suplantar a otra persona.",
     "seg3Title": "Tor — en desarrollo",

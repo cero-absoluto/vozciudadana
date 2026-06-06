@@ -273,10 +273,8 @@
     "donPosibles": "soutiens possibles",
     "donSaldo": "Solde :",
     "donCount": "{count} dons · {total}€ au total",
-    "donAgotado": "Cette protestation n'a pas de fonds disponibles.",
-    "donApoyar": "☕ Soutenir cet événement",
-    "joinSinSaldo": "Sans fonds — soutenez cette protestation",
-    "donAgotadoHint": "Couvrez 20 vérifications pour 1€ et invitez d'autres à contribuer."
+    "donAgotado": "⚠️ Solde épuisé — cet événement a besoin de votre soutien",
+    "donApoyar": "☕ Soutenir cet événement"
   },
   "verify": {
     "spinVerifying": "Vérification de votre participation...",
@@ -289,13 +287,11 @@
     "backDetail": "← Voir l'événement",
     "seeReport": "📊 Voir le rapport complet",
     "goMap": "Aller à la carte mondiale",
-    "toastError": "Une erreur s'est produite. Veuillez réessayer.",
+    "toastError": "Erreur lors de l'enregistrement de l'adhésion : {msg}",
     "toast": "✓ Adhésion anonyme enregistrée",
     "toastNational": "Impossible de rejoindre, cet événement est uniquement pour les citoyens nationaux",
     "notiOn": "✅ Nous vous notifierons à la clôture",
-    "notiOff": "Me notifier à la clôture",
-    "toastAlready": "Vous avez déjà adhéré à cette protestation avec ce numéro de téléphone.",
-    "toastSinSaldo": "Cette protestation n'a pas de fonds. Soutenez-la pour activer les adhésions."
+    "notiOff": "Me notifier à la clôture"
   },
   "about": {
     "heroTitle": "L'outil. Sans tromperie.",

@@ -338,7 +338,7 @@
     "censo4Body": "The census emerges from verified adhesions. Nobody has a prior list of members.",
     "sec4Title": "Security",
     "seg1Title": "Local hash",
-    "seg1Body": "SHA-256 on your device. Your number or email never leaves in plain text — only its irreversible mathematical fingerprint.",
+    "seg1Body": "After verification, your phone number or email is transformed into an irreversible SHA-256 fingerprint. The original data is not stored.",
     "seg2Title": "Verified SMS",
     "seg2Body": "One real number, one adhesion per event. Impossible to participate twice or impersonate someone else.",
     "seg3Title": "Tor — in development",

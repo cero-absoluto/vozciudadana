@@ -175,7 +175,7 @@
     "audienceTitle": "Who is this event directed at?",
     "censoAll": "The entire institution",
     "audienceAll": "The entire institution",
-    "censoAllDesc": "Any member with email @{domain} can participate",
+    "censoAllDesc": "Any member with an institutional email ending in {domain} can participate",
     "audienceAllDesc": "Any member with email @{domain} can participate",
     "censoDept": "A specific department or group",
     "audienceGroup": "A specific department or group",

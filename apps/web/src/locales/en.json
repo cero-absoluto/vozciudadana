@@ -220,8 +220,11 @@
     "confirmPublish": "Confirm you want to publish this event?\n\n\"{title}\"\n\nOnce published it cannot be edited or deleted.",
     "successToast": "✓ Event created — it now appears on the map",
     "errTargetRejected": "This entity is not allowed. Voice Protest only accepts public institutions.",
-    "errTargetChecking": "Please wait while we verify the entity.",
-    "createdOk": "✓ Protest created — it now appears on the map."
+    "errTargetChecking": "Verifying with Wikidata...",
+    "createdOk": "✓ Protest created — it now appears on the map.",
+    "errTargetRejectedShort": "Not allowed on Voice Protest",
+    "errTargetReview": "Needs manual review before publishing",
+    "createdSaldo": "✓ Protest created — fund it from the protest page to start receiving verified adhesions."
   },
   "detail": {
     "back": "← Back to map",

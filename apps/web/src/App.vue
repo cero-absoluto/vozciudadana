@@ -37,7 +37,7 @@ onMounted(() => {
 
   // Service Worker
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/vozciudadana/service-worker.js')
+    navigator.serviceWorker.register('/service-worker.js')
       .catch(err => console.warn('[PWA] SW error:', err));
   }
 

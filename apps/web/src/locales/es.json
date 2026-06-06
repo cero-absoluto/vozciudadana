@@ -220,8 +220,11 @@
     "confirmPublish": "¿Confirmas que quieres publicar esta convocatoria?\n\n\"{title}\"\n\nUna vez publicada no podrá editarse ni eliminarse.",
     "successToast": "✓ Convocatoria creada — ya aparece en el mapa",
     "errTargetRejected": "Esta entidad no está permitida. Voice Protest solo acepta instituciones públicas.",
-    "errTargetChecking": "Por favor espera mientras verificamos la entidad.",
-    "createdOk": "✓ Convocatoria creada — ya aparece en el mapa."
+    "errTargetChecking": "Verificando con Wikidata...",
+    "createdOk": "✓ Convocatoria creada — ya aparece en el mapa.",
+    "errTargetRejectedShort": "No permitida en Voice Protest",
+    "errTargetReview": "Requiere revisión manual antes de publicar",
+    "createdSaldo": "✓ Convocatoria creada — finánciala desde su pantalla para recibir adhesiones verificadas."
   },
   "detail": {
     "back": "← Volver al mapa",

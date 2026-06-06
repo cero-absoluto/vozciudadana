@@ -273,10 +273,8 @@
     "donPosibles": "possible supporters",
     "donSaldo": "Balance:",
     "donCount": "{count} donations · {total}€ total",
-    "donAgotado": "This protest has no funds available.",
-    "donApoyar": "☕ Support this event",
-    "joinSinSaldo": "No funds — support this protest",
-    "donAgotadoHint": "Cover 20 verifications for €1 and invite others to contribute."
+    "donAgotado": "⚠️ Balance depleted — this event needs your support",
+    "donApoyar": "☕ Support this event"
   },
   "verify": {
     "spinVerifying": "Verifying your participation...",
@@ -289,13 +287,11 @@
     "backDetail": "← See the event",
     "seeReport": "📊 See full report",
     "goMap": "Go to world map",
-    "toastError": "Something went wrong. Please try again.",
+    "toastError": "Error registering adhesion: {msg}",
     "toast": "✓ Anonymous adhesion registered",
     "toastNational": "Cannot join, this event is only for national citizens",
     "notiOn": "✅ We'll notify you when it closes",
-    "notiOff": "Notify me when it closes",
-    "toastAlready": "You have already joined this protest with this phone number.",
-    "toastSinSaldo": "This protest has no funds. Support it to enable adhesions."
+    "notiOff": "Notify me when it closes"
   },
   "about": {
     "heroTitle": "The tool. No tricks.",

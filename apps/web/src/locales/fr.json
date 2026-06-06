@@ -289,11 +289,13 @@
     "backDetail": "← Voir l'événement",
     "seeReport": "📊 Voir le rapport complet",
     "goMap": "Aller à la carte mondiale",
-    "toastError": "Erreur lors de l'enregistrement de l'adhésion : {msg}",
+    "toastError": "Une erreur s'est produite. Veuillez réessayer.",
     "toast": "✓ Adhésion anonyme enregistrée",
     "toastNational": "Impossible de rejoindre, cet événement est uniquement pour les citoyens nationaux",
     "notiOn": "✅ Nous vous notifierons à la clôture",
-    "notiOff": "Me notifier à la clôture"
+    "notiOff": "Me notifier à la clôture",
+    "toastAlready": "Vous avez déjà adhéré à cette protestation avec ce numéro de téléphone.",
+    "toastSinSaldo": "Cette protestation n'a pas de fonds. Soutenez-la pour activer les adhésions."
   },
   "about": {
     "heroTitle": "L'outil. Sans tromperie.",

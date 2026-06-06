@@ -169,8 +169,8 @@
     "institutionHint": "If it's a university or workplace event, enter the name.",
     "dominioLabel": "Institutional email domain *",
     "emailDomainLabel": "Institutional email domain *",
-    "dominioHint": "Only the part after the @ — for example: uu.nl",
-    "emailDomainHint": "Only the part after the @ — for example: uu.nl",
+    "dominioHint": "Solo la parte después del símbolo arroba — por ejemplo: uu.nl",
+    "emailDomainHint": "Solo la parte después del símbolo arroba — por ejemplo: uu.nl"
     "censoTitle": "Who is this event directed at?",
     "audienceTitle": "Who is this event directed at?",
     "censoAll": "The entire institution",

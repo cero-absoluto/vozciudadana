@@ -14,7 +14,7 @@
   },
   "auth": {
     "title": "Your phone number",
-    "subtitle": "We send you a 6-digit code. Your number is transformed into a mathematical fingerprint on your device — we never see it in plain text.",
+    "subtitle": "We send a 6-digit code. Your number is used for SMS verification and is then transformed into an irreversible mathematical fingerprint. The original number is not stored.",
     "prefixLabel": "Country prefix",
     "phoneLabel": "Phone number",
     "phonePlaceholder": "600 000 000",

@@ -219,7 +219,9 @@
     "errNoActionVerb": "Las exigencias deben incluir verbos como \"exigir\", \"denunciar\" o \"demandar\".",
     "confirmPublish": "¿Confirmas que quieres publicar esta convocatoria?\n\n\"{title}\"\n\nUna vez publicada no podrá editarse ni eliminarse.",
     "successToast": "✓ Convocatoria creada — ya aparece en el mapa",
-    "createdSaldo": "✓ Convocatoria creada — finánciala desde su pantalla para recibir adhesiones verificadas."
+    "errTargetRejected": "Esta entidad no está permitida. Voice Protest solo acepta instituciones públicas.",
+    "errTargetChecking": "Por favor espera mientras verificamos la entidad.",
+    "createdOk": "✓ Convocatoria creada — ya aparece en el mapa."
   },
   "detail": {
     "back": "← Volver al mapa",

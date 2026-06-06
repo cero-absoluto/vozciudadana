@@ -9,6 +9,13 @@ const OFFICIAL_TLDS = ['.gov', '.gob', '.gov.uk', '.gov.au', '.gov.br', '.gob.es
   '.gob.mx', '.gouv.fr', '.gouv.be', '.gc.ca', '.europa.eu', '.un.org',
   '.who.int', '.oecd.org', '.worldbank.org', '.imf.org', '.eur-lex.europa.eu'];
 
+const UNIVERSITY_MEDIA = new Set([
+  'dub.uu.nl', 'dub.nl',           // Utrecht University news
+  'dare.uva.nl',                    // Amsterdam University
+  'cursor.tue.nl',                  // TU Eindhoven
+  'sg.uu.nl',                       // Utrecht student media
+]);
+
 const KNOWN_OFFICIAL = new Set([
   'boe.es', 'congreso.es', 'senado.es', 'poderjudicial.es', 'ine.es',
   'rtve.es', 'europarl.europa.eu', 'un.org', 'who.int', 'oecd.org',
@@ -38,6 +45,7 @@ function classifyDomain(domain, wikidataType) {
     if (['amnesty.org','hrw.org','transparency.org'].includes(domain)) return 'ngo';
     return 'public_institution';
   }
+  if (UNIVERSITY_MEDIA.has(domain)) return 'academic';
   if (BLOCKED_DOMAINS.has(domain)) return 'blocked';
   return 'unknown';
 }

@@ -219,7 +219,9 @@
     "errNoActionVerb": "Les exigences doivent inclure des verbes d'action comme « exiger », « dénoncer » ou « demander ».",
     "confirmPublish": "Confirmez-vous vouloir publier cet événement ?\n\n\"{title}\"\n\nUne fois publié, il ne pourra pas être modifié ni supprimé.",
     "successToast": "✓ Événement créé — il apparaît maintenant sur la carte",
-    "createdSaldo": "✓ Protestation créée — financez-la depuis sa page pour recevoir des adhésions vérifiées."
+    "errTargetRejected": "Cette entité n'est pas autorisée. Voice Protest n'accepte que les institutions publiques.",
+    "errTargetChecking": "Veuillez patienter pendant la vérification de l'entité.",
+    "createdOk": "✓ Protestation créée — elle apparaît maintenant sur la carte."
   },
   "detail": {
     "back": "← Retour à la carte",

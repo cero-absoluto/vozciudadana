@@ -175,7 +175,7 @@
     "audienceTitle": "¿A quién va dirigida esta convocatoria?",
     "censoAll": "A toda la institución",
     "audienceAll": "A toda la institución",
-    "censoAllDesc": "Cualquier miembro con email @{domain} puede participar",
+    "censoAllDesc": "Cualquier miembro con email institucional de {domain} puede participar",
     "audienceAllDesc": "Cualquier miembro con email @{domain} puede participar",
     "censoDept": "A un departamento o grupo concreto",
     "audienceGroup": "A un departamento o grupo concreto",

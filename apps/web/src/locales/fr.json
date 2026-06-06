@@ -170,7 +170,7 @@
     "dominioLabel": "Domaine email institutionnel *",
     "emailDomainLabel": "Domaine email institutionnel *",
     "dominioHint": "Seulement la partie après le symbole arobase — par exemple : univ-paris.fr",
-    "emailDomainHint": "Seulement la partie après le symbole arobase — par exemple : univ-paris.fr"
+    "emailDomainHint": "Seulement la partie après le symbole arobase — par exemple : univ-paris.fr",
     "censoTitle": "À qui s'adresse cet événement ?",
     "audienceTitle": "À qui s'adresse cet événement ?",
     "censoAll": "Toute l'institution",

@@ -175,7 +175,7 @@
     "audienceTitle": "此活动面向谁？",
     "censoAll": "整个机构",
     "audienceAll": "整个机构",
-    "censoAllDesc": "任何拥有@{domain}邮箱的成员均可参与",
+    "censoAllDesc": "任何拥有{domain}机构邮箱的成员均可参与",
     "audienceAllDesc": "任何拥有@{domain}邮箱的成员均可参与",
     "censoDept": "特定部门或群体",
     "audienceGroup": "特定部门或群体",

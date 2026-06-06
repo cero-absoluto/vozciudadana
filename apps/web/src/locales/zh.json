@@ -219,7 +219,9 @@
     "errNoActionVerb": "诉求必须包含行动动词，如「要求」、「谴责」或「强制」。",
     "confirmPublish": "确认要发布此活动吗？\n\n\"{title}\"\n\n发布后将无法编辑或删除。",
     "successToast": "✓ 活动已创建 — 现在显示在地图上",
-    "createdSaldo": "✓ 抗议已创建 — 从抗议页面为其提供资金以开始接收经过验证的参与。"
+    "errTargetRejected": "此实体不被允许。Voice Protest仅接受公共机构。",
+    "errTargetChecking": "请等待我们验证该实体。",
+    "createdOk": "✓ 抗议已创建 — 现已显示在地图上。"
   },
   "detail": {
     "back": "← 返回地图",

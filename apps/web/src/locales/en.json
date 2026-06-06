@@ -240,7 +240,7 @@
     "geoMsg": "🌍 Outside geographic scope:",
     "secTitle": "Security guarantees",
     "secHash": "Local SHA-256 hash",
-    "secHashSub": "Your number is transformed into a mathematical fingerprint on your device.",
+    "secHashSub": "After verification, your number is transformed into an irreversible SHA-256 mathematical fingerprint.",
     "secSms": "SMS verification",
     "secSmsSub": "Your number confirms you're a real person. One number, one adhesion.",
     "secTor": "Tor in risk regimes",

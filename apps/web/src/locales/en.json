@@ -18,7 +18,7 @@
     "prefixLabel": "Country prefix",
     "phoneLabel": "Phone number",
     "phonePlaceholder": "600 000 000",
-    "hashHint": "Your number is transformed into an irreversible fingerprint on your device before being sent.",
+    "hashHint": "After verification, your number is transformed into an irreversible fingerprint. The original number is not stored.",
     "hashLabel": "Fingerprint generated in real time",
     "hashPlaceholder": "Enter your number...",
     "sending": "Sending...",

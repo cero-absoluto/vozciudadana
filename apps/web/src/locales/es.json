@@ -170,7 +170,7 @@
     "dominioLabel": "Dominio de email institucional *",
     "emailDomainLabel": "Dominio de email institucional *",
     "dominioHint": "Solo la parte después de la @ — por ejemplo: uu.nl",
-    "emailDomainHint": "Solo la parte después de la @ — por ejemplo: uu.nl"
+    "emailDomainHint": "Solo la parte después de la @ — por ejemplo: uu.nl",
     "censoTitle": "¿A quién va dirigida esta convocatoria?",
     "audienceTitle": "¿A quién va dirigida esta convocatoria?",
     "censoAll": "A toda la institución",

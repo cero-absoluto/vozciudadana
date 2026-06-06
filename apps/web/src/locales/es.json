@@ -218,7 +218,8 @@
     "errVerb": "Las exigencias deben incluir verbos como \"exigir\", \"denunciar\" o \"demandar\".",
     "errNoActionVerb": "Las exigencias deben incluir verbos como \"exigir\", \"denunciar\" o \"demandar\".",
     "confirmPublish": "¿Confirmas que quieres publicar esta convocatoria?\n\n\"{title}\"\n\nUna vez publicada no podrá editarse ni eliminarse.",
-    "successToast": "✓ Convocatoria creada — ya aparece en el mapa"
+    "successToast": "✓ Convocatoria creada — ya aparece en el mapa",
+    "createdSaldo": "✓ Convocatoria creada — finánciala desde su pantalla para recibir adhesiones verificadas."
   },
   "detail": {
     "back": "← Volver al mapa",
@@ -272,8 +273,10 @@
     "donPosibles": "adhesiones posibles",
     "donSaldo": "Saldo:",
     "donCount": "{count} donaciones · {total}€ total",
-    "donAgotado": "⚠️ Saldo agotado — esta convocatoria necesita tu apoyo",
-    "donApoyar": "☕ Apoyar esta convocatoria"
+    "donAgotado": "Esta convocatoria no tiene saldo disponible.",
+    "donApoyar": "☕ Apoyar esta convocatoria",
+    "joinSinSaldo": "Sin saldo — apoya esta protesta",
+    "donAgotadoHint": "Cubre 20 verificaciones por €1 e invita a otros a contribuir."
   },
   "verify": {
     "spinVerifying": "Verificando código...",

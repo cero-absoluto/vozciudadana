@@ -18,7 +18,7 @@
     "prefixLabel": "Indicatif du pays",
     "phoneLabel": "Numéro de téléphone",
     "phonePlaceholder": "06 00 00 00 00",
-    "hashHint": "Votre numéro est transformé en empreinte irréversible sur votre appareil avant d'être envoyé.",
+    "hashHint": "Après vérification, votre numéro est transformé en une empreinte irréversible. Le numéro d'origine n'est pas conservé.",
     "hashLabel": "Empreinte générée en temps réel",
     "hashPlaceholder": "Entrez votre numéro...",
     "sending": "Envoi en cours...",

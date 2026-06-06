@@ -292,7 +292,10 @@
     "toast": "✓ Adhesión anónima registrada",
     "toastNational": "No puede adherirse, la protesta es únicamente para ciudadanos nacionales",
     "notiOn": "✅ Te avisaremos al cierre",
-    "notiOff": "Avísame cuando cierre la convocatoria"
+    "notiOff": "Avísame cuando cierre la convocatoria",
+    "toastAlready": "Ya te has adherido a esta convocatoria con este número de teléfono.",
+    "toastSinSaldo": "Esta convocatoria no tiene saldo. Apóyala para activar las adhesiones.",
+    "toastError": "Algo salió mal. Por favor inténtalo de nuevo."
   },
   "about": {
     "heroTitle": "La herramienta. Sin trampa.",

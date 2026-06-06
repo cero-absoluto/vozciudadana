@@ -14,7 +14,7 @@
   },
   "auth": {
     "title": "Votre numéro de téléphone",
-    "subtitle": "Nous vous envoyons un code à 6 chiffres. Votre numéro est transformé en empreinte mathématique sur votre appareil — nous ne le voyons jamais en clair.",
+    "subtitle": "Nous vous envoyons un code à 6 chiffres. Votre numéro est utilisé pour la vérification SMS puis transformé en une empreinte mathématique irréversible. Le numéro d'origine n'est pas conservé.",
     "prefixLabel": "Indicatif du pays",
     "phoneLabel": "Numéro de téléphone",
     "phonePlaceholder": "06 00 00 00 00",

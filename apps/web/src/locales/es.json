@@ -18,7 +18,7 @@
     "prefixLabel": "Prefijo del país",
     "phoneLabel": "Número de teléfono",
     "phonePlaceholder": "600 000 000",
-    "hashHint": "Tu número se transforma en una huella irreversible en tu dispositivo antes de enviarse.",
+    "hashHint": "Tras la verificación, tu número se transforma en una huella irreversible. El número original no se almacena.",
     "hashLabel": "Huella generada en tiempo real",
     "hashPlaceholder": "Escribe tu número...",
     "sending": "Enviando...",

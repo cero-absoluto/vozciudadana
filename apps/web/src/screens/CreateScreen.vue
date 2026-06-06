@@ -331,6 +331,11 @@ const ALLOWED_TYPES = new Set([
   'Q327333','Q37260','Q35749','Q637846','Q11204','Q15284',
   'Q6465','Q7278','Q2659904','Q178706','Q1639634','Q270791',
   'Q15265344','Q3918','Q16917','Q178790','Q190928','Q35120','Q43229',
+  'Q902522', // public research university
+  'Q875538', // public university
+  'Q38723',  // higher education institution
+  'Q189004', // college
+  'Q23002054',// national university
   // Political offices & positions (POLITICAL_OFFICE)
   'Q30185',  // president of a country
   'Q1255921',// public office
@@ -640,9 +645,8 @@ function submit() {
     country: form.convocatoria_pais || null,
     country_name: PAIS_NOMBRES[form.convocatoria_pais] || form.convocatoria_pais || 'regional',
   });
+  ui.showToast('✓ Convocatoria creada — ya aparece en el mapa');
   router.push('/');
-  setTimeout(() => {
-    ui.showToast(t('create.createdSaldo'));
-  }, 800);
 }
 </script>
+

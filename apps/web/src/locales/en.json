@@ -170,7 +170,7 @@
     "dominioLabel": "Institutional email domain *",
     "emailDomainLabel": "Institutional email domain *",
     "dominioHint": "Only the part after the at sign — for example: uu.nl",
-    "emailDomainHint": "Only the part after the at sign — for example: uu.nl"
+    "emailDomainHint": "Only the part after the at sign — for example: uu.nl",
     "censoTitle": "Who is this event directed at?",
     "audienceTitle": "Who is this event directed at?",
     "censoAll": "The entire institution",

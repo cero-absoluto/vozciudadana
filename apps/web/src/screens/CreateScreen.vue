@@ -53,9 +53,9 @@
         color: targetStatus==='ALLOWED' ? 'var(--accent2)' : targetStatus==='REJECTED' ? 'var(--accent3)' : targetStatus==='CHECKING' ? 'var(--text3)' : 'var(--accent4)'
       }">
       <span v-if="targetStatus==='ALLOWED'">✅ {{ targetName }} — {{ targetType }} — {{ targetCountry }}</span>
-      <span v-else-if="targetStatus==='REJECTED'">❌ {{ targetName }} — {{ targetType }} — Not allowed on Voice Protest</span>
-      <span v-else-if="targetStatus==='NEEDS_REVIEW'">⚠️ {{ targetName }} — Needs manual review before publishing</span>
-      <span v-else-if="targetStatus==='CHECKING'">🔍 Verifying with Wikidata...</span>
+      <span v-else-if="targetStatus==='REJECTED'">❌ {{ targetName }} — {{ targetType }} — {{ $t('create.errTargetRejectedShort') }}</span>
+      <span v-else-if="targetStatus==='NEEDS_REVIEW'">⚠️ {{ targetName }} — {{ $t('create.errTargetReview') }}</span>
+      <span v-else-if="targetStatus==='CHECKING'">🔍 {{ $t('create.errTargetChecking') }}</span>
     </div>
     <!-- Autocomplete dropdown -->
     <div v-if="targetSuggestions.length > 0"
@@ -94,12 +94,11 @@
 
   <!-- Checking spinner -->
   <div v-if="sourceChecking" style="font-size:11px;color:var(--text3);margin-top:6px;display:flex;align-items:center;gap:6px">
-    <span style="animation:spin 1s linear infinite;display:inline-block">🔄</span> Verifying source...
+    <span style="animation:spin 1s linear infinite;display:inline-block">🔄</span> {{ $t('create.fuenteChecking') }}
   </div>
 
   <!-- Validation card -->
   <div v-else-if="sourceResult" style="margin-top:8px;border-radius:10px;overflow:hidden;border:.5px solid var(--border2)">
-    <!-- Header bar -->
     <div style="display:flex;align-items:center;gap:10px;padding:10px 14px"
       :style="{
         background: sourceResult.source_validation_status === 'VERIFIED_SOURCE' ? 'rgba(76,255,164,.08)' :
@@ -129,7 +128,6 @@
         </div>
         <div style="font-size:10px;color:var(--text2);line-height:1.4">{{ sourceResult.message }}</div>
       </div>
-      <!-- Confidence score badge -->
       <div style="flex-shrink:0;text-align:center">
         <div style="font-size:14px;font-weight:800;line-height:1"
           :style="{color: sourceResult.source_confidence_score >= 60 ? 'var(--accent2)' : sourceResult.source_confidence_score >= 40 ? 'var(--accent4)' : 'var(--accent3)'}">
@@ -138,7 +136,6 @@
         <div style="font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">score</div>
       </div>
     </div>
-    <!-- Article preview if available -->
     <div v-if="sourceResult.source_title" style="padding:8px 14px;border-top:.5px solid var(--border);background:var(--bg2)">
       <div style="font-size:11px;font-weight:600;margin-bottom:2px;color:var(--text)">{{ sourceResult.source_title }}</div>
       <div v-if="sourceResult.source_description" style="font-size:10px;color:var(--text2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
@@ -152,7 +149,6 @@
     </div>
   </div>
 
-  <!-- Default hint -->
   <div v-else style="font-size:10px;color:var(--text3);margin-top:4px;opacity:.6">
     {{ $t('create.fuenteHint') }}
   </div>
@@ -175,7 +171,6 @@
           <div class="so-radio" :class="{on: form.scope === s.key}"></div>
         </div>
       </div>
-      <!-- Campos adaptativos según alcance -->
 <div v-if="form.scope === 'national' || form.scope === 'regional'" class="fg" style="margin-top:12px">
   <label>{{ $t('create.paisLabel') }}</label>
   <select v-model="form.convocatoria_pais">
@@ -249,7 +244,7 @@
         </select>
       </div>
     </div>
-          <div v-if="form.risk_level === 'high' || form.risk_level === 'critical'" class="risk-warn" style="display:flex">
+    <div v-if="form.risk_level === 'high' || form.risk_level === 'critical'" class="risk-warn" style="display:flex">
       ⚠️ {{ $t('create.riskWarn') }}
     </div>
     <div class="mod-box">
@@ -261,7 +256,6 @@
     <div class="mstep"><div class="mn">4</div>{{ $t('create.mod4') }}</div>
   </div>
 </div>
-   
       <button class="btn-primary" style="width:100%;margin-bottom:18px" @click="submit">{{ $t('create.submit') }}</button>
   </div>
 </div>
@@ -311,7 +305,6 @@ const form = reactive({
 const tooltip = ref(null);
 const fuenteStatus = ref(null);
 const fuenteName = ref('');
-// New source validation
 const sourceChecking = ref(false);
 const sourceResult   = ref(null);
 
@@ -326,31 +319,14 @@ const targetWikiId      = ref('');
 let targetDebounce      = null;
 
 const ALLOWED_TYPES = new Set([
-  // Institutions & organisations
   'Q1193236','Q11033','Q1004705','Q7275','Q2297946','Q1002697',
   'Q327333','Q37260','Q35749','Q637846','Q11204','Q15284',
   'Q6465','Q7278','Q2659904','Q178706','Q1639634','Q270791',
   'Q15265344','Q3918','Q16917','Q178790','Q190928','Q35120','Q43229',
-  // Political offices & positions (POLITICAL_OFFICE)
-  'Q30185',  // president of a country
-  'Q1255921',// public office
-  'Q294414', // public office (alt)
-  'Q4164871',// position
-  'Q699567', // government minister
-  'Q83307',  // minister
-  'Q372436', // secretary of state
-  'Q107363442',// head of government
-  'Q48352',  // head of state
-  'Q2101',   // chancellor
-  'Q212238', // mayor
-  'Q13218630',// governor
-  'Q16533',  // judge
-  'Q193391', // diplomat
-  'Q82955',  // politician
-  'Q1097498',// prime minister
-  'Q15275719',// elected official
-  'Q42178',  // commissioner
-  'Q486839', // member of parliament
+  'Q30185','Q1255921','Q294414','Q4164871','Q699567','Q83307',
+  'Q372436','Q107363442','Q48352','Q2101','Q212238','Q13218630',
+  'Q16533','Q193391','Q82955','Q1097498','Q15275719','Q42178','Q486839',
+  'Q902522','Q62078547','Q875538','Q38723','Q189004','Q23002054',
 ]);
 
 const REJECTED_TYPES = new Set([
@@ -454,7 +430,6 @@ async function validateSource(url) {
     });
     const data = await res.json();
     sourceResult.value = data;
-    // Keep fuenteStatus compatible for submit validation
     fuenteStatus.value = ['VERIFIED_SOURCE','RELEVANT_SOURCE','WEAK_SOURCE','PAYWALLED_SOURCE'].includes(data.source_validation_status)
       ? 'verified' : 'unknown';
   } catch {
@@ -467,7 +442,6 @@ async function validateSource(url) {
 function showTooltip(id) { tooltip.value = id; }
 function hideTooltip() { tooltip.value = null; }
 
-// ── Country list with translations ────────────────────────────────────────
 const COUNTRIES = [
   { code:'AF', en:'Afghanistan',        es:'Afganistán',      fr:'Afghanistan',        zh:'阿富汗' },
   { code:'DE', en:'Germany',            es:'Alemania',        fr:'Allemagne',          zh:'德国' },
@@ -640,7 +614,9 @@ function submit() {
     country: form.convocatoria_pais || null,
     country_name: PAIS_NOMBRES[form.convocatoria_pais] || form.convocatoria_pais || 'regional',
   });
-  ui.showToast('✓ Convocatoria creada — ya aparece en el mapa');
   router.push('/');
+  setTimeout(() => {
+    ui.showToast(t('create.createdSaldo'));
+  }, 800);
 }
 </script>

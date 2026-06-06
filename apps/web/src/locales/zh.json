@@ -220,8 +220,11 @@
     "confirmPublish": "确认要发布此活动吗？\n\n\"{title}\"\n\n发布后将无法编辑或删除。",
     "successToast": "✓ 活动已创建 — 现在显示在地图上",
     "errTargetRejected": "此实体不被允许。Voice Protest仅接受公共机构。",
-    "errTargetChecking": "请等待我们验证该实体。",
-    "createdOk": "✓ 抗议已创建 — 现已显示在地图上。"
+    "errTargetChecking": "正在通过Wikidata验证...",
+    "createdOk": "✓ 抗议已创建 — 现已显示在地图上。",
+    "errTargetRejectedShort": "Voice Protest不允许",
+    "errTargetReview": "发布前需要人工审核",
+    "createdSaldo": "✓ 抗议已创建 — 从抗议页面为其提供资金以开始接收经过验证的参与。"
   },
   "detail": {
     "back": "← 返回地图",

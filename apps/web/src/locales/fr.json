@@ -635,7 +635,7 @@
     "principleBody": "Voice Protest est construit sur le principe que la participation démocratique ne doit pas nécessiter de sacrifier la vie privée. Nous ne collectons que ce qui est strictement nécessaire pour vérifier que chaque adhésion est réelle et unique. Aucune identité n'est jamais stockée.",
     "collectTitle": "Ce que nous collectons",
     "collect1Title": "Hash cryptographique de votre numéro de téléphone",
-    "collect1Body": "Votre numéro de téléphone est haché sur votre appareil avec SHA-256 avant tout envoi de données. Le serveur ne reçoit que le hash — jamais le numéro original. Il est mathématiquement impossible de le retrouver.",
+    "collect1Body": "Votre numéro de téléphone est utilisé uniquement pour envoyer le SMS de vérification et vérifier votre pays. Il est ensuite transformé en un hash SHA-256 irréversible. Le numéro d'origine n'est pas conservé.",
     "collect2Title": "Localisation approximative",
     "collect2Body": "Ville et région, dérivées du GPS (si accordé) ou de la géolocalisation par IP. Jamais de coordonnées exactes. Utilisé uniquement pour construire le rapport vérifié.",
     "collect3Title": "Identifiant anonyme de l'appareil",

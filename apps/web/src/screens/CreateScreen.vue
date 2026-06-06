@@ -640,7 +640,9 @@ function submit() {
     country: form.convocatoria_pais || null,
     country_name: PAIS_NOMBRES[form.convocatoria_pais] || form.convocatoria_pais || 'regional',
   });
-  ui.showToast('✓ Convocatoria creada — ya aparece en el mapa');
   router.push('/');
+  setTimeout(() => {
+    ui.showToast(t('create.createdSaldo'));
+  }, 800);
 }
 </script>

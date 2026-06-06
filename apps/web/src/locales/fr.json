@@ -218,7 +218,8 @@
     "errVerb": "Les exigences doivent inclure des verbes d'action comme « exiger », « dénoncer » ou « demander ».",
     "errNoActionVerb": "Les exigences doivent inclure des verbes d'action comme « exiger », « dénoncer » ou « demander ».",
     "confirmPublish": "Confirmez-vous vouloir publier cet événement ?\n\n\"{title}\"\n\nUne fois publié, il ne pourra pas être modifié ni supprimé.",
-    "successToast": "✓ Événement créé — il apparaît maintenant sur la carte"
+    "successToast": "✓ Événement créé — il apparaît maintenant sur la carte",
+    "createdSaldo": "✓ Protestation créée — financez-la depuis sa page pour recevoir des adhésions vérifiées."
   },
   "detail": {
     "back": "← Retour à la carte",
@@ -272,8 +273,10 @@
     "donPosibles": "soutiens possibles",
     "donSaldo": "Solde :",
     "donCount": "{count} dons · {total}€ au total",
-    "donAgotado": "⚠️ Solde épuisé — cet événement a besoin de votre soutien",
-    "donApoyar": "☕ Soutenir cet événement"
+    "donAgotado": "Cette protestation n'a pas de fonds disponibles.",
+    "donApoyar": "☕ Soutenir cet événement",
+    "joinSinSaldo": "Sans fonds — soutenez cette protestation",
+    "donAgotadoHint": "Couvrez 20 vérifications pour 1€ et invitez d'autres à contribuer."
   },
   "verify": {
     "spinVerifying": "Vérification de votre participation...",

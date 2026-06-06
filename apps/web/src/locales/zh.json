@@ -18,7 +18,7 @@
     "prefixLabel": "国家区号",
     "phoneLabel": "手机号码",
     "phonePlaceholder": "138 0000 0000",
-    "hashHint": "您的号码在发送前在您的设备上转化为不可逆指纹。",
+    "hashHint": "验证完成后，您的号码会被转换为不可逆的指纹。原始号码不会被存储。",
     "hashLabel": "实时生成的指纹",
     "hashPlaceholder": "输入您的号码...",
     "sending": "发送中...",

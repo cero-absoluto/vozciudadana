@@ -240,7 +240,7 @@
     "geoMsg": "🌍 Fuera de alcance geográfico:",
     "secTitle": "Garantías de seguridad",
     "secHash": "Hash SHA-256 local",
-    "secHashSub": "Tu número se transforma en una huella matemática en tu dispositivo.",
+    "secHashSub": "Tras la verificación, tu número se transforma en una huella matemática irreversible mediante SHA-256.",
     "secSms": "Verificación por SMS",
     "secSmsSub": "Tu número confirma que eres una persona real. Un número, una adhesión.",
     "secTor": "Tor en regímenes de riesgo",

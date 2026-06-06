@@ -220,8 +220,11 @@
     "confirmPublish": "Confirmez-vous vouloir publier cet événement ?\n\n\"{title}\"\n\nUne fois publié, il ne pourra pas être modifié ni supprimé.",
     "successToast": "✓ Événement créé — il apparaît maintenant sur la carte",
     "errTargetRejected": "Cette entité n'est pas autorisée. Voice Protest n'accepte que les institutions publiques.",
-    "errTargetChecking": "Veuillez patienter pendant la vérification de l'entité.",
-    "createdOk": "✓ Protestation créée — elle apparaît maintenant sur la carte."
+    "errTargetChecking": "Vérification avec Wikidata...",
+    "createdOk": "✓ Protestation créée — elle apparaît maintenant sur la carte.",
+    "errTargetRejectedShort": "Non autorisée sur Voice Protest",
+    "errTargetReview": "Nécessite une révision manuelle avant publication",
+    "createdSaldo": "✓ Protestation créée — financez-la depuis sa page pour recevoir des adhésions vérifiées."
   },
   "detail": {
     "back": "← Retour à la carte",

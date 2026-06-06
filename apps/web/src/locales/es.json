@@ -14,7 +14,7 @@
   },
   "auth": {
     "title": "Tu número de teléfono",
-    "subtitle": "Te enviamos un código de 6 dígitos. Tu número se transforma en una huella matemática en tu dispositivo — nunca lo vemos en texto claro.",
+    "subtitle": "Te enviamos un código de 6 dígitos. Tu número se utiliza para la verificación SMS y después se transforma en una huella matemática irreversible. El número original no se almacena.",
     "prefixLabel": "Prefijo del país",
     "phoneLabel": "Número de teléfono",
     "phonePlaceholder": "600 000 000",

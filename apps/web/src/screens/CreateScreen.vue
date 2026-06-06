@@ -195,7 +195,7 @@
   <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">{{ $t('create.institucionHint') }}</div>
 </div>
 
-<div v-if="form.scope === 'regional' && form.convocatoria_institucion" class="fg" style="margin-top:12px">
+<div v-show="form.scope === 'regional' && form.convocatoria_institucion" class="fg" style="margin-top:12px">
  <label>{{ $t('create.dominioLabel') }}</label>
 <div style="display:flex;align-items:center;gap:0">
   <div style="padding:9px 10px;background:var(--bg3);border:.5px solid var(--border);border-right:none;border-radius:var(--r) 0 0 var(--r);font-size:15px;color:var(--text3);font-family:'DM Sans',sans-serif">@</div>
@@ -203,7 +203,7 @@
 </div>
 <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">{{ $t('create.dominioHint') }}</div>
 </div>
-      <div v-if="form.scope === 'regional' && form.convocatoria_institucion && form.dominio_email" 
+      <div v-show="form.scope === 'regional' && form.convocatoria_institucion && form.dominio_email" 
   style="background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r2);padding:12px;margin-top:12px">
   <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px">
     {{ $t('create.censoTitle') }}

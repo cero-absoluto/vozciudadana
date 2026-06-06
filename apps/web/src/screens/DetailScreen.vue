@@ -109,14 +109,17 @@
           <div style="font-size:10px;color:var(--text2)">{{ $t('detail.donSaldo') }} <strong style="color:var(--text)">{{ donacionesInfo.saldo_euros.toFixed(2) }}€</strong></div>
           <div v-if="donacionesInfo.donaciones_count > 0" style="font-size:10px;color:var(--text2)">{{ $t('detail.donCount', { count: donacionesInfo.donaciones_count, total: donacionesInfo.donaciones_total.toFixed(2) }) }}</div>
         </div>
-        <div v-if="donacionesInfo.saldo_euros <= 0" style="font-size:11px;color:var(--accent3);margin-bottom:8px;text-align:center">{{ $t('detail.donAgotado') }}</div>
+        <div v-if="donacionesInfo.saldo_euros <= 0" style="font-size:12px;color:var(--accent3);margin-bottom:8px;padding:8px 10px;background:rgba(255,94,91,.06);border-radius:var(--r);border:.5px solid rgba(255,94,91,.2);text-align:center;line-height:1.5">
+          ⚠️ {{ $t('detail.donAgotado') }}<br>
+          <span style="font-size:11px;color:var(--text2)">{{ $t('detail.donAgotadoHint') }}</span>
+        </div>
         <a :href="`https://ko-fi.com/voiceprotest?description=Support:+${encodeURIComponent(protest.title)}`" target="_blank" rel="noopener"
           style="display:block;width:100%;padding:9px;background:#FF5E5B;border:none;border-radius:var(--r);color:#fff;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box;text-align:center">
           {{ $t('detail.donApoyar') }}
         </a>
       </div>
       <div class="btn-row">
-        <button class="btn-primary" :class="{sj: protest.joined}" :disabled="!cj.ok" @click="onJoin">
+        <button class="btn-primary" :class="{sj: protest.joined}" :disabled="!cj.ok || sinSaldo" @click="onJoin">
           {{ joinLabel }}
         </button>
         <div class="viral-wrap"v-if="!protest.requiere_censo">
@@ -217,9 +220,15 @@ const confFillColor = computed(() => {
   return c >= 75 ? 'var(--accent2)' : c >= 50 ? 'var(--accent4)' : 'var(--accent3)';
 });
 
+const sinSaldo = computed(() => {
+  if (!donacionesInfo.value) return false;
+  return donacionesInfo.value.saldo_euros <= 0;
+});
+
 const joinLabel = computed(() => {
   if (!protest.value) return '—';
   if (protest.value.joined) return t('detail.joinJoined');
+  if (sinSaldo.value) return t('detail.joinSinSaldo');
   if (!cj.value.ok) return cj.value.lock ? t('detail.joinLocked') : t('detail.joinGeo');
   if (protest.value.scope === 'regional' && protest.value.dominio_email && protest.value.requiere_censo) {
     return censoExiste.value ? t('detail.joinInitCensus') : t('detail.joinCensus');

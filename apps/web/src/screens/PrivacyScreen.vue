@@ -111,10 +111,11 @@ const neverItems = computed(() => [
 ]);
 
 const providers = computed(() => [
-  { name: 'Supabase',  role: t('privacy.providerSupabase'),  country: 'EU (AWS Frankfurt)' },
-  { name: 'Railway',   role: t('privacy.providerRailway'),   country: 'US' },
-  { name: 'Twilio',    role: t('privacy.providerTwilio'),    country: 'US' },
-  { name: 'Resend',    role: t('privacy.providerResend'),    country: 'US' },
-  { name: 'Google reCAPTCHA', role: t('privacy.providerRecaptcha'), country: 'US' },
+  { name: 'Supabase',             role: t('privacy.providerSupabase'),   country: 'EU (AWS Frankfurt)' },
+  { name: 'Railway',              role: t('privacy.providerRailway'),    country: 'US' },
+  { name: 'Twilio',               role: t('privacy.providerTwilio'),     country: 'US' },
+  { name: 'Resend',               role: t('privacy.providerResend'),     country: 'US' },
+  { name: 'OpenStreetMap Nominatim', role: t('privacy.providerNominatim'), country: 'UK (OSMF)' },
+  { name: 'Google reCAPTCHA',     role: t('privacy.providerRecaptcha'), country: 'US' },
 ]);
 </script>

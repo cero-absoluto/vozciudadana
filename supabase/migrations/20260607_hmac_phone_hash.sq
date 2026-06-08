@@ -1,1 +1,29 @@
+-- Migration: Clear test data and prepare for HMAC phone hashing
+-- Date: 2026-06-07
+-- Purpose: Existing phone_hash values were computed with plain SHA-256
+--          (no secret key) and are vulnerable to rainbow table attacks.
+--          We are in implementation/testing phase — no real user data exists.
+--          This migration clears all test data so the system starts fresh
+--          with HMAC-SHA256 hashing (using PHONE_HASH_SECRET env variable).
+
+-- ── 1. Clear all test adhesions ───────────────────────────────────────────
+DELETE FROM adhesions;
+
+-- ── 2. Clear all test devices ─────────────────────────────────────────────
+DELETE FROM devices;
+
+-- ── 3. Clear OTP requests ─────────────────────────────────────────────────
+DELETE FROM otp_requests;
+
+-- ── 4. Reset protest counters (adhesions were deleted) ────────────────────
+UPDATE protests SET count = 0, cities_count = 0;
+
+-- ── 5. Confirmation ───────────────────────────────────────────────────────
+-- After running this migration:
+-- 1. Add PHONE_HASH_SECRET to Railway environment variables
+-- 2. Deploy the updated users.js with HMAC hashPhone function
+-- 3. All new adhesions will use HMAC-SHA256 — secure against rainbow tables
+
+COMMENT ON TABLE adhesions IS
+  'phone_hash uses HMAC-SHA256 with PHONE_HASH_SECRET from June 2026. Previous plain SHA-256 hashes cleared.';
 

@@ -46,7 +46,7 @@
     "gpsAccept": "Renforcer ma participation",
     "gpsSkip": "Continuer sans localisation",
     "gpsDecline": "Continuer sans localisation",
-    "anonNote": "Votre identité n'est jamais enregistrée. Seulement des empreintes mathématiques irréversibles.",
+    "anonNote": "Votre identité n'est pas visible par les autres participants. Seul un hachage cryptographique de votre numéro est conservé.",
     "countryPrefix": "Indicatif du pays",
     "phoneNumber": "Numéro de téléphone",
     "noCode": "Vous ne l'avez pas reçu ?",
@@ -225,7 +225,8 @@
     "errTargetRejectedShort": "Non autorisée sur Voice Protest",
     "errTargetReview": "Nécessite une révision manuelle avant publication",
     "createdSaldo": "✓ Protestation créée — financez-la depuis sa page pour recevoir des adhésions vérifiées.",
-    "endsAt": "Votre protestation se terminera le"
+    "endsAt": "Votre protestation se terminera le",
+    "principleNote": "Voice Protest vérifie la participation. Il ne vérifie pas la vérité des faits."
   },
   "detail": {
     "back": "← Retour à la carte",
@@ -350,7 +351,8 @@
     "openCard1Title": "API publique",
     "openCard1Body": "API gratuite pour chercheurs et journalistes. Données agrégées, aucune authentification requise. →",
     "openCard2Title": "Code source ouvert",
-    "openCard2Body": "Code source complet disponible sous AGPL 3.0 sur <a href=\"https://github.com/cero-absoluto/vozciudadana\" target=\"_blank\" style=\"color:var(--accent)\">GitHub</a>."
+    "openCard2Body": "Code source complet disponible sous AGPL 3.0 sur <a href=\"https://github.com/cero-absoluto/vozciudadana\" target=\"_blank\" style=\"color:var(--accent)\">GitHub</a>.",
+    "principleNote": "Voice Protest vérifie la participation. Il ne vérifie pas la vérité des faits."
   },
   "informe": {
     "loading": "Chargement du rapport...",
@@ -430,7 +432,7 @@
     "howTitle": "ℹ️ Comment ça marche",
     "howBody": "En acceptant, vous vérifierez votre email institutionnel. Le parrainage de la personne qui vous a invité est enregistré automatiquement.\n\nSi vous avez été invité directement par le nœud genèse, vous serez accrédité sans avoir besoin de parrainages supplémentaires.\n\nSi invité par un autre membre, vous aurez besoin d'1 parrainage de plus de n'importe quel membre accrédité.",
     "privacyTitle": "🔒 Votre confidentialité",
-    "privacyBody": "Votre email est converti en empreinte mathématique irréversible et immédiatement détruit. Personne ne peut savoir qui vous êtes.",
+    "privacyBody": "Votre email est converti en empreinte cryptographique irréversible. Votre identité n'est pas visible par les autres participants.",
     "warning": "⚠️ Ce lien est à usage unique et expire dans 48 heures. Si vous n'êtes pas membre du groupe, ne l'utilisez pas.",
     "accept": "Accepter l'invitation →",
     "reject": "Refuser",
@@ -509,8 +511,8 @@
     "emailLabel": "Email institutionnel *",
     "sendCode": "Envoyer le code →",
     "sending": "Envoi en cours...",
-    "privacyNote": "🔒 Votre email est converti en empreinte mathématique irréversible. Personne ne peut savoir qui vous êtes.",
-    "hashNote": "🔒 Votre email est converti en empreinte mathématique irréversible.\nPersonne ne peut savoir qui vous êtes.",
+    "privacyNote": "🔒 Votre email est converti en empreinte cryptographique irréversible. Votre identité n'est pas visible par les autres participants.",
+    "hashNote": "🔒 Votre email est converti en empreinte cryptographique irréversible. Votre identité n'est pas visible par les autres participants.",
     "otpTitle": "📬 Entrez le code",
     "otpBody": "Nous avons envoyé un code à 6 chiffres à votre email. Il expire dans 10 minutes.",
     "step2Title": "📬 Entrez le code",

@@ -244,6 +244,11 @@
         </select>
       </div>
     </div>
+    <!-- Ends at preview -->
+    <div v-if="form.starts_at && endsAt" style="font-size:12px;color:var(--text2);margin-bottom:12px;padding:8px 12px;background:var(--bg2);border-radius:var(--r);border:.5px solid var(--border)">
+      📅 {{ $t('create.endsAt') }}: <strong>{{ endsAt }}</strong>
+    </div>
+
     <div v-if="form.risk_level === 'high' || form.risk_level === 'critical'" class="risk-warn" style="display:flex">
       ⚠️ {{ $t('create.riskWarn') }}
     </div>
@@ -526,6 +531,16 @@ const COUNTRIES = [
   { code:'VE', en:'Venezuela',          es:'Venezuela',       fr:'Venezuela',          zh:'委内瑞拉' },
   { code:'VN', en:'Vietnam',            es:'Vietnam',         fr:'Viêt Nam',           zh:'越南' },
 ];
+
+const endsAt = computed(() => {
+  if (!form.starts_at) return null;
+  const start = new Date(form.starts_at + 'T08:00:00.000Z');
+  const end = new Date(start.getTime() + form.duration_h * 3_600_000);
+  return end.toLocaleString(locale.value || 'en', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
+  });
+});
 
 const sortedCountries = computed(() => {
   const lang = (locale.value || 'en').substring(0, 2);

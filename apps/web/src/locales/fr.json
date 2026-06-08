@@ -224,7 +224,8 @@
     "createdOk": "✓ Protestation créée — elle apparaît maintenant sur la carte.",
     "errTargetRejectedShort": "Non autorisée sur Voice Protest",
     "errTargetReview": "Nécessite une révision manuelle avant publication",
-    "createdSaldo": "✓ Protestation créée — financez-la depuis sa page pour recevoir des adhésions vérifiées."
+    "createdSaldo": "✓ Protestation créée — financez-la depuis sa page pour recevoir des adhésions vérifiées.",
+    "endsAt": "Votre protestation se terminera le"
   },
   "detail": {
     "back": "← Retour à la carte",

@@ -46,7 +46,7 @@
     "gpsAccept": "Strengthen my participation",
     "gpsSkip": "Continue without location",
     "gpsDecline": "Continue without location",
-    "anonNote": "Your identity is never stored. Only irreversible mathematical fingerprints.",
+    "anonNote": "Your identity is not visible to other participants. Only a cryptographic hash of your phone number is retained.",
     "countryPrefix": "Country prefix",
     "phoneNumber": "Phone number",
     "noCode": "Didn't receive it?",
@@ -225,7 +225,8 @@
     "errTargetRejectedShort": "Not allowed on Voice Protest",
     "errTargetReview": "Needs manual review before publishing",
     "createdSaldo": "✓ Protest created — fund it from the protest page to start receiving verified adhesions.",
-    "endsAt": "Your protest will end on"
+    "endsAt": "Your protest will end on",
+    "principleNote": "Voice Protest verifies participation. It does not verify truth."
   },
   "detail": {
     "back": "← Back to map",
@@ -350,7 +351,8 @@
     "openCard1Title": "Public API",
     "openCard1Body": "Free API for researchers and journalists. Aggregated data, no authentication required. →",
     "openCard2Title": "Open Source",
-    "openCard2Body": "Full source code available under AGPL 3.0 at <a href=\"https://github.com/cero-absoluto/vozciudadana\" target=\"_blank\" style=\"color:var(--accent)\">GitHub</a>."
+    "openCard2Body": "Full source code available under AGPL 3.0 at <a href=\"https://github.com/cero-absoluto/vozciudadana\" target=\"_blank\" style=\"color:var(--accent)\">GitHub</a>.",
+    "principleNote": "Voice Protest verifies participation. It does not verify truth."
   },
   "informe": {
     "loading": "Loading report...",
@@ -509,8 +511,8 @@
     "emailLabel": "Institutional email *",
     "sendCode": "Send code →",
     "sending": "Sending...",
-    "privacyNote": "🔒 Your email is converted into an irreversible mathematical fingerprint. Nobody can know who you are from it.",
-    "hashNote": "🔒 Your email is converted into an irreversible mathematical fingerprint.\nNobody can know who you are from it.",
+    "privacyNote": "🔒 Your email is converted into an irreversible cryptographic hash. Your identity is not visible to other participants.",
+    "hashNote": "🔒 Your email is converted into an irreversible cryptographic hash. Your identity is not visible to other participants.",
     "otpTitle": "📬 Enter the code",
     "otpBody": "We've sent a 6-digit code to your email. It expires in 10 minutes.",
     "step2Title": "📬 Enter the code",

@@ -79,6 +79,12 @@
         <div style="font-size:14px;color:var(--text2);line-height:1.7">{{ $t('privacy.reportNoteBody') }}</div>
       </div>
 
+      <!-- Technical metadata section -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('privacy.metadataTitle') }}</div>
+        <div style="font-size:14px;color:var(--text2);line-height:1.7">{{ $t('privacy.metadataBody') }}</div>
+      </div>
+
       <!-- Source code -->
       <div style="text-align:center;font-size:13px;color:var(--text3);line-height:1.8">
         {{ $t('privacy.sourceNote') }}<br>
@@ -111,11 +117,10 @@ const neverItems = computed(() => [
 ]);
 
 const providers = computed(() => [
-  { name: 'Supabase',             role: t('privacy.providerSupabase'),   country: 'EU (AWS Frankfurt)' },
-  { name: 'Railway',              role: t('privacy.providerRailway'),    country: 'US' },
-  { name: 'Twilio',               role: t('privacy.providerTwilio'),     country: 'US' },
-  { name: 'Resend',               role: t('privacy.providerResend'),     country: 'US' },
-  { name: 'OpenStreetMap Nominatim', role: t('privacy.providerNominatim'), country: 'UK (OSMF)' },
-  { name: 'Google reCAPTCHA',     role: t('privacy.providerRecaptcha'), country: 'US' },
+  { name: 'Supabase',  role: t('privacy.providerSupabase'),  country: 'EU (AWS Frankfurt)' },
+  { name: 'Railway',   role: t('privacy.providerRailway'),   country: 'US' },
+  { name: 'Twilio',    role: t('privacy.providerTwilio'),    country: 'US' },
+  { name: 'Resend',    role: t('privacy.providerResend'),    country: 'US' },
+  { name: 'Google reCAPTCHA', role: t('privacy.providerRecaptcha'), country: 'US' },
 ]);
 </script>

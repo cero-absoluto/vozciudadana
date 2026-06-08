@@ -260,6 +260,9 @@
     <div class="mstep"><div class="mn">3</div>{{ $t('create.mod3') }}</div>
     <div class="mstep"><div class="mn">4</div>{{ $t('create.mod4') }}</div>
   </div>
+  <div style="margin-top:10px;padding-top:10px;border-top:.5px solid var(--border);font-size:10px;color:var(--text3);font-style:italic;text-align:center">
+    {{ $t('create.principleNote') }}
+  </div>
 </div>
       <button class="btn-primary" style="width:100%;margin-bottom:18px" @click="submit">{{ $t('create.submit') }}</button>
   </div>

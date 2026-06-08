@@ -14,6 +14,7 @@ import InviteScreen from '@/screens/InviteScreen.vue';
 import ArchivoScreen from '@/screens/ArchivoScreen.vue';
 import ApiScreen from '@/screens/ApiScreen.vue';
 import PrivacyScreen from '@/screens/PrivacyScreen.vue';
+import FundingScreen from '@/screens/FundingScreen.vue';
 
 const routes = [
   { path: '/',          component: HomeScreen },
@@ -30,6 +31,7 @@ const routes = [
   { path: '/archivo', component: ArchivoScreen },
   { path: '/api-docs', component: ApiScreen },
   { path: '/privacy',  component: PrivacyScreen },
+  { path: '/funding',  component: FundingScreen },
 ];
 
 export const router = createRouter({

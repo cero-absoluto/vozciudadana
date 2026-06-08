@@ -46,7 +46,7 @@
     "gpsAccept": "Reforzar mi participación",
     "gpsSkip": "Continuar sin ubicación",
     "gpsDecline": "Continuar sin ubicación",
-    "anonNote": "Tu identidad nunca se almacena. Solo huellas matemáticas irreversibles.",
+    "anonNote": "Tu identidad no es visible para otros participantes. Solo se conserva un hash criptográfico de tu número de teléfono.",
     "countryPrefix": "Prefijo del país",
     "phoneNumber": "Número de teléfono",
     "noCode": "¿No lo recibiste?",
@@ -225,7 +225,8 @@
     "errTargetRejectedShort": "No permitida en Voice Protest",
     "errTargetReview": "Requiere revisión manual antes de publicar",
     "createdSaldo": "✓ Convocatoria creada — finánciala desde su pantalla para recibir adhesiones verificadas.",
-    "endsAt": "Tu convocatoria finalizará el"
+    "endsAt": "Tu convocatoria finalizará el",
+    "principleNote": "Voice Protest verifica la participación. No verifica la veracidad de los hechos."
   },
   "detail": {
     "back": "← Volver al mapa",
@@ -252,9 +253,9 @@
     "aboutTitle": "Sobre esta convocatoria",
     "demandsTitle": "⚡ Qué exigimos",
     "riskHigh": "🕵️ Régimen de alto riesgo. Tu adhesión es pseudónima. No se recaba ningún dato de ubicación. Tu número de teléfono no se almacena — solo su hash criptográfico.",
-    "riskGlobal": "🌍 Convocatoria global. Solo verificarás que eres una persona real. Tu identidad nunca se almacena.",
-    "riskCensus": "👥 Convocatoria con censo dinámico. Verificarás tu pertenencia con tu email y el aval de tus compañeros. Tu identidad nunca se almacena.",
-    "riskEmail": "📧 Convocatoria local. Verificarás tu pertenencia con tu email institucional. Tu identidad nunca se almacena.",
+    "riskGlobal": "🌍 Convocatoria global. Solo verificarás que eres una persona real. Tu identidad no es visible para otros participantes.",
+    "riskCensus": "👥 Convocatoria con censo dinámico. Verificarás tu pertenencia con tu email y el aval de tus compañeros. Tu identidad no es visible para otros participantes.",
+    "riskEmail": "📧 Convocatoria local. Verificarás tu pertenencia con tu email institucional. Tu identidad no es visible para otros participantes.",
     "riskNormal": "🛡️ Tu adhesión es pseudónima. Tu número se transforma en una huella criptográfica irreversible. Tu identidad no es visible para otros participantes.",
     "joinAnon": "Adherirme — identidad protegida",
     "joinJoined": "✓ Adherido — identidad protegida",
@@ -349,7 +350,8 @@
     "openCard1Title": "API pública",
     "openCard1Body": "API gratuita para investigadores y periodistas. Datos agregados, sin autenticación requerida. →",
     "openCard2Title": "Código abierto",
-    "openCard2Body": "Código fuente completo disponible bajo AGPL 3.0 en <a href=\"https://github.com/cero-absoluto/vozciudadana\" target=\"_blank\" style=\"color:var(--accent)\">GitHub</a>."
+    "openCard2Body": "Código fuente completo disponible bajo AGPL 3.0 en <a href=\"https://github.com/cero-absoluto/vozciudadana\" target=\"_blank\" style=\"color:var(--accent)\">GitHub</a>.",
+    "principleNote": "Voice Protest verifica la participación. No verifica la veracidad de los hechos."
   },
   "informe": {
     "loading": "Cargando informe...",
@@ -508,8 +510,8 @@
     "emailLabel": "Email institucional *",
     "sendCode": "Enviar código →",
     "sending": "Enviando...",
-    "privacyNote": "🔒 Tu email se convierte en una huella matemática irreversible. Nadie puede saber quién eres a partir de ella.",
-    "hashNote": "🔒 Tu email se convierte en una huella matemática irreversible.\nNadie puede saber quién eres a partir de ella.",
+    "privacyNote": "🔒 Tu email se convierte en una huella criptográfica irreversible. Tu identidad no es visible para otros participantes.",
+    "hashNote": "🔒 Tu email se convierte en una huella criptográfica irreversible. Tu identidad no es visible para otros participantes.",
     "otpTitle": "📬 Introduce el código",
     "otpBody": "Hemos enviado un código de 6 dígitos a tu email. Caduca en 10 minutos.",
     "step2Title": "📬 Introduce el código",

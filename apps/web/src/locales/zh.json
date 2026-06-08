@@ -225,7 +225,8 @@
     "errTargetRejectedShort": "Voice Protest不允许",
     "errTargetReview": "发布前需要人工审核",
     "createdSaldo": "✓ 抗议已创建 — 从抗议页面为其提供资金以开始接收经过验证的参与。",
-    "endsAt": "您的抗议将于以下时间结束"
+    "endsAt": "您的抗议将于以下时间结束",
+    "principleNote": "Voice Protest验证参与。它不验证事实的真实性。"
   },
   "detail": {
     "back": "← 返回地图",
@@ -350,7 +351,8 @@
     "openCard1Title": "公共API",
     "openCard1Body": "为研究人员和记者提供的免费API。汇总数据，无需身份验证。 →",
     "openCard2Title": "开源",
-    "openCard2Body": "完整代码在AGPL 3.0许可证下可在<a href=\"https://github.com/cero-absoluto/vozciudadana\" target=\"_blank\" style=\"color:var(--accent)\">GitHub</a>上查阅。"
+    "openCard2Body": "完整代码在AGPL 3.0许可证下可在<a href=\"https://github.com/cero-absoluto/vozciudadana\" target=\"_blank\" style=\"color:var(--accent)\">GitHub</a>上查阅。",
+    "principleNote": "Voice Protest验证参与。它不验证事实的真实性。"
   },
   "informe": {
     "loading": "加载报告中...",

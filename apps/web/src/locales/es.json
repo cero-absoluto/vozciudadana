@@ -672,7 +672,7 @@
     "title": "Política de Financiación e Independencia",
     "updated": "Última actualización: junio de 2026",
     "principleTitle": "Nuestro principio fundacional",
-    "principleBody": "Voice Protest existe para proporcionar una infraestructura independiente de participación ciudadana verificable. La independencia es un requisito fundamental de la plataforma. Voice Protest busca financiar sus costes operativos mediante contribuciones voluntarias de ciudadanos, sin dependencia de gobiernos, partidos políticos, empresas o instituciones con capacidad de influencia sobre la plataforma.",
+    "principleBody": "Voice Protest existe para proporcionar una infraestructura independiente de participación ciudadana verificable. La independencia es un requisito fundamental de la plataforma. Voice Protest busca financiar sus costes operativos mediante contribuciones voluntarias de ciudadanos, sin control financiero ni influencia de gobiernos, partidos políticos, empresas o instituciones.",
     "costsTitle": "Cuánto cuesta mantener Voice Protest",
     "costsDesc": "Voice Protest opera con costes mínimos. Transparencia total sobre la infraestructura actual:",
     "costRailway": "Infraestructura del servidor backend",
@@ -685,7 +685,7 @@
     "accept1": "Donaciones individuales de ciudadanos de cualquier cuantía.",
     "accept2": "Contribuciones recurrentes de pequeña cuantía para cubrir costes operativos.",
     "accept3": "Contribuciones destinadas a cubrir infraestructura, auditorías de seguridad o mejoras técnicas.",
-    "accept4": "Apoyo de organizaciones sin capacidad de influencia sobre la gobernanza de la plataforma ni sobre los resultados de las convocatorias.",
+    "accept4": "Contribuciones de ciudadanos que creen en el valor de la participación ciudadana verificada e independiente.",
     "rejectTitle": "Qué no aceptamos",
     "reject1": "Financiación de partidos políticos, gobiernos o instituciones estatales.",
     "reject2": "Financiación de empresas o entidades privadas que busquen influencia sobre la plataforma.",
@@ -700,6 +700,11 @@
     "transparencyNote": "Todo el código fuente es públicamente auditable bajo licencia AGPL 3.0.",
     "transparencyTitle": "Transparencia financiera",
     "transparencyBody": "Cuando la plataforma reciba contribuciones de forma estable, Voice Protest publicará periódicamente un resumen agregado de ingresos y gastos operativos. Voice Protest no vende influencia. Las contribuciones solo ayudan a cubrir los costes técnicos necesarios para que ciudadanos verificados puedan participar.",
-    "donationsNote": "Las donaciones se registran actualmente de forma manual mientras la integración automática está en desarrollo."
+    "donationsNote": "Las donaciones se registran actualmente de forma manual mientras la integración automática está en desarrollo.",
+    "noInfluenceTitle": "Voice Protest no vende influencia",
+    "noInfluence1": "Las contribuciones ayudan a cubrir costes técnicos.",
+    "noInfluence2": "No compran visibilidad.",
+    "noInfluence3": "No compran influencia.",
+    "noInfluence4": "No compran resultados."
   }
 }

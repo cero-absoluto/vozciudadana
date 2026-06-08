@@ -488,7 +488,7 @@ function downloadPDF() {
   body('Each adhesion was verified through a multi-layer process:');
   body('  1. reCAPTCHA v3 — proof of humanity (bot detection)');
   body('  2. SMS OTP — real phone number verification (one adhesion per number)');
-  body('  3. SHA-256 local hash — irreversible anonymisation (identity never stored)');
+  body('  3. HMAC-SHA256 hash — pseudonymous identifier (phone number not stored, hash retained for deduplication)');
   body('  4. Device uniqueness — one device per protest scope');
   body('  5. Geographic verification — SIM prefix, IP geolocation, GPS (optional)');
   nl(2); line();

@@ -279,7 +279,9 @@
     "donSaldo": "Saldo:",
     "donCount": "{count} donaciones · {total}€ total",
     "donAgotado": "⚠️ Saldo agotado — esta convocatoria necesita tu apoyo",
-    "donApoyar": "☕ Apoyar esta convocatoria"
+    "donApoyar": "☕ Apoyar esta convocatoria",
+    "donAgotadoHint": "Cubre 20 verificaciones por €1 e invita a otros a contribuir.",
+    "joinSinSaldo": "Sin saldo — apoya esta protesta"
   },
   "verify": {
     "spinVerifying": "Verificando código...",
@@ -292,10 +294,12 @@
     "backDetail": "← Ver la convocatoria",
     "seeReport": "📄 Ver informe público",
     "goMap": "Ir al mapa mundial",
-    "toast": "✓ Adhesión anónima registrada",
+    "toast": "✓ Adhesión verificada registrada",
     "toastNational": "No puede adherirse, la protesta es únicamente para ciudadanos nacionales",
     "notiOn": "✅ Te avisaremos al cierre",
-    "notiOff": "Avísame cuando cierre la convocatoria"
+    "notiOff": "Avísame cuando cierre la convocatoria",
+    "toastAlready": "Ya te has adherido a esta convocatoria con este número de teléfono.",
+    "toastSinSaldo": "Esta convocatoria no tiene saldo. Apóyala para activar las adhesiones."
   },
   "about": {
     "heroTitle": "La herramienta. Sin trampa.",
@@ -635,17 +639,17 @@
     "collectTitle": "Qué recogemos",
     "collect1Title": "Hash criptográfico de tu número de teléfono",
     "collect1Body": " Número procesado únicamente para enviar SMS de verificación y comprobar tu país. Después se transforma en un hash SHA-256 irreversible. El número original no se almacena.",
-    "collect2Title": "Ubicación aproximada — solo ciudad y región",
-    "collect2Body": "Si concedes permiso de GPS, tus coordenadas se transmiten a nuestro servidor por HTTPS y se reenvían al servicio Nominatim de OpenStreetMap para determinar tu ciudad, región y país. Las coordenadas se usan exclusivamente para este fin y no se almacenan en nuestra base de datos. Solo se conservan los nombres de ciudad y región resultantes. Si no concedes el GPS, tu ubicación aproximada se estima a partir de tu dirección IP.",
+    "collect2Title": "Ubicación aproximada",
+    "collect2Body": "Ciudad y región, derivados del GPS (si se concede) o geolocalización por IP. Nunca coordenadas exactas. Se usa únicamente para construir el informe verificado.",
     "collect3Title": "Identificador anónimo de dispositivo",
     "collect3Body": "Un ID aleatorio generado en tu dispositivo para evitar adhesiones duplicadas desde el mismo dispositivo. No te identifica personalmente.",
     "collect4Title": "Preferencia de idioma",
-    "collect4Body": "Almacenada solo localmente en tu dispositivo. Nunca se envía al servidor.",
+    "collect4Body": "Tu navegador envía una cabecera Accept-Language con cada petición a nuestro servidor, que puede registrarse temporalmente en los logs del servidor. Tu preferencia de idioma dentro de la app se almacena solo localmente en tu dispositivo.",
     "neverTitle": "Lo que nunca hacemos",
-    "never1": "Nunca almacenamos tu número de teléfono, nombre, email ni ningún identificador personal.",
-    "never2": "Nunca usamos cookies de rastreo ni publicidad.",
-    "never3": "Nunca vendemos, compartimos ni monetizamos ningún dato.",
-    "never4": "Nunca permitimos el acceso de gobiernos o instituciones a los datos de participación.",
+    "never1": "No almacenamos tu número de teléfono en su forma original. Solo se conserva su hash SHA-256 — un identificador pseudónimo. No almacenamos tu nombre, email ni dirección postal.",
+    "never2": "No usamos cookies de rastreo ni de publicidad.",
+    "never3": "No vendemos, compartimos ni monetizamos datos personales con fines comerciales.",
+    "never4": "No compartimos voluntariamente los datos de participación con gobiernos o instituciones. Podemos estar obligados a cumplir órdenes judiciales legítimas conforme a la ley aplicable.",
     "never5": "Nunca mostramos publicidad de ningún tipo.",
     "providersTitle": "Proveedores de servicio",
     "providersDesc": "Los siguientes servicios de terceros se usan únicamente para operar la plataforma. Procesan datos en nuestro nombre y están sujetos a acuerdos de tratamiento de datos.",
@@ -657,11 +661,10 @@
     "cookiesTitle": "Cookies",
     "cookiesBody": "Voice Protest no usa cookies de rastreo ni publicitarias. Las preferencias de idioma e interfaz se almacenan en el localStorage de tu navegador — nunca salen de tu dispositivo y no requieren banner de consentimiento.",
     "retentionTitle": "Retención de datos",
-    "retentionBody": "Los datos individuales de adhesión (hash del teléfono, ubicación aproximada, puntuación de fiabilidad) se eliminan de forma lógica 90 días después del cierre de la protesta — es decir, se marcan como eliminados y quedan excluidos de todas las consultas. El informe público nunca se elimina: contiene únicamente agregados estadísticos (recuento total, ciudades, desglose de fiabilidad) y ningún dato personal. Ninguna adhesión individual puede rastrearse desde el informe público.",
+    "retentionBody": "Los datos de adhesión (hash SHA-256 del número de teléfono, ciudad y región, identificador de dispositivo, puntuación de fiabilidad, booleano de confirmación GPS) se eliminan lógicamente 90 días después del cierre de la protesta. Las coordenadas GPS no se almacenan — solo un booleano que confirma si el GPS estaba activo. El informe público no se elimina: contiene únicamente estadísticas agregadas sin datos personales.",
     "controllerTitle": "Responsable del tratamiento",
     "sourceNote": "Todo el código fuente es públicamente auditable bajo licencia AGPL 3.0.",
     "reportNote": "El informe público verificado",
-    "reportNoteBody": "El informe público generado por cada protesta contiene únicamente estadísticas agregadas y anonimizadas — adhesiones totales, distribución geográfica, desglose de fiabilidad. No contiene datos personales y nunca está sujeto a eliminación. Es el registro permanente y auditable de la participación ciudadana verificada.",
-    "providerNominatim": "Geocodificación inversa — recibe coordenadas GPS de nuestro servidor para devolver ciudad y región. Operado por la OpenStreetMap Foundation (Reino Unido). Las coordenadas pueden aparecer en sus registros de servidor durante un período limitado."
+    "reportNoteBody": "El informe público generado por cada protesta contiene únicamente estadísticas agregadas y anonimizadas — adhesiones totales, distribución geográfica, desglose de fiabilidad. No contiene datos personales y nunca está sujeto a eliminación. Es el registro permanente y auditable de la participación ciudadana verificada."
   }
 }

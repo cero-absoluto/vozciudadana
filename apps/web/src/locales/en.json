@@ -279,7 +279,9 @@
     "donSaldo": "Balance:",
     "donCount": "{count} donations · {total}€ total",
     "donAgotado": "⚠️ Balance depleted — this event needs your support",
-    "donApoyar": "☕ Support this event"
+    "donApoyar": "☕ Support this event",
+    "donAgotadoHint": "Cover 20 verifications for €1 and invite others to contribute.",
+    "joinSinSaldo": "No funds — support this protest"
   },
   "verify": {
     "spinVerifying": "Verifying your participation...",
@@ -293,10 +295,12 @@
     "seeReport": "📊 See full report",
     "goMap": "Go to world map",
     "toastError": "Error registering adhesion: {msg}",
-    "toast": "✓ Anonymous adhesion registered",
+    "toast": "✓ Verified adhesion registered",
     "toastNational": "Cannot join, this event is only for national citizens",
     "notiOn": "✅ We'll notify you when it closes",
-    "notiOff": "Notify me when it closes"
+    "notiOff": "Notify me when it closes",
+    "toastAlready": "You have already joined this protest with this phone number.",
+    "toastSinSaldo": "This protest has no funds. Support it to enable adhesions."
   },
   "about": {
     "heroTitle": "The tool. No tricks.",
@@ -636,17 +640,17 @@
     "collectTitle": "What we collect",
     "collect1Title": "Cryptographic hash of your phone number",
     "collect1Body": "Your phone number is processed only to send the verification SMS and verify your country. It is then transformed into an irreversible SHA-256 hash. The original number is not stored.",
-    "collect2Title": "Approximate location — city and region only",
-    "collect2Body": "If you grant GPS permission, your coordinates are transmitted to our server over HTTPS and forwarded to the OpenStreetMap Nominatim service to determine your city, region and country. The coordinates are used solely for this purpose and are not stored in our database. Only the resulting city and region names are retained. If GPS is not granted, your approximate location is estimated from your IP address.",
+    "collect2Title": "Approximate location",
+    "collect2Body": "City and region, derived from GPS (if granted) or IP geolocation. Never exact coordinates. Used only to build the verified report.",
     "collect3Title": "Anonymous device identifier",
     "collect3Body": "A random ID generated on your device to prevent duplicate adhesions from the same device. It does not identify you personally.",
     "collect4Title": "Language preference",
-    "collect4Body": "Stored locally on your device only. Never sent to the server.",
+    "collect4Body": "Your browser sends an Accept-Language header with each request to our server, which may be recorded temporarily in server logs. Your in-app language preference is stored locally on your device only.",
     "neverTitle": "What we never do",
-    "never1": "We never store your phone number, name, email or any personal identifier.",
-    "never2": "We never use cookies for tracking or advertising.",
-    "never3": "We never sell, share or monetise any data.",
-    "never4": "We never allow government or institutional access to participation data.",
+    "never1": "We do not store your phone number in its original form. Only its SHA-256 hash — a pseudonymous identifier — is retained. We do not store your name, email or postal address.",
+    "never2": "We do not use cookies for tracking or advertising.",
+    "never3": "We do not sell, share or monetise personal data for commercial purposes.",
+    "never4": "We do not voluntarily share participation data with governments or institutions. We may be required to comply with lawful court orders under applicable law.",
     "never5": "We never display advertising of any kind.",
     "providersTitle": "Service providers",
     "providersDesc": "The following third-party services are used solely to operate the platform. They process data on our behalf and are bound by data processing agreements.",
@@ -658,11 +662,10 @@
     "cookiesTitle": "Cookies",
     "cookiesBody": "Voice Protest does not use tracking cookies or advertising cookies. Language and UI preferences are stored in your browser's localStorage — they never leave your device and require no consent banner.",
     "retentionTitle": "Data retention",
-    "retentionBody": "Individual adhesion data (hashed phone number, approximate location, reliability score) is soft-deleted 90 days after a protest closes — meaning it is marked as deleted and excluded from all queries. The public report is never deleted: it contains only statistical aggregates (total count, cities, reliability breakdown) and no personal data of any kind. No individual adhesion can be traced from the public report.",
+    "retentionBody": "Adhesion data (SHA-256 hash of phone number, city and region, device identifier, reliability score, GPS confirmation boolean) is soft-deleted 90 days after a protest closes — meaning it is marked as deleted and excluded from all queries. GPS coordinates are not stored — only a boolean confirming GPS was active. The public report is not deleted: it contains only aggregated statistics with no personal data.",
     "controllerTitle": "Data controller",
     "sourceNote": "All source code is publicly auditable under AGPL 3.0 licence.",
     "reportNote": "The public verified report",
-    "reportNoteBody": "The public report generated by each protest contains only aggregated, anonymised statistics — total adhesions, geographic distribution, reliability breakdown. It contains no personal data and is never subject to deletion. It is the permanent, auditable record of verified civic participation.",
-    "providerNominatim": "Reverse geocoding — receives GPS coordinates from our server to return city and region. Operated by the OpenStreetMap Foundation (UK). Coordinates may appear in their server logs for a limited period."
+    "reportNoteBody": "The public report generated by each protest contains only aggregated, anonymised statistics — total adhesions, geographic distribution, reliability breakdown. It contains no personal data and is never subject to deletion. It is the permanent, auditable record of verified civic participation."
   }
 }

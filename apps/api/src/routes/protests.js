@@ -218,8 +218,10 @@ export default async function protestRoutes(app) {
           { headers: { 'Accept-Language': 'es', 'User-Agent': 'VozCiudadana/1.0' } }
         );
         const geoData = await geoRes.json();
-        ciudad = geoData.address?.city || geoData.address?.town || geoData.address?.village || null;
-        region = geoData.address?.state || null;
+        ciudad = geoData.address?.city || geoData.address?.town || geoData.address?.village ||
+                 geoData.address?.suburb || geoData.address?.hamlet ||
+                 geoData.address?.locality || geoData.address?.municipality || null;
+        region = geoData.address?.state || geoData.address?.county || null;
         pais   = geoData.address?.country || null;
       } catch { /* silencioso */ }
     }
@@ -279,14 +281,11 @@ export default async function protestRoutes(app) {
       senales = ['ip'];
     }
 
-    // GPS coordinates used only for geocoding — not stored
-    const gps_confirmed = (gps_lat != null && gps_lng != null);
-
     const { data, error } = await supabase
       .from('adhesions')
       .insert({ protest_id: req.params.id, phone_hash, doc_hash: doc_hash ?? null,
                 device_id, ciudad, region, pais, idioma, nullifier, created_at,
-                gps_confirmed,
+                gps_lat: gps_lat ?? null, gps_lng: gps_lng ?? null, gps_accuracy: gps_accuracy ?? null,
                 fiabilidad, senales: senales.join(',') })
       .select()
       .single();
@@ -466,7 +465,7 @@ export default async function protestRoutes(app) {
 
     const { data: adhesions } = await supabase
       .from('adhesions')
-      .select('ciudad, region, pais, idioma, created_at, gps_confirmed, fiabilidad, senales')
+      .select('ciudad, region, pais, idioma, created_at, gps_lat, fiabilidad, senales')
       .eq('protest_id', req.params.id)
       .order('created_at', { ascending: true });
 
@@ -479,7 +478,7 @@ export default async function protestRoutes(app) {
       return acc;
     }, {});
 
-    const adhesiones_con_gps = adhesions.filter(a => a.gps_confirmed === true).length;
+    const adhesiones_con_gps = adhesions.filter(a => a.gps_lat !== null).length;
 
     const fiabilidad_alta    = adhesions.filter(a => a.fiabilidad >= 85).length;
     const fiabilidad_media   = adhesions.filter(a => a.fiabilidad >= 75 && a.fiabilidad < 85).length;

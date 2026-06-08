@@ -1,10 +1,20 @@
-import { createHash } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
 import { supabase } from '../services/supabase.js';
 import { sendOtp, verifyOtp } from '../services/twilio.js';
 
-/** Hash a phone number to avoid storing it in plain text. */
+/** Hash a phone number using HMAC-SHA256 with a server-side secret.
+ *  This prevents rainbow table attacks — without the secret, hashes
+ *  cannot be reversed even if the database is compromised.
+ *  Secret is stored in PHONE_HASH_SECRET environment variable.
+ */
 function hashPhone(phoneE164) {
-  return createHash('sha256').update(phoneE164).digest('hex');
+  const secret = process.env.PHONE_HASH_SECRET;
+  if (!secret) {
+    // Development fallback — log warning but continue
+    console.warn('[SECURITY] PHONE_HASH_SECRET not set — using plain SHA-256. Set this variable in production.');
+    return createHash('sha256').update(phoneE164).digest('hex');
+  }
+  return createHmac('sha256', secret).update(phoneE164).digest('hex');
 }
 
 /** @param {import('fastify').FastifyInstance} app */

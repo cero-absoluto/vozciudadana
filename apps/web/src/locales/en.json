@@ -224,7 +224,8 @@
     "createdOk": "✓ Protest created — it now appears on the map.",
     "errTargetRejectedShort": "Not allowed on Voice Protest",
     "errTargetReview": "Needs manual review before publishing",
-    "createdSaldo": "✓ Protest created — fund it from the protest page to start receiving verified adhesions."
+    "createdSaldo": "✓ Protest created — fund it from the protest page to start receiving verified adhesions.",
+    "endsAt": "Your protest will end on"
   },
   "detail": {
     "back": "← Back to map",

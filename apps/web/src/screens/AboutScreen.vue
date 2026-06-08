@@ -58,6 +58,11 @@
           <div class="tcard-h">{{ $t('privacy.title') }}</div>
           <div class="tcard-p">{{ $t('privacy.principleTitle') }}</div>
         </div>
+        <div class="tcard" style="cursor:pointer" @click="$router.push('/funding')">
+          <div class="tcard-ico">💰</div>
+          <div class="tcard-h">{{ $t('funding.title') }}</div>
+          <div class="tcard-p">{{ $t('funding.principleTitle') }}</div>
+        </div>
       </div>
 
     </div>

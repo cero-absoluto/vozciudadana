@@ -673,7 +673,7 @@
     "title": "Funding & Independence Policy",
     "updated": "Last updated: June 2026",
     "principleTitle": "Our founding principle",
-    "principleBody": "Voice Protest exists to provide independent, verifiable civic participation infrastructure. Independence is a fundamental requirement of the platform. Voice Protest seeks to cover its operational costs through voluntary contributions from citizens, with no dependence on governments, political parties, corporations or institutions with capacity to influence the platform.",
+    "principleBody": "Voice Protest exists to provide independent, verifiable civic participation infrastructure. Independence is a fundamental requirement of the platform. Voice Protest seeks to cover its operational costs through voluntary citizen contributions, without financial control or influence from governments, political parties, corporations or institutions.",
     "costsTitle": "What it costs to run Voice Protest",
     "costsDesc": "Voice Protest operates at minimal cost. Full transparency on current infrastructure:",
     "costRailway": "Backend server infrastructure",
@@ -686,7 +686,7 @@
     "accept1": "Individual citizen donations of any amount.",
     "accept2": "Small recurring contributions to cover operational costs.",
     "accept3": "Contributions directed at covering infrastructure, security audits or technical improvements.",
-    "accept4": "Support from organisations with no capacity to influence platform governance or protest outcomes.",
+    "accept4": "Contributions from citizens who believe in the value of independent, verified civic participation.",
     "rejectTitle": "What we do not accept",
     "reject1": "Funding from political parties, governments or state institutions.",
     "reject2": "Funding from corporations or private entities seeking influence over the platform.",
@@ -701,6 +701,11 @@
     "transparencyNote": "All source code is publicly auditable under AGPL 3.0.",
     "transparencyTitle": "Financial transparency",
     "transparencyBody": "When the platform receives stable contributions, Voice Protest will periodically publish an aggregated summary of income and operational expenses. Voice Protest does not sell influence. Contributions only help cover the technical costs necessary for verified citizens to participate.",
-    "donationsNote": "Donations are currently registered manually while automatic integration is in development."
+    "donationsNote": "Donations are currently registered manually while automatic integration is in development.",
+    "noInfluenceTitle": "Voice Protest does not sell influence",
+    "noInfluence1": "Contributions help cover technical costs.",
+    "noInfluence2": "They do not buy visibility.",
+    "noInfluence3": "They do not buy influence.",
+    "noInfluence4": "They do not buy results."
   }
 }

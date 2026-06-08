@@ -67,7 +67,13 @@
         </a>
       </div>
 
-      <!-- Transparency note -->
+      <!-- Financial transparency -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.transparencyTitle') }}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.transparencyBody') }}</div>
+      </div>
+
+      <!-- Source code note -->
       <div style="text-align:center;font-size:12px;color:var(--text3);line-height:1.8">
         {{ $t('funding.transparencyNote') }}<br>
         <a href="https://github.com/cero-absoluto/vozciudadana" target="_blank" style="color:var(--accent)">github.com/cero-absoluto/vozciudadana</a>

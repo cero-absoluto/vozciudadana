@@ -224,7 +224,8 @@
     "createdOk": "✓ Convocatoria creada — ya aparece en el mapa.",
     "errTargetRejectedShort": "No permitida en Voice Protest",
     "errTargetReview": "Requiere revisión manual antes de publicar",
-    "createdSaldo": "✓ Convocatoria creada — finánciala desde su pantalla para recibir adhesiones verificadas."
+    "createdSaldo": "✓ Convocatoria creada — finánciala desde su pantalla para recibir adhesiones verificadas.",
+    "endsAt": "Tu convocatoria finalizará el"
   },
   "detail": {
     "back": "← Volver al mapa",

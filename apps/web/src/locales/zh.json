@@ -673,7 +673,7 @@
     "title": "资金与独立政策",
     "updated": "最后更新：2026年6月",
     "principleTitle": "我们的创立原则",
-    "principleBody": "Voice Protest的存在是为了提供独立的、可验证的公民参与基础设施。独立性是平台的基本要求。Voice Protest寻求通过公民的自愿捐款来覆盖运营成本，不依赖于对平台有影响能力的政府、政党、企业或机构。",
+    "principleBody": "Voice Protest的存在是为了提供独立的、可验证的公民参与基础设施。独立性是平台的基本要求。Voice Protest寻求通过公民的自愿捐款来覆盖运营成本，不受政府、政党、企业或机构的财务控制或影响。",
     "costsTitle": "运营Voice Protest的成本",
     "costsDesc": "Voice Protest以最低成本运营。当前基础设施完全透明：",
     "costRailway": "后端服务器基础设施",
@@ -686,7 +686,7 @@
     "accept1": "任何金额的个人公民捐款。",
     "accept2": "用于覆盖运营成本的小额定期捐款。",
     "accept3": "用于基础设施、安全审计或技术改进的捐款。",
-    "accept4": "对平台治理或抗议结果没有影响能力的组织的支持。",
+    "accept4": "相信经过验证的独立公民参与价值的公民的捐款。",
     "rejectTitle": "我们不接受的内容",
     "reject1": "来自政党、政府或国家机构的资金。",
     "reject2": "来自寻求对平台施加影响的企业或私人实体的资金。",
@@ -701,6 +701,11 @@
     "transparencyNote": "所有源代码均可在AGPL 3.0许可证下公开审计。",
     "transparencyTitle": "财务透明度",
     "transparencyBody": "当平台收到稳定捐款时，Voice Protest将定期发布收入和运营支出的汇总摘要。Voice Protest不出售影响力。捐款仅帮助覆盖经验证公民参与所需的技术成本。",
-    "donationsNote": "在自动集成开发期间，捐款目前以手动方式登记。"
+    "donationsNote": "在自动集成开发期间，捐款目前以手动方式登记。",
+    "noInfluenceTitle": "Voice Protest不出售影响力",
+    "noInfluence1": "捐款有助于覆盖技术成本。",
+    "noInfluence2": "不购买可见度。",
+    "noInfluence3": "不购买影响力。",
+    "noInfluence4": "不购买结果。"
   }
 }

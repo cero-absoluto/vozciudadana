@@ -224,7 +224,8 @@
     "createdOk": "✓ 抗议已创建 — 现已显示在地图上。",
     "errTargetRejectedShort": "Voice Protest不允许",
     "errTargetReview": "发布前需要人工审核",
-    "createdSaldo": "✓ 抗议已创建 — 从抗议页面为其提供资金以开始接收经过验证的参与。"
+    "createdSaldo": "✓ 抗议已创建 — 从抗议页面为其提供资金以开始接收经过验证的参与。",
+    "endsAt": "您的抗议将于以下时间结束"
   },
   "detail": {
     "back": "← 返回地图",

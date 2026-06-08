@@ -51,6 +51,15 @@
         </div>
       </div>
 
+      <!-- No influence block -->
+      <div style="background:rgba(255,179,71,.06);border:.5px solid rgba(255,179,71,.2);border-radius:12px;padding:14px 16px;margin-bottom:20px">
+        <div style="font-size:13px;font-weight:700;color:var(--accent4);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">{{ $t('funding.noInfluenceTitle') }}</div>
+        <div v-for="item in noInfluenceItems" :key="item"
+          style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;color:var(--text2)">
+          <span style="color:var(--accent3);font-weight:700">✗</span> {{ item }}
+        </div>
+      </div>
+
       <!-- Independence guarantee -->
       <div style="background:rgba(124,111,255,.06);border:.5px solid rgba(124,111,255,.2);border-radius:12px;padding:14px 16px;margin-bottom:20px">
         <div style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">{{ $t('funding.independenceTitle') }}</div>
@@ -102,6 +111,13 @@ const acceptItems = computed(() => [
   t('funding.accept2'),
   t('funding.accept3'),
   t('funding.accept4'),
+]);
+
+const noInfluenceItems = computed(() => [
+  t('funding.noInfluence1'),
+  t('funding.noInfluence2'),
+  t('funding.noInfluence3'),
+  t('funding.noInfluence4'),
 ]);
 
 const rejectItems = computed(() => [

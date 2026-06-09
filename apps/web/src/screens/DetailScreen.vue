@@ -20,6 +20,11 @@
         <div class="sc"><div class="sc-n" style="color:var(--accent2)">{{ protest.cities }}</div><div class="sc-l">{{ $t('detail.statCiudades') }}</div></div>
         <div class="sc"><div class="sc-n" style="color:var(--accent3)">{{ fmtTime(protest.timer) }}</div><div class="sc-l">{{ $t('detail.statRestante') }}</div></div>
       </div>
+      <!-- Fecha de cierre -->
+      <div v-if="protest.ends_at && protest.timer > 0" style="text-align:center;font-size:11px;color:var(--text3);margin-bottom:8px">
+        {{ $t('detail.closesOn') }} {{ fmtCloseDate(protest.ends_at) }}
+      </div>
+
       <!-- Velocidad — solo si hay datos de hoy -->
       <div v-if="velocidadHoy > 0" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.2);border-radius:var(--r);margin-bottom:8px">
         <div style="width:6px;height:6px;border-radius:50%;background:var(--accent2);animation:blink 1.5s infinite;flex-shrink:0"></div>
@@ -159,6 +164,14 @@ import { useUiStore }       from '@/stores/ui.js';
 import { useI18n } from 'vue-i18n';
 import DetailMap from '@/components/map/DetailMap.vue';
 import { fmt, fmtTime, inRegion } from '@/constants.js';
+
+function fmtCloseDate(endsAt) {
+  if (!endsAt) return '';
+  return new Date(endsAt).toLocaleString(undefined, {
+    weekday: 'short', day: 'numeric', month: 'short',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
 import * as api from '@/services/api.js';
 
 const { t } = useI18n();

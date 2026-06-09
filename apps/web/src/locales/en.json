@@ -395,8 +395,8 @@
     "penetracionBody": "{count} verified adhesions over an eligible universe of citizens from {country}.",
     "chainTitle": "🔒 Verification chain",
     "chainBody": "Each adhesion was verified via: reCAPTCHA v3 (proof of humanity) + SMS OTP (real number) + HMAC-SHA256 hash (pseudonymisation) + device uniqueness.",
-    "selloTitle": "✅ Transparency seal",
-    "selloHashLabel": "🔐 Integrity hash at closure",
+    "selloTitle": "🔐 Integrity Hash",
+    "selloHashLabel": "SHA-256 integrity hash — calculated at close from all adhesion nullifiers:",
     "selloSourceBtn": "View source code on GitHub →",
     "selloGenerated": "Report generated:",
     "selloId": "Event ID:",
@@ -424,7 +424,10 @@
     "embedClose": "Close",
     "embedPreview": "Preview",
     "embedVerifiedCitizens": "verified citizens",
-    "embedJoin": "🗳️ Join — identity protected"
+    "embedJoin": "🗳️ Join — identity protected",
+    "selloDesc": "This hash is calculated at the moment the protest closes using a SHA-256 function applied to the protest ID, final count, and all adhesion nullifiers sorted alphabetically. Any subsequent modification of adhesion data would produce a different hash, making tampering mathematically detectable. Nullifiers are pseudonymous identifiers — they prove uniqueness without revealing identity.",
+    "selloVerify": "How to verify: recalculate SHA256(protest_id + \":\" + count + \":\" + sorted_nullifiers_joined_with_\"|\") and compare with the hash above.",
+    "selloHashPending": "Integrity hash will be calculated when the protest closes."
   },
   "invite": {
     "loading": "Validating invitation...",

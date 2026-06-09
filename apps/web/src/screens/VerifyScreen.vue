@@ -17,15 +17,15 @@
             <!-- Escalera de acción -->
       <div style="width:100%;margin-top:8px">
 
-        <!-- Peldaño 1 — VIRAL -->
-        <button class="suc-share" style="width:100%;margin-bottom:10px" @click="ui.showShareModal = true">
-          {{ $t('verify.viral') }}
+        <!-- Peldaño 1 — Notificación (first — ensures user gets result) -->
+        <button @click="activarNotificacion"
+          style="width:100%;margin-bottom:10px;padding:12px;background:rgba(76,111,255,.12);border:.5px solid #4C6FFF;border-radius:var(--r);color:#4C6FFF;font-size:13px;font-weight:700;cursor:pointer">
+          🔔 {{ notiActivada ? $t('verify.notiOn') : $t('verify.notiOff') }}
         </button>
 
-        <!-- Peldaño 2 — Notificación -->
-        <button @click="activarNotificacion"
-          style="width:100%;margin-bottom:10px;padding:10px;background:rgba(76,111,255,.12);border:.5px solid #4C6FFF;border-radius:var(--r);color:#4C6FFF;font-size:12px;font-weight:600;cursor:pointer">
-          🔔 {{ notiActivada ? $t('verify.notiOn') : $t('verify.notiOff') }}
+        <!-- Peldaño 2 — VIRAL -->
+        <button class="suc-share" style="width:100%;margin-bottom:10px" @click="ui.showShareModal = true">
+          {{ $t('verify.viral') }}
         </button>
 
         <!-- Peldaño 3 — Ver convocatoria (salida) -->

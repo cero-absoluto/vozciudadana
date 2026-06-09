@@ -223,9 +223,14 @@
           <!-- BLOQUE 7 — Sello de transparencia -->
           <div class="block" style="margin-bottom:20px">
             <div class="block-title">{{ $t('informe.selloTitle') }}</div>
-            <div v-if="data.protest.hash_integridad" style="margin-bottom:12px;padding:8px 10px;background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.18);border-radius:var(--r)">
-              <div style="font-size:9px;color:var(--text3);margin-bottom:4px">{{ $t('informe.selloHashLabel') }}</div>
-              <div style="font-family:monospace;font-size:9px;color:var(--accent2);word-break:break-all">{{ data.protest.hash_integridad }}</div>
+            <div v-if="data.protest.hash_integridad" style="margin-bottom:12px;padding:12px 14px;background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.25);border-radius:var(--r)">
+              <div style="font-size:11px;color:var(--text3);margin-bottom:6px">{{ $t('informe.selloHashLabel') }}</div>
+              <div style="font-family:monospace;font-size:11px;color:var(--accent2);word-break:break-all;margin-bottom:8px">{{ data.protest.hash_integridad }}</div>
+              <div style="font-size:10px;color:var(--text3);line-height:1.5">{{ $t('informe.selloDesc') }}</div>
+              <div style="font-size:9px;color:var(--text3);margin-top:6px;padding-top:6px;border-top:.5px solid var(--border);font-family:monospace;opacity:.7">{{ $t('informe.selloVerify') }}</div>
+            </div>
+            <div v-else style="margin-bottom:12px;padding:10px 12px;background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r);font-size:11px;color:var(--text3)">
+              ⏳ {{ $t('informe.selloHashPending') }}
             </div>
             <div style="font-size:14px;color:var(--text2);line-height:1.8">
               {{ $t('informe.selloSourceDesc') }}<br>
@@ -488,7 +493,7 @@ function downloadPDF() {
   body('Each adhesion was verified through a multi-layer process:');
   body('  1. reCAPTCHA v3 — proof of humanity (bot detection)');
   body('  2. SMS OTP — real phone number verification (one adhesion per number)');
-  body('  3. HMAC-SHA256 hash — pseudonymous identifier (phone number not stored after verification)');
+  body('  3. SHA-256 local hash — irreversible anonymisation (identity never stored)');
   body('  4. Device uniqueness — one device per protest scope');
   body('  5. Geographic verification — SIM prefix, IP geolocation, GPS (optional)');
   nl(2); line();

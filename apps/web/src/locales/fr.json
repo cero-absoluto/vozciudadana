@@ -300,10 +300,11 @@
     "toastError": "Erreur lors de l'enregistrement de l'adhésion : {msg}",
     "toast": "✓ Adhésion vérifiée enregistrée",
     "toastNational": "Impossible de rejoindre, cet événement est uniquement pour les citoyens nationaux",
-    "notiOn": "✅ Nous vous notifierons à la clôture",
-    "notiOff": "Me notifier à la clôture",
+    "notiOn": "🔔 Notifications activées",
+    "notiOff": "🔔 Me notifier à la clôture",
     "toastAlready": "Vous avez déjà adhéré à cette protestation avec ce numéro de téléphone.",
-    "toastSinSaldo": "Cette protestation n'a pas de fonds. Soutenez-la pour activer les adhésions."
+    "toastSinSaldo": "Cette protestation n'a pas de fonds. Soutenez-la pour activer les adhésions.",
+    "notiInfo": "Si vous activez les notifications, votre navigateur sera lié à cette protestation pour vous envoyer le résultat. Cela réduit légèrement votre pseudonymat. Si vous préférez une confidentialité maximale, ne les activez pas."
   },
   "about": {
     "heroTitle": "L'outil. Sans tromperie.",
@@ -675,7 +676,9 @@
     "reportNote": "Le rapport public vérifié",
     "reportNoteBody": "Le rapport public généré par chaque protestation ne contient que des statistiques agrégées et anonymisées — adhésions totales, distribution géographique, répartition de la fiabilité. Il ne contient aucune donnée personnelle et n'est jamais sujet à suppression. C'est le registre permanent et auditable de la participation citoyenne vérifiée.",
     "metadataTitle": "Métadonnées techniques stockées par adhésion",
-    "metadataBody": "Pour chaque adhésion, nous stockons : hachage HMAC-SHA256 du numéro de téléphone, ville et région (issues du géocodage), identifiant anonyme de l'appareil, score de fiabilité (60–95%), signaux géographiques utilisés (GPS / SIM / IP), horodatage approximatif (arrondi à l'heure la plus proche) et un booléen confirmant si le GPS était actif. Nous stockons ces données de manière transparente et les décrivons intégralement ici car nous croyons que les citoyens ont le droit de savoir exactement quelles informations sont conservées."
+    "metadataBody": "Pour chaque adhésion, nous stockons : hachage HMAC-SHA256 du numéro de téléphone, ville et région (issues du géocodage), identifiant anonyme de l'appareil, score de fiabilité (60–95%), signaux géographiques utilisés (GPS / SIM / IP), horodatage approximatif (arrondi à l'heure la plus proche) et un booléen confirmant si le GPS était actif. Nous stockons ces données de manière transparente et les décrivons intégralement ici car nous croyons que les citoyens ont le droit de savoir exactement quelles informations sont conservées.",
+    "pushTitle": "Notifications push (optionnel)",
+    "pushBody": "Si vous choisissez d'activer les notifications push après avoir adhéré à une protestation, l'endpoint push de votre navigateur — un identifiant technique assigné par votre fournisseur de navigateur — est stocké lié à cette protestation. Cet endpoint est utilisé uniquement pour vous envoyer la notification de résultat et est supprimé à la clôture. L'activation réduit légèrement votre pseudonymat. C'est entièrement optionnel et nécessite votre consentement explicite."
   },
   "funding": {
     "title": "Politique de Financement et d'Indépendance",

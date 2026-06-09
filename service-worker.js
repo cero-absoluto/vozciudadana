@@ -51,8 +51,8 @@ self.addEventListener('push', event => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body:    data.body,
-      icon:    data.icon  || '/vozciudadana/icon-192.png',
-      badge:   data.badge || '/vozciudadana/icon-72.png',
+      icon:    data.icon  || '/icon-192.png',
+      badge:   data.badge || '/icon-72.png',
       data:    { url: data.url },
       vibrate: [200, 100, 200],
     })
@@ -61,6 +61,7 @@ self.addEventListener('push', event => {
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const url = event.notification.data?.url || 'https://cero-absoluto.github.io/vozciudadana';
+  const url = event.notification.data?.url || 'https://voiceprotest.org';
   event.waitUntil(clients.openWindow(url));
 });
+

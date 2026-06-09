@@ -283,7 +283,8 @@
     "donAgotado": "⚠️ Balance depleted — this event needs your support",
     "donApoyar": "☕ Support this event",
     "donAgotadoHint": "Cover 20 verifications for €1 and invite others to contribute.",
-    "joinSinSaldo": "No funds — support this protest"
+    "joinSinSaldo": "No funds — support this protest",
+    "closesOn": "Closes on"
   },
   "verify": {
     "spinVerifying": "Verifying your participation...",

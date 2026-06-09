@@ -30,6 +30,7 @@ export default async function pushRoutes(app) {
           device_id:    { type: 'string' },
           protest_id:   { type: 'string', nullable: true },
           ends_at:      { type: 'string', nullable: true },
+          locale:       { type: 'string', nullable: true },
           subscription: {
             type: 'object',
             required: ['endpoint', 'keys'],
@@ -49,7 +50,7 @@ export default async function pushRoutes(app) {
       },
     },
   }, async (req, reply) => {
-    const { device_id, protest_id, ends_at, subscription } = req.body;
+    const { device_id, protest_id, ends_at, locale, subscription } = req.body;
     const { endpoint, keys: { p256dh, auth } } = subscription;
 
     await supabase.from('push_subscriptions').upsert({
@@ -59,6 +60,7 @@ export default async function pushRoutes(app) {
       auth,
       protest_id: protest_id || null,
       ends_at:    ends_at    || null,
+      locale:     locale || 'en',
       updated_at: new Date().toISOString(),
     }, { onConflict: 'endpoint' });
 
@@ -160,7 +162,28 @@ export default async function pushRoutes(app) {
   });
 
   // ── Helper: send push to all subscribers of a protest ──────────────────
-  async function sendToProtest(protestId, title, body, url) {
+  const NOTIF_TEXTS = {
+    started: {
+      en: { title: '🗳️ Protest has started', body: (t) => `${t} — Share now to add more voices` },
+      es: { title: '🗳️ La protesta ha comenzado', body: (t) => `${t} — Compártela ahora para sumar más voces` },
+      fr: { title: '🗳️ La protestation a commencé', body: (t) => `${t} — Partagez maintenant pour ajouter des voix` },
+      zh: { title: '🗳️ 抗议已开始', body: (t) => `${t} — 立即分享以获得更多支持` },
+    },
+    closing: {
+      en: { title: '⏰ Last hour', body: (t) => `${t} — Closes in 1 hour. Share to add more adhesions` },
+      es: { title: '⏰ Última hora', body: (t) => `${t} — Cierra en 1 hora. Comparte para sumar más adhesiones` },
+      fr: { title: '⏰ Dernière heure', body: (t) => `${t} — Ferme dans 1 heure. Partagez pour plus d'adhésions` },
+      zh: { title: '⏰ 最后一小时', body: (t) => `${t} — 1小时后关闭。分享以获得更多参与` },
+    },
+    closed: {
+      en: { title: '✅ Final result', body: (t, c, ci) => `${t} — ${c} verified participants in ${ci} cities. See report →` },
+      es: { title: '✅ Resultado final', body: (t, c, ci) => `${t} — ${c} participantes verificados en ${ci} ciudades. Ver informe →` },
+      fr: { title: '✅ Résultat final', body: (t, c, ci) => `${t} — ${c} participants vérifiés dans ${ci} villes. Voir rapport →` },
+      zh: { title: '✅ 最终结果', body: (t, c, ci) => `${t} — ${c}名经验证参与者来自${ci}个城市。查看报告 →` },
+    },
+  };
+
+  async function sendToProtest(protestId, type, protestTitle, url, count = 0, cities = 0) {
     const { data: adhesions } = await supabase
       .from('adhesions')
       .select('device_id')
@@ -172,22 +195,24 @@ export default async function pushRoutes(app) {
 
     const { data: subs } = await supabase
       .from('push_subscriptions')
-      .select('endpoint, p256dh, auth')
+      .select('endpoint, p256dh, auth, locale')
       .in('device_id', deviceIds);
 
     if (!subs?.length || !initVapid()) return 0;
-
-    const payload = JSON.stringify({
-      title, body,
-      icon: '/icon-192.png',
-      badge: '/icon-72.png',
-      url,
-    });
 
     let sent = 0;
     const dead = [];
     await Promise.allSettled(subs.map(async sub => {
       try {
+        const lang = (sub.locale || 'en').substring(0, 2);
+        const texts = NOTIF_TEXTS[type]?.[lang] || NOTIF_TEXTS[type]?.['en'];
+        const payload = JSON.stringify({
+          title: texts.title,
+          body:  texts.body(protestTitle, count, cities),
+          icon: '/icon-192.png',
+          badge: '/icon-72.png',
+          url,
+        });
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
           payload
@@ -219,12 +244,7 @@ export default async function pushRoutes(app) {
       .lte('starts_at', now.toISOString());
 
     for (const protest of (justStarted || [])) {
-      await sendToProtest(
-        protest.id,
-        '🗳️ La protesta ha comenzado',
-        `${protest.title} — Compártela ahora para sumar más voces`,
-        `https://voiceprotest.org/#/informe/${protest.id}`
-      );
+      await sendToProtest(protest.id, 'started', protest.title, `https://voiceprotest.org/#/informe/${protest.id}`);
     }
 
     // ── NOTIFICATION 2: Closing in 1 hour ──────────────────────────────
@@ -236,12 +256,7 @@ export default async function pushRoutes(app) {
       .lte('ends_at', in1h.toISOString());
 
     for (const protest of (closingSoon || [])) {
-      await sendToProtest(
-        protest.id,
-        '⏰ Última hora',
-        `${protest.title} — Cierra en 1 hora. Comparte para sumar más adhesiones`,
-        `https://voiceprotest.org/#/informe/${protest.id}`
-      );
+      await sendToProtest(protest.id, 'closing', protest.title, `https://voiceprotest.org/#/informe/${protest.id}`);
     }
 
     // ── NOTIFICATION 3: Just closed (ends_at in last hour, status=closed) ──
@@ -253,12 +268,7 @@ export default async function pushRoutes(app) {
       .lte('ends_at', now.toISOString());
 
     for (const protest of (justClosed || [])) {
-      await sendToProtest(
-        protest.id,
-        '✅ Resultado final',
-        `${protest.title} — ${protest.count} participantes verificados en ${protest.cities_count} ciudades. Ver informe →`,
-        `https://voiceprotest.org/#/informe/${protest.id}`
-      );
+      await sendToProtest(protest.id, 'closed', protest.title, `https://voiceprotest.org/#/informe/${protest.id}`, protest.count, protest.cities_count);
     }
 
     // ── Cleanup: delete subscriptions for protests closed >24h ago ──────

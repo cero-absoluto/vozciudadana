@@ -395,8 +395,8 @@
     "penetracionBody": "在{country}符合条件的公民中有{count}次经验证的加入。",
     "chainTitle": "🔒 验证链",
     "chainBody": "每次加入通过以下方式验证：reCAPTCHA v3 + 短信OTP + 本地SHA-256哈希 + 设备唯一性。",
-    "selloTitle": "✅ 透明印章",
-    "selloHashLabel": "🔐 关闭时的完整性哈希",
+    "selloTitle": "🔐 完整性哈希",
+    "selloHashLabel": "SHA-256完整性哈希——在关闭时从所有参与nullifier计算：",
     "selloSourceBtn": "在GitHub上查看源代码 →",
     "selloGenerated": "报告生成时间：",
     "selloId": "活动ID：",
@@ -424,7 +424,10 @@
     "embedClose": "关闭",
     "embedPreview": "预览",
     "embedVerifiedCitizens": "名经验证公民",
-    "embedJoin": "🗳️ 参与 — 身份受保护"
+    "embedJoin": "🗳️ 参与 — 身份受保护",
+    "selloDesc": "此哈希在抗议关闭时计算，对抗议ID、最终计数和按字母顺序排列的所有参与nullifier应用SHA-256。任何后续修改参与数据都会产生不同的哈希值，使篡改在数学上可检测。Nullifier是假名标识符——证明唯一性而不泄露身份。",
+    "selloVerify": "如何验证：重新计算SHA256(protest_id + \":\" + count + \":\" + 按\"|\"连接的排序nullifier)，并与上述哈希值进行比较。",
+    "selloHashPending": "完整性哈希将在抗议关闭时计算。"
   },
   "invite": {
     "loading": "验证邀请中...",

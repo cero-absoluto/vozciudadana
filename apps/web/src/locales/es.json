@@ -283,7 +283,8 @@
     "donAgotado": "⚠️ Saldo agotado — esta convocatoria necesita tu apoyo",
     "donApoyar": "☕ Apoyar esta convocatoria",
     "donAgotadoHint": "Cubre 20 verificaciones por €1 e invita a otros a contribuir.",
-    "joinSinSaldo": "Sin saldo — apoya esta protesta"
+    "joinSinSaldo": "Sin saldo — apoya esta protesta",
+    "closesOn": "Cierra el"
   },
   "verify": {
     "spinVerifying": "Verificando código...",

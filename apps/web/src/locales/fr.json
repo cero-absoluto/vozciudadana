@@ -283,7 +283,8 @@
     "donAgotado": "⚠️ Solde épuisé — cet événement a besoin de votre soutien",
     "donApoyar": "☕ Soutenir cet événement",
     "donAgotadoHint": "Couvrez 20 vérifications pour 1€ et invitez d'autres à contribuer.",
-    "joinSinSaldo": "Sans fonds — soutenez cette protestation"
+    "joinSinSaldo": "Sans fonds — soutenez cette protestation",
+    "closesOn": "Se termine le"
   },
   "verify": {
     "spinVerifying": "Vérification de votre participation...",

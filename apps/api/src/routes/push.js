@@ -127,9 +127,9 @@ export default async function pushRoutes(app) {
     const payload = JSON.stringify({
       title,
       body,
-      icon:  '/vozciudadana/icon-192.png',
-      badge: '/vozciudadana/icon-72.png',
-      url:   url || 'https://cero-absoluto.github.io/vozciudadana',
+      icon:  '/icon-192.png',
+      badge: '/icon-72.png',
+      url:   url || 'https://voiceprotest.org',
     });
 
     if (!initVapid()) return { sent: 0, error: 'VAPID not configured' };
@@ -159,58 +159,115 @@ export default async function pushRoutes(app) {
     return { sent, dead: dead.length };
   });
 
-  // ── HOURLY JOB — notify 1h before closing + cleanup expired ─────────
+  // ── Helper: send push to all subscribers of a protest ──────────────────
+  async function sendToProtest(protestId, title, body, url) {
+    const { data: adhesions } = await supabase
+      .from('adhesions')
+      .select('device_id')
+      .eq('protest_id', protestId)
+      .is('deleted_at', null);
+
+    if (!adhesions?.length) return 0;
+    const deviceIds = adhesions.map(a => a.device_id);
+
+    const { data: subs } = await supabase
+      .from('push_subscriptions')
+      .select('endpoint, p256dh, auth')
+      .in('device_id', deviceIds);
+
+    if (!subs?.length || !initVapid()) return 0;
+
+    const payload = JSON.stringify({
+      title, body,
+      icon: '/icon-192.png',
+      badge: '/icon-72.png',
+      url,
+    });
+
+    let sent = 0;
+    const dead = [];
+    await Promise.allSettled(subs.map(async sub => {
+      try {
+        await webpush.sendNotification(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+          payload
+        );
+        sent++;
+      } catch (err) {
+        if (err.statusCode === 410 || err.statusCode === 404) dead.push(sub.endpoint);
+      }
+    }));
+
+    if (dead.length) {
+      await supabase.from('push_subscriptions').delete().in('endpoint', dead);
+    }
+    return sent;
+  }
+
+  // ── HOURLY JOB — 3 notification triggers ─────────────────────────────
   async function hourlyJob() {
     const now = new Date();
     const in1h = new Date(now.getTime() + 60 * 60 * 1000);
+    const ago1h = new Date(now.getTime() - 60 * 60 * 1000);
 
-    // Find protests closing in the next 60 minutes
-    const { data: closing } = await supabase
+    // ── NOTIFICATION 1: Protest just started (starts_at in last hour) ──
+    const { data: justStarted } = await supabase
       .from('protests')
-      .select('id, title, ends_at')
+      .select('id, title, starts_at, ends_at, count')
+      .eq('status', 'active')
+      .gte('starts_at', ago1h.toISOString())
+      .lte('starts_at', now.toISOString());
+
+    for (const protest of (justStarted || [])) {
+      await sendToProtest(
+        protest.id,
+        '🗳️ La protesta ha comenzado',
+        `${protest.title} — Compártela ahora para sumar más voces`,
+        `https://voiceprotest.org/#/informe/${protest.id}`
+      );
+    }
+
+    // ── NOTIFICATION 2: Closing in 1 hour ──────────────────────────────
+    const { data: closingSoon } = await supabase
+      .from('protests')
+      .select('id, title, ends_at, count')
+      .eq('status', 'active')
       .gte('ends_at', now.toISOString())
       .lte('ends_at', in1h.toISOString());
 
-    for (const protest of (closing || [])) {
-      const { data: subs } = await supabase
-        .from('push_subscriptions')
-        .select('endpoint, p256dh, auth')
-        .eq('protest_id', protest.id);
-
-      if (!subs?.length) continue;
-
-      const payload = JSON.stringify({
-        title: '⏰ Closing in 1 hour',
-        body:  protest.title + ' — check the final report',
-        icon:  '/vozciudadana/icon-192.png',
-        badge: '/vozciudadana/icon-72.png',
-        url:   `https://cero-absoluto.github.io/vozciudadana/#/informe/${protest.id}`,
-      });
-
-      if (!initVapid()) continue;
-      const dead = [];
-      await Promise.allSettled(subs.map(async sub => {
-        try {
-          await webpush.sendNotification(
-            { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-            payload,
-          );
-        } catch (err) {
-          if (err.statusCode === 410 || err.statusCode === 404) dead.push(sub.endpoint);
-        }
-      }));
-
-      if (dead.length) {
-        await supabase.from('push_subscriptions').delete().in('endpoint', dead);
-      }
+    for (const protest of (closingSoon || [])) {
+      await sendToProtest(
+        protest.id,
+        '⏰ Última hora',
+        `${protest.title} — Cierra en 1 hora. Comparte para sumar más adhesiones`,
+        `https://voiceprotest.org/#/informe/${protest.id}`
+      );
     }
 
-    // Delete subscriptions for protests that have already closed
+    // ── NOTIFICATION 3: Just closed (ends_at in last hour, status=closed) ──
+    const { data: justClosed } = await supabase
+      .from('protests')
+      .select('id, title, ends_at, count, cities_count')
+      .eq('status', 'closed')
+      .gte('ends_at', ago1h.toISOString())
+      .lte('ends_at', now.toISOString());
+
+    for (const protest of (justClosed || [])) {
+      await sendToProtest(
+        protest.id,
+        '✅ Resultado final',
+        `${protest.title} — ${protest.count} participantes verificados en ${protest.cities_count} ciudades. Ver informe →`,
+        `https://voiceprotest.org/#/informe/${protest.id}`
+      );
+    }
+
+    // ── Cleanup: delete subscriptions for protests closed >24h ago ──────
+    const ago24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     await supabase
       .from('push_subscriptions')
       .delete()
       .not('ends_at', 'is', null)
-      .lt('ends_at', now.toISOString());
+      .lt('ends_at', ago24h.toISOString());
   }
 
   // Run every 60 minutes + once at startup

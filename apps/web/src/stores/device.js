@@ -66,10 +66,14 @@ export const useDeviceStore = defineStore('device', () => {
           'RU': '+7', 'TR': '+90', 'ZA': '+27', 'IN': '+91',
         };
         // Update simName and simPrefix for UI display (country selector default)
-        // but simCountry stays independent from IP
-        simCountry.value = data.country_code;
-        simName.value = countryNames[data.country_code] || data.country_code;
-        simPrefix.value = countryPrefixes[data.country_code] || '';
+        // simCountry must NOT be overwritten — it reflects the phone prefix chosen by the user
+        // IP country is stored separately in ipCountry for confidence calculation
+        if (!localStorage.getItem('vc_sim_set_by_user')) {
+          // Only update the UI selector if the user hasn't manually chosen a prefix
+          simName.value = countryNames[data.country_code] || data.country_code;
+          simPrefix.value = countryPrefixes[data.country_code] || '';
+          // simCountry stays as default (ES) until user explicitly selects a prefix
+        }
       }
     } catch { /* silencioso */ }
   }

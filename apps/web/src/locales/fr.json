@@ -395,8 +395,8 @@
     "penetracionBody": "{count} adhésions vérifiées sur un univers éligible de citoyens de {country}.",
     "chainTitle": "🔒 Chaîne de vérification",
     "chainBody": "Chaque adhésion a été vérifiée via : reCAPTCHA v3 + SMS OTP + hachage HMAC-SHA256 (pseudonymisation) + unicité de l'appareil.",
-    "selloTitle": "✅ Sceau de transparence",
-    "selloHashLabel": "🔐 Hash d'intégrité à la clôture",
+    "selloTitle": "🔐 Hash d'intégrité",
+    "selloHashLabel": "Hash SHA-256 d'intégrité — calculé à la clôture à partir de tous les nullifiers d'adhésion :",
     "selloSourceBtn": "Voir le code source sur GitHub →",
     "selloGenerated": "Rapport généré :",
     "selloId": "ID de l'événement :",
@@ -424,7 +424,10 @@
     "embedClose": "Fermer",
     "embedPreview": "Aperçu",
     "embedVerifiedCitizens": "citoyens vérifiés",
-    "embedJoin": "🗳️ Rejoindre — identité protégée"
+    "embedJoin": "🗳️ Rejoindre — identité protégée",
+    "selloDesc": "Ce hash est calculé au moment de la clôture de la protestation en appliquant SHA-256 à l'ID de protestation, au compte final et à tous les nullifiers d'adhésion triés alphabétiquement. Toute modification ultérieure des données d'adhésion produirait un hash différent, rendant toute manipulation mathématiquement détectable.",
+    "selloVerify": "Comment vérifier : recalculez SHA256(protest_id + \":\" + count + \":\" + nullifiers_triés_joints_avec_\"|\") et comparez avec le hash ci-dessus.",
+    "selloHashPending": "Le hash d'intégrité sera calculé à la clôture de la protestation."
   },
   "invite": {
     "loading": "Validation de l'invitation...",

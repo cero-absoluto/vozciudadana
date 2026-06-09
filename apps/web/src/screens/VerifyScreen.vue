@@ -18,9 +18,12 @@
       <div style="width:100%;margin-top:8px">
 
         <!-- Peldaño 1 — Notificación (first — ensures user gets result) -->
+        <div v-if="!notiActivada" style="font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:6px;padding:8px 10px;background:var(--bg2);border-radius:var(--r);border:.5px solid var(--border)">
+          {{ $t('verify.notiInfo') }}
+        </div>
         <button @click="activarNotificacion"
           style="width:100%;margin-bottom:10px;padding:12px;background:rgba(76,111,255,.12);border:.5px solid #4C6FFF;border-radius:var(--r);color:#4C6FFF;font-size:13px;font-weight:700;cursor:pointer">
-          🔔 {{ notiActivada ? $t('verify.notiOn') : $t('verify.notiOff') }}
+          {{ notiActivada ? $t('verify.notiOn') : $t('verify.notiOff') }}
         </button>
 
         <!-- Peldaño 2 — VIRAL -->
@@ -80,6 +83,8 @@ async function activarNotificacion() {
     // Get protest ends_at
     const protestEndsAt = protests.protests.find(p => String(p.id) === protestId)?.ends_at || null;
 
+    const locale = localStorage.getItem('vc_lang') || navigator.language?.substring(0, 2) || 'en';
+
     await fetch(`${import.meta.env.VITE_API_URL}/api/push/subscribe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -87,6 +92,7 @@ async function activarNotificacion() {
         device_id:    deviceId,
         protest_id:   protestId,
         ends_at:      protestEndsAt,
+        locale,
         subscription: sub,
       }),
     });

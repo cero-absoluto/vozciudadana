@@ -59,7 +59,8 @@
     "wrongCountry": "此活动仅面向{country}的公民。请使用该国号码。",
     "otpError": "请输入全部6位数字",
     "otpIncorrect": "验证码错误或已过期：{msg}",
-    "sendError": "发送验证码失败：{msg}"
+    "sendError": "发送验证码失败：{msg}",
+    "otpRateLimited": "出于安全原因，请等待几分钟后再请求新验证码。"
   },
   "home": {
     "geoConfidence": "地理置信度：",

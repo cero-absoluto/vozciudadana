@@ -652,7 +652,7 @@
     "collect2Title": "Localisation approximative — ville et région uniquement",
     "collect2Body": "Si vous accordez la permission GPS, vos coordonnées sont transmises via HTTPS à notre serveur et traitées temporairement par le service Nominatim d'OpenStreetMap pour déterminer votre ville, région et pays. Les coordonnées ne sont pas stockées une fois ce processus de géocodage terminé. Seuls les noms de ville et de région résultants sont conservés, ainsi qu'un booléen confirmant que le GPS était actif.",
     "collect3Title": "Identifiant anonyme de l'appareil",
-    "collect3Body": "Un identifiant aléatoire généré sur votre appareil pour éviter les adhésions en double depuis le même appareil. Il ne vous identifie pas personnellement.",
+    "collect3Body": "Voice Protest génère un identifiant aléatoire sur votre appareil pour aider à prévenir les adhésions en double, l'abus des systèmes de vérification et les requêtes automatisées en masse. Cet identifiant ne contient aucune information personnelle et est utilisé uniquement pour protéger l'intégrité et la sécurité de la plateforme.",
     "collect4Title": "Préférence de langue",
     "collect4Body": "Votre navigateur envoie un en-tête Accept-Language avec chaque requête à notre serveur. Votre préférence de langue dans l'application est stockée uniquement localement sur votre appareil et n'est pas transmise séparément.",
     "neverTitle": "Nos engagements de confidentialité",
@@ -679,7 +679,9 @@
     "metadataTitle": "Métadonnées techniques stockées par adhésion",
     "metadataBody": "Pour chaque adhésion, nous stockons : hachage HMAC-SHA256 du numéro de téléphone, ville et région (issues du géocodage), identifiant anonyme de l'appareil, score de fiabilité (60–95%), signaux géographiques utilisés (GPS / SIM / IP), horodatage approximatif (arrondi à l'heure la plus proche) et un booléen confirmant si le GPS était actif. Nous stockons ces données de manière transparente et les décrivons intégralement ici car nous croyons que les citoyens ont le droit de savoir exactement quelles informations sont conservées.",
     "pushTitle": "Notifications push (optionnel)",
-    "pushBody": "Si vous choisissez d'activer les notifications push après avoir adhéré à une protestation, l'endpoint push de votre navigateur — un identifiant technique assigné par votre fournisseur de navigateur — est stocké lié à cette protestation. Cet endpoint est utilisé uniquement pour vous envoyer la notification de résultat et est supprimé à la clôture. L'activation réduit légèrement votre pseudonymat. C'est entièrement optionnel et nécessite votre consentement explicite."
+    "pushBody": "Si vous choisissez d'activer les notifications push après avoir adhéré à une protestation, l'endpoint push de votre navigateur — un identifiant technique assigné par votre fournisseur de navigateur — est stocké lié à cette protestation. Cet endpoint est utilisé uniquement pour vous envoyer la notification de résultat et est supprimé à la clôture. L'activation réduit légèrement votre pseudonymat. C'est entièrement optionnel et nécessite votre consentement explicite.",
+    "abuseTitle": "Protection contre les abus",
+    "abuseBody": "Pour protéger les ressources de vérification et empêcher l'utilisation automatisée de la plateforme, Voice Protest peut enregistrer temporairement des identifiants techniques pseudonymisés — tels que des hachages HMAC-SHA256 de numéros de téléphone, des hachages d'IP pseudonymisés et des identifiants aléatoires d'appareils. Ces données sont utilisées exclusivement pour prévenir la fraude, le spam et les abus des systèmes de vérification. Elles sont automatiquement supprimées après 7 jours."
   },
   "funding": {
     "title": "Politique de Financement et d'Indépendance",

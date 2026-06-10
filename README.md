@@ -1,33 +1,33 @@
 🗳️ Voice Protest
 Verified, pseudonymous and uncensored citizen protest platform.
-> *"A street protest measures who can be there that day. We measure real support — with mathematical guarantees that each adhesion is a real person from the right country."*
+> *"A street protest measures who can be there that day. We measure real support — using technical safeguards designed to verify that each adhesion comes from a unique participant connected to the relevant community."*
 ![Live App](https://img.shields.io/badge/Live%20App-cero--absoluto.github.io-4CFFA4?style=flat-square)
 ![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue?style=flat-square)
 ![API](https://img.shields.io/badge/Public%20API-Open%20Data-orange?style=flat-square)
 ---
 What is Voice Protest?
-Voice Protest is a civic tech platform that allows citizens to adhere to verified protest events with full identity protection. It is not a petition platform — it only accepts formal complaints about public abuse (corruption, nepotism, negligence, repression) directed at institutions with public funds or mandate.
+Voice Protest is a civic tech platform that allows citizens to adhere to verified protest events with privacy-preserving verification. It is not a petition platform — it only accepts formal complaints about public abuse (corruption, nepotism, negligence, repression) directed at institutions with public funds or mandate.
 Every adhesion is:
-Anonymous — phone number is SHA-256 hashed locally before leaving the device
-Verified — real phone number via SMS OTP (one number = one adhesion)
+Pseudonymous — phone numbers are processed only for verification and are not stored after being transformed into an irreversible HMAC-SHA256 identifier.
+Verified — real phone number via SMS OTP (one verified phone number can support a protest only once)
 Geographically validated — SIM prefix + IP + optional GPS
-Publicly auditable — all counts are transparent and open
+Publicly auditable — aggregated results and integrity hashes are publicly available.
 Available in 🇪🇸 ES · 🇬🇧 EN · 🇫🇷 FR · 🇨🇳 中文
 ---
 Key Features
 Feature	Description
-🔒 SHA-256 local hashing	Phone number hashed on-device. Identity never stored or transmitted
-📍 GPS verification	Optional location boost raises reliability to 95%
+🔒 HMAC-SHA256 pseudonymous identifier
+Phone numbers are used only for verification and are not stored after transformation into an irreversible identifier.
+📍 GPS verification	Optional location boost can raise reliability up to 95%
 👥 Dynamic census	Wave-based trust system with peer vouching for local events
 📧 Institutional email	Any institutional domain for university/workplace events
 🌍 Geographic scopes	National (SIM+IP verified) · Local · Global
 📊 Public report	Live data, PDF export, embeddable widget for media
 🔌 Public API	Free, no auth required. For researchers and journalists
 💰 Citizen funding	Per-event balance funded by citizen donations
-📁 Archive	Permanent record of all closed events
+📁 Permanent public record of closed events and reports
 🔔 Push notifications	1h-before-close alert. Auto-deleted after event ends
-⛓️ Blockchain	Immutable counts — in development
-🧅 Tor routing	For high-risk regimes — in development
+⛓️ Public integrity ledger — planned
 ---
 Tech Stack
 Layer	Technology
@@ -40,7 +40,7 @@ Maps	OpenStreetMap / Nominatim
 Source validation	Wikidata API
 ---
 Public API
-Free, open, no authentication required. Rate limit: 120 req/min.
+Free, open, no authentication required. Aggregated data only. Rate limit: 120 req/min.
 ```
 GET /api/public/stats              # Global platform statistics
 GET /api/public/protests           # List all protests (filter by status, scope, country)
@@ -143,10 +143,10 @@ CORS_ORIGIN=https://voiceprotest.org
 ---
 Philosophy
 Voice Protest has no ideology. It is neutral infrastructure for democratic expression, accessible from anywhere, without physical risk.
-No advertising — ever
-No data sales — ever
-No institutional funding — by design
-No identity stored — mathematically guaranteed
+No advertising.
+No data sales.
+No institutional funding by design.
+Direct personal identifiers are not stored after verification. Technical safeguards are used to help verify that each adhesion comes from a unique participant connected to the relevant community.
 Sustained by citizen donations. Independent by structure, not by promise.
 ---
 Contributing

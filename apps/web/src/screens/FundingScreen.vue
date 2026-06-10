@@ -37,6 +37,24 @@
         <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.verificationProtectionBody') }}</div>
       </div>
 
+      <!-- Allocation -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.allocationTitle') }}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.allocationBody') }}</div>
+      </div>
+
+      <!-- Surplus -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.surplusTitle') }}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.surplusBody') }}</div>
+      </div>
+
+      <!-- Sustainability fund -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.sustainabilityTitle') }}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.sustainabilityBody') }}</div>
+      </div>
+
       <!-- What we accept -->
       <div style="margin-bottom:20px">
         <div style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('funding.acceptTitle') }}</div>
@@ -80,24 +98,6 @@
           style="display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r2);text-decoration:none;color:var(--text)">
           ☕ Ko-fi — ko-fi.com/voiceprotest
         </a>
-      </div>
-
-      <!-- Allocation -->
-      <div style="margin-bottom:20px">
-        <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.allocationTitle') }}</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.allocationBody') }}</div>
-      </div>
-
-      <!-- Surplus -->
-      <div style="margin-bottom:20px">
-        <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.surplusTitle') }}</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.surplusBody') }}</div>
-      </div>
-
-      <!-- Sustainability fund -->
-      <div style="margin-bottom:20px">
-        <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.sustainabilityTitle') }}</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.sustainabilityBody') }}</div>
       </div>
 
       <!-- Financial transparency -->

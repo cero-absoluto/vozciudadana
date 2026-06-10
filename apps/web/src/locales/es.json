@@ -651,7 +651,7 @@
     "collect2Title": "Ubicación aproximada — solo ciudad y región",
     "collect2Body": "Si concedes permiso de GPS, tus coordenadas se transmiten por HTTPS a nuestro servidor y son procesadas temporalmente por el servicio Nominatim de OpenStreetMap para determinar tu ciudad, región y país. Las coordenadas no se almacenan una vez completado este proceso de geocodificación. Solo se conservan los nombres de ciudad y región resultantes, junto con un booleano que confirma que el GPS estaba activo.",
     "collect3Title": "Identificador anónimo de dispositivo",
-    "collect3Body": "Un ID aleatorio generado en tu dispositivo para evitar adhesiones duplicadas desde el mismo dispositivo. No te identifica personalmente.",
+    "collect3Body": "Voice Protest genera un identificador aleatorio en tu dispositivo para ayudar a prevenir adhesiones duplicadas, el abuso de los sistemas de verificación y las solicitudes masivas automatizadas. Este identificador no contiene información personal y se utiliza exclusivamente para proteger la integridad y seguridad de la plataforma.",
     "collect4Title": "Preferencia de idioma",
     "collect4Body": "Tu navegador envía una cabecera Accept-Language con cada petición a nuestro servidor. Tu preferencia de idioma dentro de la app se almacena solo localmente en tu dispositivo y no se transmite por separado.",
     "neverTitle": "Nuestros compromisos de privacidad",
@@ -678,7 +678,9 @@
     "metadataTitle": "Metadatos técnicos almacenados por adhesión",
     "metadataBody": "Por cada adhesión almacenamos: hash HMAC-SHA256 del número de teléfono, ciudad y región (obtenidas por geocodificación), identificador anónimo de dispositivo, puntuación de fiabilidad (60–95%), señales geográficas utilizadas (GPS / SIM / IP), marca temporal aproximada (redondeada a la hora más cercana) y un booleano que confirma si el GPS estaba activo. Almacenamos estos datos de forma transparente y los describimos aquí íntegramente porque creemos que los ciudadanos tienen derecho a saber exactamente qué información se conserva.",
     "pushTitle": "Notificaciones push (opcional)",
-    "pushBody": "Si eliges activar las notificaciones push tras adherirte a una convocatoria, el endpoint push de tu navegador — un identificador técnico asignado por el proveedor de tu navegador (Google, Mozilla, etc.) — se almacena vinculado a esa convocatoria. Este endpoint se usa exclusivamente para enviarte la notificación del resultado y se elimina cuando la convocatoria se cierra. Activar las notificaciones reduce ligeramente tu pseudonimidad. Es completamente opcional y requiere tu consentimiento explícito."
+    "pushBody": "Si eliges activar las notificaciones push tras adherirte a una convocatoria, el endpoint push de tu navegador — un identificador técnico asignado por el proveedor de tu navegador (Google, Mozilla, etc.) — se almacena vinculado a esa convocatoria. Este endpoint se usa exclusivamente para enviarte la notificación del resultado y se elimina cuando la convocatoria se cierra. Activar las notificaciones reduce ligeramente tu pseudonimidad. Es completamente opcional y requiere tu consentimiento explícito.",
+    "abuseTitle": "Protección frente al abuso",
+    "abuseBody": "Para proteger los recursos de verificación y evitar el uso automatizado de la plataforma, Voice Protest puede registrar de forma temporal identificadores técnicos pseudonimizados — como hashes HMAC-SHA256 de números de teléfono, hashes de IP pseudonimizadas e identificadores aleatorios de dispositivo. Estos registros se utilizan exclusivamente para prevenir fraude, spam y abuso de los sistemas de verificación. Se eliminan automáticamente a los 7 días."
   },
   "funding": {
     "title": "Política de Financiación e Independencia",

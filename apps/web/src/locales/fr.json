@@ -59,7 +59,8 @@
     "wrongCountry": "Cet événement est réservé aux citoyens de {country}. Utilisez un numéro de ce pays.",
     "otpError": "Entrez les 6 chiffres",
     "otpIncorrect": "Code incorrect ou expiré : {msg}",
-    "sendError": "Erreur d'envoi du code : {msg}"
+    "sendError": "Erreur d'envoi du code : {msg}",
+    "otpRateLimited": "Pour des raisons de sécurité, veuillez patienter quelques minutes avant de demander un nouveau code."
   },
   "home": {
     "geoConfidence": "Confiance géographique :",

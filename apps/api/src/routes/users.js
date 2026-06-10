@@ -2,23 +2,28 @@ import { createHash, createHmac } from 'node:crypto';
 import { supabase } from '../services/supabase.js';
 import { sendOtp, verifyOtp } from '../services/twilio.js';
 
-/** Hash a phone number using HMAC-SHA256 with a server-side secret.
- *  This prevents rainbow table attacks — without the secret, hashes
- *  cannot be reversed even if the database is compromised.
- *  Secret is stored in PHONE_HASH_SECRET environment variable.
- */
+/** Hash a phone number using HMAC-SHA256 with a server-side secret. */
 function hashPhone(phoneE164) {
   const secret = process.env.PHONE_HASH_SECRET;
   if (!secret) {
-    // Development fallback — log warning but continue
     console.warn('[SECURITY] PHONE_HASH_SECRET not set — using plain SHA-256. Set this variable in production.');
     return createHash('sha256').update(phoneE164).digest('hex');
   }
   return createHmac('sha256', secret).update(phoneE164).digest('hex');
 }
 
+/** Hash an IP address using HMAC-SHA256 — pseudonymous, not stored in plain text.
+ *  Uses same SERVER_SECRET as phone hashing to prevent dictionary attacks.
+ *  IP space is small enough to be brute-forced with plain SHA-256.
+ */
+function hashIp(ip) {
+  const secret = process.env.PHONE_HASH_SECRET || 'fallback-dev-secret';
+  return createHmac('sha256', secret).update(ip || '').digest('hex').substring(0, 32);
+}
+
 /** @param {import('fastify').FastifyInstance} app */
 export default async function userRoutes(app) {
+
   // POST /api/users/request-otp
   app.post('/request-otp', {
     config: { rateLimit: { max: 5, timeWindow: '5 minutes' } },
@@ -29,23 +34,57 @@ export default async function userRoutes(app) {
         properties: {
           phone:           { type: 'string', minLength: 8, maxLength: 16, pattern: '^\\+[1-9]\\d{7,14}$' },
           recaptcha_token: { type: 'string', minLength: 1 },
+          device_id:       { type: 'string', minLength: 8, maxLength: 128, nullable: true },
+          protest_id:      { type: 'string', nullable: true },
         },
         additionalProperties: false,
       },
     },
   }, async (req, reply) => {
-    const { phone, recaptcha_token } = req.body;
+    const { phone, recaptcha_token, device_id, protest_id } = req.body;
 
+    // ── 1. Verify reCAPTCHA first ──────────────────────────────────────────
     await verifyRecaptcha(recaptcha_token, 'request_otp', req, reply);
 
     const phone_hash = hashPhone(phone);
+    const ip_hash    = hashIp(req.ip || req.headers['x-forwarded-for']);
 
+    // ── 2. Check progressive cooldown for this device ──────────────────────
+    if (device_id) {
+      const { data: cooldown } = await supabase.rpc('get_otp_cooldown', { p_device_id: device_id });
+      if (cooldown > 0) {
+        return reply.tooManyRequests('For security reasons, please wait a few minutes before requesting another code.');
+      }
+    }
+
+    // ── 3. Check rate limits (phone, device, IP, device+protest) ──────────
+    const { data: limitCheck } = await supabase.rpc('check_otp_rate_limit', {
+      p_phone_hash: phone_hash,
+      p_device_id:  device_id || null,
+      p_ip_hash:    ip_hash,
+      p_protest_id: protest_id || null,
+    });
+
+    if (!limitCheck?.allowed) {
+      req.log.warn({ reason: limitCheck?.reason }, 'OTP rate limit exceeded');
+      return reply.tooManyRequests('For security reasons, please wait a few minutes before requesting another code.');
+    }
+
+    // ── 4. Log OTP request ────────────────────────────────────────────────
     const { error } = await supabase
       .from('otp_requests')
-      .insert({ phone_hash, requested_at: new Date().toISOString() });
+      .insert({
+        phone_hash,
+        device_id:   device_id || null,
+        ip_hash,
+        protest_id:  protest_id || null,
+        status:      'sent',
+        requested_at: new Date().toISOString(),
+      });
 
     if (error) throw error;
 
+    // ── 5. Send SMS ───────────────────────────────────────────────────────
     await sendOtp(phone);
     return { sent: true };
   });
@@ -70,15 +109,27 @@ export default async function userRoutes(app) {
     const { phone, otp, device_id, country_code } = req.body;
 
     const approved = await verifyOtp(phone, otp);
-    if (!approved) return reply.unauthorized('OTP inválido o expirado');
+    if (!approved) {
+      // Mark OTP as expired on failure
+      await supabase
+        .from('otp_requests')
+        .update({ status: 'expired' })
+        .eq('device_id', device_id)
+        .eq('status', 'sent');
+      return reply.unauthorized('OTP inválido o expirado');
+    }
 
     const phone_hash = hashPhone(phone);
 
-    // Note: we allow multiple devices per phone number, but each device can only be verified with one phone number. 
-    // This means that if a user tries to verify a phone number that's already verified on another device, 
-    // we won't create a new device record but return the existing one. 
-    // This is to prevent abuse where someone could verify multiple phone numbers on the same device (i.e: web) to gain more "confidence" in the system.
-    // If this phone is already verified on another device, return it directly.
+    // Mark OTP as completed
+    await supabase
+      .from('otp_requests')
+      .update({ status: 'completed', completed_at: new Date().toISOString() })
+      .eq('device_id', device_id)
+      .eq('phone_hash', phone_hash)
+      .eq('status', 'sent');
+
+    // If phone already verified on another device, return it
     const { data: existing } = await supabase
       .from('devices')
       .select('id')
@@ -98,7 +149,7 @@ export default async function userRoutes(app) {
     return { verified: true, device_id: data.id };
   });
 
-  // GET /api/users/device/:id/locks — active protest locks for a device
+  // GET /api/users/device/:id/locks
   app.get('/device/:id/locks', {
     schema: {
       params: {
@@ -118,16 +169,9 @@ export default async function userRoutes(app) {
   });
 }
 
-/**
- * Verify a reCAPTCHA v3 token server-side.
- * @param {string} token
- * @param {string} expectedAction
- * @param {import('fastify').FastifyRequest} req
- * @param {import('fastify').FastifyReply} reply
- */
 async function verifyRecaptcha(token, expectedAction, req, reply) {
   const secret = process.env.RECAPTCHA_SECRET;
-  if (!secret) return; // Skip when secret not configured (dev)
+  if (!secret) return;
 
   const res = await fetch(
     `https://www.google.com/recaptcha/api/siteverify?secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}`,

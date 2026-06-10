@@ -137,10 +137,10 @@
     </div>
     <div class="vc-meta" id="vc-meta-${id}"></div>
     <a class="vc-btn" href="${APP}/#/protest/${id}" target="_blank" rel="noopener">
-      🗳️ Join anonymously
+      🗳️ Join — identity protected
     </a>
     <div class="vc-footer">
-      Anonymous · Verified · Uncensored ·
+      Verified · Privacy-preserving · Uncensored ·
       <a href="${APP}" target="_blank" rel="noopener">voiceprotest.org</a>
     </div>
   `;

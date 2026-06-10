@@ -63,6 +63,12 @@
         <div style="font-size:14px;color:var(--text2);line-height:1.7">{{ $t('privacy.pushBody') }}</div>
       </div>
 
+      <!-- Section: Abuse protection -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('privacy.abuseTitle') }}</div>
+        <div style="font-size:14px;color:var(--text2);line-height:1.7">{{ $t('privacy.abuseBody') }}</div>
+      </div>
+
       <!-- Section: Data retention -->
       <div style="margin-bottom:20px">
         <div style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('privacy.retentionTitle') }}</div>

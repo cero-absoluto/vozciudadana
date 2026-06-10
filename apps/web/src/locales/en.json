@@ -723,8 +723,6 @@
     "noInfluence4": "They do not buy results.",
     "verificationProtectionTitle": "Protection of verification resources",
     "verificationProtectionBody": "Voice Protest applies technical measures to prevent abusive verification code requests, automated attempts and malicious consumption of resources. These measures help protect the funds allocated to SMS and email verification so they can be used for legitimate participation.",
-    "splitTitle": "How protest donations are allocated",
-    "splitBody": "Donations directed to a specific protest are split between: 90% allocated to that protest's verification budget, and 10% allocated to the platform sustainability fund. This split may be adjusted in the future and will always be publicly documented.",
     "surplusTitle": "Unused balances",
     "surplusBody": "When a protest closes with unused verification funds, the remaining balance may be transferred to the platform sustainability fund and used exclusively for infrastructure, security, audits and maintenance.",
     "allocationTitle": "How donations are allocated",

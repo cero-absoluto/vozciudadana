@@ -6,6 +6,12 @@ const VALID_REGIONS   = ['region', 'provincia', 'ciudad', 'distrito', 'instituci
 const VALID_RISK      = ['low', 'med', 'high', 'critical'];
 const COUNTRY_RE      = /^[A-Z]{2}$/;
 
+// ── Configurable costs and fees (set via Railway env vars) ──────────────
+const SMS_COST_EUR      = parseFloat(process.env.SMS_COST_EUR      || '0.05');
+const EMAIL_COST_EUR    = parseFloat(process.env.EMAIL_COST_EUR     || '0.01');
+const PLATFORM_FEE_PCT  = parseFloat(process.env.PLATFORM_FEE_PERCENT || '10') / 100;
+const MAX_DONATION_EUR  = parseFloat(process.env.MAX_DONATION_EUR   || '10');
+
 /** @param {import('fastify').FastifyInstance} app */
 export default async function protestRoutes(app) {
   // GET /api/protests — list active protests (optionally filter by scope/country)
@@ -302,7 +308,7 @@ export default async function protestRoutes(app) {
     // Descontar saldo por adhesion (~0.05euro por verificacion SMS)
     if (protest.saldo_euros !== null && protest.saldo_euros > 0) {
       await supabase.from('protests')
-        .update({ saldo_euros: Math.max(0, protest.saldo_euros - 0.05) })
+        .update({ saldo_euros: Math.max(0, protest.saldo_euros - SMS_COST_EUR) })
         .eq('id', req.params.id);
     }
 
@@ -369,7 +375,7 @@ export default async function protestRoutes(app) {
       .order('created_at', { ascending: false })
       .limit(20);
 
-    const adhesiones_posibles = Math.floor((protest?.saldo_euros || 0) / 0.05);
+    const adhesiones_posibles = Math.floor((protest?.saldo_euros || 0) / SMS_COST_EUR);
 
     return {
       saldo_euros:       protest?.saldo_euros || 0,
@@ -393,7 +399,7 @@ export default async function protestRoutes(app) {
         type: 'object',
         required: ['importe', 'admin_secret'],
         properties: {
-          importe:      { type: 'number', minimum: 0.01, maximum: 10000 },
+          importe:      { type: 'number', minimum: 0.50, maximum: 100 },
           mensaje:      { type: 'string', maxLength: 200, nullable: true },
           admin_secret: { type: 'string', minLength: 1 },
         },
@@ -415,7 +421,12 @@ export default async function protestRoutes(app) {
 
     if (!protest) return reply.notFound('Convocatoria no encontrada');
 
-    const nuevo_saldo   = (protest.saldo_euros || 0) + importe;
+    // 90/10 split — configurable via PLATFORM_FEE_PERCENT env var
+    const fee_percent         = Math.round(PLATFORM_FEE_PCT * 100);
+    const importe_plataforma  = parseFloat((importe * PLATFORM_FEE_PCT).toFixed(2));
+    const importe_convocatoria = parseFloat((importe - importe_plataforma).toFixed(2));
+
+    const nuevo_saldo   = (protest.saldo_euros || 0) + importe_convocatoria;
     const nuevo_count   = (protest.donaciones_count || 0) + 1;
     const nuevo_total   = (protest.donaciones_total || 0) + importe;
 
@@ -426,13 +437,46 @@ export default async function protestRoutes(app) {
       ultima_donacion:  new Date().toISOString(),
     }).eq('id', req.params.id);
 
-    await supabase.from('donaciones').insert({
-      protest_id: req.params.id,
+    // Record donation with split
+    const { data: donacion } = await supabase.from('donaciones').insert({
+      protest_id:            req.params.id,
       importe,
+      importe_convocatoria,
+      importe_plataforma,
+      fee_percent,
       mensaje: mensaje || null,
+    }).select().single();
+
+    // Record platform fund income
+    await supabase.from('platform_fund').insert({
+      type:        'income',
+      amount:      importe_plataforma,
+      source:      'donation_fee',
+      protest_id:  req.params.id,
+      description: `${fee_percent}% platform fee from donation of €${importe}`,
     });
 
-    return { ok: true, saldo_nuevo: nuevo_saldo, adhesiones_posibles: Math.floor(nuevo_saldo / 0.05) };
+    // Record financial movements
+    await supabase.from('financial_movements').insert([
+      {
+        type:        'donation_protest',
+        protest_id:  req.params.id,
+        donation_id: donacion?.id || null,
+        amount:      importe_convocatoria,
+        destination: 'protest_balance',
+        description: `Donation credited to protest (${100 - fee_percent}%)`,
+      },
+      {
+        type:        'donation_platform',
+        protest_id:  req.params.id,
+        donation_id: donacion?.id || null,
+        amount:      importe_plataforma,
+        destination: 'platform_fund',
+        description: `Platform fee from donation (${fee_percent}%)`,
+      },
+    ]);
+
+    return { ok: true, saldo_nuevo: nuevo_saldo, adhesiones_posibles: Math.floor(nuevo_saldo / SMS_COST_EUR) };
   });
 
   // GET /api/protests/archivo — convocatorias cerradas

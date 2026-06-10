@@ -720,6 +720,8 @@
     "noInfluence1": "捐款有助于覆盖技术成本。",
     "noInfluence2": "不购买可见度。",
     "noInfluence3": "不购买影响力。",
-    "noInfluence4": "不购买结果。"
+    "noInfluence4": "不购买结果。",
+    "verificationProtectionTitle": "验证资源保护",
+    "verificationProtectionBody": "Voice Protest采取技术措施防止滥用验证码请求、自动化尝试和恶意消耗资源。这些措施有助于保护分配给短信和电子邮件验证的资金，使其能够用于合法参与。"
   }
 }

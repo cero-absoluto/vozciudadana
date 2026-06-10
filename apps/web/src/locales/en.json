@@ -652,7 +652,7 @@
     "collect2Title": "Approximate location — city and region only",
     "collect2Body": "If you grant GPS permission, your coordinates are transmitted over HTTPS to our server and temporarily processed by the OpenStreetMap Nominatim service to determine your city, region and country. The coordinates are not stored after this geocoding process is complete. Only the resulting city and region names are retained, along with a boolean confirming that GPS was active.",
     "collect3Title": "Anonymous device identifier",
-    "collect3Body": "A random ID generated on your device to prevent duplicate adhesions from the same device. It does not identify you personally.",
+    "collect3Body": "Voice Protest generates a random identifier on your device to help prevent duplicate adhesions, abuse of verification systems and automated mass requests. This identifier contains no personal information and is used solely to protect the integrity and security of the platform.",
     "collect4Title": "Language preference",
     "collect4Body": "Your browser sends an Accept-Language header with each request to our server. Your in-app language preference is stored locally on your device only and is not transmitted separately.",
     "neverTitle": "Our privacy commitments",
@@ -679,7 +679,9 @@
     "metadataTitle": "Technical metadata stored per adhesion",
     "metadataBody": "For each adhesion, we store: HMAC-SHA256 hash of phone number, city and region (from geocoding), anonymous device identifier, reliability score (60–95%), geographic signals used (GPS / SIM / IP), approximate timestamp (rounded to the nearest hour), and a boolean confirming GPS was active. We store this data transparently and describe it fully here because we believe citizens have the right to know exactly what information is retained.",
     "pushTitle": "Push notifications (optional)",
-    "pushBody": "If you choose to enable push notifications after joining a protest, your browser's push endpoint — a technical identifier assigned by your browser provider (Google, Mozilla, etc.) — is stored linked to that protest. This endpoint is used solely to send you the result notification and is deleted when the protest closes. Enabling notifications slightly reduces your pseudonymity. It is entirely optional and requires your explicit consent."
+    "pushBody": "If you choose to enable push notifications after joining a protest, your browser's push endpoint — a technical identifier assigned by your browser provider (Google, Mozilla, etc.) — is stored linked to that protest. This endpoint is used solely to send you the result notification and is deleted when the protest closes. Enabling notifications slightly reduces your pseudonymity. It is entirely optional and requires your explicit consent.",
+    "abuseTitle": "Protection against abuse",
+    "abuseBody": "To protect verification resources and prevent automated use of the platform, Voice Protest may temporarily record pseudonymous technical identifiers — such as HMAC-SHA256 hashes of phone numbers, pseudonymous IP hashes and random device identifiers. These records are used exclusively to prevent fraud, spam and abuse of verification systems. They are automatically deleted after 7 days."
   },
   "funding": {
     "title": "Funding & Independence Policy",

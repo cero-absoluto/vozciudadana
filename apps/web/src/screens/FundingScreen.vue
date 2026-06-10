@@ -31,6 +31,12 @@
         </div>
       </div>
 
+      <!-- Verification protection -->
+      <div style="background:rgba(124,111,255,.06);border:.5px solid rgba(124,111,255,.15);border-radius:12px;padding:14px 16px;margin-bottom:20px">
+        <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:6px">🛡️ {{ $t('funding.verificationProtectionTitle') }}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.verificationProtectionBody') }}</div>
+      </div>
+
       <!-- What we accept -->
       <div style="margin-bottom:20px">
         <div style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('funding.acceptTitle') }}</div>
@@ -129,3 +135,4 @@ const rejectItems = computed(() => [
   t('funding.reject6'),
 ]);
 </script>
+

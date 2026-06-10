@@ -15,7 +15,7 @@
       <div style="width:100%" v-if="!otpVisible">
         <div class="phone-wrap">
           <label for="cc-sel" class="sr-only">{{ $t('auth.prefixLabel') }}</label>
-          <select id="cc-sel" class="cc-sel" v-model="countryCode" :disabled="countryCodes.length === 0" @change="onPrefixChanged">
+          <select id="cc-sel" class="cc-sel" v-model="countryCode" :disabled="countryCodes.length === 0">
             <option v-if="countryCodes.length === 0" :value="countryCode">...</option>
             <option v-for="c in countryCodes" :key="c.iso2" :value="c.iso2">
               {{ c.flag }} +{{ c.dial_code }}
@@ -180,11 +180,6 @@ async function sha256(text) {
 }
 
 const hashDisplay = ref(t('auth.hashPlaceholder'));
-function onPrefixChanged() {
-  // User explicitly selected a prefix — mark it so IP detection doesn't override
-  localStorage.setItem('vc_sim_set_by_user', '1');
-}
-
 watch([countryCode, phone], async () => {
   const v = phone.value.replace(/\D/g, '');
   if (v.length >= 4) {
@@ -287,7 +282,11 @@ async function sendSMS() {
     otpDigits.value = ['', '', '', '', '', ''];
     otpVisible.value = true;
   } catch (err) {
-    ui.showToast(t('auth.sendError', { msg: err.message }));
+    if (err.status === 429 || err.message?.includes('429') || err.code === 'otp_rate_limited') {
+      ui.showToast(t('auth.otpRateLimited'));
+    } else {
+      ui.showToast(t('auth.sendError', { msg: err.message }));
+    }
   } finally {
     sending.value = false;
   }

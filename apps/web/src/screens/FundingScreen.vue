@@ -82,16 +82,22 @@
         </a>
       </div>
 
-      <!-- Donation split 90/10 -->
+      <!-- Allocation -->
       <div style="margin-bottom:20px">
-        <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.splitTitle') }}</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.splitBody') }}</div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.allocationTitle') }}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.allocationBody') }}</div>
       </div>
 
       <!-- Surplus -->
       <div style="margin-bottom:20px">
         <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.surplusTitle') }}</div>
         <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.surplusBody') }}</div>
+      </div>
+
+      <!-- Sustainability fund -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.sustainabilityTitle') }}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.sustainabilityBody') }}</div>
       </div>
 
       <!-- Financial transparency -->

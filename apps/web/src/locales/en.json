@@ -59,7 +59,8 @@
     "wrongCountry": "This event is only for citizens of {country}. Use a number from that country.",
     "otpError": "Enter all 6 digits",
     "otpIncorrect": "Incorrect or expired code: {msg}",
-    "sendError": "Error sending the code: {msg}"
+    "sendError": "Error sending the code: {msg}",
+    "otpRateLimited": "For security reasons, please wait a few minutes before requesting another code."
   },
   "home": {
     "geoConfidence": "Geographic confidence:",

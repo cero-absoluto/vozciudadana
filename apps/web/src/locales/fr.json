@@ -695,7 +695,7 @@
     "costTwilio": "Vérification SMS — par adhésion",
     "costResend": "Vérification d'email institutionnel (actuellement gratuit)",
     "costDomain": "Domaine voiceprotest.org",
-    "smsCost": "💬 La vérification SMS génère un coût variable par tentative — généralement quelques centimes selon le pays, le fournisseur et les nouvelles tentatives. Les contributions associées à une protestation aident à couvrir ces coûts techniques. Participer ne nécessite pas de paiement.",
+    "smsCost": "Les contributions aident à couvrir à la fois les coûts de vérification des protestations et les coûts opérationnels nécessaires pour maintenir Voice Protest indépendant. Les coûts de vérification varient selon le pays, le fournisseur et le nombre de tentatives.",
     "acceptTitle": "Ce que nous acceptons",
     "accept1": "Dons individuels de citoyens de tout montant.",
     "accept2": "Contributions récurrentes modestes pour couvrir les coûts opérationnels.",

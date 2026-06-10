@@ -720,6 +720,8 @@
     "noInfluence1": "Les contributions aident à couvrir les coûts techniques.",
     "noInfluence2": "Elles n'achètent pas de visibilité.",
     "noInfluence3": "Elles n'achètent pas d'influence.",
-    "noInfluence4": "Elles n'achètent pas de résultats."
+    "noInfluence4": "Elles n'achètent pas de résultats.",
+    "verificationProtectionTitle": "Protection des ressources de vérification",
+    "verificationProtectionBody": "Voice Protest applique des mesures techniques pour prévenir les demandes abusives de codes de vérification, les tentatives automatisées et la consommation malveillante des ressources. Ces mesures aident à protéger les fonds alloués aux vérifications SMS et email afin qu'ils puissent être utilisés pour des participations légitimes."
   }
 }

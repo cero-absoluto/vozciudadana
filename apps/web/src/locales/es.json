@@ -59,7 +59,8 @@
     "wrongCountry": "Esta convocatoria es solo para ciudadanos de {country}. Usa un número de ese país.",
     "otpError": "Introduce los 6 dígitos",
     "otpIncorrect": "Código incorrecto o expirado: {msg}",
-    "sendError": "Error al enviar el código: {msg}"
+    "sendError": "Error al enviar el código: {msg}",
+    "otpRateLimited": "Por seguridad, espera unos minutos antes de solicitar otro código."
   },
   "home": {
     "geoConfidence": "Confianza geográfica:",

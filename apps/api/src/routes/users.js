@@ -67,7 +67,7 @@ export default async function userRoutes(app) {
 
     if (!limitCheck?.allowed) {
       req.log.warn({ reason: limitCheck?.reason }, 'OTP rate limit exceeded');
-      return reply.tooManyRequests('For security reasons, please wait a few minutes before requesting another code.');
+      return reply.code(429).send({ error: 'RATE_LIMITED', code: 'otp_rate_limited' });
     }
 
     // ── 4. Log OTP request ────────────────────────────────────────────────

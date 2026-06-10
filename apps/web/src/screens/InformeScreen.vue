@@ -493,7 +493,7 @@ function downloadPDF() {
   body('Each adhesion was verified through a multi-layer process:');
   body('  1. reCAPTCHA v3 — proof of humanity (bot detection)');
   body('  2. SMS OTP — real phone number verification (one adhesion per number)');
-  body('  3. SHA-256 local hash — irreversible anonymisation (identity never stored)');
+  body('  3. HMAC-SHA256 pseudonymous identifier — phone number not stored after verification. Direct personal identifiers are not stored after verification.');
   body('  4. Device uniqueness — one device per protest scope');
   body('  5. Geographic verification — SIM prefix, IP geolocation, GPS (optional)');
   nl(2); line();
@@ -506,7 +506,7 @@ function downloadPDF() {
   kv('Report generated', new Date().toISOString());
   if (d.protest.hash_integridad) {
     nl(1);
-    body('Integrity hash (SHA-256 at closure):', {bold:true});
+    body('Integrity hash (HMAC-SHA256 at closure):', {bold:true});
     doc.setFont('courier','normal'); doc.setFontSize(9); doc.setTextColor(76,255,164);
     const hashLines = doc.splitTextToSize(d.protest.hash_integridad, CW);
     hashLines.forEach(l => { doc.text(l, M, y); nl(4); });

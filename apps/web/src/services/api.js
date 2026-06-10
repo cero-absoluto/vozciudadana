@@ -70,7 +70,7 @@ export function createProtest(data) {
 }
 
 /**
- * Join a protest (anonymous adhesion).
+ * Join a protest (pseudonymous verified adhesion).
  * @param {number|string} protestId
  * @param {{ phone_hash: string, doc_hash?: string, device_id: string, recaptcha_token: string }} payload
  * @returns {Promise<{ receipt: string }>}

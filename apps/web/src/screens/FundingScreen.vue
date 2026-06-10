@@ -82,10 +82,25 @@
         </a>
       </div>
 
+      <!-- Donation split 90/10 -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.splitTitle') }}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.splitBody') }}</div>
+      </div>
+
+      <!-- Surplus -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.surplusTitle') }}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.surplusBody') }}</div>
+      </div>
+
       <!-- Financial transparency -->
       <div style="margin-bottom:20px">
         <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.transparencyTitle') }}</div>
         <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.transparencyBody') }}</div>
+        <div style="margin-top:8px;padding:8px 10px;background:var(--bg2);border-radius:var(--r);font-size:11px;color:var(--text3);font-style:italic">
+          ℹ️ {{ $t('funding.donationsNote') }}
+        </div>
       </div>
 
       <!-- Source code note -->

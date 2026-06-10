@@ -722,8 +722,6 @@
     "noInfluence4": "No compran resultados.",
     "verificationProtectionTitle": "Protección de los recursos de verificación",
     "verificationProtectionBody": "Voice Protest aplica medidas técnicas destinadas a prevenir solicitudes abusivas de códigos de verificación, intentos automatizados y consumo malicioso de recursos. Estas medidas ayudan a proteger los fondos destinados a verificaciones SMS y email para que puedan utilizarse en participaciones legítimas.",
-    "splitTitle": "Cómo se distribuyen las donaciones a convocatorias",
-    "splitBody": "Las donaciones dirigidas a una convocatoria específica se distribuyen entre: el 90% destinado al presupuesto de verificación de esa convocatoria, y el 10% al fondo de sostenibilidad de la plataforma. Esta distribución podrá ajustarse en el futuro y siempre quedará documentada públicamente.",
     "surplusTitle": "Saldos no utilizados",
     "surplusBody": "Cuando una convocatoria se cierra con fondos de verificación no utilizados, el saldo restante puede transferirse al fondo de sostenibilidad de la plataforma y usarse exclusivamente para infraestructura, seguridad, auditorías y mantenimiento.",
     "allocationTitle": "Cómo se distribuyen las donaciones",

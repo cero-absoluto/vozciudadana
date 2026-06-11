@@ -434,7 +434,13 @@
     "embedJoin": "🗳️ Rejoindre — identité protégée",
     "selloDesc": "Ce hash est calculé au moment de la clôture en appliquant HMAC-SHA256 à l'ID de protestation, au compte final, à la répartition de fiabilité, à la distribution par ville, aux horodatages et à tous les identifiants internes. Il sert de sceau anti-falsification — toute modification après clôture produirait un hash différent. La vérification publique indépendante est prévue pour une version future.",
     "selloVerify": "Note : Le hash d'intégrité actuel est un sceau cryptographique interne calculé à la clôture de la protestation. La vérification publique indépendante sera disponible dans une version future.",
-    "selloHashPending": "Le hash d'intégrité sera calculé à la clôture de la protestation."
+    "selloHashPending": "Le hash d'intégrité sera calculé à la clôture de la protestation.",
+    "verifyBtn": "Vérifier l'intégrité",
+    "verifyRunning": "Vérification...",
+    "verifyOk": "✅ Intégrité vérifiée — ce rapport correspond aux données d'intégrité publiques.",
+    "verifyFail": "❌ Discordance d'intégrité — le rapport peut avoir été modifié ou les données sont incohérentes.",
+    "verifyV1": "ℹ️ Ce rapport utilise la version d'intégrité 1 (sceau interne). La vérification publique indépendante est disponible à partir de la version 2.",
+    "verifyNoHash": "Aucun hash d'intégrité disponible pour cette protestation."
   },
   "invite": {
     "loading": "Validation de l'invitation...",

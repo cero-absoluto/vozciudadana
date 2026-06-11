@@ -732,6 +732,10 @@
     "splitTitle": "How protest donations are allocated",
     "splitBody": "Donations directed to a specific protest are split between: 90% allocated to that protest's verification budget, and 10% allocated to the platform sustainability fund. This split may be adjusted in the future and will always be publicly documented.",
     "surplusTitle": "Unused verification funds",
-    "surplusBody": "When a protest closes with unused verification funds, the remaining balance may be transferred to the platform sustainability fund and used exclusively for infrastructure, verification systems, security audits and platform maintenance."
+    "surplusBody": "When a protest closes with unused verification funds, the remaining balance may be transferred to the platform sustainability fund and used exclusively for infrastructure, verification systems, security audits and platform maintenance.",
+    "allocationTitle": "How donations are allocated",
+    "allocationBody": "Contributions may be divided between protest verification resources and the long-term sustainability of Voice Protest. The allocation model is publicly documented and may evolve as the project matures.",
+    "sustainabilityTitle": "Platform sustainability fund",
+    "sustainabilityBody": "The sustainability fund exists to preserve the long-term independence of Voice Protest. It may be used for hosting, security, verification systems, audits and future maintenance of the platform."
   }
 }

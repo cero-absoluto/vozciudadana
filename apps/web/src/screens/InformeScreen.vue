@@ -232,6 +232,18 @@
             <div v-else style="margin-bottom:12px;padding:10px 12px;background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r);font-size:11px;color:var(--text3)">
               ⏳ {{ $t('informe.selloHashPending') }}
             </div>
+
+            <!-- In-app integrity verifier -->
+            <div v-if="data.protest.hash_integridad" style="margin-top:10px">
+              <button @click="verifyIntegrity"
+                style="width:100%;padding:8px;background:rgba(76,255,164,.08);border:.5px solid rgba(76,255,164,.3);border-radius:var(--r);color:var(--accent2);font-size:11px;font-weight:600;cursor:pointer">
+                🔍 {{ verifyState === 'running' ? $t('informe.verifyRunning') : $t('informe.verifyBtn') }}
+              </button>
+              <div v-if="verifyResult" style="margin-top:8px;padding:8px 10px;border-radius:var(--r);font-size:11px;line-height:1.5"
+                :style="verifyResult === 'ok' ? 'background:rgba(76,255,164,.08);border:.5px solid rgba(76,255,164,.3)' : verifyResult === 'v1' ? 'background:rgba(124,111,255,.08);border:.5px solid rgba(124,111,255,.3)' : 'background:rgba(255,80,80,.08);border:.5px solid rgba(255,80,80,.3)'">
+                {{ verifyResult === 'ok' ? $t('informe.verifyOk') : verifyResult === 'v1' ? $t('informe.verifyV1') : $t('informe.verifyFail') }}
+              </div>
+            </div>
             <div style="font-size:14px;color:var(--text2);line-height:1.8">
               {{ $t('informe.selloSourceDesc') }}<br>
               <button
@@ -314,6 +326,56 @@ const tipoAbusoLabel = computed(() => {
   return map[tipo] || tipo || '—';
 });
 const data = ref(null);
+const verifyState  = ref('idle'); // idle | running
+const verifyResult = ref(null);   // null | ok | fail | v1
+
+async function verifyIntegrity() {
+  if (verifyState.value === 'running') return;
+  verifyState.value  = 'running';
+  verifyResult.value = null;
+
+  try {
+    const version = data.value?.protest?.integrity_version || 1;
+
+    if (version < 2) {
+      verifyResult.value = 'v1';
+      verifyState.value  = 'idle';
+      return;
+    }
+
+    const apiUrl = import.meta.env.VITE_API_URL;
+    const res = await fetch(`${apiUrl}/api/public/protests/${route.params.id}/integrity-data`);
+    if (!res.ok) throw new Error('Failed to fetch integrity data');
+    const d = await res.json();
+
+    // Recalculate hash in browser using SubtleCrypto
+    const sorted = [...d.public_commitments].sort();
+    const cities = Object.entries(d.city_distribution || {})
+      .sort((a,b) => a[0].localeCompare(b[0]))
+      .map(([k,v]) => `${k}:${v}`).join(',');
+    const rel = Object.entries(d.reliability_breakdown || {})
+      .sort((a,b) => a[0] - b[0])
+      .map(([k,v]) => `${k}:${v}`).join(',');
+
+    const input = [
+      d.protest_id, d.title, d.demands, d.scope, d.country,
+      d.total_adhesions, d.cities_count,
+      rel, cities, '', '',
+      sorted.join('|')
+    ].join('|');
+
+    const msgBuffer  = new TextEncoder().encode(input);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray  = Array.from(new Uint8Array(hashBuffer));
+    const hashHex    = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    verifyResult.value = hashHex === d.integrity_hash ? 'ok' : 'fail';
+  } catch {
+    verifyResult.value = 'fail';
+  } finally {
+    verifyState.value = 'idle';
+  }
+}
 const loading = ref(true);
 const error = ref(false);
 const showEmbed = ref(false);

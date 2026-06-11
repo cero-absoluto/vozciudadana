@@ -360,7 +360,9 @@ async function verifyIntegrity() {
     const input = [
       d.protest_id, d.title, d.demands, d.scope, d.country,
       d.total_adhesions, d.cities_count,
-      rel, cities, '', '',
+      rel, cities,
+      d.first_adhesion || '',
+      d.last_adhesion  || '',
       sorted.join('|')
     ].join('|');
 

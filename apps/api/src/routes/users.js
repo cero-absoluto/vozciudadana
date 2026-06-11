@@ -6,18 +6,21 @@ import { sendOtp, verifyOtp } from '../services/twilio.js';
 function hashPhone(phoneE164) {
   const secret = process.env.PHONE_HASH_SECRET;
   if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('[SECURITY] PHONE_HASH_SECRET is required in production. Server cannot start without it.');
+    }
     console.warn('[SECURITY] PHONE_HASH_SECRET not set — using plain SHA-256. Set this variable in production.');
     return createHash('sha256').update(phoneE164).digest('hex');
   }
   return createHmac('sha256', secret).update(phoneE164).digest('hex');
 }
 
-/** Hash an IP address using HMAC-SHA256 — pseudonymous, not stored in plain text.
- *  Uses same SERVER_SECRET as phone hashing to prevent dictionary attacks.
- *  IP space is small enough to be brute-forced with plain SHA-256.
- */
+/** Hash an IP address using HMAC-SHA256 with same secret as phone hashing. */
 function hashIp(ip) {
-  const secret = process.env.PHONE_HASH_SECRET || 'fallback-dev-secret';
+  const secret = process.env.PHONE_HASH_SECRET;
+  if (!secret) {
+    return createHash('sha256').update(ip || '').digest('hex').substring(0, 32);
+  }
   return createHmac('sha256', secret).update(ip || '').digest('hex').substring(0, 32);
 }
 

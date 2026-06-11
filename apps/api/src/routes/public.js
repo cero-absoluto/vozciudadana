@@ -183,8 +183,15 @@ export default async function publicRoutes(app) {
     if (error || !p) return reply.notFound('Protest not found');
     if (new Date(p.ends_at) > new Date()) return reply.badRequest('Protest is still active — integrity data available after closure');
 
-    // Get public commitments
-    const { data: adhesions } = await supabase
+    // Try integrity_records first (permanent, survives 90-day deletion)
+    const { data: record } = await supabase
+      .from('integrity_records')
+      .select('*')
+      .eq('protest_id', req.params.id)
+      .maybeSingle();
+
+    // Fall back to live adhesions if record not yet created
+    const { data: adhesions } = record ? { data: null } : await supabase
       .from('adhesions')
       .select('public_commitment, ciudad, region, pais, fiabilidad, created_at')
       .eq('protest_id', req.params.id)
@@ -192,14 +199,49 @@ export default async function publicRoutes(app) {
       .not('public_commitment', 'is', null)
       .order('public_commitment');
 
+    // Use integrity_record if available (permanent snapshot)
+    if (record) {
+      return {
+        integrity_version:        record.integrity_version,
+        protest_id:               p.id,
+        title:                    p.title,
+        demands:                  p.demands,
+        scope:                    p.scope,
+        country:                  p.country,
+        total_adhesions:          record.total_adhesions,
+        cities_count:             p.cities_count,
+        closed_at:                p.ends_at,
+        integrity_hash:           record.integrity_hash,
+        integrity_calculated_at:  record.calculated_at,
+        first_adhesion:           record.first_adhesion || '',
+        last_adhesion:            record.last_adhesion  || '',
+        public_commitments:       record.public_commitments || [],
+        city_distribution:        record.city_distribution  || {},
+        reliability_breakdown:    record.reliability_breakdown || {},
+        data_source:              'integrity_record',
+        verification_instructions: {
+          algorithm: 'SHA256',
+          input_format: 'protest_id|title|demands|scope|country|count|cities_count|reliability|cities|first_adhesion|last_adhesion|sorted_commitments_joined_with_|',
+          note: 'Sort public_commitments alphabetically before joining.',
+        },
+      };
+    }
+
     const commitments = (adhesions || []).map(a => a.public_commitment);
 
     // Build city and reliability distributions
     const cityMap = {};
     const relMap = {};
+    let firstAdhesion = null;
+    let lastAdhesion  = null;
+
     for (const a of (adhesions || [])) {
       if (a.ciudad) cityMap[a.ciudad] = (cityMap[a.ciudad] || 0) + 1;
       if (a.fiabilidad) relMap[a.fiabilidad] = (relMap[a.fiabilidad] || 0) + 1;
+      if (a.created_at) {
+        if (!firstAdhesion || a.created_at < firstAdhesion) firstAdhesion = a.created_at;
+        if (!lastAdhesion  || a.created_at > lastAdhesion)  lastAdhesion  = a.created_at;
+      }
     }
 
     return {
@@ -214,13 +256,15 @@ export default async function publicRoutes(app) {
       closed_at:                p.ends_at,
       integrity_hash:           p.hash_integridad,
       integrity_calculated_at:  p.integrity_calculated_at,
+      first_adhesion:           firstAdhesion || '',
+      last_adhesion:            lastAdhesion  || '',
       public_commitments:       commitments,
       city_distribution:        cityMap,
       reliability_breakdown:    relMap,
       verification_instructions: {
         algorithm: 'SHA256',
         input_format: 'protest_id|title|demands|scope|country|count|cities_count|reliability|cities|first_adhesion|last_adhesion|sorted_commitments_joined_with_|',
-        note: 'Sort public_commitments alphabetically before joining. Timestamps are rounded to the hour.',
+        note: 'Sort public_commitments alphabetically before joining. Timestamps must match exactly as stored in PostgreSQL.',
       },
     };
   });

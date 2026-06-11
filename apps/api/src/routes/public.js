@@ -145,7 +145,9 @@ export default async function publicRoutes(app) {
       starts_at:     p.starts_at,
       ends_at:       p.ends_at,
       status:        new Date(p.ends_at) > new Date() ? 'active' : 'closed',
-      integrity_hash: p.hash_integridad || null,
+      integrity_hash:           p.hash_integridad || null,
+      integrity_version:        p.integrity_version || 1,
+      integrity_calculated_at:  p.integrity_calculated_at || null,
       stats: {
         total_adhesions: total,
         cities:          cities.length,
@@ -160,6 +162,66 @@ export default async function publicRoutes(app) {
       },
       embed_code: `<script src="https://cero-absoluto.github.io/vozciudadana/widget.js?id=${p.id}"></script>`,
       report_url: `https://cero-absoluto.github.io/vozciudadana/#/informe/${p.id}`,
+    };
+  });
+
+  // GET /api/public/protests/:id/integrity-data
+  // Returns all data needed for independent public verification of the integrity hash.
+  // public_commitments = SHA256(protest_id + nullifier) — unique per adhesion and protest.
+  // Does not reveal phone numbers or allow cross-protest correlation.
+  app.get('/protests/:id/integrity-data', {
+    schema: {
+      params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
+    },
+  }, async (req, reply) => {
+    const { data: p, error } = await supabase
+      .from('protests')
+      .select('id, title, demands, scope, country, count, cities_count, starts_at, ends_at, hash_integridad, integrity_version, integrity_calculated_at')
+      .eq('id', req.params.id)
+      .single();
+
+    if (error || !p) return reply.notFound('Protest not found');
+    if (new Date(p.ends_at) > new Date()) return reply.badRequest('Protest is still active — integrity data available after closure');
+
+    // Get public commitments
+    const { data: adhesions } = await supabase
+      .from('adhesions')
+      .select('public_commitment, ciudad, region, pais, fiabilidad, created_at')
+      .eq('protest_id', req.params.id)
+      .is('deleted_at', null)
+      .not('public_commitment', 'is', null)
+      .order('public_commitment');
+
+    const commitments = (adhesions || []).map(a => a.public_commitment);
+
+    // Build city and reliability distributions
+    const cityMap = {};
+    const relMap = {};
+    for (const a of (adhesions || [])) {
+      if (a.ciudad) cityMap[a.ciudad] = (cityMap[a.ciudad] || 0) + 1;
+      if (a.fiabilidad) relMap[a.fiabilidad] = (relMap[a.fiabilidad] || 0) + 1;
+    }
+
+    return {
+      integrity_version:        p.integrity_version || 1,
+      protest_id:               p.id,
+      title:                    p.title,
+      demands:                  p.demands,
+      scope:                    p.scope,
+      country:                  p.country,
+      total_adhesions:          p.count,
+      cities_count:             p.cities_count,
+      closed_at:                p.ends_at,
+      integrity_hash:           p.hash_integridad,
+      integrity_calculated_at:  p.integrity_calculated_at,
+      public_commitments:       commitments,
+      city_distribution:        cityMap,
+      reliability_breakdown:    relMap,
+      verification_instructions: {
+        algorithm: 'SHA256',
+        input_format: 'protest_id|title|demands|scope|country|count|cities_count|reliability|cities|first_adhesion|last_adhesion|sorted_commitments_joined_with_|',
+        note: 'Sort public_commitments alphabetically before joining. Timestamps are rounded to the hour.',
+      },
     };
   });
 

@@ -211,7 +211,7 @@ a:hover{opacity:.8}
 .dev-flag{font-size:13px}
 .dev-info{flex:1}
 .dev-country{font-weight:500;color:var(--text);font-size:13px}
-.dev-conf{color:var(--text3);font-size:12px}}
+.dev-conf{color:var(--text3);font-size:12px}
 .dev-conf span{font-weight:600}
 .dev-dots{display:flex;gap:3px;align-items:center}
 .dev-dot{width:6px;height:6px;border-radius:50%}

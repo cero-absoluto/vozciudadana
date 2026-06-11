@@ -434,7 +434,13 @@
     "embedJoin": "🗳️ Join — identity protected",
     "selloDesc": "This hash is calculated at the moment the protest closes using HMAC-SHA256 applied to the protest ID, final count, reliability breakdown, city distribution, adhesion timestamps and all internal identifiers. It serves as a tamper-evident seal — any modification after closure would produce a different hash. Independent public verification with full data disclosure is planned for a future version.",
     "selloVerify": "Note: The current integrity hash is an internal cryptographic seal calculated at protest closure. Public independent verification will be available in a future version.",
-    "selloHashPending": "Integrity hash will be calculated when the protest closes."
+    "selloHashPending": "Integrity hash will be calculated when the protest closes.",
+    "verifyBtn": "Verify integrity",
+    "verifyRunning": "Verifying...",
+    "verifyOk": "✅ Integrity verified — this report matches the public integrity data.",
+    "verifyFail": "❌ Integrity mismatch — the report may have been modified or the data is inconsistent.",
+    "verifyV1": "ℹ️ This report uses integrity version 1 (internal seal). Public independent verification is available from version 2 onwards.",
+    "verifyNoHash": "No integrity hash available for this protest."
   },
   "invite": {
     "loading": "Validating invitation...",

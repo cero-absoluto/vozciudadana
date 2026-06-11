@@ -433,7 +433,13 @@
     "embedJoin": "🗳️ Adherirme — identidad protegida",
     "selloDesc": "Este hash se calcula en el momento del cierre aplicando HMAC-SHA256 al ID de la convocatoria, el recuento final, la distribución de fiabilidad, la distribución por ciudades, los timestamps de adhesión y todos los identificadores internos. Sirve como sello de detección de manipulaciones — cualquier modificación posterior al cierre produciría un hash diferente. La verificación pública independiente con divulgación completa de datos está prevista para una versión futura.",
     "selloVerify": "Nota: El hash de integridad actual es un sello criptográfico interno calculado al cierre de la convocatoria. La verificación pública independiente estará disponible en una versión futura.",
-    "selloHashPending": "El hash de integridad se calculará cuando se cierre la convocatoria."
+    "selloHashPending": "El hash de integridad se calculará cuando se cierre la convocatoria.",
+    "verifyBtn": "Verificar integridad",
+    "verifyRunning": "Verificando...",
+    "verifyOk": "✅ Integridad verificada — este informe coincide con los datos públicos de integridad.",
+    "verifyFail": "❌ Discrepancia de integridad — el informe puede haber sido modificado o los datos son inconsistentes.",
+    "verifyV1": "ℹ️ Este informe usa la versión de integridad 1 (sello interno). La verificación pública independiente está disponible a partir de la versión 2.",
+    "verifyNoHash": "No hay hash de integridad disponible para esta convocatoria."
   },
   "invite": {
     "loading": "Validando invitación...",

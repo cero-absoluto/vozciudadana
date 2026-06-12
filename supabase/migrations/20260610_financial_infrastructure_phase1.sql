@@ -83,7 +83,7 @@ CREATE OR REPLACE FUNCTION check_donation_limit(
   p_amount     NUMERIC
 ) RETURNS JSONB AS $$
 DECLARE
-  v_max_per_operation NUMERIC := 10.00;
+  v_max_per_operation NUMERIC := 100.00; -- configurable via MAX_DONATION_EUR env var
 BEGIN
   IF p_amount > v_max_per_operation THEN
     RETURN jsonb_build_object(

@@ -175,7 +175,7 @@ export default async function protestRoutes(app) {
     // Fetch protest metadata and idempotency check in parallel
     const [{ data: protest, error: protestErr }, { data: existing }] = await Promise.all([
       supabase.from('protests').select('scope, country, saldo_euros').eq('id', req.params.id).maybeSingle(),
-      supabase.from('adhesions').select('id').eq('protest_id', req.params.id).eq('device_id', device_id).maybeSingle(),
+      supabase.from('adhesions').select('id').eq('protest_id', req.params.id).eq('device_id', device_id).is('deleted_at', null).maybeSingle(),
     ]);
 
     if (protestErr || !protest) return reply.notFound('Protest not found');
@@ -190,6 +190,7 @@ export default async function protestRoutes(app) {
       .select('id')
       .eq('protest_id', req.params.id)
       .eq('nullifier', nullifierCheck)
+      .is('deleted_at', null)
       .maybeSingle();
     if (existingNullifier) return reply.conflict('Phone already joined this protest');
 
@@ -514,6 +515,7 @@ export default async function protestRoutes(app) {
       .from('adhesions')
       .select('ciudad, region, pais, idioma, created_at, gps_confirmed, fiabilidad, senales')
       .eq('protest_id', req.params.id)
+      .is('deleted_at', null)
       .order('created_at', { ascending: true });
 
     const ciudades = [...new Set(adhesions.map(a => a.ciudad).filter(Boolean))];

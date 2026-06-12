@@ -1,12 +1,17 @@
 -- Migration: Public integrity commitments (v2)
 -- Date: 2026-06-11
--- Purpose: Implement publicly verifiable integrity system.
+-- Purpose: Add columns, index and cron job for the v2 integrity system.
 --   v1 = internal HMAC-SHA256 seal (existing, not publicly reproducible)
 --   v2 = SHA256 over public_commitments (publicly verifiable by anyone)
 --
 -- public_commitment = SHA256(protest_id + nullifier)
 -- This is unique per adhesion AND per protest — prevents cross-protest correlation.
 -- Can be published without revealing phone numbers or internal identifiers.
+--
+-- NOTE: calculate_integrity_hash_v2() is intentionally defined only in
+-- 20260611_integrity_records.sql to ensure the permanent integrity snapshot
+-- is always written to integrity_records.
+-- Do not redefine it here.
 
 -- ── 1. Add public_commitment column to adhesions ──────────────────────────
 ALTER TABLE adhesions
@@ -17,84 +22,9 @@ ALTER TABLE protests
   ADD COLUMN IF NOT EXISTS integrity_version      INTEGER DEFAULT 1,
   ADD COLUMN IF NOT EXISTS integrity_calculated_at TIMESTAMPTZ;
 
--- ── 3. Create v2 integrity hash function ─────────────────────────────────
-CREATE OR REPLACE FUNCTION calculate_integrity_hash_v2(p_protest_id UUID)
-RETURNS TEXT AS $$
-DECLARE
-  v_protest     RECORD;
-  v_commitments TEXT;
-  v_cities      TEXT;
-  v_reliability TEXT;
-  v_first       TEXT;
-  v_last        TEXT;
-  v_input       TEXT;
-BEGIN
-  -- Get protest metadata
-  SELECT title, demands, scope, country, count, cities_count, starts_at, ends_at
-  INTO v_protest
-  FROM protests WHERE id = p_protest_id;
-
-  -- Generate public_commitments if not already done
-  UPDATE adhesions
-  SET public_commitment = encode(
-    digest(p_protest_id::TEXT || nullifier, 'sha256'),
-    'hex'
-  )
-  WHERE protest_id = p_protest_id
-    AND deleted_at IS NULL
-    AND public_commitment IS NULL;
-
-  -- Get sorted public_commitments
-  SELECT COALESCE(STRING_AGG(public_commitment, '|' ORDER BY public_commitment), '')
-  INTO v_commitments
-  FROM adhesions
-  WHERE protest_id = p_protest_id
-    AND deleted_at IS NULL;
-
-  -- City distribution
-  SELECT COALESCE(STRING_AGG(ciudad || ':' || cnt::TEXT, ',' ORDER BY ciudad), '')
-  INTO v_cities
-  FROM (
-    SELECT ciudad, COUNT(*) AS cnt
-    FROM adhesions
-    WHERE protest_id = p_protest_id AND deleted_at IS NULL AND ciudad IS NOT NULL
-    GROUP BY ciudad
-  ) c;
-
-  -- Reliability breakdown
-  SELECT COALESCE(STRING_AGG(fiabilidad::TEXT || ':' || cnt::TEXT, ',' ORDER BY fiabilidad), '')
-  INTO v_reliability
-  FROM (
-    SELECT fiabilidad, COUNT(*) AS cnt
-    FROM adhesions
-    WHERE protest_id = p_protest_id AND deleted_at IS NULL
-    GROUP BY fiabilidad
-  ) r;
-
-  -- Timestamps
-  SELECT COALESCE(MIN(created_at)::TEXT, ''), COALESCE(MAX(created_at)::TEXT, '')
-  INTO v_first, v_last
-  FROM adhesions WHERE protest_id = p_protest_id AND deleted_at IS NULL;
-
-  -- Build canonical input using public data only
-  v_input :=
-    p_protest_id::TEXT                           || '|' ||
-    COALESCE(v_protest.title, '')                || '|' ||
-    COALESCE(v_protest.demands, '')              || '|' ||
-    COALESCE(v_protest.scope, '')                || '|' ||
-    COALESCE(v_protest.country, '')              || '|' ||
-    COALESCE(v_protest.count::TEXT, '0')         || '|' ||
-    COALESCE(v_protest.cities_count::TEXT, '0')  || '|' ||
-    v_reliability                                || '|' ||
-    v_cities                                     || '|' ||
-    v_first                                      || '|' ||
-    v_last                                       || '|' ||
-    v_commitments;
-
-  -- Return plain SHA256 — no secret key needed, publicly reproducible
-  RETURN encode(digest(v_input, 'sha256'), 'hex');
-END;
-$$ LANGUAGE plpgsql;
+-- ── 3. calculate_integrity_hash_v2() — defined in 20260611_integrity_records.sql
+-- See that file for the full implementation including integrity_records snapshot.
+-- Do not redefine here.
 
 -- ── 4. Update auto-close job to use v2 ───────────────────────────────────
 DO $$

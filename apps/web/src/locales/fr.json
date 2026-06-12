@@ -143,7 +143,7 @@
     "scopeNational": "National",
     "scopeNationalLabel": "National",
     "scopeNationalBadge": "Portée nationale uniquement",
-    "scopeNationalDesc": "Citoyens de ce pays uniquement. L'éligibilité est déterminée par le préfixe SIM. Les citoyens à l'étranger peuvent participer avec leur SIM d'origine.",
+    "scopeNationalDesc": "Participants vérifiés dans ce pays uniquement. L'éligibilité est déterminée par la vérification SIM et d'autres mécanismes d'intégrité. Les personnes conservant une SIM de ce pays peuvent participer même si elles sont temporairement à l'étranger.",
     "scopeLocal": "Local",
     "scopeRegionalLabel": "Local",
     "scopeLocalBadge": "Portée locale",

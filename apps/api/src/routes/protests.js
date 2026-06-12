@@ -306,11 +306,22 @@ export default async function protestRoutes(app) {
     await supabase.rpc('update_cities_count', { protest_id: req.params.id });
     if (rpcErr) req.log.error({ rpcErr }, 'increment_protest_count failed');
 
-    // Descontar saldo por adhesion (~0.05euro por verificacion SMS)
+    // Descontar saldo por adhesion y registrar movimiento financiero
     if (protest.saldo_euros !== null && protest.saldo_euros > 0) {
       await supabase.from('protests')
         .update({ saldo_euros: Math.max(0, protest.saldo_euros - SMS_COST_EUR) })
         .eq('id', req.params.id);
+
+      // Audit trail — register verification cost in financial_movements
+      await supabase.from('financial_movements').insert({
+        type:        'verification_sms',
+        protest_id:  req.params.id,
+        adhesion_id: data.id,
+        amount:      SMS_COST_EUR,
+        currency:    'EUR',
+        destination: 'verification_cost',
+        description: `SMS verification cost for adhesion ${data.id}`,
+      });
     }
 
     // Fire push notification on milestones

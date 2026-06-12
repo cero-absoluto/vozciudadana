@@ -1,6 +1,6 @@
 # 🗳️ Voice Protest
 
-**Verified, pseudonymous and uncensored civic protest platform.**
+**Verified, pseudonymous and privacy-preserving civic protest platform.**
 
 > *"A street protest measures who can be there that day. We measure real support — using technical safeguards designed to verify that each adhesion comes from a unique participant connected to the relevant community."*
 
@@ -18,8 +18,8 @@ Every adhesion is:
 
 - **Pseudonymous** — phone numbers are used only for verification and transformed into irreversible pseudonymous identifiers. The original number is not stored after verification.
 - **Verified** — real phone number via SMS OTP. One verified number, one adhesion per protest.
-- **Geographically validated** — SIM prefix + IP + optional GPS
-- **Publicly auditable** — integrity hashes and public commitments allow independent verification of every closed report.
+- **Geographically validated** — SIM, IP and optional location signals
+- **Publicly auditable** — integrity hashes and public commitments allow independent verification of every closed report. Results can be verified by anyone using the in-app verifier or the public API.
 
 Available in 🇪🇸 ES · 🇬🇧 EN · 🇫🇷 FR · 🇨🇳 中文
 
@@ -32,7 +32,7 @@ Available in 🇪🇸 ES · 🇬🇧 EN · 🇫🇷 FR · 🇨🇳 中文
 | 🔒 HMAC-SHA256 pseudonymous identifier | Phone numbers are used only for verification and transformed into irreversible identifiers. |
 | 🔍 Publicly verifiable reports | Closed reports include SHA-256 integrity hashes and public commitments. Anyone can verify results independently using the in-app verifier or the public API. |
 | 📡 Public commitments | Per-adhesion commitments — `SHA256(protest_id + nullifier)` — enable hash verification without revealing identities or enabling cross-protest correlation. |
-| 📋 Integrity log | Hashes of closed protests are anchored in a public GitHub commit history. |
+| 📋 Integrity log | Public record of integrity hashes maintained through GitHub. Updated manually at each protest closure. |
 | 📍 GPS verification | Optional location signal raises reliability confidence up to 95% |
 | 👥 Dynamic census | Wave-based trust system with peer vouching for institutional events |
 | 📧 Institutional email | Any institutional domain for university/workplace events |
@@ -40,7 +40,7 @@ Available in 🇪🇸 ES · 🇬🇧 EN · 🇫🇷 FR · 🇨🇳 中文
 | 📊 Public report | Live data, PDF export, embeddable widget for media |
 | 🔌 Public API | Free, no auth required. For researchers and journalists |
 | 💰 Participant funding | Per-event balance funded by participant donations |
-| 📁 Persistent public record | Closed events and integrity snapshots preserved indefinitely |
+| 📁 Persistent public record | Closed events and integrity snapshots designed to be preserved indefinitely |
 | 🔔 Push notifications | Result alert at closure. Auto-deleted after event ends |
 
 ---

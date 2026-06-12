@@ -111,7 +111,8 @@ export default async function publicRoutes(app) {
     const { data: adhesions } = await supabase
       .from('adhesions')
       .select('fiabilidad, ciudad, region, pais, created_at')
-      .eq('protest_id', req.params.id);
+      .eq('protest_id', req.params.id)
+      .is('deleted_at', null);
 
     const total = (adhesions || []).length;
     const cities = [...new Set((adhesions || []).map(a => a.ciudad).filter(Boolean))];

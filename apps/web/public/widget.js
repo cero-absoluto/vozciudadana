@@ -1,7 +1,7 @@
 (function () {
   // --- Config ---
   const API = 'https://vozciudadanaapi-production.up.railway.app';
-  const APP = 'https://cero-absoluto.github.io/vozciudadana';
+  const APP = 'https://voiceprotest.org';
   const REFRESH = 30000; // refresh every 30 seconds
 
   // --- Get protest ID from script tag ---

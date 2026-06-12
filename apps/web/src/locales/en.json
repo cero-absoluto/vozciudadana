@@ -143,7 +143,7 @@
     "scopeNational": "National",
     "scopeNationalLabel": "National",
     "scopeNationalBadge": "National scope only",
-    "scopeNationalDesc": "Citizens of that country only. Eligibility is determined by SIM prefix. Citizens living abroad can participate using their home SIM.",
+    "scopeNationalDesc": "Verified participants within this country only. Eligibility is determined through SIM verification and other integrity mechanisms. People who retain a SIM from this country may participate even if temporarily abroad.",
     "scopeLocal": "Local",
     "scopeRegionalLabel": "Local",
     "scopeLocalBadge": "Local scope",

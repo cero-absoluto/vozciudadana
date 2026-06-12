@@ -352,7 +352,7 @@ export default async function gruposRoutes(app) {
 
     if (error) throw error;
 
-    const baseUrl = process.env.FRONTEND_URL || 'https://cero-absoluto.github.io/vozciudadana';
+    const baseUrl = process.env.FRONTEND_URL || 'https://voiceprotest.org';
     return { token: invite.token, url: `${baseUrl}/#/invite/${invite.token}` };
   });
   // GET /api/grupos/invite/:token

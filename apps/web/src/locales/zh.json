@@ -143,7 +143,7 @@
     "scopeNational": "全国",
     "scopeNationalLabel": "全国",
     "scopeNationalBadge": "仅限国家范围",
-    "scopeNationalDesc": "仅限该国公民。资格由SIM卡前缀决定。在国外的公民可以使用本国SIM卡参与。",
+    "scopeNationalDesc": "仅限该国经验证的参与者。资格通过SIM验证和其他完整性机制确定。保留该国SIM卡的人员即使临时在国外也可以参与。",
     "scopeLocal": "本地",
     "scopeRegionalLabel": "本地",
     "scopeLocalBadge": "本地范围",

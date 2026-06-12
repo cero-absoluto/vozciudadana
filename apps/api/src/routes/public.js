@@ -161,8 +161,8 @@ export default async function publicRoutes(app) {
           last_donation:    p.ultima_donacion || null,
         },
       },
-      embed_code: `<script src="https://cero-absoluto.github.io/vozciudadana/widget.js?id=${p.id}"></script>`,
-      report_url: `https://cero-absoluto.github.io/vozciudadana/#/informe/${p.id}`,
+      embed_code: `<script src="https://voiceprotest.org/widget.js?id=${p.id}"></script>`,
+      report_url: `https://voiceprotest.org/#/informe/${p.id}`,
     };
   });
 

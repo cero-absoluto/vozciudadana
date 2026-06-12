@@ -118,6 +118,7 @@ const collectItems = computed(() => [
   { key:'city',    icon:'📍', title: t('privacy.collect2Title'), body: t('privacy.collect2Body') },
   { key:'device',  icon:'📱', title: t('privacy.collect3Title'), body: t('privacy.collect3Body') },
   { key:'lang',    icon:'🌐', title: t('privacy.collect4Title'), body: t('privacy.collect4Body') },
+  { key:'gps',     icon:'📡', title: t('privacy.collect5Title'), body: t('privacy.collect5Body') },
 ]);
 
 const neverItems = computed(() => [

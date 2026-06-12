@@ -1,5 +1,9 @@
 # Voice Protest — Public Integrity Log
 
+> **Este registro se actualiza manualmente.**
+> Las entradas se añaden por commit tras el cierre de cada convocatoria.
+> No existe actualización automática — cada entrada es una acción deliberada y trazable.
+
 This file records the public integrity hashes of closed Voice Protest events.
 
 Each entry can be independently verified against:

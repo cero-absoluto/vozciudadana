@@ -339,7 +339,7 @@ export default async function protestRoutes(app) {
             protest_id:   req.params.id,
             title:        `🗳️ ${updated.count} verified citizens`,
             body:         updated.title,
-            url:          `https://cero-absoluto.github.io/vozciudadana/#/protest/${req.params.id}`,
+            url:          `https://voiceprotest.org/#/protest/${req.params.id}`,
             admin_secret: process.env.ADMIN_SECRET,
           }),
         }).catch(() => {});

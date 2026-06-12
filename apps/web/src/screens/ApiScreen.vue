@@ -76,7 +76,7 @@
         <div class="api-block-title">{{ $t('api.attributionTitle') }}</div>
         <div style="font-size:12px;color:var(--text2);line-height:1.7">
           {{ $t('api.attributionDesc') }}<br>
-          <strong style="color:var(--text)">Voice Protest — cero-absoluto.github.io/vozciudadana</strong><br>
+          <strong style="color:var(--text)">Voice Protest — voiceprotest.org</strong><br>
           Source code: <a href="https://github.com/cero-absoluto/vozciudadana" target="_blank" style="color:var(--accent)">github.com/cero-absoluto/vozciudadana</a><br>
           License: AGPL 3.0
         </div>

@@ -92,6 +92,7 @@
         <div style="font-size:14px;color:var(--text);line-height:1.7">
           {{ $t('api.attributionDesc') }}<br>
           <strong style="color:var(--text)">{{ $t('api.attributionLine') }}</strong><br>
+          {{ $t('api.attributionData') }}<br>
           <a href="https://github.com/cero-absoluto/vozciudadana" target="_blank" style="color:var(--accent)">{{ $t('api.attributionSource') }}</a>
         </div>
       </div>
@@ -122,7 +123,7 @@ const integrityExample = `{
   "integrity_version": 2,
   "integrity_hash": "e0ff21f8a3b4c5d6...",
   "total_adhesions": 1247,
-  "public_commitments": ["a1b2c3...", "d4e5f6...", "..."],
+  "public_commitments": ["a1b2c3...", "d4e5f6...", "..."],  // listado truncado
   "first_adhesion": "2026-06-10T10:23:14Z",
   "last_adhesion": "2026-06-11T18:29:52Z",
   "city_distribution": { "Amsterdam": 234, "Rotterdam": 187 },

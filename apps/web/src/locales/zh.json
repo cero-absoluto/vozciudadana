@@ -639,7 +639,7 @@
     "baseUrlTitle": "基础URL",
     "rateLimitTitle": "请求限制",
     "rateLimitDesc": "每个IP每分钟120次请求。无需认证。",
-    "exampleResponse": "响应示例",
+    "exampleResponse": "示例响应（说明性）",
     "tryIt": "▶ 试用",
     "tryUtrecht": "▶ 用乌得勒支试用",
     "endpoint1Desc": "平台全局统计数据——抗议总数、支持者数量、国家数量。",
@@ -647,7 +647,12 @@
     "endpoint2Params": "查询参数：",
     "endpoint3Desc": "单个抗议的完整数据，包括可信度分析、地理分布和增长统计。",
     "attributionTitle": "署名",
-    "attributionDesc": "使用这些数据时，请注明出处："
+    "attributionDesc": "使用这些数据时，请注明出处：",
+    "badgeAGPL": "代码：AGPL 3.0",
+    "endpoint4Desc": "公开承诺和完整性数据，用于独立验证已发布的报告。",
+    "endpoint4Note": "此端点实现了Voice Protest的公开可验证性。",
+    "attributionLine": "Voice Protest — voiceprotest.org",
+    "attributionSource": "GitHub上提供源代码（AGPL 3.0）"
   },
   "privacy": {
     "title": "隐私政策",

@@ -706,7 +706,7 @@
     "title": "Politique de Financement et d'Indépendance",
     "updated": "Dernière mise à jour : juin 2026",
     "principleTitle": "Notre principe fondateur",
-    "principleBody": "Voice Protest existe pour fournir une infrastructure indépendante de participation citoyenne vérifiable. L'indépendance est une exigence fondamentale de la plateforme. Voice Protest cherche à couvrir ses coûts opérationnels par des contributions volontaires de citoyens, sans contrôle financier ni influence de gouvernements, partis politiques, entreprises ou institutions.",
+    "principleBody": "Voice Protest existe pour fournir une infrastructure indépendante de participation vérifiable. L'indépendance est une exigence fondamentale. Voice Protest cherche à financer ses coûts opérationnels par des contributions volontaires de personnes, sans contrôle financier ni influence de gouvernements, partis politiques, entreprises ou institutions.",
     "costsTitle": "Ce que coûte Voice Protest",
     "costsDesc": "Voice Protest fonctionne à coût minimal. Transparence totale sur l'infrastructure actuelle :",
     "costRailway": "Infrastructure du serveur backend",
@@ -716,13 +716,13 @@
     "costDomain": "Domaine voiceprotest.org",
     "smsCost": "💬 La vérification SMS génère un coût variable par tentative — généralement quelques centimes selon le pays, le fournisseur et les nouvelles tentatives. Les contributions associées à une protestation aident à couvrir ces coûts techniques. Participer ne nécessite pas de paiement.",
     "acceptTitle": "Ce que nous acceptons",
-    "accept1": "Dons individuels de citoyens de tout montant.",
+    "accept1": "Contributions individuelles de toute personne, dans la limite applicable par don.",
     "accept2": "Contributions récurrentes modestes pour couvrir les coûts opérationnels.",
     "accept3": "Contributions destinées à l'infrastructure, aux audits de sécurité ou aux améliorations techniques.",
-    "accept4": "Contributions de citoyens qui croient en la valeur d'une participation citoyenne vérifiée et indépendante.",
+    "accept4": "Contributions de personnes qui croient en la valeur d'une participation vérifiée et indépendante.",
     "rejectTitle": "Ce que nous n'acceptons pas",
     "reject1": "Financement de partis politiques, gouvernements ou institutions étatiques.",
-    "reject2": "Financement d'entreprises ou d'entités privées cherchant une influence sur la plateforme.",
+    "reject2": "Financement d'entreprises, d'institutions ou de toute entité cherchant à influencer la gouvernance de la plateforme. Lorsqu'une contribution est identifiable comme provenant d'une entité compromettant l'indépendance, elle pourra être refusée ou remboursée.",
     "reject3": "Dons conditionnés à tout changement de comportement de la plateforme ou des résultats.",
     "reject4": "Publicité de quelque nature que ce soit.",
     "reject5": "Revenus provenant de la vente ou de la commercialisation de données utilisateurs.",
@@ -749,6 +749,9 @@
     "allocationTitle": "Comment les dons sont répartis",
     "allocationBody": "Les contributions peuvent être réparties entre les ressources de vérification des protestations et la durabilité à long terme de Voice Protest. Le modèle de répartition est documenté publiquement et peut évoluer.",
     "sustainabilityTitle": "Fonds de durabilité de la plateforme",
-    "sustainabilityBody": "Le fonds de durabilité existe pour préserver l'indépendance à long terme de Voice Protest. Il peut être utilisé pour l'hébergement, la sécurité, les systèmes de vérification, les audits et la maintenance."
+    "sustainabilityBody": "Le fonds de durabilité existe pour préserver l'indépendance à long terme de Voice Protest. Il peut être utilisé pour l'hébergement, la sécurité, les systèmes de vérification, les audits et la maintenance.",
+    "limitTitle": "Limite par don",
+    "limitBody": "Pour préserver l'indépendance du projet, les contributions individuelles sont actuellement limitées à 100 € par don.",
+    "corporateNote": "Voice Protest se finance principalement par de petites contributions individuelles. Il ne recherche pas de financement d'entreprises, de partis politiques ou d'organisations cherchant à influencer la gouvernance."
   }
 }

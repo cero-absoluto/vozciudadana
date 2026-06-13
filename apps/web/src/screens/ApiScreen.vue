@@ -111,23 +111,39 @@ const results = ref({});
 const statsExample = `{
   "generated_at": "2026-05-31T10:00:00.000Z",
   "platform": "Voice Protest",
+  "version": "1.0",
+  "license": "AGPL 3.0",
   "data": {
     "total_protests": 12,
     "active_protests": 3,
+    "closed_protests": 9,
     "total_adhesions": 847,
-    "active_countries": 5
+    "active_countries": 5,
+    "active_countries_list": ["ES", "NL", "FR"],
+    "by_scope": { "national": 8, "regional": 3, "global": 1 }
   }
 }`;
 
 const integrityExample = `{
   "integrity_version": 2,
-  "integrity_hash": "e0ff21f8a3b4c5d6...",
+  "protest_id": "b15ae4a9-...",
+  "scope": "national",
+  "country": "ES",
   "total_adhesions": 1247,
-  "public_commitments": ["a1b2c3...", "d4e5f6...", "..."],  // listado truncado
-  "first_adhesion": "2026-06-10T10:23:14Z",
-  "last_adhesion": "2026-06-11T18:29:52Z",
+  "closed_at": "2026-06-11T18:30:00Z",
+  "integrity_hash": "e0ff21f8a3b4c5d6...",
+  "integrity_calculated_at": "2026-06-11T18:30:05Z",
+  "first_adhesion": "2026-06-10T10:00:00Z",
+  "last_adhesion": "2026-06-11T18:00:00Z",
+  "public_commitments": ["a1b2c3...", "d4e5f6...", "..."],
   "city_distribution": { "Amsterdam": 234, "Rotterdam": 187 },
-  "verification_instructions": { "algorithm": "SHA256" }
+  "reliability_breakdown": { "85": 456, "75": 389, "65": 402 },
+  "data_source": "integrity_record",
+  "verification_instructions": {
+    "algorithm": "SHA256",
+    "input_format": "protest_id|title|demands|scope|country|count|cities_count|reliability|cities|first_adhesion|last_adhesion|sorted_commitments_joined_with_|",
+    "note": "Sort public_commitments alphabetically before joining."
+  }
 }`;
 
 async function tryEndpoint(key) {

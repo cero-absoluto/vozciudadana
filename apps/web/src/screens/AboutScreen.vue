@@ -38,7 +38,6 @@
         <div class="tcard"><div class="tcard-ico">🔒</div><div class="tcard-h">{{ $t('about.seg1Title') }}</div><div class="tcard-p">{{ $t('about.seg1Body') }}</div></div>
         <div class="tcard"><div class="tcard-ico">🪪</div><div class="tcard-h">{{ $t('about.seg2Title') }}</div><div class="tcard-p">{{ $t('about.seg2Body') }}</div></div>
         <div class="tcard"><div class="tcard-ico">🔍</div><div class="tcard-h">{{ $t('about.seg3Title') }}</div><div class="tcard-p">{{ $t('about.seg3Body') }}</div></div>
-        <div class="tcard"><div class="tcard-ico">🔭</div><div class="tcard-h">{{ $t('about.seg4Title') }}</div><div class="tcard-p">{{ $t('about.seg4Body') }}</div></div>
       </div>
       <!-- API pública -->
       <div class="section-head">{{ $t('about.openTitle') }}</div>

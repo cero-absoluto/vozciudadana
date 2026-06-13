@@ -58,8 +58,8 @@
     "worldIdSoon": "World ID — coming soon",
     "wrongCountry": "This event is only for citizens of {country}. Use a number from that country.",
     "otpError": "Enter all 6 digits",
-    "otpIncorrect": "Incorrect or expired code: {msg}",
-    "sendError": "Error sending the code: {msg}",
+    "otpIncorrect": "Incorrect or expired code. Request a new one if the problem persists.",
+    "sendError": "Error sending the code. Check your number and try again.",
     "otpRateLimited": "For security reasons, please wait a few minutes before requesting another code."
   },
   "home": {
@@ -507,7 +507,7 @@
     "toastCreated": "✓ Census started — you are the genesis node",
     "toastVouched": "✓ Vouch registered",
     "toastLoadError": "Error loading group status",
-    "toastVouchError": "Error registering vouch: {msg}",
+    "toastVouchError": "Could not register the vouch. Please try again.",
     "errorSend": "Error sending the code.",
     "otpError": "Enter the 6-digit code",
     "shareTitle": "Join the census of {name}",
@@ -516,7 +516,7 @@
     "linkCopied": "✓ Link copied — share it only with your colleagues",
     "errorDomain": "The email must be from the {domain} domain",
     "errorCreateGroup": "Error creating the group.",
-    "toastLinkError": "Error generating the link: {msg}",
+    "toastLinkError": "Could not generate the invitation link. Please try again.",
     "linkCopyError": "Could not copy — copy the link manually"
   },
   "unirse": {

@@ -706,7 +706,7 @@
     "title": "Funding & Independence Policy",
     "updated": "Last updated: June 2026",
     "principleTitle": "Our founding principle",
-    "principleBody": "Voice Protest exists to provide independent, verifiable civic participation infrastructure. Independence is a fundamental requirement of the platform. Voice Protest seeks to cover its operational costs through voluntary citizen contributions, without financial control or influence from governments, political parties, corporations or institutions.",
+    "principleBody": "Voice Protest exists to provide an independent infrastructure for verified civic participation. Independence is a fundamental requirement of the platform. Voice Protest seeks to fund its operating costs through voluntary contributions from individuals, without financial control or influence from governments, political parties, companies or institutions.",
     "costsTitle": "What it costs to run Voice Protest",
     "costsDesc": "Voice Protest operates at minimal cost. Full transparency on current infrastructure:",
     "costRailway": "Backend server infrastructure",
@@ -716,13 +716,13 @@
     "costDomain": "voiceprotest.org domain",
     "smsCost": "💬 SMS verification generates a variable cost per verification attempt — typically a few cents, depending on country, provider and retries. Contributions associated with a protest help cover these technical costs. Participating does not require payment.",
     "acceptTitle": "What we accept",
-    "accept1": "Individual citizen donations of any amount.",
+    "accept1": "Individual contributions from any person of any amount, up to the applicable per-donation limit.",
     "accept2": "Small recurring contributions to cover operational costs.",
     "accept3": "Contributions directed at covering infrastructure, security audits or technical improvements.",
-    "accept4": "Contributions from citizens who believe in the value of independent, verified civic participation.",
+    "accept4": "Contributions from people who believe in the value of verified, independent participation.",
     "rejectTitle": "What we do not accept",
     "reject1": "Funding from political parties, governments or state institutions.",
-    "reject2": "Funding from corporations or private entities seeking influence over the platform.",
+    "reject2": "Corporate, institutional or any funding from entities seeking to influence the governance, moderation or decisions of the platform. Voice Protest does not seek this type of funding. When a contribution is identifiable as coming from an entity that would compromise the independence of the project, it may be refused or returned.",
     "reject3": "Donations conditioned on any change to platform behaviour, content moderation or results.",
     "reject4": "Advertising of any kind.",
     "reject5": "Revenue from the sale or commercialisation of user data.",
@@ -749,6 +749,9 @@
     "allocationTitle": "How donations are allocated",
     "allocationBody": "Contributions may be divided between protest verification resources and the long-term sustainability of Voice Protest. The allocation model is publicly documented and may evolve as the project matures.",
     "sustainabilityTitle": "Platform sustainability fund",
-    "sustainabilityBody": "The sustainability fund exists to preserve the long-term independence of Voice Protest. It may be used for hosting, security, verification systems, audits and future maintenance of the platform."
+    "sustainabilityBody": "The sustainability fund exists to preserve the long-term independence of Voice Protest. It may be used for hosting, security, verification systems, audits and future maintenance of the platform.",
+    "limitTitle": "Per-donation limit",
+    "limitBody": "To preserve the independence of the project, individual contributions are currently limited to €100 per donation. This limit aims to prevent any individual donor from accumulating disproportionate economic influence over the platform.",
+    "corporateNote": "Voice Protest is funded primarily through small individual contributions. It does not seek funding from companies, political parties, public administrations or organisations seeking to influence the governance of the project."
   }
 }

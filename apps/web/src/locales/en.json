@@ -656,7 +656,7 @@
     "collect1Title": "Cryptographic hash of your phone number",
     "collect1Body": "Your phone number is transmitted over HTTPS to our server solely to send the SMS verification code and to extract your country prefix for geographic eligibility. It is not stored persistently after this process is complete. Only its HMAC-SHA256 hash — a pseudonymous identifier — is retained to prevent duplicate adhesions. The original number cannot reasonably be recovered from the stored identifier.",
     "collect2Title": "Approximate location — city and region only",
-    "collect2Body": "If you grant GPS permission, the coordinates are momentarily stored in your browser and transmitted to our server over HTTPS, where Nominatim (OpenStreetMap geocoding) uses them to determine your city, region and country. The coordinates are discarded immediately — from both the browser and server — once geocoding is complete. They are never stored in the database. Only the resulting city and region names are retained, along with an indicator that GPS was active.",
+    "collect2Body": "If you grant GPS permission, the coordinates are used to determine your city, region and country via the Nominatim service (OpenStreetMap geocoding). Depending on context, this call may be made directly from your browser or via our server. In the first case, Nominatim receives your IP address; in the second, it receives our server's IP. In both cases, coordinates are discarded immediately after geocoding and are never stored in the database.",
     "collect3Title": "Random device identifier",
     "collect3Body": "Voice Protest generates a random identifier on your device to help prevent duplicate adhesions, abuse of verification systems and automated mass requests. This identifier contains no personal information and is used solely to protect the integrity and security of the platform.",
     "collect4Title": "Language preference",
@@ -697,9 +697,9 @@
     "integrityRecordsBody": "At protest closure, the data needed for public verification — public commitments, geographic distribution, integrity hash — are saved in a permanent record (integrity_records). This record survives the 90-day deletion of individual adhesions, designed to remain available long-term.",
     "institutionalEmailTitle": "Institutional email",
     "institutionalEmailBody": "For protests with institutional verification, the participant provides an email address from the configured domain. This email is used solely to send the OTP verification code. Like the phone number, the original email is not stored — it is transformed into an irreversible HMAC-SHA256 hash. The email is never used for subsequent communications or shared with the protest convener.",
-    "providerNominatim": "GPS geocoding — converts coordinates into city, region and country. May receive the user's IP when geocoding is performed from the browser.",
+    "providerNominatim": "GPS geocoding — converts coordinates into city, region and country. In some situations the call is made directly from the user's browser, in which case Nominatim receives their IP address.",
     "providerNominatimRegion": "EU / Variable (distributed OpenStreetMap infrastructure)",
-    "providerGithub": "Static frontend hosting (voiceprotest.org). GitHub receives the IP address of each visitor.",
+    "providerGithub": "Static frontend hosting (voiceprotest.org). GitHub Pages may receive the IP address of each visitor when serving the application files.",
     "providerGithubRegion": "US"
   },
   "funding": {

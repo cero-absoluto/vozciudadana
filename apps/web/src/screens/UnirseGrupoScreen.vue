@@ -138,7 +138,7 @@ async function solicitarOtp() {
     await api.sendEmailOtp({ email: email.value, protest_id: protestId });
     paso.value = 2;
   } catch (e) {
-    emailError.value = e.message || t('unirse.errorSend');
+    emailError.value = t('unirse.errorSend');
   } finally {
     loading.value = false;
   }
@@ -195,7 +195,7 @@ async function verificarOtp() {
     }
   } catch (e) {
      console.log('Error verificarOtp:', e);
-    otpError.value = e.message || t('unirse.errOtpWrong');
+    otpError.value = t('unirse.errOtpWrong');
   } finally {
     loading.value = false;
   }

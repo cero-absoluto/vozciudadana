@@ -55,12 +55,12 @@
         <div class="tcard" style="cursor:pointer" @click="$router.push('/privacy')">
           <div class="tcard-ico">🔒</div>
           <div class="tcard-h">{{ $t('privacy.title') }}</div>
-          <div class="tcard-p">{{ $t('privacy.principleTitle') }}</div>
+          <div class="tcard-p">{{ $t('about.openCard3Teaser') }}</div>
         </div>
         <div class="tcard" style="cursor:pointer" @click="$router.push('/funding')">
           <div class="tcard-ico">💰</div>
           <div class="tcard-h">{{ $t('funding.title') }}</div>
-          <div class="tcard-p">{{ $t('funding.principleTitle') }}</div>
+          <div class="tcard-p">{{ $t('about.openCard4Teaser') }}</div>
         </div>
       </div>
 

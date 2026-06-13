@@ -354,7 +354,7 @@
     "seg3Body": "报告包含完整性哈希和可验证的公开承诺。任何人都可以验证已发布的结果与关闭时记录的数据相符。",
     "seg4Title": "",
     "seg4Body": "",
-    "openTitle": "开放数据",
+    "openTitle": "透明度与开放数据",
     "openCard1Title": "公共API",
     "openCard1Body": "为研究人员和记者提供的免费API。汇总数据，无需身份验证。 →",
     "openCard2Title": "开源",

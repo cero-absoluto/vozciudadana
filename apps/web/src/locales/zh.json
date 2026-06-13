@@ -654,7 +654,7 @@
     "principleBody": "Voice Protest建立在民主参与不应要求牺牲隐私的原则之上。我们只收集验证每次参与真实唯一所必需的数据。Voice Protest提供假名参与——您的身份对其他参与者不可见，且验证后不予保留。",
     "collectTitle": "我们收集的信息",
     "collect1Title": "手机号码的加密哈希值",
-    "collect1Body": "您的电话号码通过HTTPS传输到我们的服务器，仅用于发送SMS验证码和提取国家前缀。此过程完成后不予存储。仅保留其HMAC-SHA256哈希值。原始号码无法从存储的标识符中合理地恢复。",
+    "collect1Body": "您的电话号码通过HTTPS传输到我们的服务器，仅用于发送SMS验证码和提取国家前缀。此过程完成后不予持久存储。仅保留其HMAC-SHA256哈希值。原始号码无法从存储的标识符中合理地恢复。",
     "collect2Title": "大致位置——仅限城市和地区",
     "collect2Body": "如果您授予GPS权限，坐标暂时存储在您的浏览器中并通过HTTPS传输到我们的服务器，Nominatim（OpenStreetMap地理编码）使用它们确定您的城市和地区。地理编码完成后立即丢弃坐标——从浏览器和服务器均予丢弃。从不存储在数据库中。",
     "collect3Title": "随机设备标识符",
@@ -694,7 +694,7 @@
     "nullifiersTitle": "Nullifiers和公开承诺",
     "nullifiersBody": "为确保每个电话号码每次抗议只能参与一次，系统计算nullifier并验证其不存在。Nullifier从不公开。关闭时生成公开承诺——SHA256(protest_id + nullifier)——允许任何人在不揭示身份的情况下验证完整性哈希。",
     "integrityRecordsTitle": "永久完整性记录",
-    "integrityRecordsBody": "关闭时，公开验证所需数据保存在永久记录(integrity_records)中。此记录在90天后个人参与数据删除后仍然存在。",
+    "integrityRecordsBody": "关闭时，公开验证所需数据保存在永久记录(integrity_records)中，设计为长期可用。此记录在90天后个人参与数据删除后仍然存在。",
     "institutionalEmailTitle": "机构电子邮件",
     "institutionalEmailBody": "对于机构验证的抗议，电子邮件仅用于发送OTP验证码。原始邮件不存储——转换为不可逆的HMAC-SHA256哈希。"
   },

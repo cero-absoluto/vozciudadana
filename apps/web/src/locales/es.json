@@ -695,7 +695,11 @@
     "integrityRecordsTitle": "Registros de integridad permanentes",
     "integrityRecordsBody": "Al cierre de cada convocatoria, los datos necesarios para la verificación pública — compromisos públicos, distribución geográfica, hash de integridad — se guardan en un registro permanente (integrity_records). Este registro sobrevive a la eliminación de adhesiones individuales a los 90 días, diseñado para permanecer disponible a largo plazo.",
     "institutionalEmailTitle": "Correo electrónico institucional",
-    "institutionalEmailBody": "Para convocatorias con verificación institucional, el participante proporciona una dirección de correo del dominio configurado. Este correo se usa exclusivamente para enviar el código OTP de verificación. Al igual que el número de teléfono, el correo original no se almacena — se transforma en un hash HMAC-SHA256 irreversible. El correo nunca se usa para comunicaciones posteriores ni se comparte con el convocante."
+    "institutionalEmailBody": "Para convocatorias con verificación institucional, el participante proporciona una dirección de correo del dominio configurado. Este correo se usa exclusivamente para enviar el código OTP de verificación. Al igual que el número de teléfono, el correo original no se almacena — se transforma en un hash HMAC-SHA256 irreversible. El correo nunca se usa para comunicaciones posteriores ni se comparte con el convocante.",
+    "providerNominatim": "Geocodificación GPS — convierte coordenadas en ciudad, región y país. Puede recibir la IP del usuario cuando la geocodificación se realiza desde el navegador.",
+    "providerNominatimRegion": "EU / Variable (infraestructura distribuida de OpenStreetMap)",
+    "providerGithub": "Hosting del frontend estático (voiceprotest.org). GitHub recibe la dirección IP de cada visitante.",
+    "providerGithubRegion": "US"
   },
   "funding": {
     "title": "Política de Financiación e Independencia",

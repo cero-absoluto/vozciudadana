@@ -285,7 +285,7 @@ async function sendSMS() {
     if (err.status === 429 || err.message?.includes('429') || err.code === 'otp_rate_limited') {
       ui.showToast(t('auth.otpRateLimited'));
     } else {
-      ui.showToast(t('auth.sendError', { msg: err.message }));
+      ui.showToast(t('auth.sendError'));
     }
   } finally {
     sending.value = false;
@@ -316,7 +316,7 @@ async function verifyOTP() {
     }
     router.push('/verify');
   } catch (err) {
-    ui.showToast(t('auth.otpIncorrect', { msg: err.message }));
+    ui.showToast(t('auth.otpIncorrect'));
   } finally {
     sending.value = false;
   }

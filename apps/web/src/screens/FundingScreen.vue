@@ -67,6 +67,17 @@
 
       <!-- What we do not accept -->
       <div style="margin-bottom:20px">
+        <!-- Limit per donation -->
+        <div style="margin-bottom:20px;padding:12px 16px;border-left:3px solid var(--accent);background:var(--bg2);border-radius:4px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:6px;color:var(--text)">{{ $t('funding.limitTitle') }}</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.6">{{ $t('funding.limitBody') }}</div>
+        </div>
+
+        <!-- Corporate note -->
+        <div style="margin-bottom:20px">
+          <div style="font-size:13px;color:var(--text2);line-height:1.6;font-style:italic">{{ $t('funding.corporateNote') }}</div>
+        </div>
+
         <div style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('funding.rejectTitle') }}</div>
         <div v-for="item in rejectItems" :key="item"
           style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:.5px solid var(--border)">

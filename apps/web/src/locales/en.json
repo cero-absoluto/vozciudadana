@@ -696,7 +696,11 @@
     "integrityRecordsTitle": "Permanent integrity records",
     "integrityRecordsBody": "At protest closure, the data needed for public verification — public commitments, geographic distribution, integrity hash — are saved in a permanent record (integrity_records). This record survives the 90-day deletion of individual adhesions, designed to remain available long-term.",
     "institutionalEmailTitle": "Institutional email",
-    "institutionalEmailBody": "For protests with institutional verification, the participant provides an email address from the configured domain. This email is used solely to send the OTP verification code. Like the phone number, the original email is not stored — it is transformed into an irreversible HMAC-SHA256 hash. The email is never used for subsequent communications or shared with the protest convener."
+    "institutionalEmailBody": "For protests with institutional verification, the participant provides an email address from the configured domain. This email is used solely to send the OTP verification code. Like the phone number, the original email is not stored — it is transformed into an irreversible HMAC-SHA256 hash. The email is never used for subsequent communications or shared with the protest convener.",
+    "providerNominatim": "GPS geocoding — converts coordinates into city, region and country. May receive the user's IP when geocoding is performed from the browser.",
+    "providerNominatimRegion": "EU / Variable (distributed OpenStreetMap infrastructure)",
+    "providerGithub": "Static frontend hosting (voiceprotest.org). GitHub receives the IP address of each visitor.",
+    "providerGithubRegion": "US"
   },
   "funding": {
     "title": "Funding & Independence Policy",

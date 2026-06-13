@@ -1,4 +1,5 @@
-{
+
+    {
   "app": {
     "name": "Voice Protest",
     "tagline1": "Verified citizen protest",
@@ -639,7 +640,7 @@
     "baseUrlTitle": "Base URL",
     "rateLimitTitle": "Rate limit",
     "rateLimitDesc": "120 requests per minute per IP. No authentication required.",
-    "exampleResponse": "Example response",
+    "exampleResponse": "Example response (illustrative)",
     "tryIt": "▶ Try it",
     "tryUtrecht": "▶ Try with Utrecht",
     "endpoint1Desc": "Global platform statistics — total protests, adhesions, countries.",
@@ -647,7 +648,12 @@
     "endpoint2Params": "Query params:",
     "endpoint3Desc": "Full data for a single protest including reliability breakdown, geographic distribution and growth stats.",
     "attributionTitle": "Attribution",
-    "attributionDesc": "When using this data, please credit:"
+    "attributionDesc": "When using this data, please credit:",
+    "badgeAGPL": "Code: AGPL 3.0",
+    "endpoint4Desc": "Public commitments and integrity data needed to independently verify the published report.",
+    "endpoint4Note": "This endpoint materialises the public verifiability of Voice Protest. Anyone can use it to verify that the published hash matches exactly the data in the report.",
+    "attributionLine": "Voice Protest — voiceprotest.org",
+    "attributionSource": "Source code available on GitHub (AGPL 3.0)"
   },
   "privacy": {
     "title": "Privacy Policy",

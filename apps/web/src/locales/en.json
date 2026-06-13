@@ -1,5 +1,4 @@
-
-    {
+{
   "app": {
     "name": "Voice Protest",
     "tagline1": "Verified citizen protest",
@@ -653,7 +652,8 @@
     "endpoint4Desc": "Public commitments and integrity data needed to independently verify the published report.",
     "endpoint4Note": "This endpoint materialises the public verifiability of Voice Protest. Anyone can use it to verify that the published hash matches exactly the data in the report.",
     "attributionLine": "Voice Protest — voiceprotest.org",
-    "attributionSource": "Source code available on GitHub (AGPL 3.0)"
+    "attributionSource": "Source code available on GitHub (AGPL 3.0)",
+    "attributionData": "Public data provided by Voice Protest."
   },
   "privacy": {
     "title": "Privacy Policy",

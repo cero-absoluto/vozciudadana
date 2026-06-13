@@ -69,6 +69,24 @@
         <div style="font-size:14px;color:var(--text2);line-height:1.7">{{ $t('privacy.abuseBody') }}</div>
       </div>
 
+      <!-- Section: Nullifiers and public commitments -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('privacy.nullifiersTitle') }}</div>
+        <div style="font-size:14px;color:var(--text2);line-height:1.7">{{ $t('privacy.nullifiersBody') }}</div>
+      </div>
+
+      <!-- Section: Integrity records -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('privacy.integrityRecordsTitle') }}</div>
+        <div style="font-size:14px;color:var(--text2);line-height:1.7">{{ $t('privacy.integrityRecordsBody') }}</div>
+      </div>
+
+      <!-- Section: Institutional email -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('privacy.institutionalEmailTitle') }}</div>
+        <div style="font-size:14px;color:var(--text2);line-height:1.7">{{ $t('privacy.institutionalEmailBody') }}</div>
+      </div>
+
       <!-- Section: Data retention -->
       <div style="margin-bottom:20px">
         <div style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('privacy.retentionTitle') }}</div>

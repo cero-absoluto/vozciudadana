@@ -705,7 +705,7 @@
     "title": "Política de Financiación e Independencia",
     "updated": "Última actualización: junio de 2026",
     "principleTitle": "Nuestro principio fundacional",
-    "principleBody": "Voice Protest existe para proporcionar una infraestructura independiente de participación ciudadana verificable. La independencia es un requisito fundamental de la plataforma. Voice Protest busca financiar sus costes operativos mediante contribuciones voluntarias de ciudadanos, sin control financiero ni influencia de gobiernos, partidos políticos, empresas o instituciones.",
+    "principleBody": "Voice Protest existe para proporcionar una infraestructura independiente de participación verificable. La independencia es un requisito fundamental de la plataforma. Voice Protest busca financiar sus costes operativos mediante contribuciones voluntarias de personas, sin control financiero ni influencia de gobiernos, partidos políticos, empresas o instituciones.",
     "costsTitle": "Cuánto cuesta mantener Voice Protest",
     "costsDesc": "Voice Protest opera con costes mínimos. Transparencia total sobre la infraestructura actual:",
     "costRailway": "Infraestructura del servidor backend",
@@ -715,13 +715,13 @@
     "costDomain": "Dominio voiceprotest.org",
     "smsCost": "💬 La verificación por SMS genera un coste variable por intento, normalmente de unos céntimos, según el país, el proveedor y los reintentos. Las contribuciones asociadas a una convocatoria ayudan a cubrir esos costes técnicos. Participar no requiere pagar.",
     "acceptTitle": "Qué aceptamos",
-    "accept1": "Donaciones individuales de ciudadanos de cualquier cuantía.",
+    "accept1": "Contribuciones individuales de personas de cualquier cuantía, hasta el límite por donación vigente.",
     "accept2": "Contribuciones recurrentes de pequeña cuantía para cubrir costes operativos.",
     "accept3": "Contribuciones destinadas a cubrir infraestructura, auditorías de seguridad o mejoras técnicas.",
-    "accept4": "Contribuciones de ciudadanos que creen en el valor de la participación ciudadana verificada e independiente.",
+    "accept4": "Contribuciones de personas que crean en el valor de la participación verificada e independiente.",
     "rejectTitle": "Qué no aceptamos",
     "reject1": "Financiación de partidos políticos, gobiernos o instituciones estatales.",
-    "reject2": "Financiación de empresas o entidades privadas que busquen influencia sobre la plataforma.",
+    "reject2": "Financiación corporativa, institucional o de cualquier entidad que pretenda influir en la gobernanza, moderación o decisiones de la plataforma. Voice Protest no solicita este tipo de financiación. Cuando una contribución sea identificable como procedente de una entidad que comprometa la independencia del proyecto, podrá ser rechazada o devuelta.",
     "reject3": "Donaciones condicionadas a cualquier cambio en el comportamiento de la plataforma, la moderación de contenidos o los resultados.",
     "reject4": "Publicidad de ningún tipo.",
     "reject5": "Ingresos por la venta o comercialización de datos de usuarios.",
@@ -748,6 +748,9 @@
     "allocationTitle": "Cómo se distribuyen las donaciones",
     "allocationBody": "Las contribuciones pueden dividirse entre los recursos de verificación de las convocatorias y la sostenibilidad a largo plazo de Voice Protest. El modelo de distribución está documentado públicamente y puede evolucionar a medida que el proyecto madure.",
     "sustainabilityTitle": "Fondo de sostenibilidad de la plataforma",
-    "sustainabilityBody": "El fondo de sostenibilidad existe para preservar la independencia a largo plazo de Voice Protest. Puede utilizarse para alojamiento, seguridad, sistemas de verificación, auditorías y mantenimiento futuro de la plataforma."
+    "sustainabilityBody": "El fondo de sostenibilidad existe para preservar la independencia a largo plazo de Voice Protest. Puede utilizarse para alojamiento, seguridad, sistemas de verificación, auditorías y mantenimiento futuro de la plataforma.",
+    "limitTitle": "Límite por donación",
+    "limitBody": "Para preservar la independencia del proyecto, las contribuciones individuales están actualmente limitadas a 100 € por donación. Este límite busca evitar que ningún donante individual acumule una influencia económica desproporcionada sobre la plataforma.",
+    "corporateNote": "Voice Protest se financia principalmente mediante pequeñas contribuciones individuales. No busca financiación de empresas, partidos políticos, administraciones públicas ni organizaciones que pretendan influir en la gobernanza del proyecto."
   }
 }

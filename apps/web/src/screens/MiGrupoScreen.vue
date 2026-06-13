@@ -210,7 +210,7 @@ async function enviarOtpGenesis() {
     await api.sendEmailOtp({ email: genesisEmail.value, protest_id: protestId });
     genesisOtpVisible.value = true;
   } catch (e) {
-    genesisError.value = e.message || t('migrupo.errorSend');
+    genesisError.value = t('migrupo.errorSend');
   } finally {
     loadingGenesis.value = false;
   }
@@ -240,7 +240,7 @@ async function verificarOtpGenesis() {
     genesisOtpVisible.value = false;
     ui.showToast(t('migrupo.toastCreated'));
   } catch (e) {
-    genesisOtpError.value = e.message || t('migrupo.errorCreateGroup');
+    genesisOtpError.value = t('migrupo.errorCreateGroup');
   } finally {
     loadingGenesis.value = false;
   }
@@ -297,7 +297,7 @@ async function darVouch(solicitud) {
     ui.showToast(t('migrupo.toastVouched'));
     await cargarEstado();
   } catch (e) {
-    ui.showToast(t('migrupo.toastVouchError', { msg: e.message }));
+    ui.showToast(t('migrupo.toastVouchError'));
   }
 }
 
@@ -307,7 +307,7 @@ async function generarLink() {
     const data = await api.generarInvite(groupId.value, { inviter_hash: emailHash.value });
     linkInvitacion.value = data.url;
   } catch (e) {
-    ui.showToast(t('migrupo.toastLinkError', { msg: e.message }));
+    ui.showToast(t('migrupo.toastLinkError'));
   }
 }
   async function generarYCompartirLink() {

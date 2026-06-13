@@ -58,8 +58,8 @@
     "worldIdSoon": "World ID — bientôt disponible",
     "wrongCountry": "Cet événement est réservé aux citoyens de {country}. Utilisez un numéro de ce pays.",
     "otpError": "Entrez les 6 chiffres",
-    "otpIncorrect": "Code incorrect ou expiré : {msg}",
-    "sendError": "Erreur d'envoi du code : {msg}",
+    "otpIncorrect": "Code incorrect ou expiré. Demandez-en un nouveau si le problème persiste.",
+    "sendError": "Erreur lors de l'envoi du code. Vérifiez votre numéro et réessayez.",
     "otpRateLimited": "Pour des raisons de sécurité, veuillez patienter quelques minutes avant de demander un nouveau code."
   },
   "home": {
@@ -507,7 +507,7 @@
     "toastCreated": "✓ Recensement démarré — vous êtes le nœud genèse",
     "toastVouched": "✓ Parrainage enregistré",
     "toastLoadError": "Erreur lors du chargement du statut du groupe",
-    "toastVouchError": "Erreur lors de l'enregistrement du parrainage : {msg}",
+    "toastVouchError": "Impossible d'enregistrer le parrainage. Veuillez réessayer.",
     "errorSend": "Erreur lors de l'envoi du code.",
     "otpError": "Entrez le code à 6 chiffres",
     "shareTitle": "Rejoins le recensement de {name}",
@@ -516,7 +516,7 @@
     "linkCopied": "✓ Lien copié — partage-le uniquement avec tes collègues",
     "errorDomain": "L'email doit être du domaine {domain}",
     "errorCreateGroup": "Erreur lors de la création du groupe.",
-    "toastLinkError": "Erreur lors de la génération du lien : {msg}",
+    "toastLinkError": "Impossible de générer le lien d'invitation. Veuillez réessayer.",
     "linkCopyError": "Impossible de copier — copiez le lien manuellement"
   },
   "unirse": {

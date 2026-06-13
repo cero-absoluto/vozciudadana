@@ -58,8 +58,8 @@
     "worldIdSoon": "World ID — próximamente",
     "wrongCountry": "Esta convocatoria es solo para participantes verificados vinculados al ámbito nacional de {country}. Usa un número de ese país.",
     "otpError": "Introduce los 6 dígitos",
-    "otpIncorrect": "Código incorrecto o expirado: {msg}",
-    "sendError": "Error al enviar el código: {msg}",
+    "otpIncorrect": "Código incorrecto o expirado. Solicita uno nuevo si el problema persiste.",
+    "sendError": "Error al enviar el código. Comprueba tu número e inténtalo de nuevo.",
     "otpRateLimited": "Por seguridad, espera unos minutos antes de solicitar otro código."
   },
   "home": {
@@ -506,7 +506,7 @@
     "toastCreated": "✓ Censo iniciado — eres el nodo génesis",
     "toastVouched": "✓ Aval registrado",
     "toastLoadError": "Error al cargar el estado del grupo",
-    "toastVouchError": "Error al registrar el aval: {msg}",
+    "toastVouchError": "No se pudo registrar el aval. Inténtalo de nuevo.",
     "errorSend": "Error al enviar el código.",
     "otpError": "Introduce el código de 6 dígitos",
     "shareTitle": "Uúnete al censo de {name}",
@@ -515,7 +515,7 @@
     "linkCopied": "✓ Link copiado — compártelo solo con tus compañeros",
     "errorDomain": "El email debe ser del dominio {domain}",
     "errorCreateGroup": "Error al crear el grupo.",
-    "toastLinkError": "Error al generar el link: {msg}",
+    "toastLinkError": "No se pudo generar el link de invitación. Inténtalo de nuevo.",
     "linkCopyError": "No se pudo copiar — copia el link manualmente"
   },
   "unirse": {

@@ -359,7 +359,9 @@
     "openCard1Body": "API gratuite pour chercheurs et journalistes. Données agrégées, aucune authentification requise. →",
     "openCard2Title": "Code source ouvert",
     "openCard2Body": "Code source complet disponible sous AGPL 3.0 sur <a href=\"https://github.com/cero-absoluto/vozciudadana\" target=\"_blank\" style=\"color:var(--accent)\">GitHub</a>.",
-    "principleNote": "Voice Protest vérifie la participation. Il ne vérifie pas la vérité des faits."
+    "principleNote": "Voice Protest vérifie la participation. Il ne vérifie pas la vérité des faits.",
+    "openCard3Teaser": "Pas de publicité. Pas de vente de données. Pas de cookies de suivi.",
+    "openCard4Teaser": "Pas de financement institutionnel. Pas de grands donateurs. Contributions individuelles jusqu'à 100 €."
   },
   "informe": {
     "loading": "Chargement du rapport...",

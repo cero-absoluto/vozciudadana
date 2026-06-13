@@ -656,7 +656,7 @@
     "collect1Title": "Hash cryptographique de votre numéro de téléphone",
     "collect1Body": "Votre numéro de téléphone est transmis par HTTPS à notre serveur uniquement pour envoyer le code de vérification SMS et extraire votre préfixe de pays. Il n'est pas stocké de façon persistante après ce processus. Seul son hachage HMAC-SHA256 est conservé. Le numéro original ne peut raisonnablement pas être récupéré.",
     "collect2Title": "Localisation approximative — ville et région uniquement",
-    "collect2Body": "Si vous accordez la permission GPS, les coordonnées sont momentanément stockées dans votre navigateur et transmises à notre serveur par HTTPS, où Nominatim (géocodage OpenStreetMap) les utilise pour déterminer votre ville et région. Les coordonnées sont immédiatement écartées — du navigateur et du serveur — une fois le géocodage terminé. Elles ne sont jamais stockées en base de données.",
+    "collect2Body": "Si vous accordez la permission GPS, les coordonnées sont utilisées pour déterminer votre ville et région via Nominatim (OpenStreetMap). Selon le contexte, cet appel peut être effectué directement depuis votre navigateur ou via notre serveur. Dans le premier cas, Nominatim reçoit votre adresse IP ; dans le second, celle de notre serveur.",
     "collect3Title": "Identifiant aléatoire d'appareil",
     "collect3Body": "Voice Protest génère un identifiant aléatoire sur votre appareil pour aider à prévenir les adhésions en double, l'abus des systèmes de vérification et les requêtes automatisées en masse. Cet identifiant ne contient aucune information personnelle et est utilisé uniquement pour protéger l'intégrité et la sécurité de la plateforme.",
     "collect4Title": "Préférence de langue",
@@ -697,9 +697,9 @@
     "integrityRecordsBody": "À la clôture, les données nécessaires à la vérification publique sont sauvegardées dans un enregistrement permanent (integrity_records), conçu pour rester disponible à long terme.",
     "institutionalEmailTitle": "Email institutionnel",
     "institutionalEmailBody": "Pour les protestations avec vérification institutionnelle, l'email est utilisé uniquement pour envoyer le code OTP. L'email original n'est pas stocké — il est transformé en hachage HMAC-SHA256 irréversible. Il n'est jamais utilisé pour des communications ultérieures.",
-    "providerNominatim": "Géocodage GPS — convertit les coordonnées en ville, région et pays. Peut recevoir l'IP de l'utilisateur lors du géocodage depuis le navigateur.",
+    "providerNominatim": "Géocodage GPS — convertit les coordonnées en ville et région. Dans certains cas l'appel est effectué directement depuis le navigateur, auquel cas Nominatim reçoit l'adresse IP de l'utilisateur.",
     "providerNominatimRegion": "EU / Variable (infrastructure OpenStreetMap distribuée)",
-    "providerGithub": "Hébergement du frontend statique (voiceprotest.org). GitHub reçoit l'adresse IP de chaque visiteur.",
+    "providerGithub": "Hébergement du frontend statique (voiceprotest.org). GitHub Pages peut recevoir l'adresse IP de chaque visiteur lors de la fourniture des fichiers de l'application.",
     "providerGithubRegion": "US"
   },
   "funding": {

@@ -652,7 +652,8 @@
     "endpoint4Desc": "公开承诺和完整性数据，用于独立验证已发布的报告。",
     "endpoint4Note": "此端点实现了Voice Protest的公开可验证性。",
     "attributionLine": "Voice Protest — voiceprotest.org",
-    "attributionSource": "GitHub上提供源代码（AGPL 3.0）"
+    "attributionSource": "GitHub上提供源代码（AGPL 3.0）",
+    "attributionData": "公开数据由Voice Protest提供。"
   },
   "privacy": {
     "title": "隐私政策",

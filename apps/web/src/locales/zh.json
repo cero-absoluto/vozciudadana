@@ -656,7 +656,7 @@
     "collect1Title": "手机号码的加密哈希值",
     "collect1Body": "您的电话号码通过HTTPS传输到我们的服务器，仅用于发送SMS验证码和提取国家前缀。此过程完成后不予持久存储。仅保留其HMAC-SHA256哈希值。原始号码无法从存储的标识符中合理地恢复。",
     "collect2Title": "大致位置——仅限城市和地区",
-    "collect2Body": "如果您授予GPS权限，坐标暂时存储在您的浏览器中并通过HTTPS传输到我们的服务器，Nominatim（OpenStreetMap地理编码）使用它们确定您的城市和地区。地理编码完成后立即丢弃坐标——从浏览器和服务器均予丢弃。从不存储在数据库中。",
+    "collect2Body": "如果您授予GPS权限，坐标通过Nominatim（OpenStreetMap地理编码）确定您的城市和地区。根据情况，此调用可能直接从您的浏览器发出或通过我们的服务器。前者Nominatim接收您的IP地址；后者接收我们服务器的IP。坐标在地理编码后立即丢弃，从不存储在数据库中。",
     "collect3Title": "随机设备标识符",
     "collect3Body": "Voice Protest在您的设备上生成一个随机标识符，以帮助防止重复参与、滥用验证系统和自动化批量请求。此标识符不包含任何个人信息，仅用于保护平台的完整性和安全性。",
     "collect4Title": "语言偏好",
@@ -697,9 +697,9 @@
     "integrityRecordsBody": "关闭时，公开验证所需数据保存在永久记录(integrity_records)中，设计为长期可用。此记录在90天后个人参与数据删除后仍然存在。",
     "institutionalEmailTitle": "机构电子邮件",
     "institutionalEmailBody": "对于机构验证的抗议，电子邮件仅用于发送OTP验证码。原始邮件不存储——转换为不可逆的HMAC-SHA256哈希。",
-    "providerNominatim": "GPS地理编码——将坐标转换为城市、地区和国家。从浏览器进行地理编码时可能接收用户IP。",
+    "providerNominatim": "GPS地理编码——将坐标转换为城市和地区。某些情况下直接从用户浏览器调用，此时Nominatim接收用户IP地址。",
     "providerNominatimRegion": "EU / 可变（OpenStreetMap分布式基础设施）",
-    "providerGithub": "静态前端托管（voiceprotest.org）。GitHub接收每位访客的IP地址。",
+    "providerGithub": "静态前端托管（voiceprotest.org）。GitHub Pages在提供应用文件时可能接收每位访客的IP地址。",
     "providerGithubRegion": "US"
   },
   "funding": {

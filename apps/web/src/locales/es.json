@@ -651,7 +651,8 @@
     "endpoint4Desc": "Compromisos públicos y datos de integridad necesarios para verificar independientemente el informe publicado.",
     "endpoint4Note": "Este endpoint materializa la verificabilidad pública de Voice Protest. Cualquier persona puede usarlo para comprobar que el hash publicado corresponde exactamente a los datos del informe.",
     "attributionLine": "Voice Protest — voiceprotest.org",
-    "attributionSource": "Código fuente disponible en GitHub (AGPL 3.0)"
+    "attributionSource": "Código fuente disponible en GitHub (AGPL 3.0)",
+    "attributionData": "Datos públicos proporcionados por Voice Protest."
   },
   "privacy": {
     "title": "Política de privacidad",

@@ -58,8 +58,8 @@
     "worldIdSoon": "World ID — 即将推出",
     "wrongCountry": "此活动仅面向{country}的公民。请使用该国号码。",
     "otpError": "请输入全部6位数字",
-    "otpIncorrect": "验证码错误或已过期：{msg}",
-    "sendError": "发送验证码失败：{msg}",
+    "otpIncorrect": "验证码不正确或已过期。如问题持续，请申请新验证码。",
+    "sendError": "发送验证码时出错。请检查您的号码后重试。",
     "otpRateLimited": "出于安全原因，请等待几分钟后再请求新验证码。"
   },
   "home": {
@@ -507,7 +507,7 @@
     "toastCreated": "✓ 名册已启动 — 您是创始节点",
     "toastVouched": "✓ 担保已注册",
     "toastLoadError": "加载群组状态时出错",
-    "toastVouchError": "注册担保时出错：{msg}",
+    "toastVouchError": "无法注册担保。请重试。",
     "errorSend": "发送验证码时出错。",
     "otpError": "请输入6位验证码",
     "shareTitle": "加入 {name} 的名册",
@@ -516,7 +516,7 @@
     "linkCopied": "✓ 链接已复制——只与同事分享",
     "errorDomain": "电子邮件必须属于 {domain} 域",
     "errorCreateGroup": "创建群组时出错。",
-    "toastLinkError": "生成链接时出错：{msg}",
+    "toastLinkError": "无法生成邀请链接。请重试。",
     "linkCopyError": "无法复制 — 请手动复制链接"
   },
   "unirse": {

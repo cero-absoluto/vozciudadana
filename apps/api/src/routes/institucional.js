@@ -25,7 +25,7 @@ const EMAIL_TEXTS = {
     title: 'Voice Protest',
     body: (title) => `Votre code de vérification pour <strong>${title}</strong> est :`,
     expiry: 'Ce code expire dans 24 heures.',
-    privacy: 'Votre email n'est pas conservé — uniquement son empreinte cryptographique irréversible.',
+    privacy: "Votre email n'est pas conservé — uniquement son empreinte cryptographique irréversible.",
   },
   zh: {
     subject: (otp) => `您的验证码：${otp}`,

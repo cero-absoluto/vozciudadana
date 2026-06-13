@@ -153,5 +153,7 @@ const providers = computed(() => [
   { name: 'Twilio',    role: t('privacy.providerTwilio'),    country: 'US' },
   { name: 'Resend',    role: t('privacy.providerResend'),    country: 'US' },
   { name: 'Google reCAPTCHA', role: t('privacy.providerRecaptcha'), country: 'US' },
+  { name: 'Nominatim (OpenStreetMap)', role: t('privacy.providerNominatim'), country: t('privacy.providerNominatimRegion') },
+  { name: 'GitHub Pages', role: t('privacy.providerGithub'), country: t('privacy.providerGithubRegion') },
 ]);
 </script>

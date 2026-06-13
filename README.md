@@ -2,7 +2,7 @@
 
 **Verified, pseudonymous and privacy-preserving civic protest platform.**
 
-> *"A street protest measures who can be there that day. We measure real support — using technical safeguards designed to verify that each adhesion comes from a unique participant connected to the relevant community."*
+> *"A street protest measures who can be there that day. We measure verifiable support from those who choose to participate — using technical safeguards designed to verify that each adhesion comes from a unique participant connected to the relevant community."*
 
 ![Live App](https://img.shields.io/badge/Live%20App-voiceprotest.org-4CFFA4?style=flat-square)
 ![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue?style=flat-square)
@@ -34,7 +34,7 @@ Available in 🇪🇸 ES · 🇬🇧 EN · 🇫🇷 FR · 🇨🇳 中文
 | 📡 Public commitments | Per-adhesion commitments — `SHA256(protest_id + nullifier)` — enable hash verification without revealing identities or enabling cross-protest correlation. |
 | 📋 Integrity log | Public record of integrity hashes maintained through GitHub. Updated manually at each protest closure. |
 | 📍 GPS verification | Optional location signal raises reliability confidence up to 95% |
-| 👥 Dynamic census | Wave-based trust system with peer vouching for institutional events |
+| 👥 Dynamic census | Wave-based trust system with peer vouching for local/institutional events |
 | 📧 Institutional email | Any institutional domain for university/workplace events |
 | 🌍 Geographic scopes | National (SIM+IP verified) · Local/Regional · Global |
 | 📊 Public report | Live data, PDF export, embeddable widget for media |
@@ -209,7 +209,7 @@ CORS_ORIGIN=https://voiceprotest.org
 
 ## Philosophy
 
-Voice Protest has no ideology. It is neutral infrastructure for democratic expression, accessible from anywhere, without physical risk.
+Voice Protest is not affiliated with any ideology, political party or institution. It is neutral infrastructure for verified participation, accessible from anywhere and without physical risk.
 
 - No advertising.
 - No data sales.

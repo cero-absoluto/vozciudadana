@@ -359,7 +359,9 @@
     "openCard1Body": "为研究人员和记者提供的免费API。汇总数据，无需身份验证。 →",
     "openCard2Title": "开源",
     "openCard2Body": "完整代码在AGPL 3.0许可证下可在<a href=\"https://github.com/cero-absoluto/vozciudadana\" target=\"_blank\" style=\"color:var(--accent)\">GitHub</a>上查阅。",
-    "principleNote": "Voice Protest验证参与。它不验证事实的真实性。"
+    "principleNote": "Voice Protest验证参与。它不验证事实的真实性。",
+    "openCard3Teaser": "无广告。不出售数据。无跟踪Cookie。",
+    "openCard4Teaser": "无机构资金。无大额捐款人。个人捐款上限100欧元。"
   },
   "informe": {
     "loading": "加载报告中...",

@@ -652,7 +652,8 @@
     "endpoint4Desc": "Engagements publics et données d'intégrité nécessaires pour vérifier indépendamment le rapport publié.",
     "endpoint4Note": "Cet endpoint matérialise la vérifiabilité publique de Voice Protest.",
     "attributionLine": "Voice Protest — voiceprotest.org",
-    "attributionSource": "Code source disponible sur GitHub (AGPL 3.0)"
+    "attributionSource": "Code source disponible sur GitHub (AGPL 3.0)",
+    "attributionData": "Données publiques fournies par Voice Protest."
   },
   "privacy": {
     "title": "Politique de confidentialité",

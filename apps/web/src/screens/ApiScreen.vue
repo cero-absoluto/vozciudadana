@@ -33,7 +33,7 @@
           <span class="api-path">/api/public/stats</span>
         </div>
         <div style="font-size:14px;color:var(--text);margin-bottom:10px">{{ $t('api.endpoint1Desc') }}</div>
-        <div class="api-code">{{ BASE_URL }}/api/public/stats</div>
+        <div class="api-code">https://api.voiceprotest.org/api/public/stats</div>
         <div style="margin-top:10px">
           <div style="font-size:11px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">{{ $t('api.exampleResponse') }}</div>
           <pre class="api-pre">{{ statsExample }}</pre>
@@ -54,7 +54,7 @@
           <code class="api-inline">scope</code> (national|regional|global) ·
           <code class="api-inline">country</code> (ISO code, e.g. ES)
         </div>
-        <div class="api-code">{{ BASE_URL }}/api/public/protests?status=active</div>
+        <div class="api-code">https://api.voiceprotest.org/api/public/protests?status=active</div>
         <button class="api-try-btn" @click="tryEndpoint('protests')">{{ $t('api.tryIt') }}</button>
         <pre v-if="results.protests" class="api-result">{{ results.protests }}</pre>
       </div>
@@ -66,7 +66,7 @@
           <span class="api-path">/api/public/protests/:id</span>
         </div>
         <div style="font-size:14px;color:var(--text);margin-bottom:10px">{{ $t('api.endpoint3Desc') }}</div>
-        <div class="api-code">{{ BASE_URL }}/api/public/protests/{protest_id}</div>
+        <div class="api-code">https://api.voiceprotest.org/api/public/protests/{protest_id}</div>
         <button class="api-try-btn" @click="tryEndpoint('protest')">{{ $t('api.tryUtrecht') }}</button>
         <pre v-if="results.protest" class="api-result">{{ results.protest }}</pre>
       </div>

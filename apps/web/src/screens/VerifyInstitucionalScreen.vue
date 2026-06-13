@@ -97,7 +97,7 @@ async function sendOtp() {
     await api.sendEmailOtp({ email: email.value, protest_id: protestId });
     step.value = 2;
   } catch (e) {
-    emailError.value = e.message || t('verificacional.errorSend');
+    emailError.value = t('verificacional.errorSend');
   } finally {
     loading.value = false;
   }
@@ -114,7 +114,7 @@ async function verifyOtp() {
     step.value = 3;
     ui.showToast(t('verify.toast'));
   } catch (e) {
-    otpError.value = e.message || t('verificacional.errOtpWrong');
+    otpError.value = t('verificacional.errOtpWrong');
   } finally {
     loading.value = false;
   }

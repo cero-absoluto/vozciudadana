@@ -5,6 +5,42 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 /** @param {import('fastify').FastifyInstance} app */
+const EMAIL_TEXTS = {
+  es: {
+    subject: (otp) => `Tu código de verificación: ${otp}`,
+    title: 'Voice Protest',
+    body: (title) => `Tu código de verificación para <strong>${title}</strong> es:`,
+    expiry: 'Este código caduca en 24 horas.',
+    privacy: 'Tu email no se guarda — solo su huella matemática irreversible.',
+  },
+  en: {
+    subject: (otp) => `Your verification code: ${otp}`,
+    title: 'Voice Protest',
+    body: (title) => `Your verification code for <strong>${title}</strong> is:`,
+    expiry: 'This code expires in 24 hours.',
+    privacy: 'Your email is not stored — only its irreversible cryptographic fingerprint.',
+  },
+  fr: {
+    subject: (otp) => `Votre code de vérification : ${otp}`,
+    title: 'Voice Protest',
+    body: (title) => `Votre code de vérification pour <strong>${title}</strong> est :`,
+    expiry: 'Ce code expire dans 24 heures.',
+    privacy: 'Votre email n'est pas conservé — uniquement son empreinte cryptographique irréversible.',
+  },
+  zh: {
+    subject: (otp) => `您的验证码：${otp}`,
+    title: 'Voice Protest',
+    body: (title) => `您在<strong>${title}</strong>的验证码是：`,
+    expiry: '此验证码在24小时后失效。',
+    privacy: '您的电子邮件不会被保存——仅保留其不可逆的加密指纹。',
+  },
+};
+
+function getLocale(req) {
+  const lang = req.headers['accept-language']?.split(',')[0]?.split('-')[0]?.toLowerCase();
+  return ['es', 'en', 'fr', 'zh'].includes(lang) ? lang : 'es';
+}
+
 export default async function institucionalRoutes(app) {
 
   // POST /api/institucional/send-otp
@@ -81,19 +117,22 @@ export default async function institucionalRoutes(app) {
     }
 
     // 8. Enviar email con Resend
+    const locale = getLocale(req);
+    const t = EMAIL_TEXTS[locale];
+
     await resend.emails.send({
       from: 'Voice Protest <noreply@ceroabsoluto.es>',
       to: email,
-      subject: `Tu código de verificación: ${otp}`,
+      subject: t.subject(otp),
       html: `
         <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px">
-          <h2 style="color:#7C6FFF">Voice Protest</h2>
-          <p>Tu código de verificación para <strong>${protest.title}</strong> es:</p>
+          <h2 style="color:#7C6FFF">${t.title}</h2>
+          <p>${t.body(protest.title)}</p>
           <div style="font-size:36px;font-weight:bold;letter-spacing:8px;color:#7C6FFF;margin:24px 0;text-align:center">
             ${otp}
           </div>
-          <p style="color:#888;font-size:12px">Este código caduca en 24 horas.</p>
-          <p style="color:#888;font-size:12px">Tu email no se guarda — solo su huella matemática irreversible.</p>
+          <p style="color:#888;font-size:12px">${t.expiry}</p>
+          <p style="color:#888;font-size:12px">${t.privacy}</p>
         </div>
       `,
     });

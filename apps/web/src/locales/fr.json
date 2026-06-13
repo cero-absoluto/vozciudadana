@@ -696,7 +696,11 @@
     "integrityRecordsTitle": "Enregistrements d'intégrité permanents",
     "integrityRecordsBody": "À la clôture, les données nécessaires à la vérification publique sont sauvegardées dans un enregistrement permanent (integrity_records), conçu pour rester disponible à long terme.",
     "institutionalEmailTitle": "Email institutionnel",
-    "institutionalEmailBody": "Pour les protestations avec vérification institutionnelle, l'email est utilisé uniquement pour envoyer le code OTP. L'email original n'est pas stocké — il est transformé en hachage HMAC-SHA256 irréversible. Il n'est jamais utilisé pour des communications ultérieures."
+    "institutionalEmailBody": "Pour les protestations avec vérification institutionnelle, l'email est utilisé uniquement pour envoyer le code OTP. L'email original n'est pas stocké — il est transformé en hachage HMAC-SHA256 irréversible. Il n'est jamais utilisé pour des communications ultérieures.",
+    "providerNominatim": "Géocodage GPS — convertit les coordonnées en ville, région et pays. Peut recevoir l'IP de l'utilisateur lors du géocodage depuis le navigateur.",
+    "providerNominatimRegion": "EU / Variable (infrastructure OpenStreetMap distribuée)",
+    "providerGithub": "Hébergement du frontend statique (voiceprotest.org). GitHub reçoit l'adresse IP de chaque visiteur.",
+    "providerGithubRegion": "US"
   },
   "funding": {
     "title": "Politique de Financement et d'Indépendance",

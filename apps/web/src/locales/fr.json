@@ -654,7 +654,7 @@
     "principleBody": "Voice Protest est construit sur le principe que la participation démocratique ne doit pas exiger de sacrifier la vie privée. Nous ne collectons que le strict nécessaire pour vérifier que chaque adhésion est réelle et unique. Voice Protest offre une participation pseudonyme — votre identité n'est pas visible par les autres participants et n'est pas conservée après la vérification.",
     "collectTitle": "Ce que nous collectons",
     "collect1Title": "Hash cryptographique de votre numéro de téléphone",
-    "collect1Body": "Votre numéro de téléphone est transmis par HTTPS à notre serveur uniquement pour envoyer le code de vérification SMS et extraire votre préfixe de pays. Il n'est pas stocké après ce processus. Seul son hachage HMAC-SHA256 est conservé. Le numéro original ne peut raisonnablement pas être récupéré à partir de l'identifiant stocké.",
+    "collect1Body": "Votre numéro de téléphone est transmis par HTTPS à notre serveur uniquement pour envoyer le code de vérification SMS et extraire votre préfixe de pays. Il n'est pas stocké de façon persistante après ce processus. Seul son hachage HMAC-SHA256 est conservé. Le numéro original ne peut raisonnablement pas être récupéré.",
     "collect2Title": "Localisation approximative — ville et région uniquement",
     "collect2Body": "Si vous accordez la permission GPS, les coordonnées sont momentanément stockées dans votre navigateur et transmises à notre serveur par HTTPS, où Nominatim (géocodage OpenStreetMap) les utilise pour déterminer votre ville et région. Les coordonnées sont immédiatement écartées — du navigateur et du serveur — une fois le géocodage terminé. Elles ne sont jamais stockées en base de données.",
     "collect3Title": "Identifiant aléatoire d'appareil",
@@ -694,7 +694,7 @@
     "nullifiersTitle": "Nullifiers et engagements publics",
     "nullifiersBody": "Pour garantir qu'un numéro de téléphone ne peut adhérer qu'une seule fois par protestation, le système calcule un nullifier et vérifie qu'il n'existe pas déjà. Le nullifier n'est jamais publié. À la clôture, des engagements publics — SHA256(protest_id + nullifier) — sont générés, permettant à quiconque de vérifier le hash d'intégrité sans révéler d'identités.",
     "integrityRecordsTitle": "Enregistrements d'intégrité permanents",
-    "integrityRecordsBody": "À la clôture, les données nécessaires à la vérification publique sont sauvegardées dans un enregistrement permanent (integrity_records). Cet enregistrement survit à la suppression des adhésions individuelles après 90 jours.",
+    "integrityRecordsBody": "À la clôture, les données nécessaires à la vérification publique sont sauvegardées dans un enregistrement permanent (integrity_records), conçu pour rester disponible à long terme.",
     "institutionalEmailTitle": "Email institutionnel",
     "institutionalEmailBody": "Pour les protestations avec vérification institutionnelle, l'email est utilisé uniquement pour envoyer le code OTP. L'email original n'est pas stocké — il est transformé en hachage HMAC-SHA256 irréversible. Il n'est jamais utilisé pour des communications ultérieures."
   },

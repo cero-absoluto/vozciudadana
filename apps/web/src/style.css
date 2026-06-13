@@ -544,13 +544,13 @@ a:hover{opacity:.8}
 
 /* ── PUBLIC API ──────────────────────────────────────────────────────── */
 #s-api{display:flex;flex-direction:column;height:100%;overflow:hidden}
-.api-block{background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r2);padding:14px;margin-bottom:12px}
-.api-block-title{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
-.api-method{font-size:10px;font-weight:800;background:rgba(76,255,164,.15);color:var(--accent2);border-radius:4px;padding:2px 8px}
-.api-path{font-family:monospace;font-size:12px;color:var(--text)}
-.api-code{font-family:monospace;font-size:10px;color:var(--accent2);background:#0C0B14;border:.5px solid rgba(255,255,255,.06);border-radius:6px;padding:8px 10px;word-break:break-all;line-height:1.6}
-.api-inline{font-family:monospace;font-size:10px;color:var(--accent4);background:rgba(255,179,71,.1);border-radius:3px;padding:1px 4px}
-.api-pre{font-family:monospace;font-size:9px;color:var(--text2);background:#0C0B14;border:.5px solid rgba(255,255,255,.06);border-radius:6px;padding:10px;overflow-x:auto;white-space:pre;line-height:1.6;margin-top:0}
-.api-result{font-family:monospace;font-size:9px;color:var(--accent2);background:#0C0B14;border:.5px solid rgba(76,255,164,.2);border-radius:6px;padding:10px;overflow-x:auto;white-space:pre;line-height:1.6;margin-top:8px;max-height:200px;overflow-y:auto}
-.api-try-btn{margin-top:10px;padding:6px 14px;background:rgba(76,111,255,.15);border:.5px solid #4C6FFF;border-radius:var(--r);color:#4C6FFF;font-size:11px;font-weight:700;cursor:pointer}
-.api-try-btn:hover{background:rgba(76,111,255,.25)}
+.api-block{background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r2);padding:16px;margin-bottom:14px}
+.api-block-title{font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.api-method{font-size:12px;font-weight:800;background:rgba(76,255,164,.15);color:var(--accent2);border-radius:4px;padding:3px 10px}
+.api-path{font-family:monospace;font-size:14px;color:var(--text);font-weight:600}
+.api-code{font-family:monospace;font-size:12px;color:var(--accent2);background:#0C0B14;border:.5px solid rgba(255,255,255,.1);border-radius:6px;padding:10px 12px;word-break:break-all;line-height:1.7}
+.api-inline{font-family:monospace;font-size:12px;color:var(--accent4);background:rgba(255,179,71,.12);border-radius:3px;padding:2px 5px}
+.api-pre{font-family:monospace;font-size:11px;color:var(--text);background:#0C0B14;border:.5px solid rgba(255,255,255,.1);border-radius:6px;padding:12px;overflow-x:auto;white-space:pre;line-height:1.7;margin-top:0}
+.api-result{font-family:monospace;font-size:11px;color:var(--accent2);background:#0C0B14;border:.5px solid rgba(76,255,164,.25);border-radius:6px;padding:12px;overflow-x:auto;white-space:pre;line-height:1.7;margin-top:8px;max-height:220px;overflow-y:auto}
+.api-try-btn{margin-top:10px;padding:7px 16px;background:rgba(76,111,255,.15);border:.5px solid #4C6FFF;border-radius:var(--r);color:#4C6FFF;font-size:13px;font-weight:700;cursor:pointer}
+.api-try-btn:hover{background:rgba(76,111,255,.28)}

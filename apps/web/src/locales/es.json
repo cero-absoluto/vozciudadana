@@ -638,7 +638,7 @@
     "baseUrlTitle": "URL base",
     "rateLimitTitle": "Límite de peticiones",
     "rateLimitDesc": "120 peticiones por minuto por IP. No se requiere autenticación.",
-    "exampleResponse": "Ejemplo de respuesta",
+    "exampleResponse": "Respuesta de ejemplo (ilustrativa)",
     "tryIt": "▶ Probar",
     "tryUtrecht": "▶ Probar con Utrecht",
     "endpoint1Desc": "Estadísticas globales de la plataforma — total de convocatorias, adhesiones, países.",
@@ -646,7 +646,12 @@
     "endpoint2Params": "Parámetros:",
     "endpoint3Desc": "Datos completos de una convocatoria: desglose de fiabilidad, distribución geográfica y estadísticas de crecimiento.",
     "attributionTitle": "Atribución",
-    "attributionDesc": "Al usar estos datos, por favor cita:"
+    "attributionDesc": "Al usar estos datos, por favor cita:",
+    "badgeAGPL": "Código: AGPL 3.0",
+    "endpoint4Desc": "Compromisos públicos y datos de integridad necesarios para verificar independientemente el informe publicado.",
+    "endpoint4Note": "Este endpoint materializa la verificabilidad pública de Voice Protest. Cualquier persona puede usarlo para comprobar que el hash publicado corresponde exactamente a los datos del informe.",
+    "attributionLine": "Voice Protest — voiceprotest.org",
+    "attributionSource": "Código fuente disponible en GitHub (AGPL 3.0)"
   },
   "privacy": {
     "title": "Política de privacidad",

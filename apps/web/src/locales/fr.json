@@ -60,7 +60,8 @@
     "otpError": "Entrez les 6 chiffres",
     "otpIncorrect": "Code incorrect ou expiré. Demandez-en un nouveau si le problème persiste.",
     "sendError": "Erreur lors de l'envoi du code. Vérifiez votre numéro et réessayez.",
-    "otpRateLimited": "Pour des raisons de sécurité, veuillez patienter quelques minutes avant de demander un nouveau code."
+    "otpRateLimited": "Pour des raisons de sécurité, veuillez patienter quelques minutes avant de demander un nouveau code.",
+    "verificationCannotContinue": "La vérification ne peut pas continuer pour cet événement."
   },
   "home": {
     "geoConfidence": "Confiance géographique :",

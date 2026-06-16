@@ -282,13 +282,13 @@ a:hover{opacity:.8}
   flex:1;position:relative;overflow:hidden;
   padding:0;border:none;border-radius:var(--r2);cursor:pointer;
   background:#B7410E;transition:all .2s;
-  display:flex;align-items:center;justify-content:space-between;
-  gap:0;width:100%;
+  display:flex;align-items:stretch;justify-content:space-between;
+  gap:0;width:100%;height:100%;align-self:stretch;
 }
 .btn-viral::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,#e85d24 0%,#B7410E 55%,#8B3010 100%);transition:opacity .2s}
 .btn-viral:hover::before{opacity:.85}
 .btn-viral:active{transform:scale(.98)}
-.bv-inner{display:flex;align-items:center;justify-content:space-between;width:100%;padding:11px 11px;position:relative;z-index:1;gap:6px}
+.bv-inner{display:flex;align-items:center;justify-content:space-between;width:100%;padding:11px 11px;position:relative;z-index:1;gap:6px;min-height:100%}
 .bv-left{display:flex;align-items:center;gap:7px}
 .bv-fire{font-size:18px;animation:flicker 1.8s ease-in-out infinite alternate;display:block}
 @keyframes flicker{0%{transform:scale(1) rotate(-3deg)}100%{transform:scale(1.15) rotate(3deg)}}
@@ -565,3 +565,5 @@ a:hover{opacity:.8}
 .api-result{font-family:monospace;font-size:11px;color:var(--accent2);background:#0C0B14;border:.5px solid rgba(76,255,164,.25);border-radius:6px;padding:12px;overflow-x:auto;white-space:pre;line-height:1.7;margin-top:8px;max-height:220px;overflow-y:auto}
 .api-try-btn{margin-top:10px;padding:7px 16px;background:rgba(76,111,255,.15);border:.5px solid #4C6FFF;border-radius:var(--r);color:#4C6FFF;font-size:13px;font-weight:700;cursor:pointer}
 .api-try-btn:hover{background:rgba(76,111,255,.28)}
+
+

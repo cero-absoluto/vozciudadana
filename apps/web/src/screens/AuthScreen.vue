@@ -278,7 +278,12 @@ async function sendSMS() {
   try {
     let token = '';
     try { token = await getRecaptchaToken('request_otp'); } catch { /* dev mode */ }
-    await api.requestOtp({ phone: '+' + dialCode.value + v, recaptcha_token: token || 'dev' });
+    const protestId = sessionStorage.getItem('vc_last_joined') || null;
+    const res = await api.requestOtp({ phone: '+' + dialCode.value + v, recaptcha_token: token || 'dev', protest_id: protestId });
+    if (res && res.sent === false) {
+      ui.showToast(t('auth.verificationCannotContinue'));
+      return;
+    }
     otpDigits.value = ['', '', '', '', '', ''];
     otpVisible.value = true;
   } catch (err) {

@@ -335,7 +335,7 @@ const ALLOWED_TYPES = new Set([
   'Q372436','Q107363442','Q48352','Q2101','Q212238','Q13218630',
   'Q16533','Q193391','Q82955','Q1097498','Q15275719','Q42178','Q486839',
   'Q902522','Q62078547','Q875538','Q38723','Q189004','Q23002054',
-  // Additional common public institution types
+  // Public institution types
   'Q166107',  // overheidsorgaan / public body (Netherlands)
   'Q2085381', // department of government
   'Q17320256',// public body (generic)
@@ -352,6 +352,13 @@ const ALLOWED_TYPES = new Set([
   'Q748720',  // public authority
   'Q31855',   // inspectorate
   'Q2275247', // national commission
+  // Supranational and intergovernmental
+  'Q170156',  // intergovernmental organisation (EU, UN, NATO, Council of Europe...)
+  'Q484652',  // international organisation
+  'Q7207745', // supranational organisation
+  'Q1172599', // multinational organisation
+  'Q1063239', // intergovernmental panel
+  'Q245065',  // intergovernmental body
 ]);
 
 const REJECTED_TYPES = new Set([

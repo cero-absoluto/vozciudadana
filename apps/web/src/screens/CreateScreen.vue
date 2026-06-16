@@ -384,10 +384,10 @@ async function validateTarget(wikidataId, label) {
   targetName.value   = label;
   try {
     const sparql = `SELECT ?type ?typeLabel ?countryLabel WHERE {
-      wd:${wikidataId} wdt:P31 ?type .
+      wd:${wikidataId} wdt:P31/wdt:P279* ?type .
       OPTIONAL { wd:${wikidataId} wdt:P17 ?country . }
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en" . }
-    } LIMIT 10`;
+    } LIMIT 20`;
     const res = await fetch('https://query.wikidata.org/sparql?query=' + encodeURIComponent(sparql) + '&format=json');
     const data = await res.json();
     const bindings = data.results.bindings;

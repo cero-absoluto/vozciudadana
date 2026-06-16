@@ -12,10 +12,10 @@
             {{ $t('home.geoConfidence') }} <span :style="{color: confColor}">{{ device.confidence }}%</span>
           </div>
           <div v-if="!device.gpsReady" @click="strengthenGps"
-            style="font-size:10px;color:var(--accent2);cursor:pointer;text-decoration:underline;font-weight:500;margin-top:2px">
+            style="font-size:13px;color:var(--accent2);cursor:pointer;text-decoration:underline;font-weight:600;margin-top:3px">
             📍 {{ strengtheningGps ? '...' : $t('home.improveConfidence') }}
           </div>
-          <div v-else style="font-size:10px;color:var(--accent);font-weight:600;margin-top:2px">
+          <div v-else style="font-size:13px;color:var(--accent);font-weight:700;margin-top:3px">
             📍 GPS ✓
           </div>
         </div>

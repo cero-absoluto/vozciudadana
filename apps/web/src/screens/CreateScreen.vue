@@ -335,6 +335,23 @@ const ALLOWED_TYPES = new Set([
   'Q372436','Q107363442','Q48352','Q2101','Q212238','Q13218630',
   'Q16533','Q193391','Q82955','Q1097498','Q15275719','Q42178','Q486839',
   'Q902522','Q62078547','Q875538','Q38723','Q189004','Q23002054',
+  // Additional common public institution types
+  'Q166107',  // overheidsorgaan / public body (Netherlands)
+  'Q2085381', // department of government
+  'Q17320256',// public body (generic)
+  'Q28863770',// public institution
+  'Q970671',  // public enterprise
+  'Q1301371', // national agency
+  'Q1149035', // cabinet (government)
+  'Q2188189', // municipal council
+  'Q253019',  // prefecture
+  'Q1752939', // administrative division
+  'Q7210356', // political organisation
+  'Q4120845', // regional government
+  'Q6243229', // regulatory agency
+  'Q748720',  // public authority
+  'Q31855',   // inspectorate
+  'Q2275247', // national commission
 ]);
 
 const REJECTED_TYPES = new Set([
@@ -344,7 +361,7 @@ const REJECTED_TYPES = new Set([
 async function searchWikidata(q) {
   if (!q || q.length < 2) { targetSuggestions.value = []; return; }
   try {
-    const url = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(q)}&language=en&limit=6&format=json&origin=*`;
+    const url = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(q)}&language=en&limit=20&format=json&origin=*`;
     const res = await fetch(url);
     const data = await res.json();
     targetSuggestions.value = (data.search || []).map(s => ({

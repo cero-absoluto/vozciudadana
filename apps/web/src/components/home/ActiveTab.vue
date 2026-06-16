@@ -26,8 +26,8 @@
               style="cursor:pointer;font-size:14px;opacity:.7" title="Ver informe público">📄</div>
             <div v-if="isBlocked(p)" style="font-size:14px">🔒</div>
             <div class="pi-count" style="font-size:13px">{{ fmt(p.count) }}</div>
-            <div style="font-size:9px;color:var(--text3)">{{ fmtTime(p.timer) }}</div>
-            <div v-if="p.ends_at" style="font-size:9px;color:var(--text3);margin-top:2px">{{ fmtCloseDate(p.ends_at) }}</div>
+            <div style="font-size:12px;color:var(--text2);font-weight:600">{{ fmtTime(p.timer) }}</div>
+            <div v-if="p.ends_at" style="font-size:11px;color:var(--text3);margin-top:2px">{{ fmtCloseDate(p.ends_at) }}</div>
           </div>
         </div>
       </div>

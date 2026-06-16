@@ -204,7 +204,7 @@
     "errTitle": "Le titre est obligatoire",
     "errDesc": "La description est obligatoire",
     "errDemands": "Indiquez ce que vous exigez",
-    "errFocal": "Le point focal est obligatoire",
+    "errFocal": "Sélectionne une institution dans la liste de suggestions — tape un nom et choisis dans le menu déroulant",
     "errDate": "La date de l'événement est obligatoire",
     "errPais": "Sélectionnez le pays de l'événement",
     "errCountry": "Sélectionnez le pays de l'événement",

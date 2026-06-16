@@ -73,7 +73,27 @@ export default async function userRoutes(app) {
       return reply.code(429).send({ error: 'RATE_LIMITED', code: 'otp_rate_limited' });
     }
 
-    // ── 4. Log OTP request ────────────────────────────────────────────────
+    // ── 4. Nullifier check — before sending SMS ─────────────────────────
+    // If protest_id provided, check if this number already adhered.
+    // Returns neutral 200 {sent:false} — does not reveal the reason,
+    // preventing enumeration attacks on participation status.
+    if (protest_id && phone_hash) {
+      const nullifierCheck = createHmac('sha256', process.env.NULLIFIER_SECRET || 'dev-secret')
+        .update(phone_hash + protest_id)
+        .digest('hex');
+      const { data: existingNullifier } = await supabase
+        .from('adhesions')
+        .select('id')
+        .eq('protest_id', protest_id)
+        .eq('nullifier', nullifierCheck)
+        .is('deleted_at', null)
+        .maybeSingle();
+      if (existingNullifier) {
+        return reply.code(200).send({ sent: false });
+      }
+    }
+
+    // ── 5. Log OTP request ────────────────────────────────────────────────
     const { error } = await supabase
       .from('otp_requests')
       .insert({
@@ -87,7 +107,7 @@ export default async function userRoutes(app) {
 
     if (error) throw error;
 
-    // ── 5. Send SMS ───────────────────────────────────────────────────────
+    // ── 6. Send SMS ───────────────────────────────────────────────────────
     await sendOtp(phone);
     return { sent: true };
   });

@@ -60,7 +60,8 @@
     "otpError": "Introduce los 6 dígitos",
     "otpIncorrect": "Código incorrecto o expirado. Solicita uno nuevo si el problema persiste.",
     "sendError": "Error al enviar el código. Comprueba tu número e inténtalo de nuevo.",
-    "otpRateLimited": "Por seguridad, espera unos minutos antes de solicitar otro código."
+    "otpRateLimited": "Por seguridad, espera unos minutos antes de solicitar otro código.",
+    "verificationCannotContinue": "La verificación no puede continuar para esta convocatoria."
   },
   "home": {
     "geoConfidence": "Confianza geográfica:",

@@ -45,7 +45,10 @@ a:hover{opacity:.8}
   .panel-body{flex:1;overflow-y:auto}
   /* Detail screen wider */
   #s-detail{max-width:1100px;margin:0 auto;border-left:1px solid var(--border);border-right:1px solid var(--border)}
-  #s-detail .detail-map{display:block;height:80px}
+  #s-detail .detail-map{display:none}
+  #s-detail .d-scroll{overflow-y:visible;flex:none}
+  #s-detail .join-footer{flex-shrink:1;position:static;border-top:none;padding-top:0}
+  #s-detail{overflow-y:auto}
   #s-detail .d-title{font-size:24px}
   #s-detail .sc-n{font-size:28px}
   #s-detail .sc-l{font-size:12px}

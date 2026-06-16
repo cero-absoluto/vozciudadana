@@ -286,7 +286,10 @@
     "donApoyar": "☕ Soutenir cet événement",
     "donAgotadoHint": "Couvrez 20 vérifications pour 1€ et invitez d'autres à contribuer.",
     "joinSinSaldo": "Sans fonds — soutenez cette protestation",
-    "closesOn": "Se termine le"
+    "closesOn": "Se termine le",
+    "directedAt": "Adressée à",
+    "typeOfAbuse": "Type d'abus",
+    "source": "Source"
   },
   "verify": {
     "spinVerifying": "Vérification de votre participation...",

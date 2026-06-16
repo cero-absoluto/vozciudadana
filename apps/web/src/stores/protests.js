@@ -35,6 +35,10 @@ function normalizeProtest(p) {
     donaciones_total:         p.donaciones_total ?? 0,
     ultima_donacion:          p.ultima_donacion ?? null,
     ends_at:                  p.ends_at ?? null,
+    focal_point:              p.focal_point ?? null,
+    fuente_url:               p.fuente_url ?? null,
+    tipo_abuso:               p.tipo_abuso ?? null,
+    risk_level:               p.risk_level ?? null,
   };
 }
 

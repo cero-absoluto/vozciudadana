@@ -27,6 +27,7 @@
             <div v-if="isBlocked(p)" style="font-size:14px">🔒</div>
             <div class="pi-count" style="font-size:13px">{{ fmt(p.count) }}</div>
             <div style="font-size:9px;color:var(--text3)">{{ fmtTime(p.timer) }}</div>
+            <div v-if="p.ends_at" style="font-size:9px;color:var(--text3);margin-top:2px">{{ fmtCloseDate(p.ends_at) }}</div>
           </div>
         </div>
       </div>
@@ -47,6 +48,14 @@ const { t } = useI18n();
 import { useProtestsStore } from '@/stores/protests.js';
 import { useUiStore }       from '@/stores/ui.js';
 import { fmt, fmtTime }     from '@/constants.js';
+
+function fmtCloseDate(endsAt) {
+  if (!endsAt) return '';
+  return new Date(endsAt).toLocaleString(undefined, {
+    weekday: 'short', day: 'numeric', month: 'short',
+    hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
+  });
+}
 
 const props  = defineProps({ protests: Array });
 const emit   = defineEmits(['open']);

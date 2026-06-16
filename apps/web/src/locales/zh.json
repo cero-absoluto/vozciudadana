@@ -286,7 +286,10 @@
     "donApoyar": "☕ 支持此活动",
     "donAgotadoHint": "用€1支付20次验证费用，并邀请其他人贡献。",
     "joinSinSaldo": "无资金 — 支持此抗议",
-    "closesOn": "结束于"
+    "closesOn": "结束于",
+    "directedAt": "针对",
+    "typeOfAbuse": "滥用类型",
+    "source": "来源"
   },
   "verify": {
     "spinVerifying": "正在验证您的参与...",

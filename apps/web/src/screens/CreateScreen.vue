@@ -391,6 +391,8 @@ async function validateTarget(wikidataId, label) {
     const res = await fetch('https://query.wikidata.org/sparql?query=' + encodeURIComponent(sparql) + '&format=json');
     const data = await res.json();
     const bindings = data.results.bindings;
+    // TEMP DEBUG — remove after diagnosis
+    console.log('Wikidata types for', wikidataId, ':', bindings.map(b => b.type?.value?.split('/').pop() + ' (' + (b.typeLabel?.value||'?') + ')'));
     if (bindings.length === 0) { targetStatus.value = 'NEEDS_REVIEW'; targetType.value = 'Unknown entity'; return; }
     const countryBinding = bindings.find(b => b.countryLabel);
     targetCountry.value = countryBinding?.countryLabel?.value || '';

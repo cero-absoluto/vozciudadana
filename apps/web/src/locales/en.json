@@ -204,7 +204,7 @@
     "errTitle": "Title is required",
     "errDesc": "Description is required",
     "errDemands": "Indicate what you demand",
-    "errFocal": "Focal point is required",
+    "errFocal": "Please select an institution from the suggestions list — type a name and choose from the dropdown",
     "errDate": "Event date is required",
     "errPais": "Select the country for the event",
     "errCountry": "Select the country for the event",

@@ -34,6 +34,7 @@ function normalizeProtest(p) {
     donaciones_count:         p.donaciones_count ?? 0,
     donaciones_total:         p.donaciones_total ?? 0,
     ultima_donacion:          p.ultima_donacion ?? null,
+    ends_at:                  p.ends_at ?? null,
   };
 }
 

@@ -361,7 +361,8 @@ const REJECTED_TYPES = new Set([
 async function searchWikidata(q) {
   if (!q || q.length < 2) { targetSuggestions.value = []; return; }
   try {
-    const url = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(q)}&language=en&limit=20&format=json&origin=*`;
+    const lang = ui.lang || 'en';
+    const url = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(q)}&language=${lang}&uselang=${lang}&limit=20&format=json&origin=*`;
     const res = await fetch(url);
     const data = await res.json();
     targetSuggestions.value = (data.search || []).map(s => ({

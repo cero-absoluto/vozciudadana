@@ -286,7 +286,10 @@
     "donApoyar": "☕ Support this event",
     "donAgotadoHint": "Cover 20 verifications for €1 and invite others to contribute.",
     "joinSinSaldo": "No funds — support this protest",
-    "closesOn": "Closes on"
+    "closesOn": "Closes on",
+    "directedAt": "Directed at",
+    "typeOfAbuse": "Type of abuse",
+    "source": "Source"
   },
   "verify": {
     "spinVerifying": "Verifying your participation...",

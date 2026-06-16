@@ -352,13 +352,18 @@ const ALLOWED_TYPES = new Set([
   'Q748720',  // public authority
   'Q31855',   // inspectorate
   'Q2275247', // national commission
-  // Supranational and intergovernmental
-  'Q170156',  // intergovernmental organisation (EU, UN, NATO, Council of Europe...)
+  // Supranational and intergovernmental (direct P31 types)
+  'Q93288',   // supranational union (EU direct type)
+  'Q179076',  // political union (EU direct type)
+  'Q170156',  // intergovernmental organisation
   'Q484652',  // international organisation
   'Q7207745', // supranational organisation
   'Q1172599', // multinational organisation
   'Q1063239', // intergovernmental panel
   'Q245065',  // intergovernmental body
+  'Q388785',  // economic union
+  'Q185441',  // customs union
+  'Q1329623', // trade bloc
 ]);
 
 const REJECTED_TYPES = new Set([
@@ -384,15 +389,13 @@ async function validateTarget(wikidataId, label) {
   targetName.value   = label;
   try {
     const sparql = `SELECT ?type ?typeLabel ?countryLabel WHERE {
-      wd:${wikidataId} wdt:P31/wdt:P279* ?type .
+      wd:${wikidataId} wdt:P31 ?type .
       OPTIONAL { wd:${wikidataId} wdt:P17 ?country . }
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en" . }
     } LIMIT 20`;
     const res = await fetch('https://query.wikidata.org/sparql?query=' + encodeURIComponent(sparql) + '&format=json');
     const data = await res.json();
     const bindings = data.results.bindings;
-    // TEMP DEBUG — remove after diagnosis
-    console.log('Wikidata types for', wikidataId, ':', bindings.map(b => b.type?.value?.split('/').pop() + ' (' + (b.typeLabel?.value||'?') + ')'));
     if (bindings.length === 0) { targetStatus.value = 'NEEDS_REVIEW'; targetType.value = 'Unknown entity'; return; }
     const countryBinding = bindings.find(b => b.countryLabel);
     targetCountry.value = countryBinding?.countryLabel?.value || '';

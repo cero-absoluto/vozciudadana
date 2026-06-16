@@ -77,10 +77,23 @@
           <span style="font-size:10px;color:var(--text2)">{{ sobreOpen ? '▲' : '▼' }}</span>
         </div>
         <div v-if="sobreOpen">
+          <div v-if="protest.focal_point" style="margin-bottom:8px;padding:8px 10px;background:rgba(124,111,255,.06);border:.5px solid var(--border2);border-radius:var(--r)">
+            <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.5px;margin-bottom:3px">{{ $t('detail.directedAt') }}</div>
+            <div style="font-size:12px;color:var(--text);font-weight:600">{{ protest.focal_point }}</div>
+          </div>
           <div class="d-desc">{{ protest.desc }}</div>
           <div v-if="protest.demands" style="margin-top:10px">
             <div class="block-title" style="color:var(--accent3)">⚡ {{ $t('detail.whatWeDemand') }}</div>
             <div class="d-desc" style="color:var(--text);font-weight:500;line-height:1.9">{{ protest.demands }}</div>
+          </div>
+          <div v-if="protest.tipo_abuso" style="margin-top:8px">
+            <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.5px;margin-bottom:3px">{{ $t('detail.typeOfAbuse') }}</div>
+            <div style="font-size:11px;color:var(--text2)">{{ protest.tipo_abuso }}</div>
+          </div>
+          <div v-if="protest.fuente_url" style="margin-top:8px">
+            <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.5px;margin-bottom:3px">{{ $t('detail.source') }}</div>
+            <a :href="protest.fuente_url" target="_blank" rel="noopener"
+              style="font-size:11px;color:var(--accent);word-break:break-all">{{ protest.fuente_url }}</a>
           </div>
         </div>
       </div>
@@ -190,7 +203,7 @@ const censoExiste = ref(false);
 const velocidadHoy = ref(0);
 const tendenciaHoy = ref(0);
 const geoOpen = ref(false);
-const sobreOpen = ref(false);
+const sobreOpen = ref(true);
 const donacionesInfo = computed(() => {
   if (!protest.value) return null;
   const saldo = protest.value.saldo_euros ?? 0;

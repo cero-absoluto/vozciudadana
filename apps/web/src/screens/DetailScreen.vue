@@ -21,14 +21,14 @@
         <div class="sc"><div class="sc-n" style="color:var(--accent3)">{{ fmtTime(protest.timer) }}</div><div class="sc-l">{{ $t('detail.statRestante') }}</div></div>
       </div>
       <!-- Fecha de cierre -->
-      <div v-if="protest.ends_at && protest.timer > 0" style="text-align:center;font-size:11px;color:var(--text3);margin-bottom:8px">
+      <div v-if="protest.ends_at && protest.timer > 0" style="text-align:center;font-size:13px;color:var(--text2);margin-bottom:8px">
         {{ $t('detail.closesOn') }} {{ fmtCloseDate(protest.ends_at) }}
       </div>
 
       <!-- Velocidad — solo si hay datos de hoy -->
       <div v-if="velocidadHoy > 0" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.2);border-radius:var(--r);margin-bottom:8px">
         <div style="width:6px;height:6px;border-radius:50%;background:var(--accent2);animation:blink 1.5s infinite;flex-shrink:0"></div>
-        <div style="font-size:11px;color:var(--accent2)">
+        <div style="font-size:14px;color:var(--accent2)">
           <strong>+{{ velocidadHoy }}</strong> {{ $t('detail.speedToday') }}
           <span v-if="tendenciaHoy > 0" style="color:var(--accent2)"> · {{ $t('detail.trendUp') }}</span>
           <span v-else-if="tendenciaHoy < 0" style="color:var(--accent4)"> · {{ $t('detail.trendDown') }}</span>
@@ -39,12 +39,12 @@
       <div class="block">
         <div class="block-title" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center" @click="sobreOpen = !sobreOpen">
           <span>{{ $t('detail.aboutThisCall') }}</span>
-          <span style="font-size:10px;color:var(--text2)">{{ sobreOpen ? '▲' : '▼' }}</span>
+          <span style="font-size:12px;color:var(--text2)">{{ sobreOpen ? '▲' : '▼' }}</span>
         </div>
         <div v-if="sobreOpen">
           <div v-if="protest.focal_point" style="margin-bottom:8px;padding:8px 10px;background:rgba(124,111,255,.06);border:.5px solid var(--border2);border-radius:var(--r)">
-            <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.5px;margin-bottom:3px">{{ $t('detail.directedAt') }}</div>
-            <div style="font-size:12px;color:var(--text);font-weight:600">{{ protest.focal_point }}</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.3px;margin-bottom:3px">{{ $t('detail.directedAt') }}</div>
+            <div style="font-size:15px;color:var(--text);font-weight:700">{{ protest.focal_point }}</div>
           </div>
           <div class="d-desc">{{ protest.desc }}</div>
           <div v-if="protest.demands" style="margin-top:10px">
@@ -52,13 +52,13 @@
             <div class="d-desc" style="color:var(--text);font-weight:500;line-height:1.9">{{ protest.demands }}</div>
           </div>
           <div v-if="protest.tipo_abuso" style="margin-top:8px">
-            <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.5px;margin-bottom:3px">{{ $t('detail.typeOfAbuse') }}</div>
-            <div style="font-size:11px;color:var(--text2)">{{ protest.tipo_abuso }}</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.3px;margin-bottom:3px">{{ $t('detail.typeOfAbuse') }}</div>
+            <div style="font-size:14px;color:var(--text)">{{ protest.tipo_abuso }}</div>
           </div>
           <div v-if="protest.fuente_url" style="margin-top:8px">
-            <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.5px;margin-bottom:3px">{{ $t('detail.source') }}</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.3px;margin-bottom:3px">{{ $t('detail.source') }}</div>
             <a :href="protest.fuente_url" target="_blank" rel="noopener"
-              style="font-size:11px;color:var(--accent);word-break:break-all">{{ protest.fuente_url }}</a>
+              style="font-size:13px;color:var(--accent);word-break:break-all">{{ protest.fuente_url }}</a>
           </div>
         </div>
       </div>
@@ -102,7 +102,7 @@
     <!-- Join footer -->
     <div class="join-footer">
       <!-- Risk info -->
-      <div v-if="!protest.joined && cj.ok" class="risk-info" style="margin-bottom:8px;padding:8px 10px;border-radius:var(--r);font-size:9px;line-height:1.6"
+      <div v-if="!protest.joined && cj.ok" class="risk-info" style="margin-bottom:8px;padding:10px 12px;border-radius:var(--r);font-size:13px;line-height:1.6"
         :style="{
           background: protest.risk_level === 'high' || protest.risk_level === 'critical' ? 'rgba(255,107,107,.06)' : protest.scope === 'global' ? 'rgba(124,111,255,.06)' : 'rgba(76,255,164,.06)',
           border: protest.risk_level === 'high' || protest.risk_level === 'critical' ? '.5px solid rgba(255,107,107,.2)' : protest.scope === 'global' ? '.5px solid var(--border2)' : '.5px solid rgba(76,255,164,.2)',
@@ -117,14 +117,14 @@
       <!-- Financiacion ciudadana -->
       <div v-if="donacionesInfo" style="width:100%;margin-bottom:10px;padding:12px;background:rgba(255,255,255,.04);border:.5px solid var(--border2);border-radius:var(--r2)">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div style="font-size:12px;font-weight:700;color:var(--text)">{{ $t('detail.donTitle') }}</div>
-          <div style="font-size:11px;color:var(--accent2)">{{ donacionesInfo.adhesiones_posibles }} {{ $t('detail.donPosibles') }}</div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)">{{ $t('detail.donTitle') }}</div>
+          <div style="font-size:14px;color:var(--accent2)">{{ donacionesInfo.adhesiones_posibles }} {{ $t('detail.donPosibles') }}</div>
         </div>
         <div style="width:100%;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-bottom:6px">
           <div :style="{width: Math.min(100, (donacionesInfo.saldo_euros / 20) * 100) + '%', height: '100%', background: donacionesInfo.saldo_euros > 2 ? 'var(--accent2)' : 'var(--accent3)', borderRadius: '3px', transition: 'width .5s'}"></div>
         </div>
         <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-          <div style="font-size:10px;color:var(--text2)">{{ $t('detail.donSaldo') }} <strong style="color:var(--text)">{{ donacionesInfo.saldo_euros.toFixed(2) }}€</strong></div>
+          <div style="font-size:13px;color:var(--text2)">{{ $t('detail.donSaldo') }} <strong style="color:var(--text)">{{ donacionesInfo.saldo_euros.toFixed(2) }}€</strong></div>
           <div v-if="donacionesInfo.donaciones_count > 0" style="font-size:10px;color:var(--text2)">{{ $t('detail.donCount', { count: donacionesInfo.donaciones_count, total: donacionesInfo.donaciones_total.toFixed(2) }) }}</div>
         </div>
         <div v-if="donacionesInfo.saldo_euros <= 0" style="font-size:12px;color:var(--accent3);margin-bottom:8px;padding:8px 10px;background:rgba(255,94,91,.06);border-radius:var(--r);border:.5px solid rgba(255,94,91,.2);text-align:center;line-height:1.5">

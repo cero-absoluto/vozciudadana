@@ -53,7 +53,7 @@
       <!-- Advanced options -->
       <div style="width:100%;margin-top:14px">
         <button @click="advOpen = !advOpen"
-          style="width:100%;padding:8px;background:transparent;border:.5px solid var(--border);border-radius:var(--r);font-size:10px;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px">
+          style="width:100%;padding:10px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);font-size:13px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px">
           {{ $t('auth.advancedOptions') }} <span>{{ advOpen ? '▲' : '▼' }}</span>
         </button>
         <div v-if="advOpen" style="margin-top:8px">

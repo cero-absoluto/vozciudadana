@@ -4,64 +4,64 @@
 
       <!-- Header -->
       <div style="margin-bottom:24px">
-        <div style="font-size:22px;font-weight:800;font-family:'Syne',sans-serif;margin-bottom:6px">{{ $t('funding.title') }}</div>
-        <div style="font-size:12px;color:var(--text3)">{{ $t('funding.updated') }}</div>
+        <div style="font-size:26px;font-weight:800;font-family:'Syne',sans-serif;margin-bottom:6px;color:var(--text)">{{ $t('funding.title') }}</div>
+        <div style="font-size:14px;color:var(--text2)">{{ $t('funding.updated') }}</div>
       </div>
 
       <!-- Founding principle -->
       <div style="background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.2);border-radius:12px;padding:14px 16px;margin-bottom:20px">
-        <div style="font-size:13px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">{{ $t('funding.principleTitle') }}</div>
-        <div style="font-size:14px;color:var(--text2);line-height:1.7">{{ $t('funding.principleBody') }}</div>
+        <div style="font-size:15px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">{{ $t('funding.principleTitle') }}</div>
+        <div style="font-size:16px;color:var(--text);line-height:1.7">{{ $t('funding.principleBody') }}</div>
       </div>
 
       <!-- Current costs -->
       <div style="margin-bottom:20px">
-        <div style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('funding.costsTitle') }}</div>
-        <div style="font-size:13px;color:var(--text3);margin-bottom:10px">{{ $t('funding.costsDesc') }}</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('funding.costsTitle') }}</div>
+        <div style="font-size:15px;color:var(--text2);margin-bottom:10px">{{ $t('funding.costsDesc') }}</div>
         <div v-for="item in costItems" :key="item.key"
           style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:.5px solid var(--border)">
           <div>
-            <div style="font-size:13px;font-weight:600">{{ item.name }}</div>
-            <div style="font-size:11px;color:var(--text3)">{{ item.role }}</div>
+            <div style="font-size:16px;font-weight:700;color:var(--text)">{{ item.name }}</div>
+            <div style="font-size:13px;color:var(--text2)">{{ item.role }}</div>
           </div>
-          <div style="font-size:12px;color:var(--text2);text-align:right">{{ item.cost }}</div>
+          <div style="font-size:15px;color:var(--text);font-weight:600;text-align:right">{{ item.cost }}</div>
         </div>
-        <div style="margin-top:10px;padding:10px 12px;background:var(--bg2);border-radius:var(--r);font-size:12px;color:var(--text2)">
+        <div style="margin-top:10px;padding:12px 14px;background:var(--bg2);border-radius:var(--r);font-size:14px;color:var(--text)">
           {{ $t('funding.smsCost') }}
         </div>
       </div>
 
       <!-- Verification protection -->
       <div style="background:rgba(124,111,255,.06);border:.5px solid rgba(124,111,255,.15);border-radius:12px;padding:14px 16px;margin-bottom:20px">
-        <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:6px">🛡️ {{ $t('funding.verificationProtectionTitle') }}</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.verificationProtectionBody') }}</div>
+        <div style="font-size:15px;font-weight:700;color:var(--accent);margin-bottom:6px">🛡️ {{ $t('funding.verificationProtectionTitle') }}</div>
+        <div style="font-size:15px;color:var(--text);line-height:1.7">{{ $t('funding.verificationProtectionBody') }}</div>
       </div>
 
       <!-- Allocation -->
       <div style="margin-bottom:20px">
-        <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.allocationTitle') }}</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.allocationBody') }}</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.allocationTitle') }}</div>
+        <div style="font-size:15px;color:var(--text);line-height:1.7">{{ $t('funding.allocationBody') }}</div>
       </div>
 
       <!-- Surplus -->
       <div style="margin-bottom:20px">
-        <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.surplusTitle') }}</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.surplusBody') }}</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.surplusTitle') }}</div>
+        <div style="font-size:15px;color:var(--text);line-height:1.7">{{ $t('funding.surplusBody') }}</div>
       </div>
 
       <!-- Sustainability fund -->
       <div style="margin-bottom:20px">
-        <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.sustainabilityTitle') }}</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.sustainabilityBody') }}</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.sustainabilityTitle') }}</div>
+        <div style="font-size:15px;color:var(--text);line-height:1.7">{{ $t('funding.sustainabilityBody') }}</div>
       </div>
 
       <!-- What we accept -->
       <div style="margin-bottom:20px">
-        <div style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('funding.acceptTitle') }}</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('funding.acceptTitle') }}</div>
         <div v-for="item in acceptItems" :key="item"
           style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:.5px solid var(--border)">
-          <div style="color:var(--accent2);font-size:14px;flex-shrink:0;margin-top:1px">✓</div>
-          <div style="font-size:13px;color:var(--text2);line-height:1.5">{{ item }}</div>
+          <div style="color:var(--accent2);font-size:17px;flex-shrink:0;margin-top:1px">✓</div>
+          <div style="font-size:15px;color:var(--text);line-height:1.5">{{ item }}</div>
         </div>
       </div>
 
@@ -69,59 +69,59 @@
       <div style="margin-bottom:20px">
         <!-- Limit per donation -->
         <div style="margin-bottom:20px;padding:12px 16px;border-left:3px solid var(--accent);background:var(--bg2);border-radius:4px">
-          <div style="font-size:14px;font-weight:700;margin-bottom:6px;color:var(--text)">{{ $t('funding.limitTitle') }}</div>
-          <div style="font-size:13px;color:var(--text2);line-height:1.6">{{ $t('funding.limitBody') }}</div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--text)">{{ $t('funding.limitTitle') }}</div>
+          <div style="font-size:15px;color:var(--text);line-height:1.6">{{ $t('funding.limitBody') }}</div>
         </div>
 
         <!-- Corporate note -->
         <div style="margin-bottom:20px">
-          <div style="font-size:13px;color:var(--text2);line-height:1.6;font-style:italic">{{ $t('funding.corporateNote') }}</div>
+          <div style="font-size:15px;color:var(--text2);line-height:1.6;font-style:italic">{{ $t('funding.corporateNote') }}</div>
         </div>
 
-        <div style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('funding.rejectTitle') }}</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('funding.rejectTitle') }}</div>
         <div v-for="item in rejectItems" :key="item"
           style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:.5px solid var(--border)">
-          <div style="color:var(--accent3);font-size:14px;flex-shrink:0;margin-top:1px">✗</div>
-          <div style="font-size:13px;color:var(--text2);line-height:1.5">{{ item }}</div>
+          <div style="color:var(--accent3);font-size:17px;flex-shrink:0;margin-top:1px">✗</div>
+          <div style="font-size:15px;color:var(--text);line-height:1.5">{{ item }}</div>
         </div>
       </div>
 
       <!-- No influence block -->
       <div style="background:rgba(255,179,71,.06);border:.5px solid rgba(255,179,71,.2);border-radius:12px;padding:14px 16px;margin-bottom:20px">
-        <div style="font-size:13px;font-weight:700;color:var(--accent4);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">{{ $t('funding.noInfluenceTitle') }}</div>
+        <div style="font-size:15px;font-weight:700;color:var(--accent4);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">{{ $t('funding.noInfluenceTitle') }}</div>
         <div v-for="item in noInfluenceItems" :key="item"
-          style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;color:var(--text2)">
-          <span style="color:var(--accent3);font-weight:700">✗</span> {{ item }}
+          style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:15px;color:var(--text)">
+          <span style="color:var(--accent3);font-weight:700;font-size:17px">✗</span> {{ item }}
         </div>
       </div>
 
       <!-- Independence guarantee -->
       <div style="background:rgba(124,111,255,.06);border:.5px solid rgba(124,111,255,.2);border-radius:12px;padding:14px 16px;margin-bottom:20px">
-        <div style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">{{ $t('funding.independenceTitle') }}</div>
-        <div style="font-size:14px;color:var(--text2);line-height:1.7">{{ $t('funding.independenceBody') }}</div>
+        <div style="font-size:15px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">{{ $t('funding.independenceTitle') }}</div>
+        <div style="font-size:16px;color:var(--text);line-height:1.7">{{ $t('funding.independenceBody') }}</div>
       </div>
 
       <!-- How to support -->
       <div style="margin-bottom:20px">
-        <div style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('funding.supportTitle') }}</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:14px">{{ $t('funding.supportBody') }}</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('funding.supportTitle') }}</div>
+        <div style="font-size:15px;color:var(--text);line-height:1.7;margin-bottom:14px">{{ $t('funding.supportBody') }}</div>
         <a href="https://ko-fi.com/voiceprotest" target="_blank"
-          style="display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r2);text-decoration:none;color:var(--text)">
+          style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);text-decoration:none;color:var(--text);font-size:15px;font-weight:600">
           ☕ Ko-fi — ko-fi.com/voiceprotest
         </a>
       </div>
 
       <!-- Financial transparency -->
       <div style="margin-bottom:20px">
-        <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.transparencyTitle') }}</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.7">{{ $t('funding.transparencyBody') }}</div>
-        <div style="margin-top:8px;padding:8px 10px;background:var(--bg2);border-radius:var(--r);font-size:11px;color:var(--text3);font-style:italic">
+        <div style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--text)">{{ $t('funding.transparencyTitle') }}</div>
+        <div style="font-size:15px;color:var(--text);line-height:1.7">{{ $t('funding.transparencyBody') }}</div>
+        <div style="margin-top:8px;padding:10px 12px;background:var(--bg2);border-radius:var(--r);font-size:13px;color:var(--text2);font-style:italic">
           ℹ️ {{ $t('funding.donationsNote') }}
         </div>
       </div>
 
       <!-- Source code note -->
-      <div style="text-align:center;font-size:12px;color:var(--text3);line-height:1.8">
+      <div style="text-align:center;font-size:13px;color:var(--text2);line-height:1.8">
         {{ $t('funding.transparencyNote') }}<br>
         <a href="https://github.com/cero-absoluto/vozciudadana" target="_blank" style="color:var(--accent)">github.com/cero-absoluto/vozciudadana</a>
       </div>

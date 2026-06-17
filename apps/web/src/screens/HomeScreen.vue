@@ -129,8 +129,13 @@ if (showMapOverlay.value) {
 const countryFilterName = ref(null);
 
 const deviceFlag = computed(() => {
-  const flags = { ES:'🇪🇸', FR:'🇫🇷', MX:'🇲🇽', DE:'🇩🇪', US:'🇺🇸', IR:'🇮🇷', RU:'🇷🇺' };
-  return flags[device.simCountry] || '🌍';
+  const code = device.ipCountry || device.simCountry;
+  if (!code || code.length !== 2) return '🌍';
+  // Build flag from Unicode regional indicator symbols — renders consistently
+  // across platforms as long as the OS has any flag-capable font, and avoids
+  // a hardcoded country list that was missing most countries (e.g. Malta).
+  const codePoints = code.toUpperCase().split('').map(c => 0x1F1E6 - 65 + c.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
 });
 const strengtheningGps = ref(false);
 async function strengthenGps() {

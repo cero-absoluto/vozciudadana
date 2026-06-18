@@ -1,6 +1,6 @@
 # 🗳️ Voice Protest
 
-**Verified, pseudonymous and privacy-preserving civic protest platform.**
+**Verified collective participation platform with pseudonymous, privacy-preserving verification.**
 
 > *"A street protest measures who can be there that day. We measure verifiable support from those who choose to participate — using technical safeguards designed to verify that each adhesion comes from a unique participant connected to the relevant community."*
 
@@ -12,13 +12,13 @@
 
 ## What is Voice Protest?
 
-Voice Protest is a civic tech platform that allows people to adhere to verified protest events with privacy-preserving verification. It is not a petition platform — it only accepts formal complaints about public abuse (corruption, nepotism, negligence, repression) directed at institutions with public funds or mandate.
+Voice Protest is a civic tech platform that allows people to adhere to verified protest events with privacy-preserving verification. It is not a petition platform — it focuses on public-interest grievances directed at institutions exercising public functions, receiving public funds, or holding public responsibilities (corruption, nepotism, negligence, repression) 
 
 Every adhesion is:
 
 - **Pseudonymous** — phone numbers are used only for verification and transformed into irreversible pseudonymous identifiers. The original number is not stored after verification.
 - **Verified** — real phone number via SMS OTP. One verified number, one adhesion per protest.
-- **Geographically validated** — SIM, IP and optional location signals
+- **Geographically affiliation signals** — SIM, IP and optional GPS confirmation contribute to reliability scoring.
 - **Publicly auditable** — integrity hashes and public commitments allow independent verification of every closed report. Results can be verified by anyone using the in-app verifier or the public API.
 
 Available in 🇪🇸 ES · 🇬🇧 EN · 🇫🇷 FR · 🇨🇳 中文
@@ -98,7 +98,7 @@ Shows: live counter · event title · cities · countries · "Join privately" bu
 | SIM only | 75% |
 | IP only | 60% |
 | Institutional email OTP | 90% |
-
+ Scores indicate verification-signal strength and are not statistical probabilities.
 ---
 
 ## How verification works
@@ -209,7 +209,7 @@ CORS_ORIGIN=https://voiceprotest.org
 
 ## Philosophy
 
-Voice Protest is not affiliated with any ideology, political party or institution. It is neutral infrastructure for verified participation, accessible from anywhere and without physical risk.
+Voice Protest is not affiliated with any ideology, political party or institution. It is neutral infrastructure for verified participation, accessible from anywhere and without physical risk. We verify participation, not truth.
 
 - No advertising.
 - No data sales.
@@ -224,6 +224,9 @@ Sustained by participant donations. Independent by structure, not by promise.
 ## Contributing
 
 This project is open source under AGPL 3.0. Contributions welcome.
+Before contributing, please review:
+- docs/canonical/VoiceProtest_AuditAlignment_v2_1.pdf
+- docs/canonical/VoiceProtest_v3_(5)_beta_auditado.pdf
 
 Areas where help is most needed:
 

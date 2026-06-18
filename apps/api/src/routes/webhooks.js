@@ -3,6 +3,7 @@ import { createHash } from 'crypto';
 
 // ── Configurable costs and fees (shared with protests.js — set via Railway env vars) ──
 const PLATFORM_FEE_PCT = parseFloat(process.env.PLATFORM_FEE_PERCENT || '10') / 100;
+const MAX_DONATION_EUR = parseFloat(process.env.MAX_DONATION_EUR || '100');
 
 /**
  * Ko-fi webhook handler.
@@ -62,16 +63,53 @@ export default async function kofiWebhookRoutes(app) {
       return reply.status(400).send({ error: 'Invalid amount' });
     }
 
-    // protest_id is matched via the Ko-fi "Direct Link" / shop-item identifier
-    // or a custom field set up per-protest in Ko-fi. Falls back to a single
-    // configured default protest if no mapping is found (useful while only
-    // one protest accepts donations at a time, e.g. during the beta).
-    const protestId = payload.shop_items?.[0]?.direct_link_code
-      || process.env.KOFI_DEFAULT_PROTEST_ID
-      || null;
+    // ── Policy limit: €100 per contribution (Funding Policy) ─────────────
+    // The payment has already been processed by Ko-fi/PayPal before this
+    // webhook fires. Returning 400 would leave the donor in an absurd
+    // situation: they paid but Voice Protest didn't register it.
+    //
+    // Instead: accept the webhook (always return 200 for authentic payments),
+    // but cap the computable amount at MAX_DONATION_EUR. Any excess is recorded
+    // as 'over_limit_pending_review' and does NOT flow automatically to either
+    // the protest balance or the platform fund. A human reviews it.
+    const over_limit = importe > MAX_DONATION_EUR;
+    const importe_computable = over_limit ? MAX_DONATION_EUR : importe;
+    const importe_excedente  = over_limit ? parseFloat((importe - MAX_DONATION_EUR).toFixed(2)) : 0;
+
+    if (over_limit) {
+      app.log.warn({ importe, MAX_DONATION_EUR, importe_excedente },
+        'Ko-fi webhook: donation exceeds policy limit — capping at MAX_DONATION_EUR, excess marked for manual review');
+    }
+
+    // protest_id resolution — three-step lookup in priority order:
+    //
+    // 1. Ko-fi "Direct Link" code embedded in the shop item (set per-protest
+    //    in the Ko-fi dashboard when creating a dedicated donation button).
+    // 2. A mapping table in Supabase (kofi_protest_map) keyed on the same
+    //    direct_link_code — allows managing mappings without redeploying.
+    // 3. Environment variable fallback for single-protest beta deployments.
+    //
+    // This three-step approach lets the platform scale to multiple concurrent
+    // fundraising protests without code changes: add a row to kofi_protest_map
+    // and configure the Ko-fi button to match.
+    const directLinkCode = payload.shop_items?.[0]?.direct_link_code || null;
+    let protestId = null;
+
+    if (directLinkCode) {
+      const { data: mapping } = await supabase
+        .from('kofi_protest_map')
+        .select('protest_id')
+        .eq('kofi_code', directLinkCode)
+        .eq('active', true)
+        .maybeSingle();
+      if (mapping) protestId = mapping.protest_id;
+    }
+
+    // Fallback to env default (beta: only one protest accepts donations at a time)
+    if (!protestId) protestId = process.env.KOFI_DEFAULT_PROTEST_ID || null;
 
     if (!protestId) {
-      app.log.warn('Ko-fi webhook received with no matching protest_id — recording to platform fund only');
+      app.log.warn({ directLinkCode }, 'Ko-fi webhook: no matching protest_id found — crediting platform fund only');
     }
 
     // Non-identifying technical reference: hash the Ko-fi transaction id so
@@ -93,8 +131,8 @@ export default async function kofiWebhookRoutes(app) {
       }
     }
 
-    const importe_plataforma   = parseFloat((importe * PLATFORM_FEE_PCT).toFixed(2));
-    const importe_convocatoria = parseFloat((importe - importe_plataforma).toFixed(2));
+    const importe_plataforma   = parseFloat((importe_computable * PLATFORM_FEE_PCT).toFixed(2));
+    const importe_convocatoria = parseFloat((importe_computable - importe_plataforma).toFixed(2));
 
     if (protestId) {
       const { data: protest } = await supabase
@@ -107,38 +145,42 @@ export default async function kofiWebhookRoutes(app) {
         await supabase.from('protests').update({
           saldo_euros:      (protest.saldo_euros || 0) + importe_convocatoria,
           donaciones_count: (protest.donaciones_count || 0) + 1,
-          donaciones_total: (protest.donaciones_total || 0) + importe,
+          donaciones_total: (protest.donaciones_total || 0) + importe_computable,
           ultima_donacion:  new Date().toISOString(),
         }).eq('id', protestId);
 
-        // Aggregate-only donation record — no donor fields stored.
         await supabase.from('donaciones').insert({
           protest_id:            protestId,
-          importe,
+          importe:               importe_computable,
+          importe_original:      importe,
           importe_convocatoria,
           importe_plataforma,
+          importe_excedente,
           fee_percent:           Math.round(PLATFORM_FEE_PCT * 100),
-          proveedor:              'kofi',
+          proveedor:             'kofi',
           moneda,
+          over_limit,
         });
       } else {
         app.log.warn(`Ko-fi webhook: protest_id ${protestId} not found — crediting platform fund only`);
       }
     }
 
+    // Platform fee from the computable amount only — excess is never
+    // automatically credited to anyone.
     await supabase.from('platform_fund').insert({
       type:        'income',
       amount:      importe_plataforma,
       source:      'donation_fee',
       protest_id:  protestId,
-      description: `${Math.round(PLATFORM_FEE_PCT * 100)}% platform fee from Ko-fi donation of ${moneda} ${importe}`,
+      description: `${Math.round(PLATFORM_FEE_PCT * 100)}% platform fee from Ko-fi donation of ${moneda} ${importe_computable}${over_limit ? ` (original: ${importe}, excess ${importe_excedente} pending review)` : ''}`,
     });
 
     await supabase.from('financial_movements').insert([
       {
         type:        'donation_protest',
         protest_id:  protestId,
-        amount:      importe_convocatoria,
+        amount:      importe_computable,
         destination: 'protest_balance',
         description: `Ko-fi donation credited to protest (${100 - Math.round(PLATFORM_FEE_PCT * 100)}%)`,
         tx_ref:      txRef,
@@ -151,8 +193,18 @@ export default async function kofiWebhookRoutes(app) {
         description: `Platform fee from Ko-fi donation (${Math.round(PLATFORM_FEE_PCT * 100)}%)`,
         tx_ref:      txRef,
       },
+      // If over the limit, record the excess separately for manual review.
+      // It is intentionally NOT credited to protest_balance or platform_fund.
+      ...(over_limit ? [{
+        type:        'over_limit_pending_review',
+        protest_id:  protestId,
+        amount:      importe_excedente,
+        destination: 'pending_review',
+        description: `Excess above €${MAX_DONATION_EUR} policy limit — requires manual review before any allocation`,
+        tx_ref:      txRef ? txRef + '_excess' : null,
+      }] : []),
     ]);
 
-    return { ok: true };
+    return { ok: true, over_limit, importe_computable, importe_excedente };
   });
 }

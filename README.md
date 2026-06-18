@@ -12,7 +12,7 @@
 
 ## What is Voice Protest?
 
-Voice Protest is a civic tech platform that allows people to adhere to verified protest events with privacy-preserving verification. It is not a petition platform — it focuses on public-interest grievances directed at institutions exercising public functions, receiving public funds, or holding public responsibilities (corruption, nepotism, negligence, repression) 
+Voice Protest is a civic tech platform that allows people to adhere to verified protest events with privacy-preserving verification. It is not a petition platform — it focuses on public-interest grievances directed at institutions exercising public functions, receiving public funds, or holding public responsibilities (corruption, nepotism, negligence, repression). 
 
 Every adhesion is:
 
@@ -32,8 +32,7 @@ Available in 🇪🇸 ES · 🇬🇧 EN · 🇫🇷 FR · 🇨🇳 中文
 | 🔒 HMAC-SHA256 pseudonymous identifier | Phone numbers are used only for verification and transformed into irreversible identifiers. |
 | 🔍 Publicly verifiable reports | Closed reports include SHA-256 integrity hashes and public commitments. Anyone can verify results independently using the in-app verifier or the public API. |
 | 📡 Public commitments | Per-adhesion commitments — `SHA256(protest_id + nullifier)` — enable hash verification without revealing identities or enabling cross-protest correlation. |
-| 📋 Integrity log | Public record of integrity hashes maintained through GitHub. Updated manually at each protest closure. |
-| 📍 GPS verification | Optional location signal raises reliability confidence up to 95% |
+| 📋 Integrity log | Public record of integrity hashes maintained through GitHub. Updated manually at each protest closure. | 📍 GPS verification | Optional location signal raises reliability scoring |
 | 👥 Dynamic census | Wave-based trust system with peer vouching for local/institutional events |
 | 📧 Institutional email | Any institutional domain for university/workplace events |
 | 🌍 Geographic scopes | National (SIM+IP verified) · Local/Regional · Global |
@@ -120,7 +119,10 @@ repo/
 │   ├── web/          # Vue.js frontend → deployed to GitHub Pages
 │   └── api/          # Fastify backend → deployed to Railway
 ├── supabase/         # DB schema, migrations, seed data
-├── docs/
+docs/
+│   ├── canonical/
+│   ├── governance/
+│   └── integrity-log.md
 │   └── integrity-log.md  # Public integrity hash log (manually updated)
 ├── .github/
 │   └── workflows/
@@ -210,6 +212,7 @@ CORS_ORIGIN=https://voiceprotest.org
 ## Philosophy
 
 Voice Protest is not affiliated with any ideology, political party or institution. It is neutral infrastructure for verified participation, accessible from anywhere and without physical risk. We verify participation, not truth.
+The platform records that participation occurred under its verification rules while leaving the validity of claims to public debate, journalism, institutions and courts.
 
 - No advertising.
 - No data sales.

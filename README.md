@@ -18,7 +18,7 @@ Every adhesion is:
 
 - **Pseudonymous** — phone numbers are used only for verification and transformed into irreversible pseudonymous identifiers. The original number is not stored after verification.
 - **Verified** — real phone number via SMS OTP. One verified number, one adhesion per protest.
-- **Geographically affiliation signals** — SIM, IP and optional GPS confirmation contribute to reliability scoring.
+- **Geographica affiliation signals** — SIM, IP and optional GPS confirmation contribute to reliability scoring.
 - **Publicly auditable** — integrity hashes and public commitments allow independent verification of every closed report. Results can be verified by anyone using the in-app verifier or the public API.
 
 Available in 🇪🇸 ES · 🇬🇧 EN · 🇫🇷 FR · 🇨🇳 中文
@@ -36,7 +36,7 @@ Available in 🇪🇸 ES · 🇬🇧 EN · 🇫🇷 FR · 🇨🇳 中文
 | 📍 GPS verification | Optional location signal raises reliability scoring |
 | 👥 Dynamic census | Wave-based trust system with peer vouching for local/institutional events |
 | 📧 Institutional email | Any institutional domain for university/workplace events |
-| 🌍 Geographic scopes | National · Local/Regional · Global | |
+| 🌍 Geographic scopes | National · Local/Regional · Global |
 | 📊 Public report | Live data, PDF export, embeddable widget for media |
 | 🔌 Public API | Free, no auth required. For researchers and journalists |
 | 💰 Participant funding | Per-event balance funded by participant donations |
@@ -120,10 +120,10 @@ repo/
 │   ├── web/          # Vue.js frontend → deployed to GitHub Pages
 │   └── api/          # Fastify backend → deployed to Railway
 ├── supabase/         # DB schema, migrations, seed data
-docs/
-├── canonical/
-├── governance/
-└── integrity-log.md
+├── docs/
+│   ├── canonical/
+│   ├── governance/
+│   └── integrity-log.md
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml   # CI/CD: build web → gh-pages branch

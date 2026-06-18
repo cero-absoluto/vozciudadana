@@ -9,7 +9,16 @@ create unique index if not exists financial_movements_tx_ref_idx
   where tx_ref is not null;
 
 alter table donaciones
-  add column if not exists proveedor text default 'manual';
+  add column if not exists proveedor        text    default 'manual';
 
 alter table donaciones
-  add column if not exists moneda text default 'EUR';
+  add column if not exists moneda           text    default 'EUR';
+
+alter table donaciones
+  add column if not exists importe_original numeric default null;
+
+alter table donaciones
+  add column if not exists importe_excedente numeric default 0;
+
+alter table donaciones
+  add column if not exists over_limit       boolean default false;

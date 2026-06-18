@@ -87,6 +87,12 @@
         <div style="font-size:15px;color:var(--text);line-height:1.7">{{ $t('privacy.institutionalEmailBody') }}</div>
       </div>
 
+      <!-- Section: Donations -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:18px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('privacy.donationsTitle') }}</div>
+        <div style="font-size:15px;color:var(--text);line-height:1.7">{{ $t('privacy.donationsBody') }}</div>
+      </div>
+
       <!-- Section: Data retention -->
       <div style="margin-bottom:20px">
         <div style="font-size:18px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('privacy.retentionTitle') }}</div>
@@ -157,3 +163,4 @@ const providers = computed(() => [
   { name: 'GitHub Pages', role: t('privacy.providerGithub'), country: t('privacy.providerGithubRegion') },
 ]);
 </script>
+

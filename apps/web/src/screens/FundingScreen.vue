@@ -109,6 +109,9 @@
           style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);text-decoration:none;color:var(--text);font-size:15px;font-weight:600">
           ☕ Ko-fi — ko-fi.com/voiceprotest
         </a>
+        <div style="margin-top:10px;padding:10px 12px;background:var(--bg2);border-radius:var(--r);font-size:13px;color:var(--text2)">
+          🔒 {{ $t('funding.donorPrivacyNote') }}
+        </div>
       </div>
 
       <!-- Financial transparency -->

@@ -765,7 +765,7 @@
     "sustainabilityTitle": "Fondo de sostenibilidad de la plataforma",
     "sustainabilityBody": "El fondo de sostenibilidad existe para preservar la independencia a largo plazo de Voice Protest. Puede utilizarse para alojamiento, seguridad, sistemas de verificación, auditorías y mantenimiento futuro de la plataforma.",
     "limitTitle": "Límite por donación",
-    "limitBody": "Para preservar la independencia del proyecto, las contribuciones individuales están actualmente limitadas a 100 € por donación. Este límite busca evitar que ningún donante individual acumule una influencia económica desproporcionada sobre la plataforma.",
+    "limitBody": "Para preservar la independencia y el carácter participativo del proyecto, las contribuciones individuales están actualmente limitadas a 100 € por donación. El objetivo es que las convocatorias se financien colectivamente entre muchos participantes, no que las promueva un único donante. Si se recibe un pago superior a este límite, solo se registran 100 € como contribución computable. El excedente queda en revisión manual y no se acredita automáticamente al saldo de la convocatoria ni al fondo de la plataforma.",
     "corporateNote": "Voice Protest se financia principalmente mediante pequeñas contribuciones individuales. No busca financiación de empresas, partidos políticos, administraciones públicas ni organizaciones que pretendan influir en la gobernanza del proyecto."
   }
 }

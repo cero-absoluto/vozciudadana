@@ -747,7 +747,7 @@
     "transparencyNote": "Todo el código fuente es públicamente auditable bajo licencia AGPL 3.0.",
     "transparencyTitle": "Transparencia financiera",
     "transparencyBody": "Voice Protest mantiene un registro financiero interno que recoge donaciones, costes operativos y movimientos del fondo de plataforma. Los informes de transparencia pública se publicarán progresivamente a medida que la plataforma crezca. El primer informe se publicará cuando exista actividad financiera suficiente para que la información resulte significativa. Voice Protest no vende influencia. Las contribuciones solo ayudan a cubrir los costes técnicos necesarios para que participantes verificados puedan participar.",
-    "donationsNote": "Las donaciones realizadas a través de Ko-fi se registran automáticamente. Las donaciones recibidas por otros canales pueden seguir registrándose manualmente.",
+    "donationsNote": "Las donaciones realizadas a través de Ko-fi se registran automáticamente. Las contribuciones individuales tienen un límite de 100 € por donación para mantener la financiación participativa. Las donaciones recibidas por otros canales pueden seguir registrándose manualmente.",
     "donorPrivacyNote": "Ko-fi y PayPal pueden conocer tu nombre y email como procesadores de pago. Voice Protest no almacena tu identidad — solo se registra el importe y la moneda de la donación para actualizar el saldo de financiación de este evento.",
     "noInfluenceTitle": "Voice Protest no vende influencia",
     "noInfluence1": "Las contribuciones ayudan a cubrir costes técnicos.",

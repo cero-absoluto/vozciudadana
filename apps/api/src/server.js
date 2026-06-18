@@ -13,6 +13,7 @@ import countryCodeRoutes from './routes/countryCodes.js';
 import publicRoutes     from './routes/public.js';
 import pushRoutes       from './routes/push.js';
 import sourceRoutes     from './routes/source.js';
+import kofiWebhookRoutes from './routes/webhooks.js';
 
 const app = Fastify({
   logger: true,
@@ -51,6 +52,7 @@ app.register(countryCodeRoutes, { prefix: '/api/country-codes' });
 app.register(publicRoutes,      { prefix: '/api/public' });
 app.register(pushRoutes,        { prefix: '/api/push' });
 app.register(sourceRoutes,      { prefix: '/api/source' });
+app.register(kofiWebhookRoutes, { prefix: '/api/webhooks' });
 
 app.get('/health', async () => ({ status: 'ok' }));
 

@@ -766,7 +766,7 @@
     "sustainabilityTitle": "Fonds de durabilité de la plateforme",
     "sustainabilityBody": "Le fonds de durabilité existe pour préserver l'indépendance à long terme de Voice Protest. Il peut être utilisé pour l'hébergement, la sécurité, les systèmes de vérification, les audits et la maintenance.",
     "limitTitle": "Limite par don",
-    "limitBody": "Pour préserver l'indépendance du projet, les contributions individuelles sont actuellement limitées à 100 € par don.",
+    "limitBody": "Pour préserver l'indépendance et le caractère participatif du projet, les contributions individuelles sont actuellement limitées à 100 € par don. L'objectif est que les protestations soient financées collectivement par de nombreux participants, et non promues par un seul grand donateur. Si un paiement supérieur à cette limite est reçu, seuls 100 € sont enregistrés comme contribution imputable. L'excédent est mis en attente de révision manuelle et n'est pas automatiquement crédité au solde de la protestation ni au fonds de la plateforme.",
     "corporateNote": "Voice Protest se finance principalement par de petites contributions individuelles. Il ne recherche pas de financement d'entreprises, de partis politiques ou d'organisations cherchant à influencer la gouvernance."
   }
 }

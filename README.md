@@ -32,10 +32,11 @@ Available in 🇪🇸 ES · 🇬🇧 EN · 🇫🇷 FR · 🇨🇳 中文
 | 🔒 HMAC-SHA256 pseudonymous identifier | Phone numbers are used only for verification and transformed into irreversible identifiers. |
 | 🔍 Publicly verifiable reports | Closed reports include SHA-256 integrity hashes and public commitments. Anyone can verify results independently using the in-app verifier or the public API. |
 | 📡 Public commitments | Per-adhesion commitments — `SHA256(protest_id + nullifier)` — enable hash verification without revealing identities or enabling cross-protest correlation. |
-| 📋 Integrity log | Public record of integrity hashes maintained through GitHub. Updated manually at each protest closure. | 📍 GPS verification | Optional location signal raises reliability scoring |
+| 📋 Integrity log | Public record of integrity hashes maintained through GitHub. Updated manually at each protest closure. |
+| 📍 GPS verification | Optional location signal raises reliability scoring |
 | 👥 Dynamic census | Wave-based trust system with peer vouching for local/institutional events |
 | 📧 Institutional email | Any institutional domain for university/workplace events |
-| 🌍 Geographic scopes | National (SIM+IP verified) · Local/Regional · Global |
+| 🌍 Geographic scopes | National · Local/Regional · Global | |
 | 📊 Public report | Live data, PDF export, embeddable widget for media |
 | 🔌 Public API | Free, no auth required. For researchers and journalists |
 | 💰 Participant funding | Per-event balance funded by participant donations |
@@ -120,10 +121,9 @@ repo/
 │   └── api/          # Fastify backend → deployed to Railway
 ├── supabase/         # DB schema, migrations, seed data
 docs/
-│   ├── canonical/
-│   ├── governance/
-│   └── integrity-log.md
-│   └── integrity-log.md  # Public integrity hash log (manually updated)
+├── canonical/
+├── governance/
+└── integrity-log.md
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml   # CI/CD: build web → gh-pages branch

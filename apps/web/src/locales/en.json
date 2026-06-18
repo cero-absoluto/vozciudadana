@@ -766,7 +766,7 @@
     "sustainabilityTitle": "Platform sustainability fund",
     "sustainabilityBody": "The sustainability fund exists to preserve the long-term independence of Voice Protest. It may be used for hosting, security, verification systems, audits and future maintenance of the platform.",
     "limitTitle": "Per-donation limit",
-    "limitBody": "To preserve the independence of the project, individual contributions are currently limited to €100 per donation. This limit aims to prevent any individual donor from accumulating disproportionate economic influence over the platform.",
+    "limitBody": "To preserve the independence and participatory nature of the project, individual contributions are currently limited to €100 per donation. The purpose is that protests are funded collectively by many participants, not promoted by a single large donor. If a payment above this limit is received, only €100 is registered as a computable contribution. Any excess is held for manual review and is not automatically credited to the protest balance or the platform fund.",
     "corporateNote": "Voice Protest is funded primarily through small individual contributions. It does not seek funding from companies, political parties, public administrations or organisations seeking to influence the governance of the project."
   }
 }

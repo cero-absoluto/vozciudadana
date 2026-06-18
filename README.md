@@ -18,7 +18,7 @@ Every adhesion is:
 
 - **Pseudonymous** — phone numbers are used only for verification and transformed into irreversible pseudonymous identifiers. The original number is not stored after verification.
 - **Verified** — real phone number via SMS OTP. One verified number, one adhesion per protest.
-- **Geographica affiliation signals** — SIM, IP and optional GPS confirmation contribute to reliability scoring.
+- **Geographic affiliation signals** — SIM, IP and optional GPS confirmation contribute to reliability scoring.
 - **Publicly auditable** — integrity hashes and public commitments allow independent verification of every closed report. Results can be verified by anyone using the in-app verifier or the public API.
 
 Available in 🇪🇸 ES · 🇬🇧 EN · 🇫🇷 FR · 🇨🇳 中文

@@ -22,7 +22,7 @@ The Audit Trail explains:
 - what earlier documents claimed;
 - what external audits identified as inaccurate, ambiguous or overstated;
 - how those issues were corrected;
-- how the Audit Alignment Framework evolved into the platform's canonical reference. :contentReference[oaicite:0]{index=0}
+- how the Audit Alignment Framework evolved into the platform's canonical reference.
 
 ## Important
 

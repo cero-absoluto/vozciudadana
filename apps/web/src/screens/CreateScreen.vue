@@ -342,7 +342,7 @@ let targetDebounce      = null;
 const ALLOWED_TYPES = new Set([
   'Q1193236','Q11033','Q1004705','Q7275','Q2297946','Q1002697',
   'Q327333','Q37260','Q35749','Q637846','Q11204','Q15284',
-  'Q6465','Q7278','Q2659904','Q178706','Q1639634','Q270791',
+  'Q6465','Q2659904','Q178706','Q1639634','Q270791',
   'Q15265344','Q3918','Q16917','Q178790','Q190928','Q35120','Q43229',
   'Q30185','Q1255921','Q294414','Q4164871','Q699567','Q83307',
   'Q372436','Q107363442','Q48352','Q2101','Q212238','Q13218630',
@@ -377,10 +377,40 @@ const ALLOWED_TYPES = new Set([
   'Q388785',  // economic union
   'Q185441',  // customs union
   'Q1329623', // trade bloc
+  // Governments and executive branch — previously missing, causing "NEEDS_REVIEW"
+  // for common targets like "Gobierno de España", "President of X", ministries
+  'Q3550302', // government (generic) — covers all national/regional governments
+  'Q3559299', // government of Spain (specific P31 type used by Q154098)
+  'Q56289041',// national government
+  'Q30461',   // head of government — covers presidents, prime ministers
+  'Q11696',   // president (head of state)
+  'Q18810062',// head of state
+  'Q1268020', // cabinet minister
+  'Q83307',   // minister (generic, may already be above — safe duplicate)
+  'Q234497',  // ministry (generic)
+  'Q2615890', // ministry (Spanish specific)
+  'Q2085381', // department of government (may already be above)
+  'Q1752019', // supreme court
+  'Q1302361', // court of appeal
+  'Q1311553', // constitutional court
+  'Q324913',  // court (generic)
+  'Q7257424', // police force
+  'Q732717',  // public prosecutor's office
+  'Q768526',  // municipality (covers city halls / ayuntamientos)
+  'Q15284',   // municipality — may already be above
+  'Q16970',   // church / religious institution with public role
+  'Q163740',  // nonprofit (covers public interest organisations)
 ]);
 
 const REJECTED_TYPES = new Set([
-  'Q5','Q4830453','Q431289','Q476028','Q215380','Q11424',
+  'Q5',         // human being — individual person
+  'Q4830453',   // business / for-profit company
+  'Q431289',    // brand
+  'Q476028',    // sports club
+  'Q215380',    // music band
+  'Q11424',     // film
+  'Q7278',      // political party — must not be a target
+  'Q7210356',   // political organisation (generic) — covers movements, campaigns
 ]);
 
 async function searchWikidata(q) {
@@ -401,11 +431,11 @@ async function validateTarget(wikidataId, label) {
   targetWikiId.value = wikidataId;
   targetName.value   = label;
   try {
-    const sparql = `SELECT ?type ?typeLabel ?countryLabel WHERE {
+    const sparql = `SELECT DISTINCT ?type ?typeLabel ?countryLabel WHERE {
       wd:${wikidataId} wdt:P31 ?type .
       OPTIONAL { wd:${wikidataId} wdt:P17 ?country . }
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en" . }
-    } LIMIT 20`;
+    } LIMIT 30`;
     const res = await fetch('https://query.wikidata.org/sparql?query=' + encodeURIComponent(sparql) + '&format=json');
     const data = await res.json();
     const bindings = data.results.bindings;
@@ -687,3 +717,4 @@ function submit() {
   }, 800);
 }
 </script>
+

@@ -136,6 +136,19 @@
         <div style="font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">score</div>
       </div>
     </div>
+    <!-- Event-level documentary score — shown below the source card -->
+    <div v-if="sourceResult.event_score != null"
+      style="padding:8px 14px;border-top:.5px solid var(--border);display:flex;align-items:center;gap:10px"
+      :style="{background: sourceResult.event_score >= 70 ? 'rgba(76,255,164,.04)' : sourceResult.event_score >= 40 ? 'rgba(255,179,71,.04)' : 'rgba(255,94,91,.04)'}">
+      <div style="flex-shrink:0;text-align:center;min-width:32px">
+        <div style="font-size:16px;font-weight:800;line-height:1"
+          :style="{color: sourceResult.event_score >= 70 ? 'var(--accent2)' : sourceResult.event_score >= 40 ? 'var(--accent4)' : 'var(--accent3)'}">
+          {{ sourceResult.event_score }}
+        </div>
+        <div style="font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">{{ $t('create.eventScore') }}</div>
+      </div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.4">{{ sourceResult.event_score_message }}</div>
+    </div>
     <div v-if="sourceResult.source_title" style="padding:8px 14px;border-top:.5px solid var(--border);background:var(--bg2)">
       <div style="font-size:11px;font-weight:600;margin-bottom:2px;color:var(--text)">{{ sourceResult.source_title }}</div>
       <div v-if="sourceResult.source_description" style="font-size:10px;color:var(--text2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
@@ -455,15 +468,21 @@ async function validateSource(url) {
   sourceChecking.value = true;
   sourceResult.value   = null;
   try {
+    const demandsLower = (form.demands || '').toLowerCase();
+    const VERBOS_PROHIBIDOS = ['apoyar','respaldar','celebrar','felicitar','pedir','solicitar','rogar','desear','esperar','agradecer','proponer','sugerir','recomendar','mejorar','support','endorse','celebrate','congratulate','ask','request','beg','wish','hope','thank','propose','suggest','recommend','improve'];
+    const VERBOS_PERMITIDOS = ['exigi','denuncia','demanda','rechaza','condena','ces','dimt','investig','public','revel','restitu','par','deten','suspend','demand','denounce','reject','condemn','dismiss','resign','investigate','publish','reveal','restore','stop','halt','suspend'];
     const res = await fetch(`${API_BASE}/api/source/validate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        source_url:  url,
-        title:       form.title       || '',
-        demands:     form.demands     || '',
-        tipo_abuso:  form.tipo_abuso  || '',
-        target_name: form.focal_point || '',
+        source_url:        url,
+        title:             form.title       || '',
+        demands:           form.demands     || '',
+        tipo_abuso:        form.tipo_abuso  || '',
+        target_name:       form.focal_point || '',
+        has_action_verb:   VERBOS_PERMITIDOS.some(v => demandsLower.includes(v)),
+        has_blocked_verb:  VERBOS_PROHIBIDOS.some(v => demandsLower.includes(v)),
+        wikidata_verified: !!form.focal_point_wikidata_id,
       }),
     });
     const data = await res.json();

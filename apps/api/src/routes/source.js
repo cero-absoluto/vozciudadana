@@ -202,29 +202,63 @@ function statusFromScore(score) {
 }
 
 function messageForStatus(status, sourceType) {
-  const isOfficial = ['official_government','parliament','court','public_institution','public_broadcaster'].includes(sourceType);
+  // Language rule: we describe documentary quality, never truth or credibility.
+  // Per Audit Alignment Framework v2.1: "Voice Protest does not assess the
+  // truthfulness of claims. It may provide informational indicators regarding
+  // the documentary quality and apparent relevance of sources submitted by
+  // event creators."
   switch (status) {
     case 'VERIFIED_SOURCE':
-      return isOfficial
-        ? 'The source is from an official institution and appears to support the claim.'
-        : 'The provided source appears to strongly support the claim.';
+      return 'Your event has a strong documentary basis.';
     case 'RELEVANT_SOURCE':
-      return 'The provided source appears to support the claim.';
+      return 'Your event has a reasonable documentary basis.';
     case 'WEAK_SOURCE':
-      return isOfficial
-        ? 'The source is from a recognized institution, but its relevance to the claim is not clear.'
-        : 'The source could be related to the claim, but relevance is weak.';
+      return 'Your supporting source may not be clearly related to the reported issue. Consider providing a more specific source.';
     case 'UNAVAILABLE_SOURCE':
-      return 'The source could not be accessed. It may be behind a paywall or temporarily unavailable.';
+      return 'The source could not be accessed. It may be behind a paywall or temporarily unavailable. Participants will not be able to verify it directly.';
     case 'PAYWALLED_SOURCE':
-      return 'The source appears to be behind a paywall. It has been recorded but could not be fully verified.';
+      return 'The source appears to be behind a paywall. It has been recorded but participants may not be able to access it directly.';
     case 'UNRELATED_SOURCE':
-      return 'The provided source does not clearly support the claim.';
+      return 'The relationship between the submitted source and the reported issue is unclear. Participants may find it difficult to understand the documentary basis of the event.';
     case 'BLOCKED_SOURCE':
       return 'This type of source is not accepted. Please provide a news article, official document or dataset.';
     default:
-      return 'The source requires manual review before the protest can be published.';
+      return 'The source requires manual review before the event can be published.';
   }
+}
+
+// ── Event-level documentary score ─────────────────────────────────────────
+// Combines source quality, institutional verification, action verb presence,
+// and documentary relevance into a single informational indicator shown to
+// the event creator. This score describes documentary quality only — it does
+// not assess truth, legitimacy or representativeness.
+// It is never used to block publication (only hard admission rules block).
+function computeEventScore({ sourceScore, sourceStatus, hasActionVerb, hasBlockedVerb, wikidataVerified, relevanceScore }) {
+  let score = 0;
+
+  // Source quality (max 35)
+  if (sourceStatus === 'VERIFIED_SOURCE')  score += 35;
+  else if (sourceStatus === 'RELEVANT_SOURCE')  score += 25;
+  else if (sourceStatus === 'WEAK_SOURCE')       score += 10;
+  else if (sourceStatus === 'PAYWALLED_SOURCE')  score += 8;
+
+  // Institution verified as public in Wikidata (max 20)
+  if (wikidataVerified) score += 20;
+
+  // Action verb present in demands (max 20)
+  if (hasActionVerb && !hasBlockedVerb) score += 20;
+  else if (hasActionVerb && hasBlockedVerb) score += 10; // mixed — partial
+
+  // Documentary relevance: article text ↔ title+demands (max 30, already computed)
+  score += Math.min(relevanceScore || 0, 30);
+
+  return Math.min(100, Math.max(0, score));
+}
+
+function eventScoreMessage(score) {
+  if (score >= 70) return 'Your event has a strong documentary basis.';
+  if (score >= 40) return 'Your supporting source may not be clearly related to the reported issue. Consider providing a more specific source.';
+  return 'The relationship between the submitted source and the reported issue is unclear. Participants may find it difficult to understand the documentary basis of the event.';
 }
 
 // ── Main route handler ─────────────────────────────────────────────────────
@@ -238,11 +272,14 @@ export default async function sourceRoutes(app) {
         type: 'object',
         required: ['source_url'],
         properties: {
-          source_url:  { type: 'string', minLength: 10, maxLength: 2000 },
-          title:       { type: 'string', maxLength: 255, default: '' },
-          demands:     { type: 'string', maxLength: 2000, default: '' },
-          tipo_abuso:  { type: 'string', maxLength: 120, default: '' },
-          target_name: { type: 'string', maxLength: 255, default: '' },
+          source_url:       { type: 'string', minLength: 10, maxLength: 2000 },
+          title:            { type: 'string', maxLength: 255, default: '' },
+          demands:          { type: 'string', maxLength: 2000, default: '' },
+          tipo_abuso:       { type: 'string', maxLength: 120, default: '' },
+          target_name:      { type: 'string', maxLength: 255, default: '' },
+          has_action_verb:  { type: 'boolean', default: false },
+          has_blocked_verb: { type: 'boolean', default: false },
+          wikidata_verified:{ type: 'boolean', default: false },
         },
         additionalProperties: false,
       },
@@ -359,6 +396,22 @@ export default async function sourceRoutes(app) {
         source_relevance_score:   relevanceScore,
         source_validation_status: validationStatus,
         message:                  messageForStatus(validationStatus, sourceType),
+        event_score:              computeEventScore({
+          sourceScore:      confidenceScore,
+          sourceStatus:     validationStatus,
+          hasActionVerb:    req.body.has_action_verb ?? false,
+          hasBlockedVerb:   req.body.has_blocked_verb ?? false,
+          wikidataVerified: req.body.wikidata_verified ?? false,
+          relevanceScore,
+        }),
+        event_score_message: eventScoreMessage(computeEventScore({
+          sourceScore:      confidenceScore,
+          sourceStatus:     validationStatus,
+          hasActionVerb:    req.body.has_action_verb ?? false,
+          hasBlockedVerb:   req.body.has_blocked_verb ?? false,
+          wikidataVerified: req.body.wikidata_verified ?? false,
+          relevanceScore,
+        })),
       });
     }
 
@@ -383,6 +436,22 @@ export default async function sourceRoutes(app) {
       source_relevance_score:   0,
       source_validation_status: validationStatus,
       message:                  messageForStatus(validationStatus, sourceType),
+      event_score:              computeEventScore({
+        sourceScore:      domainScore,
+        sourceStatus:     validationStatus,
+        hasActionVerb:    req.body.has_action_verb ?? false,
+        hasBlockedVerb:   req.body.has_blocked_verb ?? false,
+        wikidataVerified: req.body.wikidata_verified ?? false,
+        relevanceScore:   0,
+      }),
+      event_score_message: eventScoreMessage(computeEventScore({
+        sourceScore:      domainScore,
+        sourceStatus:     validationStatus,
+        hasActionVerb:    req.body.has_action_verb ?? false,
+        hasBlockedVerb:   req.body.has_blocked_verb ?? false,
+        wikidataVerified: req.body.wikidata_verified ?? false,
+        relevanceScore:   0,
+      })),
     });
   });
 }

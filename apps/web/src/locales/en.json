@@ -228,7 +228,8 @@
     "errTargetReview": "Needs manual review before publishing",
     "createdSaldo": "✓ Protest created — fund it from the protest page to start receiving verified adhesions.",
     "endsAt": "Your protest will end on",
-    "principleNote": "Voice Protest verifies participation. It does not verify truth."
+    "principleNote": "Voice Protest verifies participation. It does not verify truth.",
+    "eventScore": "event"
   },
   "detail": {
     "back": "← Back to map",

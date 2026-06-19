@@ -22,6 +22,22 @@ const MAX_DONATION_EUR = parseFloat(process.env.MAX_DONATION_EUR || '100');
  * @param {import('fastify').FastifyInstance} app
  */
 export default async function kofiWebhookRoutes(app) {
+  // Ko-fi sends webhooks as application/x-www-form-urlencoded with a single
+  // 'data' field containing a JSON string. Fastify needs an explicit parser
+  // for this content type — without it, the server returns 415.
+  app.addContentTypeParser(
+    'application/x-www-form-urlencoded',
+    { parseAs: 'string' },
+    (req, body, done) => {
+      try {
+        const parsed = Object.fromEntries(new URLSearchParams(body));
+        done(null, parsed);
+      } catch (err) {
+        done(err);
+      }
+    }
+  );
+
   app.post('/kofi', {
     schema: {
       body: {
@@ -30,7 +46,7 @@ export default async function kofiWebhookRoutes(app) {
         properties: {
           data: { type: 'string' },
         },
-        additionalProperties: true, // Ko-fi may send extra fields we don't declare or use
+        additionalProperties: true,
       },
     },
   }, async (req, reply) => {

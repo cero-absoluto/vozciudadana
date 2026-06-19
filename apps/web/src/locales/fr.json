@@ -228,7 +228,8 @@
     "errTargetReview": "Nécessite une révision manuelle avant publication",
     "createdSaldo": "✓ Protestation créée — financez-la depuis sa page pour recevoir des adhésions vérifiées.",
     "endsAt": "Votre protestation se terminera le",
-    "principleNote": "Voice Protest vérifie la participation. Il ne vérifie pas la vérité des faits."
+    "principleNote": "Voice Protest vérifie la participation. Il ne vérifie pas la vérité des faits.",
+    "eventScore": "événement"
   },
   "detail": {
     "back": "← Retour à la carte",

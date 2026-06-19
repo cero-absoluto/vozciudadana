@@ -228,7 +228,8 @@
     "errTargetReview": "Requiere revisión manual antes de publicar",
     "createdSaldo": "✓ Convocatoria creada — finánciala desde su pantalla para recibir adhesiones verificadas.",
     "endsAt": "Tu convocatoria finalizará el",
-    "principleNote": "Voice Protest verifica la participación. No verifica la veracidad de los hechos."
+    "principleNote": "Voice Protest verifica la participación. No verifica la veracidad de los hechos.",
+    "eventScore": "evento"
   },
   "detail": {
     "back": "← Volver al mapa",

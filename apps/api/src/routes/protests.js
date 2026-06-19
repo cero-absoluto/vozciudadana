@@ -4,6 +4,58 @@ import { createHmac } from 'crypto';
 const VALID_SCOPES    = ['national', 'regional', 'global'];
 const VALID_REGIONS   = ['region', 'provincia', 'ciudad', 'distrito', 'institucion'];
 const VALID_RISK      = ['low', 'med', 'high', 'critical'];
+
+// ── Backend admission rules — these mirror and enforce frontend validation ──
+// Frontend = helps the user. Backend = real border. These rules cannot be
+// bypassed by calling the API directly. All four checks are required because
+// Voice Protest must not function as a petition platform.
+
+// 1. Closed list of accepted abuse types — tipo_abuso is required and must
+//    be one of these values. null or arbitrary strings are rejected.
+const VALID_ABUSE_TYPES = new Set([
+  'corruption',           // Corruption or embezzlement
+  'nepotism',             // Nepotism or favoritism
+  'rights_violation',     // Violation of fundamental rights
+  'negligence',           // Serious negligence
+  'repression',           // Repression or censorship
+  'opacity',              // Opacity or lack of accountability
+  'other_public_abuse',   // Other public power abuse
+]);
+
+// 2. Blocked source domains — petition platforms are not documentary sources.
+//    A petition does not prove a fact; it is itself a petition.
+const BLOCKED_SOURCE_DOMAINS = new Set([
+  'change.org', 'www.change.org',
+  'avaaz.org', 'www.avaaz.org',
+  'gopetition.com', 'www.gopetition.com',
+  'ipetitions.com', 'www.ipetitions.com',
+  'petitions.net', 'www.petitions.net',
+  'thepetitionsite.com', 'www.thepetitionsite.com',
+  'care2.com', 'www.care2.com',
+  'act.greenpeace.org',
+  'you.38degrees.org.uk',
+  'sumofus.org', 'www.sumofus.org',
+  'moveon.org', 'www.moveon.org',
+]);
+
+// 3. Prohibited verb roots — demands phrased as requests, proposals or
+//    improvement suggestions indicate a petition, not a public abuse report.
+const PROHIBITED_VERB_ROOTS = [
+  'pedir', 'solicitar', 'rogar', 'proponer', 'sugerir', 'recomendar',
+  'mejorar', 'agradecer', 'desear', 'esperar', 'apoyar', 'respaldar',
+  'ask', 'request', 'beg', 'propose', 'suggest', 'recommend',
+  'improve', 'thank', 'wish', 'hope', 'support', 'endorse',
+];
+
+// 4. Required action verb roots — at least one must be present in demands.
+//    A valid Voice Protest demand uses action verbs directed at institutions.
+const REQUIRED_VERB_ROOTS = [
+  'exigi', 'exig', 'denuncia', 'demanda', 'rechaza', 'condena',
+  'cese', 'cesar', 'dimt', 'dimitir', 'investig', 'public',
+  'revel', 'restitu', 'deten', 'suspend', 'paraliz',
+  'demand', 'denounce', 'reject', 'condemn', 'dismiss', 'resign',
+  'investigate', 'publish', 'reveal', 'restore', 'stop', 'halt', 'suspend',
+];
 const COUNTRY_RE      = /^[A-Z]{2}$/;
 
 // ── Configurable costs and fees (set via Railway env vars) ──────────────
@@ -69,11 +121,11 @@ export default async function protestRoutes(app) {
     schema: {
       body: {
         type: 'object',
-        required: ['title', 'country_name', 'scope', 'duration_h'],
+        required: ['title', 'country_name', 'scope', 'duration_h', 'fuente_url', 'tipo_abuso', 'demands'],
         properties: {
           title:        { type: 'string', minLength: 1, maxLength: 255 },
           description:  { type: 'string', maxLength: 5000 },
-          demands:      { type: 'string', maxLength: 2000 },
+          demands:      { type: 'string', minLength: 10, maxLength: 2000 },
           country:      { type: 'string', minLength: 2, maxLength: 2, nullable: true },
           country_name: { type: 'string', minLength: 1, maxLength: 120 },
           scope:        { type: 'string', enum: VALID_SCOPES },
@@ -87,10 +139,9 @@ export default async function protestRoutes(app) {
           convocatoria_region:      { type: 'string', nullable: true },
           convocatoria_institucion: { type: 'string', nullable: true },
           dominio_email:            { type: 'string', nullable: true },
-          fuente_url:               { type: 'string', nullable: true },
-          tipo_abuso:               { type: 'string', nullable: true },
+          fuente_url:               { type: 'string', minLength: 10, maxLength: 2000 },
+          tipo_abuso:               { type: 'string', enum: [...VALID_ABUSE_TYPES] },
           requiere_censo:           { type: 'boolean', nullable: true },
-          // ── Wikidata target validation ──────────────────────────────────
           target_wikidata_id: { type: 'string', nullable: true },
           target_type:        { type: 'string', nullable: true },
           target_country:     { type: 'string', nullable: true },
@@ -109,6 +160,54 @@ export default async function protestRoutes(app) {
     const ends_at = new Date(
       new Date(starts_at ?? Date.now()).getTime() + duration_h * 3_600_000
     ).toISOString();
+
+    // ── Backend admission rules ────────────────────────────────────────────
+    // These checks enforce the platform's identity as a public abuse reporting
+    // tool, not a petition platform. They run after schema validation and
+    // cannot be bypassed by calling the API directly.
+
+    // Rule 1 — fuente_url must not be a petition platform
+    let sourceDomain = '';
+    try {
+      sourceDomain = new URL(fuente_url).hostname.replace(/^www\./, '');
+    } catch {
+      return reply.status(400).send({ error: 'Invalid source URL format' });
+    }
+    if (BLOCKED_SOURCE_DOMAINS.has(sourceDomain) || BLOCKED_SOURCE_DOMAINS.has('www.' + sourceDomain)) {
+      return reply.status(400).send({
+        error: 'Source not accepted',
+        reason: 'Petition platforms are not accepted as documentary sources. Please provide a news article, official document or statistical data.',
+      });
+    }
+
+    // Rule 2 — demands must not be phrased exclusively as requests or proposals
+    const demandsLower = (demands || '').toLowerCase();
+    const hasProhibitedVerb = PROHIBITED_VERB_ROOTS.some(v => demandsLower.includes(v));
+    const hasActionVerb     = REQUIRED_VERB_ROOTS.some(v => demandsLower.includes(v));
+
+    if (hasProhibitedVerb && !hasActionVerb) {
+      return reply.status(400).send({
+        error: 'Demands not accepted',
+        reason: 'Demands must use action verbs (demand, denounce, resign, investigate) not request verbs (ask, request, propose, suggest). Voice Protest is not a petition platform.',
+      });
+    }
+
+    // Rule 3 — tipo_abuso already enforced by schema enum, but double-check
+    // to ensure no bypass through serialization edge cases
+    if (!VALID_ABUSE_TYPES.has(tipo_abuso)) {
+      return reply.status(400).send({
+        error: 'Invalid abuse type',
+        reason: `tipo_abuso must be one of: ${[...VALID_ABUSE_TYPES].join(', ')}`,
+      });
+    }
+
+    // Rule 4 — target_validation must not be REJECTED (political party, private company, etc)
+    if (target_validation === 'REJECTED') {
+      return reply.status(400).send({
+        error: 'Recipient not accepted',
+        reason: 'The recipient must be a public institution with a public mandate or public funds. Political parties, private companies and individuals are not accepted.',
+      });
+    }
 
     const { data, error } = await supabase
       .from('protests')

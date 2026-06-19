@@ -228,7 +228,8 @@
     "errTargetReview": "发布前需要人工审核",
     "createdSaldo": "✓ 抗议已创建 — 从抗议页面为其提供资金以开始接收经过验证的参与。",
     "endsAt": "您的抗议将于以下时间结束",
-    "principleNote": "Voice Protest验证参与。它不验证事实的真实性。"
+    "principleNote": "Voice Protest验证参与。它不验证事实的真实性。",
+    "eventScore": "事件"
   },
   "detail": {
     "back": "← 返回地图",

@@ -796,7 +796,7 @@ export default async function protestRoutes(app) {
 
     const { data: adhesions } = await supabase
       .from('adhesions')
-      .select('ciudad, region, pais, idioma, created_at, gps_confirmed, fiabilidad, senales')
+      .select('ciudad, region, pais, idioma, created_at, gps_confirmed, fiabilidad, senales, adhesion_osm_id')
       .eq('protest_id', req.params.id)
       .is('deleted_at', null)
       .order('created_at', { ascending: true });
@@ -811,6 +811,36 @@ export default async function protestRoutes(app) {
     }, {});
 
     const adhesiones_con_gps = adhesions.filter(a => a.gps_confirmed === true).length;
+
+    // ── Local scope geographic breakdown ──────────────────────────────────
+    // For local protests, classify adhesions into three tiers:
+    // 1. GPS confirmed within the declared municipality (osm_id match)
+    // 2. National participants (SIM from same country, no local GPS)
+    // 3. International participants (SIM from different country)
+    let desglose_geografico_local = null;
+    if (protest.scope === 'local' && protest.convocatoria_osm_id) {
+      const gps_local = adhesions.filter(a =>
+        a.adhesion_osm_id && a.adhesion_osm_id === protest.convocatoria_osm_id
+      ).length;
+      const gps_nacional = adhesions.filter(a =>
+        a.gps_confirmed && a.adhesion_osm_id && a.adhesion_osm_id !== protest.convocatoria_osm_id
+      ).length;
+      const nacionales_sin_gps = adhesions.filter(a =>
+        !a.gps_confirmed && (a.pais === protest.country_name || !a.pais)
+      ).length;
+      const internacionales = adhesions.filter(a =>
+        a.pais && a.pais !== protest.country_name && !a.gps_confirmed
+      ).length;
+
+      desglose_geografico_local = {
+        municipio: protest.convocatoria_ciudad_nombre,
+        gps_local,
+        gps_nacional,
+        nacionales_sin_gps,
+        internacionales,
+        total: adhesions.length,
+      };
+    }
 
     const fiabilidad_alta    = adhesions.filter(a => a.fiabilidad >= 85).length;
     const fiabilidad_media   = adhesions.filter(a => a.fiabilidad >= 75 && a.fiabilidad < 85).length;
@@ -862,6 +892,7 @@ export default async function protestRoutes(app) {
         adhesiones_hoy:     adhesionesHoy,
         tendencia_hoy:      adhesionesHoy - adhesionesAyer,
       },
+      desglose_geografico_local,
     };
   });
 }

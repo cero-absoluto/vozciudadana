@@ -12,7 +12,7 @@
 
 ## What is Voice Protest?
 
-Voice Protest is a civic tech platform that allows people to adhere to verified protest events with privacy-preserving verification. It is not a petition platform — it focuses on public-interest grievances directed at institutions exercising public functions, receiving public funds, or holding public responsibilities (corruption, nepotism, negligence, repression). 
+Voice Protest is a civic tech platform that allows people to adhere to verified protest events with privacy-preserving verification. It is not a petition platform — it focuses on public-interest grievances directed at institutions exercising public functions, receiving public funds, or holding public responsibilities (corruption, nepotism, negligence, repression).
 
 Every adhesion is:
 
@@ -25,6 +25,19 @@ Available in 🇪🇸 ES · 🇬🇧 EN · 🇫🇷 FR · 🇨🇳 中文
 
 ---
 
+## What Voice Protest Is Not
+
+Voice Protest is not a petition platform. Backend admission rules enforce this boundary:
+
+- Events must allege a specific form of public abuse (corruption, rights violation, negligence, repression, opacity or nepotism).
+- Sources from petition platforms (change.org, avaaz.org, etc.) are rejected as documentary sources.
+- Demands phrased exclusively as requests or proposals are rejected.
+- Recipients must be public institutions — political parties, private companies and individuals are not accepted. Validated server-side via Wikidata.
+
+These rules are enforced server-side and apply equally to web users and direct API requests.
+
+---
+
 ## Key Features
 
 | Feature | Description |
@@ -33,13 +46,13 @@ Available in 🇪🇸 ES · 🇬🇧 EN · 🇫🇷 FR · 🇨🇳 中文
 | 🔍 Publicly verifiable reports | Closed reports include SHA-256 integrity hashes and public commitments. Anyone can verify results independently using the in-app verifier or the public API. |
 | 📡 Public commitments | Per-adhesion commitments — `SHA256(protest_id + nullifier)` — enable hash verification without revealing identities or enabling cross-protest correlation. |
 | 📋 Integrity log | Public record of integrity hashes maintained through GitHub. Updated manually at each protest closure. |
-| 📍 GPS verification | Optional location signal raises reliability scoring |
+| 📍 GPS verification | Optional location signal raises reliability scoring. GPS geocoding is always routed through the backend server — Nominatim receives the server's IP address, not the participant's. |
 | 👥 Dynamic census | Wave-based trust system with peer vouching for local/institutional events |
 | 📧 Institutional email | Any institutional domain for university/workplace events |
 | 🌍 Geographic scopes | National · Local/Regional · Global |
 | 📊 Public report | Live data, PDF export, embeddable widget for media |
 | 🔌 Public API | Free, no auth required. For researchers and journalists |
-| 💰 Participant funding | Per-event balance funded by participant donations |
+| 💰 Participant funding | Per-event balance funded by participant donations (capped at €100 per computable donation) |
 | 📁 Persistent public record | Closed events and integrity snapshots designed to be preserved indefinitely |
 | 🔔 Push notifications | Result alert at closure. Auto-deleted after event ends |
 
@@ -54,8 +67,9 @@ Available in 🇪🇸 ES · 🇬🇧 EN · 🇫🇷 FR · 🇨🇳 中文
 | Database | Supabase (PostgreSQL) |
 | SMS Verification | Twilio Verify |
 | Email | Resend |
-| Maps | OpenStreetMap / Nominatim |
+| GPS Geocoding | Nominatim (OpenStreetMap) — via backend proxy, never called directly from the browser |
 | Source validation | Wikidata API |
+| Donations | Ko-fi + PayPal (webhook integration with donor data minimisation) |
 
 ---
 
@@ -98,7 +112,9 @@ Shows: live counter · event title · cities · countries · "Join privately" bu
 | SIM only | 75% |
 | IP only | 60% |
 | Institutional email OTP | 90% |
- Scores indicate verification-signal strength and are not statistical probabilities.
+
+Scores indicate verification-signal strength and are not statistical probabilities.
+
 ---
 
 ## How verification works
@@ -121,8 +137,9 @@ repo/
 │   └── api/          # Fastify backend → deployed to Railway
 ├── supabase/         # DB schema, migrations, seed data
 ├── docs/
-│   ├── canonical/
-│   ├── governance/
+│   ├── canonical/    # Constitutional documents — what Voice Protest is and claims
+│   ├── governance/   # Audit trail, security audit records, correction history
+│   ├── operations/   # Technical reference — configuration, setup, troubleshooting
 │   └── integrity-log.md
 ├── .github/
 │   └── workflows/
@@ -200,6 +217,9 @@ EMAIL_COST_EUR=0.01
 PLATFORM_FEE_PERCENT=10
 MAX_DONATION_EUR=100
 
+# Ko-fi webhook integration
+KOFI_VERIFICATION_TOKEN=
+
 # reCAPTCHA
 RECAPTCHA_SECRET=
 
@@ -211,8 +231,9 @@ CORS_ORIGIN=https://voiceprotest.org
 
 ## Philosophy
 
-Voice Protest is not affiliated with any ideology, political party or institution. It is neutral infrastructure for verified participation, accessible from anywhere and without physical risk. We verify participation, not truth.
-The platform records that participation occurred under its verification rules while leaving the validity of claims to public debate, journalism, institutions and courts.
+Voice Protest is not affiliated with any ideology, political party or institution. It is neutral infrastructure for verified participation, accessible from anywhere and without physical risk.
+
+We verify participation, not truth. The platform records that participation occurred under its verification rules while leaving the validity of claims to public debate, journalism, institutions and courts.
 
 - No advertising.
 - No data sales.
@@ -227,9 +248,10 @@ Sustained by participant donations. Independent by structure, not by promise.
 ## Contributing
 
 This project is open source under AGPL 3.0. Contributions welcome.
+
 Before contributing, please review:
-- docs/canonical/VoiceProtest_AuditAlignment_v2_1.pdf
-- docs/canonical/VoiceProtest_v3_(5)_beta_auditado.pdf
+- `docs/canonical/3.-VoiceProtest_AuditAlignment_v2_1.docx` — canonical reference document
+- `docs/canonical/2.-VoiceProtest_v3_5_beta_auditado_final.docx` — master design document (Spanish)
 
 Areas where help is most needed:
 
@@ -254,7 +276,7 @@ Please open an issue before submitting a pull request.
 
 Voice Protest is an original project by Judith Galan Mayoral.
 
-Concept and development: Judith Galan Mayoral  
-Technical collaboration — Core Developer: JL  
-License: AGPL 3.0 — publicly auditable  
+Concept and development: Judith Galan Mayoral
+Technical collaboration — Core Developer: JL
+License: AGPL 3.0 — publicly auditable
 © 2026 Judith Galan Mayoral

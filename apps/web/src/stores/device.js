@@ -3,11 +3,11 @@ import { ref, computed } from 'vue';
 import { REGIONS } from '@/constants.js';
 
 export const useDeviceStore = defineStore('device', () => {
-  const simPrefix  = ref('+34');
-  const simCountry = ref('ES');
-  const simName    = ref('España');
-  const ipCountry     = ref('ES');
-  const ipCity        = ref('Madrid');
+  const simPrefix  = ref('');
+  const simCountry = ref('');
+  const simName    = ref('');
+  const ipCountry     = ref('');
+  const ipCity        = ref('');
   const ipRegion      = ref(null);
   const ipCountryName = ref(null);
   const docCountry = ref(null);

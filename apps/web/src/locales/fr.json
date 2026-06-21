@@ -229,7 +229,14 @@
     "createdSaldo": "✓ Protestation créée — financez-la depuis sa page pour recevoir des adhésions vérifiées.",
     "endsAt": "Votre protestation se terminera le",
     "principleNote": "Voice Protest vérifie la participation. Il ne vérifie pas la vérité des faits.",
-    "eventScore": "événement"
+    "eventScore": "événement",
+    "scopeLocalCity": "Local — ville/commune",
+    "scopeLocalCityBadge": "Portée locale",
+    "scopeLocalCityDesc": "Événement de portée locale. Les participants avec GPS confirmé dans la commune apparaissent comme vérifiés localement dans le rapport public.",
+    "municipioLabel": "Commune",
+    "municipioPlaceholder": "Rechercher la commune (ex: Lyon, Bordeaux, Nantes...)",
+    "municipioHint": "Sélectionnez la commune exacte dans la liste. Utilisé pour classer les participants par proximité géographique dans le rapport public.",
+    "errMunicipio": "Veuillez sélectionner une commune pour cet événement local"
   },
   "detail": {
     "back": "← Retour à la carte",

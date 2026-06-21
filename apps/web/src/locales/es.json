@@ -67,7 +67,7 @@
     "geoConfidence": "Confianza geográfica:",
     "filterAll": "Todas",
     "filterNational": "🏛️ Nacional",
-    "filterRegional": "🌐 Local",
+    "filterRegional": "🌐 Regional",
     "filterGlobal": "🌍 Global",
     "tabActive": "Activas",
     "tabQueue": "Cola",
@@ -77,7 +77,8 @@
     "overlayLive": "Convocatorias activas en el mapa",
     "overlayTap": "Toca para explorar →",
     "dotDocument": "Documento",
-    "improveConfidence": "Mejora tu confianza geográfica"
+    "improveConfidence": "Mejora tu confianza geográfica",
+    "filterLocal": "📍 Local"
   },
   "active": {
     "empty": "Sin convocatorias activas",

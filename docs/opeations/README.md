@@ -9,3 +9,8 @@ These documents describe how specific systems work, how to configure them, and h
 ### Ko-fi_Reference.md
 Complete Ko-fi reference: initial setup, webhook configuration, content-type technical notes, donation routing, multi-protest mapping guide, Supabase verification queries and troubleshooting.
 
+## Related documentation
+
+Constitutional documents (what Voice Protest is and claims) are in `/docs/canonical/`.
+
+Governance history (audit records, correction history) is in `/docs/governance/`.

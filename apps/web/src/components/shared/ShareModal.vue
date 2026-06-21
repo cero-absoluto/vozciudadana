@@ -56,12 +56,12 @@ const route    = useRoute();
 const BASE_URL = 'https://www.voiceprotest.org';
 
 const currentProtest = computed(() => {
-  const id = Number(route.params.id);
-  return id ? protests.protests.find(p => p.id === id) : null;
+  const id = route.params.id;
+  return id ? protests.protests.find(p => String(p.id) === String(id)) : null;
 });
 
 const eventUrl = computed(() => {
-  const id = Number(route.params.id);
+  const id = route.params.id;
   return id ? `${BASE_URL}/#/detail/${id}` : BASE_URL;
 });
 

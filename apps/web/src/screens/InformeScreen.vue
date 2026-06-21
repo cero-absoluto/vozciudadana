@@ -359,13 +359,13 @@ const { t } = useI18n();
 const tipoAbusoLabel = computed(() => {
   const tipo = data.value?.protest?.tipo_abuso;
   const map = {
-    corrupcion: t('informe.abusoCorrupcion'),
-    nepotismo: t('informe.abusoNepotismo'),
-    derechos: t('informe.abusoDerechos'),
-    negligencia: t('informe.abusoNegligencia'),
-    represion: t('informe.abusoRepresion'),
-    opacidad: t('informe.abusoOpacidad'),
-    otro: t('informe.abusoOtro'),
+    corruption:        t('informe.abusoCorrupcion'),
+    nepotism:          t('informe.abusoNepotismo'),
+    rights_violation:  t('informe.abusoDerechos'),
+    negligence:        t('informe.abusoNegligencia'),
+    repression:        t('informe.abusoRepresion'),
+    opacity:           t('informe.abusoOpacidad'),
+    other_public_abuse: t('informe.abusoOtro'),
   };
   return map[tipo] || tipo || '—';
 });
@@ -650,4 +650,3 @@ function downloadPDF() {
   doc.save(filename);
 }
 </script>
-

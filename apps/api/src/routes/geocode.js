@@ -55,6 +55,8 @@ export default async function geocodeRoutes(app) {
           display_name: r.display_name,
           country_code: r.address?.country_code?.toUpperCase() || null,
           country:      r.address?.country || null,
+          lat:          parseFloat(r.lat) || null,
+          lon:          parseFloat(r.lon) || null,
         }))
         .filter(r => r.osm_id && r.name)
         .slice(0, 8);

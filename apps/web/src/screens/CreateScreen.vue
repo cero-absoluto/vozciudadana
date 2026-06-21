@@ -124,7 +124,15 @@
                    'var(--accent3)'
           }">
           {{ sourceResult.source_domain }}
-          <span style="font-weight:400;opacity:.6;text-transform:capitalize"> · {{ sourceResult.source_type?.replace(/_/g,' ') }}</span>
+          <span style="font-weight:400;opacity:.6;text-transform:capitalize"> · {{ {
+            public_broadcaster: t('create.sourceTypePublicBroadcaster'),
+            reputable_media: t('create.sourceTypeReputableMedia'),
+            public_institution: t('create.sourceTypePublicInstitution'),
+            ngo: t('create.sourceTypeNgo'),
+            academic: t('create.sourceTypeAcademic'),
+            official_government: t('create.sourceTypeGovernment'),
+            unknown: t('create.sourceTypeUnknown'),
+          }[sourceResult.source_type] || sourceResult.source_type?.replace(/_/g,' ') }}</span>
         </div>
         <div style="font-size:12px;color:var(--text2);line-height:1.4">{{ sourceResult.message }}</div>
       </div>

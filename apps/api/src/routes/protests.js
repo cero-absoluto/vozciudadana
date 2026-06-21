@@ -327,6 +327,8 @@ export default async function protestRoutes(app) {
           convocatoria_institucion: { type: 'string', nullable: true },
           convocatoria_osm_id:      { type: 'number', nullable: true },
           convocatoria_ciudad_nombre: { type: 'string', nullable: true },
+          convocatoria_lat:         { type: 'number', nullable: true },
+          convocatoria_lon:         { type: 'number', nullable: true },
           dominio_email:            { type: 'string', nullable: true },
           fuente_url:               { type: 'string', minLength: 10, maxLength: 2000 },
           tipo_abuso:               { type: 'string', enum: [...VALID_ABUSE_TYPES] },
@@ -344,6 +346,7 @@ export default async function protestRoutes(app) {
         focal_point, category, duration_h, starts_at, risk_level,
         convocatoria_pais, convocatoria_region, convocatoria_institucion, dominio_email,
         convocatoria_osm_id, convocatoria_ciudad_nombre,
+        convocatoria_lat, convocatoria_lon,
         fuente_url, tipo_abuso, requiere_censo,
         target_wikidata_id, target_type, target_country, target_validation } = req.body;
 
@@ -394,6 +397,8 @@ export default async function protestRoutes(app) {
         convocatoria_institucion: convocatoria_institucion ?? null,
         convocatoria_osm_id: convocatoria_osm_id ?? null,
         convocatoria_ciudad_nombre: convocatoria_ciudad_nombre ?? null,
+        convocatoria_lat: convocatoria_lat ?? null,
+        convocatoria_lon: convocatoria_lon ?? null,
         dominio_email: dominio_email ?? null,
         fuente_url: fuente_url ?? null,
         tipo_abuso: tipo_abuso ?? null,
@@ -927,6 +932,5 @@ async function verifyRecaptcha(token, expectedAction, reply) {
     throw new Error('recaptcha');
   }
 }
-
 
 

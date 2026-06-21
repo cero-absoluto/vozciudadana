@@ -780,7 +780,7 @@ export default async function protestRoutes(app) {
     const { data, error } = await supabase
       .from('protests')
       .select('id, title, country, country_name, scope, count, cities_count, ends_at, starts_at, saldo_euros, donaciones_total')
-      .lt('ends_at', new Date().toISOString())
+      .gt('ends_at', new Date().toISOString())
       .order('ends_at', { ascending: false })
       .limit(200);
 
@@ -927,4 +927,6 @@ async function verifyRecaptcha(token, expectedAction, reply) {
     throw new Error('recaptcha');
   }
 }
+
+
 

@@ -23,14 +23,13 @@ export default async function geocodeRoutes(app) {
       },
     },
   }, async (req, reply) => {
-    const { q, level } = req.query;
+    const { q } = req.query;
     try {
       const url = `https://nominatim.openstreetmap.org/search` +
         `?q=${encodeURIComponent(q)}` +
         `&format=json` +
         `&addressdetails=1` +
-        `&limit=8` +
-        `&featuretype=settlement`;
+        `&limit=10`;
 
       const res = await fetch(url, {
         headers: {
@@ -44,10 +43,11 @@ export default async function geocodeRoutes(app) {
 
       const data = await res.json();
 
-      // Filter to municipalities and towns, extract osm_id for reliable matching
+      // Filter to cities, towns and municipalities — exclude streets, POIs, etc.
       const results = data
-        .filter(r => ['city', 'town', 'village', 'municipality'].includes(r.type) ||
-                     r.addresstype === 'municipality')
+        .filter(r => ['city', 'town', 'village', 'municipality', 'administrative'].includes(r.type) ||
+                     ['city', 'town', 'village', 'municipality'].includes(r.addresstype) ||
+                     r.class === 'place' || r.class === 'boundary')
         .map(r => ({
           osm_id:       parseInt(r.osm_id),
           osm_type:     r.osm_type,
@@ -56,7 +56,8 @@ export default async function geocodeRoutes(app) {
           country_code: r.address?.country_code?.toUpperCase() || null,
           country:      r.address?.country || null,
         }))
-        .filter(r => r.osm_id && r.name);
+        .filter(r => r.osm_id && r.name)
+        .slice(0, 8);
 
       return { results };
     } catch {

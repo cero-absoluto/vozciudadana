@@ -722,7 +722,8 @@
     "providerNominatim": "Geocodificación GPS — convierte coordenadas en ciudad, región y país. Todas las llamadas se realizan a través de nuestro servidor backend. Nominatim recibe la IP de nuestro servidor, nunca la del usuario.",
     "providerNominatimRegion": "EU / Variable (infraestructura distribuida de OpenStreetMap)",
     "providerGithub": "Hosting del frontend estático (voiceprotest.org). GitHub Pages puede recibir la dirección IP de cada visitante al servir los archivos de la aplicación.",
-    "providerGithubRegion": "US"
+    "providerGithubRegion": "US",
+    "pushTimezone": "Si activas las notificaciones push, también podemos almacenar la zona horaria de tu dispositivo para evitar enviarte avisos no esenciales durante la noche (23:00–07:00 hora local). Esta información se usa exclusivamente para programar notificaciones y se elimina junto con la suscripción cuando la convocatoria se cierra."
   },
   "funding": {
     "title": "Política de Financiación e Independencia",

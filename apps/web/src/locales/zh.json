@@ -595,16 +595,16 @@
     "copy": "复制链接 + 消息",
     "copyDesc": "用于TikTok、Instagram、微博、微信或任何您想要的地方",
     "close": "关闭",
-    "viralMsg": "人民发声。\n{count}个声音。无暴力。无恐惧。\n仅限经验证参与者。每次参与，唯一。\n{url}",
-    "toastWA": "🔥 人民做主！通过WhatsApp分享",
-    "toastTG": "🔥 人民做主！通过Telegram分享",
+    "viralMsg": "你好，我刚刚加入了这个经过验证的抗议活动。我鼓励你参与：{url}",
+    "toastWA": "🔥 通过WhatsApp分享",
+    "toastTG": "🔥 通过Telegram分享",
     "toastCopy": "📋 已复制！粘贴到TikTok、Instagram或任何地方"
   },
   "install": {
     "title": "安装Voice Protest",
     "subtitle": "实时跟踪结果 · 无需App商店 · 无需任何人许可",
     "btn": "安装",
-    "toastInstalled": "✓ Voice Protest已安装。人民做主！"
+    "toastInstalled": "✓ Voice Protest已安装"
   },
   "map": {
     "hint": "点击国家进行筛选 · 滚轮缩放",

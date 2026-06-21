@@ -663,7 +663,7 @@
     "collect1Title": "Cryptographic hash of your phone number",
     "collect1Body": "Your phone number is transmitted over HTTPS to our server solely to send the SMS verification code and to extract your country prefix for geographic eligibility. It is not stored persistently after this process is complete. Only its HMAC-SHA256 hash — a pseudonymous identifier — is retained to prevent duplicate adhesions. The original number cannot reasonably be recovered from the stored identifier.",
     "collect2Title": "Approximate location — city and region only",
-    "collect2Body": "If you grant GPS permission, the coordinates are used to determine your city, region and country via the Nominatim service (OpenStreetMap geocoding). Depending on context, this call may be made directly from your browser or via our server. In the first case, Nominatim receives your IP address; in the second, it receives our server's IP. In both cases, coordinates are discarded immediately after geocoding and are never stored in the database.",
+    "collect2Body": "If you grant GPS permission, the coordinates are used to determine your city, region and country via the Nominatim service (OpenStreetMap geocoding). This call is always made via our server — never directly from your browser. Nominatim receives our server's IP address, not yours. Coordinates are discarded immediately after geocoding and are never stored in the database.",
     "collect3Title": "Random device identifier",
     "collect3Body": "Voice Protest generates a random identifier on your device to help prevent duplicate adhesions, abuse of verification systems and automated mass requests. This identifier contains no personal information and is used solely to protect the integrity and security of the platform.",
     "collect4Title": "Language preference",
@@ -704,7 +704,7 @@
     "institutionalEmailBody": "For protests with institutional verification, the participant provides an email address from the configured domain. This email is used solely to send the OTP verification code. Like the phone number, the original email is not stored — it is transformed into an irreversible HMAC-SHA256 hash. The email is never used for subsequent communications or shared with the protest convener.",
     "donationsTitle": "Donations",
     "donationsBody": "Donations are processed through external payment providers (such as Ko-fi and PayPal), which may process the donor's personal data — name, email, payment details — as part of completing the transaction. Voice Protest does not store the donor's identity, email or payment information. The platform records only the donation amount, currency, payment provider, timestamp and a non-identifying technical reference, used solely to update the protest's funding balance and the platform sustainability fund.",
-    "providerNominatim": "GPS geocoding — converts coordinates into city, region and country. In some situations the call is made directly from the user's browser, in which case Nominatim receives their IP address.",
+    "providerNominatim": "GPS geocoding — converts coordinates into city, region and country. All calls are made via our backend server. Nominatim receives our server's IP address, never the user's.",
     "providerNominatimRegion": "EU / Variable (distributed OpenStreetMap infrastructure)",
     "providerGithub": "Static frontend hosting (voiceprotest.org). GitHub Pages may receive the IP address of each visitor when serving the application files.",
     "providerGithubRegion": "US"

@@ -133,6 +133,50 @@
             <div v-else style="font-size:12px;color:var(--text3)">{{ $t('informe.fiabilidadNoData') }}</div>
           </div>
 
+          <!-- BLOQUE LOCAL — Desglose geográfico (solo para convocatorias locales) -->
+          <div v-if="data.desglose_geografico_local" class="block" style="margin-bottom:12px">
+            <div class="block-title">📍 {{ $t('informe.geoLocalTitle') }}</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:12px">
+              {{ $t('informe.geoLocalSubtitle', { municipio: data.desglose_geografico_local.municipio }) }}
+            </div>
+
+            <!-- GPS local -->
+            <div style="margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                <span style="font-size:13px;font-weight:600;color:var(--accent2)">📍 {{ $t('informe.geoLocalVerified') }}</span>
+                <span style="font-size:13px;color:var(--text)">{{ data.desglose_geografico_local.gps_local }}</span>
+              </div>
+              <div style="height:6px;background:var(--bg3);border-radius:4px;overflow:hidden">
+                <div :style="{width: pctLocal(data.desglose_geografico_local.gps_local) + '%', background:'var(--accent2)', height:'100%', borderRadius:'4px', transition:'width .5s'}"></div>
+              </div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">{{ $t('informe.geoLocalVerifiedDesc', { municipio: data.desglose_geografico_local.municipio }) }}</div>
+            </div>
+
+            <!-- Nacionales sin GPS local -->
+            <div style="margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                <span style="font-size:13px;font-weight:600;color:var(--accent4)">🇪🇸 {{ $t('informe.geoNational') }}</span>
+                <span style="font-size:13px;color:var(--text)">{{ data.desglose_geografico_local.nacionales_sin_gps }}</span>
+              </div>
+              <div style="height:6px;background:var(--bg3);border-radius:4px;overflow:hidden">
+                <div :style="{width: pctLocal(data.desglose_geografico_local.nacionales_sin_gps) + '%', background:'var(--accent4)', height:'100%', borderRadius:'4px', transition:'width .5s'}"></div>
+              </div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">{{ $t('informe.geoNationalDesc') }}</div>
+            </div>
+
+            <!-- Internacionales -->
+            <div v-if="data.desglose_geografico_local.internacionales > 0" style="margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                <span style="font-size:13px;font-weight:600;color:var(--accent)">🌍 {{ $t('informe.geoInternational') }}</span>
+                <span style="font-size:13px;color:var(--text)">{{ data.desglose_geografico_local.internacionales }}</span>
+              </div>
+              <div style="height:6px;background:var(--bg3);border-radius:4px;overflow:hidden">
+                <div :style="{width: pctLocal(data.desglose_geografico_local.internacionales) + '%', background:'var(--accent)', height:'100%', borderRadius:'4px', transition:'width .5s'}"></div>
+              </div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">{{ $t('informe.geoInternationalDesc') }}</div>
+            </div>
+          </div>
+
           <!-- BLOQUE 2 — Los tres números -->
           <div class="block" style="margin-bottom:12px">
             <div class="block-title">{{ $t('informe.numbersTitle') }}</div>
@@ -425,6 +469,12 @@ function formatDateTime(iso) {
 function pct(count) {
   if (!data.value?.total_adhesiones) return 0;
   return Math.round((count / data.value.total_adhesiones) * 100);
+}
+
+function pctLocal(count) {
+  const total = data.value?.desglose_geografico_local?.total;
+  if (!total) return 0;
+  return Math.round((count / total) * 100);
 }
   function maxPct(count) {
   if (!data.value?.velocidad?.adhesiones_por_dia?.length) return 0;

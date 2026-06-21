@@ -8,7 +8,7 @@
         <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin-bottom:4px">
           {{ $t('unirse.title') }}
         </div>
-        <div style="font-size:11px;color:var(--text3)">
+        <div style="font-size:12px;color:var(--text3)">
           {{ protest?.convocatoria_institucion || $t('unirse.institution') }}
         </div>
       </div>
@@ -17,7 +17,7 @@
       <div v-if="paso === 1">
         <div class="block" style="margin-bottom:12px">
           <div class="block-title">📧 {{ $t('unirse.emailTitle') }}</div>
-          <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">
             {{ $t('unirse.emailBody', { domain: dominio }) }}
           </div>
           <div class="fg">
@@ -25,14 +25,14 @@
             <input type="email" v-model="email"
               :placeholder="`tu.nombre@${dominio}`"
               @keyup.enter="solicitarOtp">
-            <div v-if="emailError" style="font-size:10px;color:var(--accent3);margin-top:4px">{{ emailError }}</div>
+            <div v-if="emailError" style="font-size:12px;color:var(--accent3);margin-top:4px">{{ emailError }}</div>
           </div>
           <button class="btn-primary" style="width:100%;margin-top:8px"
             :disabled="loading" @click="solicitarOtp">
             {{ loading ? $t('unirse.sending') : $t('unirse.sendCode') }}
           </button>
         </div>
-        <div style="font-size:9px;color:var(--text3);text-align:center;line-height:1.6">
+        <div style="font-size:12px;color:var(--text3);text-align:center;line-height:1.6">
           {{ $t('unirse.privacyNote') }}
         </div>
       </div>
@@ -42,20 +42,20 @@
         
         <div class="block" style="margin-bottom:12px">
           <div class="block-title">📬 {{ $t('unirse.otpTitle') }}</div>
-          <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">
             {{ $t('unirse.otpBody') }}
           </div>
           <input type="text" v-model="otp" maxlength="6"
             placeholder="000000"
             style="width:100%;padding:14px;text-align:center;letter-spacing:10px;font-size:24px;font-weight:700;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:'Syne',sans-serif"
             @keyup.enter="verificarOtp">
-          <div v-if="otpError" style="font-size:10px;color:var(--accent3);margin-top:6px">{{ otpError }}</div>
+          <div v-if="otpError" style="font-size:12px;color:var(--accent3);margin-top:6px">{{ otpError }}</div>
           <button class="btn-primary" style="width:100%;margin-top:12px"
             :disabled="loading" @click="verificarOtp">
             {{ loading ? $t('unirse.verifying') : $t('unirse.verifyCode') }}
           </button>
           <button @click="paso = 1"
-            style="width:100%;margin-top:8px;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:10px;cursor:pointer">
+            style="width:100%;margin-top:8px;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:12px;cursor:pointer">
             {{ $t('unirse.changeEmail') }}
           </button>
         </div>
@@ -67,7 +67,7 @@
         <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--accent2);margin-bottom:8px">
           {{ $t('unirse.successTitle') }}
         </div>
-        <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:24px">
+        <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:24px">
           {{ $t('unirse.successBody', { n: 2 - avalosRecibidos }) }}
         </div>
         <button class="btn-primary" style="width:100%" @click="$router.push('/')">
@@ -81,7 +81,7 @@
         <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--accent2);margin-bottom:8px">
           {{ $t('unirse.accreditedTitle') }}
         </div>
-        <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:24px">
+        <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:24px">
           {{ $t('unirse.step4Body') }}
         </div>
         <button class="btn-primary" style="width:100%" @click="$router.push('/')">

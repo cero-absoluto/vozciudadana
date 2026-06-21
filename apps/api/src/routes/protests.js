@@ -483,12 +483,13 @@ export default async function protestRoutes(app) {
     let ciudad = null;
     let region = null;
     let pais   = null;
+    let adhesion_osm_id = null;
 
     // Si hay GPS, usar geocodificación GPS (más precisa) ignorando IP
     if (gps_lat != null && gps_lng != null) {
       try {
         const geoRes = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${gps_lat}&lon=${gps_lng}&format=json`,
+          `https://nominatim.openstreetmap.org/reverse?lat=${gps_lat}&lon=${gps_lng}&format=json&zoom=10`,
           { headers: { 'Accept-Language': 'es', 'User-Agent': 'VozCiudadana/1.0' } }
         );
         const geoData = await geoRes.json();
@@ -497,6 +498,13 @@ export default async function protestRoutes(app) {
                  geoData.address?.locality || geoData.address?.municipality || null;
         region = geoData.address?.state || geoData.address?.county || null;
         pais   = geoData.address?.country || null;
+
+        // Extract osm_id for local scope municipality matching.
+        // zoom=10 targets the municipality level (admin_level=8) in most EU countries.
+        // Stored as adhesion_osm_id and used in the informe geographic breakdown.
+        if (geoData.osm_id && protest.scope === 'local') {
+          adhesion_osm_id = parseInt(geoData.osm_id);
+        }
       } catch { /* silencioso */ }
     }
 
@@ -563,6 +571,7 @@ export default async function protestRoutes(app) {
       .insert({ protest_id: req.params.id, phone_hash, doc_hash: doc_hash ?? null,
                 device_id, ciudad, region, pais, idioma, nullifier, created_at,
                 gps_confirmed,
+                adhesion_osm_id,
                 fiabilidad, senales: senales.join(',') })
       .select()
       .single();

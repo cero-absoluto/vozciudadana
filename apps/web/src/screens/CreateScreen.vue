@@ -362,6 +362,8 @@ const form = reactive({
   dominio_email: '',
   convocatoria_osm_id: null,
   convocatoria_ciudad_nombre: '',
+  convocatoria_lat: null,
+  convocatoria_lon: null,
   tipo_abuso: '',
   fuente_url: '',
   requiere_censo: false,
@@ -377,6 +379,8 @@ function onMunicipioInput() {
   clearTimeout(municipioDebounce);
   form.convocatoria_osm_id = null;
   form.convocatoria_ciudad_nombre = '';
+  form.convocatoria_lat = null;
+  form.convocatoria_lon = null;
   municipioResults.value = [];
   if (municipioQuery.value.trim().length < 2) return;
   municipioDebounce = setTimeout(() => searchMunicipio(municipioQuery.value.trim()), 500);
@@ -405,6 +409,8 @@ async function searchMunicipio(q) {
 function selectMunicipio(result) {
   form.convocatoria_osm_id = result.osm_id;
   form.convocatoria_ciudad_nombre = result.name;
+  form.convocatoria_lat = result.lat ?? null;
+  form.convocatoria_lon = result.lon ?? null;
   municipioQuery.value = result.name;
   municipioResults.value = [];
 }
@@ -412,6 +418,8 @@ function selectMunicipio(result) {
 function clearMunicipio() {
   form.convocatoria_osm_id = null;
   form.convocatoria_ciudad_nombre = '';
+  form.convocatoria_lat = null;
+  form.convocatoria_lon = null;
   municipioQuery.value = '';
   municipioResults.value = [];
 }

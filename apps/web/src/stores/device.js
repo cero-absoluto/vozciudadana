@@ -157,16 +157,17 @@ export const useDeviceStore = defineStore('device', () => {
           gpsLat.value      = pos.coords.latitude;
           gpsLng.value      = pos.coords.longitude;
           gpsAccuracy.value = pos.coords.accuracy;
-          // Reverse geocode via Nominatim
+          // Reverse geocode via backend proxy — never call Nominatim directly
+          // from the browser (would expose user's real IP to OpenStreetMap).
           try {
+            const API_BASE = import.meta.env.VITE_API_URL || 'https://api.voiceprotest.org';
             const res = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?lat=${gpsLat.value}&lon=${gpsLng.value}&format=json`,
-              { headers: { 'Accept-Language': 'es', 'User-Agent': 'VoiceProtest/1.0' } }
+              `${API_BASE}/api/geocode?lat=${gpsLat.value}&lon=${gpsLng.value}`
             );
             const geo = await res.json();
-            gpsCity.value   = geo.address?.city || geo.address?.town || geo.address?.village || null;
-            gpsRegion.value = geo.address?.state || null;
-            gpsPais.value   = geo.address?.country || null;
+            gpsCity.value   = geo.city   || null;
+            gpsRegion.value = geo.region || null;
+            gpsPais.value   = geo.country || null;
           } catch { /* silencioso */ }
           gpsReady.value = true;
           resolve(true);

@@ -722,7 +722,8 @@
     "providerNominatim": "GPS geocoding — converts coordinates into city, region and country. All calls are made via our backend server. Nominatim receives our server's IP address, never the user's.",
     "providerNominatimRegion": "EU / Variable (distributed OpenStreetMap infrastructure)",
     "providerGithub": "Static frontend hosting (voiceprotest.org). GitHub Pages may receive the IP address of each visitor when serving the application files.",
-    "providerGithubRegion": "US"
+    "providerGithubRegion": "US",
+    "pushTimezone": "If you activate push notifications, we may also store your device's timezone to avoid sending non-essential alerts during nighttime hours (23:00–07:00 local time). This information is used exclusively to schedule notifications and is deleted alongside your subscription when the event closes."
   },
   "funding": {
     "title": "Funding & Independence Policy",

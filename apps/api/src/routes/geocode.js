@@ -2,20 +2,67 @@
  * GET /api/geocode?lat=...&lon=...
  *
  * Privacy proxy for Nominatim reverse geocoding.
- *
- * PROBLEM SOLVED: The frontend was calling Nominatim directly from the browser,
- * which exposed the user's real IP address to OpenStreetMap's infrastructure.
- * This contradicts the platform's privacy model — we protect phone numbers and
- * GPS coordinates, but were inadvertently leaking IP via geocoding.
- *
- * SOLUTION: All Nominatim calls now go through this endpoint. The backend
- * calls Nominatim using Railway's server IP, never the user's IP.
- * Only city, region and country are returned — coordinates are never stored.
- *
- * Rate limited aggressively: one geocode per 5 seconds per IP to prevent
- * using this as a general-purpose geocoding proxy.
+ * [existing endpoint - unchanged]
  */
 export default async function geocodeRoutes(app) {
+  // ── Municipality search — for CreateScreen local scope ──────────────────
+  // Searches Nominatim for municipalities matching a text query.
+  // Returns a list of results with osm_id (for reliable comparison) and
+  // human-readable names. Admin level 8 = municipality in all EU countries.
+  app.get('/search', {
+    config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
+    schema: {
+      querystring: {
+        type: 'object',
+        required: ['q'],
+        properties: {
+          q:     { type: 'string', minLength: 2, maxLength: 100 },
+          level: { type: 'string', default: '8' },
+        },
+        additionalProperties: false,
+      },
+    },
+  }, async (req, reply) => {
+    const { q, level } = req.query;
+    try {
+      const url = `https://nominatim.openstreetmap.org/search` +
+        `?q=${encodeURIComponent(q)}` +
+        `&format=json` +
+        `&addressdetails=1` +
+        `&limit=8` +
+        `&featuretype=settlement`;
+
+      const res = await fetch(url, {
+        headers: {
+          'Accept-Language': 'es,en;q=0.8',
+          'User-Agent': 'VoiceProtest/1.0 (voiceprotest.org)',
+        },
+        signal: AbortSignal.timeout(8000),
+      });
+
+      if (!res.ok) return reply.status(502).send({ error: 'Search service unavailable' });
+
+      const data = await res.json();
+
+      // Filter to municipalities and towns, extract osm_id for reliable matching
+      const results = data
+        .filter(r => ['city', 'town', 'village', 'municipality'].includes(r.type) ||
+                     r.addresstype === 'municipality')
+        .map(r => ({
+          osm_id:       parseInt(r.osm_id),
+          osm_type:     r.osm_type,
+          name:         r.address?.city || r.address?.town || r.address?.village || r.name,
+          display_name: r.display_name,
+          country_code: r.address?.country_code?.toUpperCase() || null,
+          country:      r.address?.country || null,
+        }))
+        .filter(r => r.osm_id && r.name);
+
+      return { results };
+    } catch {
+      return reply.status(502).send({ error: 'Search service unavailable' });
+    }
+  });
   app.get('/', {
     config: { rateLimit: { max: 12, timeWindow: '1 minute' } },
     schema: {

@@ -483,6 +483,8 @@ const ALLOWED_TYPES = new Set([
   'Q732717',  // public prosecutor's office
   'Q768526',  // municipality (covers city halls / ayuntamientos)
   'Q15284',   // municipality — may already be above
+  'Q543654',  // ayuntamiento / city council — local government body
+  'Q2074737', // municipality of Spain (specific P31 for Spanish municipalities)
   'Q16970',   // church / religious institution with public role
   'Q163740',  // nonprofit (covers public interest organisations)
 ]);

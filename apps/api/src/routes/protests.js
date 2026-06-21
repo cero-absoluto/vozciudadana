@@ -203,7 +203,8 @@ const BACKEND_ALLOWED_TYPES = new Set([
   'Q3550302','Q3559299','Q56289041','Q30461','Q11696','Q18810062',
   'Q1268020','Q234497','Q2615890','Q1752019','Q1302361','Q1311553',
   'Q324913','Q7257424','Q732717','Q768526','Q16970','Q163740',
-  'Q543654',  // ayuntamiento / city council
+  'Q543654',  // ayuntamiento / city council (generic)
+  'Q22996476', // ayuntamiento (Spanish specific — local government institution in Spain)
   'Q2074737', // municipality of Spain
 ]);
 

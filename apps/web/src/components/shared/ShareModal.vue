@@ -60,13 +60,17 @@ const currentProtest = computed(() => {
   return id ? protests.protests.find(p => p.id === id) : null;
 });
 
+const eventUrl = computed(() => {
+  const id = Number(route.params.id);
+  return id ? `${BASE_URL}/#/detail/${id}` : BASE_URL;
+});
+
 const fullMsg = computed(() => {
-  const count = currentProtest.value ? fmt(currentProtest.value.count) : 'miles de';
-  return t('share.viralMsg', { count, url: BASE_URL });
+  return t('share.viralMsg', { url: eventUrl.value });
 });
 
 const previewMsg = computed(() =>
-  fullMsg.value.replace(/https?:\/\/\S+/g, '').replace('#VoiceProtest #ElPuebloManda', '').trim()
+  fullMsg.value.replace(/https?:\/\/\S+/g, '').trim()
 );
 
 function incrementViral() {

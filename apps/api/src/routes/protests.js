@@ -24,39 +24,148 @@ const VALID_ABUSE_TYPES = new Set([
 
 // 2. Blocked source domains — petition platforms are not documentary sources.
 //    A petition does not prove a fact; it is itself a petition.
+//    Stored as registrable domains (eTLD+1). The check strips all subdomains
+//    so that secure.change.org, chng.it etc. are also caught.
 const BLOCKED_SOURCE_DOMAINS = new Set([
-  'change.org', 'www.change.org',
-  'avaaz.org', 'www.avaaz.org',
-  'gopetition.com', 'www.gopetition.com',
-  'ipetitions.com', 'www.ipetitions.com',
-  'petitions.net', 'www.petitions.net',
-  'thepetitionsite.com', 'www.thepetitionsite.com',
-  'care2.com', 'www.care2.com',
-  'act.greenpeace.org',
-  'you.38degrees.org.uk',
-  'sumofus.org', 'www.sumofus.org',
-  'moveon.org', 'www.moveon.org',
+  'change.org',
+  'chng.it',          // Change.org's own URL shortener
+  'avaaz.org',
+  'gopetition.com',
+  'ipetitions.com',
+  'petitions.net',
+  'thepetitionsite.com',
+  'care2.com',
+  'sumofus.org',
+  'moveon.org',
+  'openpetition.eu',
+  'openpetition.de',
+  'mesopinions.com',
+  'petitions.change.org',
 ]);
+
+/**
+ * Extract the registrable domain (eTLD+1) from a hostname.
+ * "secure.change.org" → "change.org"
+ * "change.org." (FQDN with trailing dot) → "change.org"
+ */
+function registrableDomain(hostname) {
+  // Remove trailing dot (FQDN notation)
+  const h = hostname.replace(/\.$/, '').toLowerCase();
+  // Return last two parts (covers .org, .com, .net, .eu, .de)
+  // This is a simplified eTLD+1 — sufficient for our known blocklist.
+  const parts = h.split('.');
+  return parts.length >= 2 ? parts.slice(-2).join('.') : h;
+}
 
 // 3. Prohibited verb roots — demands phrased as requests, proposals or
 //    improvement suggestions indicate a petition, not a public abuse report.
+//    Includes common conjugations (1st person plural) to catch natural phrasing.
+//    Matched with word boundaries to avoid false positives (e.g. "esperamos"
+//    should not match "esperar" as a substring).
 const PROHIBITED_VERB_ROOTS = [
+  // Infinitivos ES
   'pedir', 'solicitar', 'rogar', 'proponer', 'sugerir', 'recomendar',
   'mejorar', 'agradecer', 'desear', 'esperar', 'apoyar', 'respaldar',
+  // Conjugaciones 1ª persona plural ES (las más naturales en peticiones)
+  'pedimos', 'solicitamos', 'rogamos', 'proponemos', 'sugerimos',
+  'recomendamos', 'mejoramos', 'deseamos', 'esperamos', 'apoyamos',
+  // EN
   'ask', 'request', 'beg', 'propose', 'suggest', 'recommend',
   'improve', 'thank', 'wish', 'hope', 'support', 'endorse',
+  'we ask', 'we request', 'we propose', 'we suggest',
 ];
 
 // 4. Required action verb roots — at least one must be present in demands.
-//    A valid Voice Protest demand uses action verbs directed at institutions.
+//    NOTE: roots must be verb-specific to avoid colliding with nouns.
+//    'public' was removed — it matches inside "público", "publicidad", etc.
 const REQUIRED_VERB_ROOTS = [
-  'exigi', 'exig', 'denuncia', 'demanda', 'rechaza', 'condena',
-  'cese', 'cesar', 'dimt', 'dimitir', 'investig', 'public',
-  'revel', 'restitu', 'deten', 'suspend', 'paraliz',
+  // ES — raíces verbales específicas
+  'exigi', 'exig', 'denuncia', 'denunci', 'demanda', 'rechaza', 'condena',
+  'cese', 'cesar', 'dimt', 'dimitir', 'investig', 'publiqu', 'publica',
+  'revel', 'restitu', 'deten', 'suspend', 'paraliz', 'interp', 'acus',
+  // ES conjugaciones
+  'exigimos', 'denunciamos', 'demandamos', 'rechazamos', 'condenamos',
+  'dimitimos', 'investigamos', 'revelamos', 'suspendemos',
+  // EN
   'demand', 'denounce', 'reject', 'condemn', 'dismiss', 'resign',
-  'investigate', 'publish', 'reveal', 'restore', 'stop', 'halt', 'suspend',
+  'investigate', 'reveal', 'restore', 'halt', 'suspend', 'prosecute',
 ];
 const COUNTRY_RE      = /^[A-Z]{2}$/;
+
+// ── Backend Wikidata target verification ───────────────────────────────────
+// The frontend sends target_wikidata_id + target_validation, but we cannot
+// trust the client-supplied validation status. A direct API caller can send
+// target_validation:"ALLOWED" for any entity — including political parties.
+// The backend must recompute this from target_wikidata_id itself.
+//
+// These lists mirror CreateScreen.vue ALLOWED_TYPES / REJECTED_TYPES exactly.
+// Keep them in sync when updating the frontend lists.
+const BACKEND_REJECTED_TYPES = new Set([
+  'Q5',         // human being
+  'Q4830453',   // business / for-profit company
+  'Q431289',    // brand
+  'Q476028',    // sports club
+  'Q215380',    // music band
+  'Q11424',     // film
+  'Q7278',      // political party
+  'Q7210356',   // political organisation
+]);
+
+const BACKEND_ALLOWED_TYPES = new Set([
+  'Q1193236','Q11033','Q1004705','Q7275','Q2297946','Q1002697',
+  'Q327333','Q37260','Q35749','Q637846','Q11204','Q15284',
+  'Q6465','Q2659904','Q178706','Q1639634','Q270791',
+  'Q15265344','Q3918','Q16917','Q178790','Q190928','Q35120','Q43229',
+  'Q30185','Q1255921','Q294414','Q4164871','Q699567','Q83307',
+  'Q372436','Q107363442','Q48352','Q2101','Q212238','Q13218630',
+  'Q16533','Q193391','Q82955','Q1097498','Q15275719','Q42178','Q486839',
+  'Q902522','Q62078547','Q875538','Q38723','Q189004','Q23002054',
+  'Q166107','Q2085381','Q17320256','Q28863770','Q970671','Q1301371',
+  'Q1149035','Q2188189','Q253019','Q1752939','Q4120845','Q6243229',
+  'Q748720','Q31855','Q2275247',
+  'Q93288','Q179076','Q170156','Q484652','Q7207745','Q1172599',
+  'Q1063239','Q245065','Q388785','Q185441','Q1329623',
+  'Q3550302','Q3559299','Q56289041','Q30461','Q11696','Q18810062',
+  'Q1268020','Q234497','Q2615890','Q1752019','Q1302361','Q1311553',
+  'Q324913','Q7257424','Q732717','Q768526','Q16970','Q163740',
+]);
+
+/**
+ * Verify a Wikidata entity server-side.
+ * Returns 'ALLOWED', 'REJECTED', or 'NEEDS_REVIEW'.
+ * Never trusts the client-supplied target_validation.
+ *
+ * Privacy note: this call goes from our backend to Wikidata's public SPARQL
+ * endpoint using the entity ID only — no user data is transmitted.
+ */
+async function verifyTargetBackend(wikidataId) {
+  if (!wikidataId || !/^Q\d+$/.test(wikidataId)) return 'NEEDS_REVIEW';
+  try {
+    const sparql = `SELECT DISTINCT ?type WHERE {
+      wd:${wikidataId} wdt:P31 ?type .
+    } LIMIT 30`;
+    const url = 'https://query.wikidata.org/sparql?query=' +
+      encodeURIComponent(sparql) + '&format=json';
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'VoiceProtest/1.0 (voiceprotest.org)' },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) return 'NEEDS_REVIEW';
+    const json = await res.json();
+    const types = json.results?.bindings ?? [];
+    let allowed = false;
+    for (const row of types) {
+      const typeId = row.type?.value?.split('/').pop();
+      if (BACKEND_REJECTED_TYPES.has(typeId)) return 'REJECTED';
+      if (BACKEND_ALLOWED_TYPES.has(typeId)) allowed = true;
+    }
+    return allowed ? 'ALLOWED' : 'NEEDS_REVIEW';
+  } catch {
+    // Wikidata timeout or network error — fail safe to NEEDS_REVIEW,
+    // not to ALLOWED. The event is created but stays pending review.
+    return 'NEEDS_REVIEW';
+  }
+}
 
 // ── Configurable costs and fees (set via Railway env vars) ──────────────
 const SMS_COST_EUR      = parseFloat(process.env.SMS_COST_EUR      || '0.05');
@@ -167,13 +276,15 @@ export default async function protestRoutes(app) {
     // cannot be bypassed by calling the API directly.
 
     // Rule 1 — fuente_url must not be a petition platform
+    // Uses registrableDomain() so subdomains are also caught.
     let sourceDomain = '';
     try {
-      sourceDomain = new URL(fuente_url).hostname.replace(/^www\./, '');
+      const parsedUrl = new URL(fuente_url);
+      sourceDomain = registrableDomain(parsedUrl.hostname);
     } catch {
       return reply.status(400).send({ error: 'Invalid source URL format' });
     }
-    if (BLOCKED_SOURCE_DOMAINS.has(sourceDomain) || BLOCKED_SOURCE_DOMAINS.has('www.' + sourceDomain)) {
+    if (BLOCKED_SOURCE_DOMAINS.has(sourceDomain)) {
       return reply.status(400).send({
         error: 'Source not accepted',
         reason: 'Petition platforms are not accepted as documentary sources. Please provide a news article, official document or statistical data.',
@@ -181,9 +292,14 @@ export default async function protestRoutes(app) {
     }
 
     // Rule 2 — demands must not be phrased exclusively as requests or proposals
-    const demandsLower = (demands || '').toLowerCase();
-    const hasProhibitedVerb = PROHIBITED_VERB_ROOTS.some(v => demandsLower.includes(v));
-    const hasActionVerb     = REQUIRED_VERB_ROOTS.some(v => demandsLower.includes(v));
+    // Scans title + description + demands to prevent hiding petition language
+    // in fields other than demands. Uses word-boundary regex to avoid false
+    // positives from substrings (e.g. "esperamos" matching "esperar",
+    // "público" matching the now-removed root "public").
+    const scanText = [title, description, demands].filter(Boolean).join(' ').toLowerCase();
+    const wordBoundary = root => new RegExp(`\\b${root}\\b`, 'i');
+    const hasProhibitedVerb = PROHIBITED_VERB_ROOTS.some(v => wordBoundary(v).test(scanText));
+    const hasActionVerb     = REQUIRED_VERB_ROOTS.some(v => wordBoundary(v).test(scanText));
 
     if (hasProhibitedVerb && !hasActionVerb) {
       return reply.status(400).send({
@@ -201,12 +317,21 @@ export default async function protestRoutes(app) {
       });
     }
 
-    // Rule 4 — target_validation must not be REJECTED (political party, private company, etc)
-    if (target_validation === 'REJECTED') {
-      return reply.status(400).send({
-        error: 'Recipient not accepted',
-        reason: 'The recipient must be a public institution with a public mandate or public funds. Political parties, private companies and individuals are not accepted.',
-      });
+    // Rule 4 — verify recipient server-side via Wikidata
+    // Never trust target_validation from the client — a direct API caller
+    // can send target_validation:"ALLOWED" for any entity.
+    // We recompute it here from target_wikidata_id and ignore whatever
+    // the client sent. Privacy: only the entity ID is sent to Wikidata,
+    // no user data.
+    let computedTargetValidation = 'NEEDS_REVIEW';
+    if (target_wikidata_id) {
+      computedTargetValidation = await verifyTargetBackend(target_wikidata_id);
+      if (computedTargetValidation === 'REJECTED') {
+        return reply.status(400).send({
+          error: 'Recipient not accepted',
+          reason: 'The recipient must be a public institution with a public mandate or public funds. Political parties, private companies and individuals are not accepted.',
+        });
+      }
     }
 
     const { data, error } = await supabase
@@ -231,7 +356,7 @@ export default async function protestRoutes(app) {
         target_wikidata_id: target_wikidata_id ?? null,
         target_type:        target_type ?? null,
         target_country:     target_country ?? null,
-        target_validation:  target_validation ?? 'NEEDS_REVIEW',
+        target_validation:  computedTargetValidation,
       })
       .select()
       .single();

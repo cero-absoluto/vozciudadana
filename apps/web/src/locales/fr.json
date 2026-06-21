@@ -236,7 +236,14 @@
     "municipioLabel": "Commune",
     "municipioPlaceholder": "Rechercher la commune (ex: Lyon, Bordeaux, Nantes...)",
     "municipioHint": "Sélectionnez la commune exacte dans la liste. Utilisé pour classer les participants par proximité géographique dans le rapport public.",
-    "errMunicipio": "Veuillez sélectionner une commune pour cet événement local"
+    "errMunicipio": "Veuillez sélectionner une commune pour cet événement local",
+    "sourceTypePublicBroadcaster": "média public",
+    "sourceTypeReputableMedia": "média de référence",
+    "sourceTypePublicInstitution": "presse",
+    "sourceTypeNgo": "ONG",
+    "sourceTypeAcademic": "source académique",
+    "sourceTypeGovernment": "source officielle",
+    "sourceTypeUnknown": "source inconnue"
   },
   "detail": {
     "back": "← Retour à la carte",

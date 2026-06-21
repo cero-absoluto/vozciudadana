@@ -2,36 +2,22 @@
 
 This folder contains governance and documentation-history records for Voice Protest.
 
-These documents do not describe the current operational reality of the platform.
+These documents do not describe the current operational reality of the platform. Instead, they document how public documentation evolved, how audits were conducted, what corrections were made, and why specific decisions were taken.
 
-Instead, they document:
+## Documents in this folder
 
-- how public documentation evolved;
-- how audits were conducted;
-- what corrections were made;
-- why specific terminology and policy changes were adopted.
+### 4.-VoiceProtest_AuditTrail.docx
+Historical record of auditor-driven corrections to Voice Protest documentation. Documents the evolution from early drafts through the external audit process to the current canonical v2.1. Covers terminology corrections, policy clarifications and the elevation of the foundational principle.
 
-## Documents
-
-### Audit Trail
-
-A historical record of auditor-driven corrections to Voice Protest documentation.
-
-The Audit Trail explains:
-
-- what earlier documents claimed;
-- what external audits identified as inaccurate, ambiguous or overstated;
-- how those issues were corrected;
-- how the Audit Alignment Framework evolved into the platform's canonical reference.
+### Security_Audit_Protest_Petition_Boundary.md
+Security audit of the backend admission rules that enforce the protest/petition boundary. Documents findings from a dual review (Sonnet 4.6 + Opus 4.8), the three vulnerabilities identified and resolved, the RLS fix applied in Supabase, and the remaining accepted limitation. Includes the SQL migration reference.
 
 ## Important
 
-Documents in this folder are governance history.
+Documents in this folder are governance history. They should not be cited as current descriptions of the platform.
 
-They should not be cited as current descriptions of the platform.
+The authoritative description of Voice Protest is contained in:
 
-The authoritative description of Voice Protest is contained in the latest version of the Audit Alignment Framework stored in:
-
-`/docs/canonical`
+`/docs/canonical/3.-VoiceProtest_AuditAlignment_v2_1.docx`
 
 This folder exists to preserve transparency, traceability and institutional memory.

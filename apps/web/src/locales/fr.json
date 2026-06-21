@@ -67,7 +67,7 @@
     "geoConfidence": "Confiance géographique :",
     "filterAll": "Tous",
     "filterNational": "🏛️ National",
-    "filterRegional": "🌐 Local",
+    "filterRegional": "🌐 Régional",
     "filterGlobal": "🌍 Mondial",
     "tabActive": "Actifs",
     "tabQueue": "File d'attente",
@@ -77,7 +77,8 @@
     "overlayLive": "Événements actifs sur la carte",
     "overlayTap": "Appuyer pour explorer →",
     "dotDocument": "Document",
-    "improveConfidence": "Améliorez votre confiance géographique"
+    "improveConfidence": "Améliorez votre confiance géographique",
+    "filterLocal": "📍 Local"
   },
   "active": {
     "empty": "Aucun événement actif",

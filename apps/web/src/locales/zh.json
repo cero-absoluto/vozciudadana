@@ -236,7 +236,14 @@
     "municipioLabel": "市辖区",
     "municipioPlaceholder": "搜索市辖区（例如：北京市、上海市...）",
     "municipioHint": "从列表中选择确切的市辖区。用于在公开报告中按地理距离对参与者进行分类。",
-    "errMunicipio": "请为此本地活动选择一个市辖区"
+    "errMunicipio": "请为此本地活动选择一个市辖区",
+    "sourceTypePublicBroadcaster": "公共媒体",
+    "sourceTypeReputableMedia": "权威媒体",
+    "sourceTypePublicInstitution": "新闻媒体",
+    "sourceTypeNgo": "非政府组织",
+    "sourceTypeAcademic": "学术来源",
+    "sourceTypeGovernment": "官方来源",
+    "sourceTypeUnknown": "未知来源"
   },
   "detail": {
     "back": "← 返回地图",

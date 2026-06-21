@@ -61,6 +61,7 @@
       <div style="margin-bottom:20px">
         <div style="font-size:18px;font-weight:700;margin-bottom:10px;color:var(--text)">{{ $t('privacy.pushTitle') }}</div>
         <div style="font-size:15px;color:var(--text);line-height:1.7">{{ $t('privacy.pushBody') }}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-top:8px">{{ $t('privacy.pushTimezone') }}</div>
       </div>
 
       <!-- Section: Abuse protection -->

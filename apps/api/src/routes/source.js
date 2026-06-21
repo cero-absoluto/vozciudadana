@@ -23,6 +23,9 @@ const KNOWN_OFFICIAL = new Set([
   'bbc.co.uk', 'bbc.com', 'reuters.com', 'apnews.com', 'theguardian.com',
   'ft.com', 'economist.com', 'lemonde.fr', 'spiegel.de', 'elpais.com',
   'lavanguardia.com', 'elmundo.es', 'abc.es', 'publico.es',
+  'eldiariomontanes.es', 'elcomercio.es', 'larioja.com', 'diariodeburgos.es',
+  'elcorreo.com', 'diariovasco.com', 'heraldo.es', 'elperiodicoextremadura.com',
+  'laopiniondemalaga.es', 'laopiniondezamora.es', 'laopiniondecordoba.es',
   'nytimes.com', 'washingtonpost.com', 'politico.eu', 'euronews.com',
 ]);
 

@@ -139,13 +139,7 @@ const deviceFlag = computed(() => {
   return String.fromCodePoint(...codePoints);
 });
 
-// Show IP country name when user hasn't manually selected a SIM prefix
-// This fixes the bug where "España" was shown even when in Malta on WiFi
-const displayCountryName = computed(() => {
-  const simSetByUser = localStorage.getItem('vc_sim_set_by_user');
-  if (simSetByUser) return device.simName;
-  return device.ipCountryName || device.simName;
-});
+const displayCountryName = computed(() => device.simName);
 const strengtheningGps = ref(false);
 async function strengthenGps() {
   if (strengtheningGps.value || device.gpsReady) return;

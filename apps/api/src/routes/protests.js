@@ -92,6 +92,81 @@ const REQUIRED_VERB_ROOTS = [
 ];
 const COUNTRY_RE      = /^[A-Z]{2}$/;
 
+// ── Shared admission rules validator ──────────────────────────────────────
+// Extracted as a standalone function so any future endpoint (e.g. an update
+// endpoint) can reuse the same rules without risk of drift.
+//
+// Returns: { ok: true, computedTargetValidation } on pass
+//          { ok: false, status, error, reason } on fail
+//
+// Does NOT call reply directly — the caller decides what to do with the result.
+// Rule 4 calls Wikidata asynchronously; the function is therefore async.
+async function validateAdmissionRules({ fuente_url, title, description, demands, tipo_abuso, target_wikidata_id }) {
+
+  // Rule 1 — fuente_url must not be a petition platform
+  let sourceDomain = '';
+  try {
+    const parsedUrl = new URL(fuente_url);
+    sourceDomain = registrableDomain(parsedUrl.hostname);
+  } catch {
+    return { ok: false, status: 400, error: 'Invalid source URL format', reason: 'The source URL is not valid.' };
+  }
+  if (BLOCKED_SOURCE_DOMAINS.has(sourceDomain)) {
+    return {
+      ok: false, status: 400,
+      error: 'Source not accepted',
+      reason: 'Petition platforms are not accepted as documentary sources. Please provide a news article, official document or statistical data.',
+    };
+  }
+
+  // Rule 2 — demands must not be phrased exclusively as requests or proposals
+  // Scans title + description + demands to prevent hiding petition language
+  // in fields other than demands. Uses word-boundary regex to avoid false
+  // positives from substrings (e.g. "esperamos" matching "esperar",
+  // "público" matching the now-removed root "public").
+  const scanText = [title, description, demands].filter(Boolean).join(' ').toLowerCase();
+  const wordBoundary = root => new RegExp(`\\b${root}\\b`, 'i');
+  const hasProhibitedVerb = PROHIBITED_VERB_ROOTS.some(v => wordBoundary(v).test(scanText));
+  const hasActionVerb     = REQUIRED_VERB_ROOTS.some(v => wordBoundary(v).test(scanText));
+
+  if (hasProhibitedVerb && !hasActionVerb) {
+    return {
+      ok: false, status: 400,
+      error: 'Demands not accepted',
+      reason: 'Demands must use action verbs (demand, denounce, resign, investigate) not request verbs (ask, request, propose, suggest). Voice Protest is not a petition platform.',
+    };
+  }
+
+  // Rule 3 — tipo_abuso must be from the closed list
+  // Schema enum already enforces this, but we double-check to prevent
+  // bypass through serialization edge cases.
+  if (!VALID_ABUSE_TYPES.has(tipo_abuso)) {
+    return {
+      ok: false, status: 400,
+      error: 'Invalid abuse type',
+      reason: `tipo_abuso must be one of: ${[...VALID_ABUSE_TYPES].join(', ')}`,
+    };
+  }
+
+  // Rule 4 — verify recipient server-side via Wikidata
+  // Never trust target_validation from the client. We recompute it here
+  // from target_wikidata_id and ignore whatever the client sent.
+  // Privacy: only the entity ID is sent to Wikidata, no user data.
+  let computedTargetValidation = 'NEEDS_REVIEW';
+  if (target_wikidata_id) {
+    computedTargetValidation = await verifyTargetBackend(target_wikidata_id);
+    if (computedTargetValidation === 'REJECTED') {
+      return {
+        ok: false, status: 400,
+        error: 'Recipient not accepted',
+        reason: 'The recipient must be a public institution with a public mandate or public funds. Political parties, private companies and individuals are not accepted.',
+      };
+    }
+  }
+
+  return { ok: true, computedTargetValidation };
+}
+
 // ── Backend Wikidata target verification ───────────────────────────────────
 // The frontend sends target_wikidata_id + target_validation, but we cannot
 // trust the client-supplied validation status. A direct API caller can send
@@ -271,68 +346,18 @@ export default async function protestRoutes(app) {
     ).toISOString();
 
     // ── Backend admission rules ────────────────────────────────────────────
-    // These checks enforce the platform's identity as a public abuse reporting
-    // tool, not a petition platform. They run after schema validation and
-    // cannot be bypassed by calling the API directly.
-
-    // Rule 1 — fuente_url must not be a petition platform
-    // Uses registrableDomain() so subdomains are also caught.
-    let sourceDomain = '';
-    try {
-      const parsedUrl = new URL(fuente_url);
-      sourceDomain = registrableDomain(parsedUrl.hostname);
-    } catch {
-      return reply.status(400).send({ error: 'Invalid source URL format' });
-    }
-    if (BLOCKED_SOURCE_DOMAINS.has(sourceDomain)) {
-      return reply.status(400).send({
-        error: 'Source not accepted',
-        reason: 'Petition platforms are not accepted as documentary sources. Please provide a news article, official document or statistical data.',
+    // Delegated to validateAdmissionRules() — a shared function that can be
+    // reused by any future endpoint without risk of the rules drifting apart.
+    const admission = await validateAdmissionRules({
+      fuente_url, title, description, demands, tipo_abuso, target_wikidata_id,
+    });
+    if (!admission.ok) {
+      return reply.status(admission.status).send({
+        error:  admission.error,
+        reason: admission.reason,
       });
     }
-
-    // Rule 2 — demands must not be phrased exclusively as requests or proposals
-    // Scans title + description + demands to prevent hiding petition language
-    // in fields other than demands. Uses word-boundary regex to avoid false
-    // positives from substrings (e.g. "esperamos" matching "esperar",
-    // "público" matching the now-removed root "public").
-    const scanText = [title, description, demands].filter(Boolean).join(' ').toLowerCase();
-    const wordBoundary = root => new RegExp(`\\b${root}\\b`, 'i');
-    const hasProhibitedVerb = PROHIBITED_VERB_ROOTS.some(v => wordBoundary(v).test(scanText));
-    const hasActionVerb     = REQUIRED_VERB_ROOTS.some(v => wordBoundary(v).test(scanText));
-
-    if (hasProhibitedVerb && !hasActionVerb) {
-      return reply.status(400).send({
-        error: 'Demands not accepted',
-        reason: 'Demands must use action verbs (demand, denounce, resign, investigate) not request verbs (ask, request, propose, suggest). Voice Protest is not a petition platform.',
-      });
-    }
-
-    // Rule 3 — tipo_abuso already enforced by schema enum, but double-check
-    // to ensure no bypass through serialization edge cases
-    if (!VALID_ABUSE_TYPES.has(tipo_abuso)) {
-      return reply.status(400).send({
-        error: 'Invalid abuse type',
-        reason: `tipo_abuso must be one of: ${[...VALID_ABUSE_TYPES].join(', ')}`,
-      });
-    }
-
-    // Rule 4 — verify recipient server-side via Wikidata
-    // Never trust target_validation from the client — a direct API caller
-    // can send target_validation:"ALLOWED" for any entity.
-    // We recompute it here from target_wikidata_id and ignore whatever
-    // the client sent. Privacy: only the entity ID is sent to Wikidata,
-    // no user data.
-    let computedTargetValidation = 'NEEDS_REVIEW';
-    if (target_wikidata_id) {
-      computedTargetValidation = await verifyTargetBackend(target_wikidata_id);
-      if (computedTargetValidation === 'REJECTED') {
-        return reply.status(400).send({
-          error: 'Recipient not accepted',
-          reason: 'The recipient must be a public institution with a public mandate or public funds. Political parties, private companies and individuals are not accepted.',
-        });
-      }
-    }
+    const { computedTargetValidation } = admission;
 
     const { data, error } = await supabase
       .from('protests')

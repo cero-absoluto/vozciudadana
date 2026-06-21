@@ -722,7 +722,8 @@
     "providerNominatim": "Géocodage GPS — convertit les coordonnées en ville et région. Tous les appels sont effectués via notre serveur backend. Nominatim reçoit l'adresse IP de notre serveur, jamais celle de l'utilisateur.",
     "providerNominatimRegion": "EU / Variable (infrastructure OpenStreetMap distribuée)",
     "providerGithub": "Hébergement du frontend statique (voiceprotest.org). GitHub Pages peut recevoir l'adresse IP de chaque visiteur lors de la fourniture des fichiers de l'application.",
-    "providerGithubRegion": "US"
+    "providerGithubRegion": "US",
+    "pushTimezone": "Si vous activez les notifications push, nous pouvons également stocker le fuseau horaire de votre appareil afin d'éviter de vous envoyer des alertes non essentielles pendant la nuit (23h00–07h00 heure locale). Cette information est utilisée exclusivement pour planifier les notifications et est supprimée avec votre abonnement à la fermeture de l'événement."
   },
   "funding": {
     "title": "Politique de Financement et d'Indépendance",

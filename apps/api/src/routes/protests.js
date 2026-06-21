@@ -1,7 +1,7 @@
 import { supabase } from '../services/supabase.js';
 import { createHmac } from 'crypto';
 
-const VALID_SCOPES    = ['national', 'regional', 'global'];
+const VALID_SCOPES    = ['national', 'regional', 'local', 'global'];
 const VALID_REGIONS   = ['region', 'provincia', 'ciudad', 'distrito', 'institucion'];
 const VALID_RISK      = ['low', 'med', 'high', 'critical'];
 
@@ -322,6 +322,8 @@ export default async function protestRoutes(app) {
           convocatoria_pais:        { type: 'string', nullable: true },
           convocatoria_region:      { type: 'string', nullable: true },
           convocatoria_institucion: { type: 'string', nullable: true },
+          convocatoria_osm_id:      { type: 'number', nullable: true },
+          convocatoria_ciudad_nombre: { type: 'string', nullable: true },
           dominio_email:            { type: 'string', nullable: true },
           fuente_url:               { type: 'string', minLength: 10, maxLength: 2000 },
           tipo_abuso:               { type: 'string', enum: [...VALID_ABUSE_TYPES] },
@@ -338,6 +340,7 @@ export default async function protestRoutes(app) {
     const { title, description, demands, country, country_name, scope, region,
         focal_point, category, duration_h, starts_at, risk_level,
         convocatoria_pais, convocatoria_region, convocatoria_institucion, dominio_email,
+        convocatoria_osm_id, convocatoria_ciudad_nombre,
         fuente_url, tipo_abuso, requiere_censo,
         target_wikidata_id, target_type, target_country, target_validation } = req.body;
 
@@ -359,6 +362,19 @@ export default async function protestRoutes(app) {
     }
     const { computedTargetValidation } = admission;
 
+    // ── Local scope requires a municipality OSM ID ─────────────────────────
+    // For local protests, the convocante must select a specific municipality
+    // via the Nominatim search in the frontend. The osm_id is stored and used
+    // later to classify participants by geographic proximity in the report.
+    // GPS is NOT used as an exclusion filter — it is used as a signal that
+    // enriches the report with local/national/international breakdown.
+    if (scope === 'local' && !convocatoria_osm_id) {
+      return reply.status(400).send({
+        error: 'Municipality required',
+        reason: 'Local protests must specify a municipality. Please select a municipality from the search.',
+      });
+    }
+
     const { data, error } = await supabase
       .from('protests')
       .insert({
@@ -373,6 +389,8 @@ export default async function protestRoutes(app) {
         convocatoria_pais: convocatoria_pais ?? null,
         convocatoria_region: convocatoria_region ?? null,
         convocatoria_institucion: convocatoria_institucion ?? null,
+        convocatoria_osm_id: convocatoria_osm_id ?? null,
+        convocatoria_ciudad_nombre: convocatoria_ciudad_nombre ?? null,
         dominio_email: dominio_email ?? null,
         fuente_url: fuente_url ?? null,
         tipo_abuso: tipo_abuso ?? null,
@@ -423,7 +441,7 @@ export default async function protestRoutes(app) {
 
     // Fetch protest metadata and idempotency check in parallel
     const [{ data: protest, error: protestErr }, { data: existing }] = await Promise.all([
-      supabase.from('protests').select('scope, country, saldo_euros').eq('id', req.params.id).maybeSingle(),
+      supabase.from('protests').select('scope, country, saldo_euros, convocatoria_osm_id, convocatoria_ciudad_nombre').eq('id', req.params.id).maybeSingle(),
       supabase.from('adhesions').select('id').eq('protest_id', req.params.id).eq('device_id', device_id).is('deleted_at', null).maybeSingle(),
     ]);
 
@@ -595,7 +613,12 @@ export default async function protestRoutes(app) {
       }
     } catch { /* silencioso */ }
 
-    return reply.code(201).send({ receipt: data.id });
+    return reply.code(201).send({
+      receipt: data.id,
+      scope: protest.scope,
+      convocatoria_osm_id: protest.convocatoria_osm_id ?? null,
+      convocatoria_ciudad_nombre: protest.convocatoria_ciudad_nombre ?? null,
+    });
   });
 
   // POST /api/protests/:id/viral — record a share

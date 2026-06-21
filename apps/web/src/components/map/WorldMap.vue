@@ -111,6 +111,15 @@ function drawFrame() {
     } else if (p.scope === 'regional') {
       const numIso = Object.entries(ISO_NUM_TO_A2).find(([, v]) => v === p.convocatoria_pais)?.[0];
   co = numIso ? COORDS[numIso] : (REGION_COORDS[p.region] || null);
+    } else if (p.scope === 'local') {
+      // Use exact municipality coordinates if available (stored at creation time)
+      // Falls back to country center if coordinates not yet stored
+      if (p.convocatoria_lat && p.convocatoria_lon) {
+        co = [p.convocatoria_lon, p.convocatoria_lat];
+      } else {
+        const numIso = Object.entries(ISO_NUM_TO_A2).find(([, v]) => v === p.convocatoria_pais)?.[0];
+        co = numIso ? COORDS[numIso] : REGION_COORDS['global'];
+      }
     } else {
       co = REGION_COORDS['global'];
     }

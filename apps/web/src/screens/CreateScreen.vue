@@ -795,14 +795,14 @@ function submit() {
     'TH': 'Tailandia', 'TW': 'Taiwán', 'KZ': 'Kazajistán',
   };
 
-  protests.createProtest({
-    ...form,
-    // Encode starts_at with local timezone so 08:00 = 08:00 in the convocante's city
+  protests.createProtest((() => {
     const tzOffset  = -new Date().getTimezoneOffset();
     const tzHours   = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, '0');
     const tzMinutes = String(Math.abs(tzOffset) % 60).padStart(2, '0');
     const tzSign    = tzOffset >= 0 ? '+' : '-';
     const tzSuffix  = `${tzSign}${tzHours}:${tzMinutes}`;
+    return {
+    ...form,
     starts_at: form.starts_at ? form.starts_at + `T08:00:00${tzSuffix}` : null,
     convocatoria_pais: form.convocatoria_pais || null,
     convocatoria_region: form.convocatoria_region || null,
@@ -815,7 +815,7 @@ function submit() {
     requiere_censo: form.requiere_censo || false,
     country: form.convocatoria_pais || null,
     country_name: PAIS_NOMBRES[form.convocatoria_pais] || form.convocatoria_pais || 'regional',
-  });
+  }; })());
   router.push('/');
   setTimeout(() => {
     ui.showToast(t('create.createdSaldo'));

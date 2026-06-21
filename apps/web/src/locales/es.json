@@ -236,7 +236,14 @@
     "municipioLabel": "Municipio",
     "municipioPlaceholder": "Busca el municipio (ej: Santander, Valencia, Gijón...)",
     "municipioHint": "Selecciona el municipio exacto de la lista. Se usa para clasificar a los participantes por proximidad geográfica en el informe público.",
-    "errMunicipio": "Indica el municipio para esta convocatoria local"
+    "errMunicipio": "Indica el municipio para esta convocatoria local",
+    "sourceTypePublicBroadcaster": "medio público",
+    "sourceTypeReputableMedia": "medio de referencia",
+    "sourceTypePublicInstitution": "prensa",
+    "sourceTypeNgo": "ONG",
+    "sourceTypeAcademic": "fuente académica",
+    "sourceTypeGovernment": "fuente oficial",
+    "sourceTypeUnknown": "fuente desconocida"
   },
   "detail": {
     "back": "← Volver al mapa",

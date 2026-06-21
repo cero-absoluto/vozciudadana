@@ -6,7 +6,7 @@
       <div class="d-title">{{ protest.title }}</div>
       <div class="d-loc">
         <span class="scope-badge" :class="store.scopeBadge(protest).cls">{{ store.scopeBadge(protest).icon }} {{ store.scopeBadge(protest).label }}</span>
-        <span style="font-size:11px;color:var(--text2)">📍 {{ protest.countryName }}</span>
+        <span style="font-size:12px;color:var(--text2)">📍 {{ protest.countryName }}</span>
       </div>
     </div>
 
@@ -66,7 +66,7 @@
       <div v-if="protest.scope !== 'global'" class="geo-validation">
         <div class="gv-title" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center" @click="geoOpen = !geoOpen">
           <span>{{ $t('detail.geoValidation') }}</span>
-          <span style="font-size:10px;color:var(--text2)">{{ geoOpen ? '▲' : '▼' }}</span>
+          <span style="font-size:12px;color:var(--text2)">{{ geoOpen ? '▲' : '▼' }}</span>
         </div>
         <div v-if="geoOpen">
           <div class="gv-row">
@@ -85,8 +85,8 @@
           </div>
           <div class="conf-bar"><div class="conf-fill" :style="{ width: device.confidence + '%', background: confFillColor }"></div></div>
           <div style="display:flex;justify-content:space-between;margin-top:3px">
-            <div style="font-size:10px;color:var(--text2)">{{ $t('detail.geoConfidence') }}</div>
-            <div style="font-size:8px;font-weight:600" :style="{color: confFillColor}">{{ device.confidence }}%</div>
+            <div style="font-size:12px;color:var(--text2)">{{ $t('detail.geoConfidence') }}</div>
+            <div style="font-size:12px;font-weight:600" :style="{color: confFillColor}">{{ device.confidence }}%</div>
           </div>
         </div>
       </div>
@@ -125,11 +125,11 @@
         </div>
         <div style="display:flex;justify-content:space-between;margin-bottom:10px">
           <div style="font-size:13px;color:var(--text2)">{{ $t('detail.donSaldo') }} <strong style="color:var(--text)">{{ donacionesInfo.saldo_euros.toFixed(2) }}€</strong></div>
-          <div v-if="donacionesInfo.donaciones_count > 0" style="font-size:10px;color:var(--text2)">{{ $t('detail.donCount', { count: donacionesInfo.donaciones_count, total: donacionesInfo.donaciones_total.toFixed(2) }) }}</div>
+          <div v-if="donacionesInfo.donaciones_count > 0" style="font-size:12px;color:var(--text2)">{{ $t('detail.donCount', { count: donacionesInfo.donaciones_count, total: donacionesInfo.donaciones_total.toFixed(2) }) }}</div>
         </div>
         <div v-if="donacionesInfo.saldo_euros <= 0" style="font-size:12px;color:var(--accent3);margin-bottom:8px;padding:8px 10px;background:rgba(255,94,91,.06);border-radius:var(--r);border:.5px solid rgba(255,94,91,.2);text-align:center;line-height:1.5">
           ⚠️ {{ $t('detail.donAgotado') }}<br>
-          <span style="font-size:11px;color:var(--text2)">{{ $t('detail.donAgotadoHint') }}</span>
+          <span style="font-size:12px;color:var(--text2)">{{ $t('detail.donAgotadoHint') }}</span>
         </div>
         <a :href="`https://ko-fi.com/voiceprotest?description=Support:+${encodeURIComponent(protest.title)}`" target="_blank" rel="noopener"
           style="display:block;width:100%;padding:9px;background:#FF5E5B;border:none;border-radius:var(--r);color:#fff;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box;text-align:center">
@@ -156,13 +156,13 @@
       </div>
       <button v-if="protest.scope === 'regional' && protest.dominio_email && protest.requiere_censo && censoExiste"
         @click="router.push(`/grupo/${protest.id}`)"
-        style="width:100%;margin-top:8px;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:10px;cursor:pointer">
+        style="width:100%;margin-top:8px;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:12px;cursor:pointer">
         {{ protest.joined ? $t('detail.myGroup') : $t('detail.seeCensus') }}
       </button>
       <div v-if="(protest.viralCount || 0) > 0"
         style="display:flex;align-items:center;gap:6px;margin-top:7px;padding:6px 9px;background:rgba(184,65,14,.08);border:.5px solid rgba(232,93,36,.22);border-radius:var(--r)">
-        <span style="font-size:11px">🔥</span>
-        <span style="font-size:9px;color:rgba(255,140,80,.9)"><strong style="color:#e85d24">{{ fmt(protest.viralCount) }}</strong> {{ $t('detail.viralCountSuffix') }}</span>
+        <span style="font-size:12px">🔥</span>
+        <span style="font-size:12px;color:rgba(255,140,80,.9)"><strong style="color:#e85d24">{{ fmt(protest.viralCount) }}</strong> {{ $t('detail.viralCountSuffix') }}</span>
       </div>
     </div>
   </div>

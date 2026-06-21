@@ -4,7 +4,7 @@ import { REGIONS, inRegion, fmtTime } from '@/constants.js';
 import { useDeviceStore } from './device.js';
 import * as api from '@/services/api.js';
 
-const SCOPE_COLOR = { national: '#7C6FFF', regional: '#FFB347', global: '#4CFFA4' };
+const SCOPE_COLOR = { national: '#7C6FFF', regional: '#FFB347', local: '#4CC8FF', global: '#4CFFA4' };
 
 /** Map an API protest record to the shape the UI expects. */
 function normalizeProtest(p) {
@@ -28,6 +28,10 @@ function normalizeProtest(p) {
     convocatoria_pais:        p.convocatoria_pais ?? null,
     convocatoria_region:      p.convocatoria_region ?? null,
     convocatoria_institucion: p.convocatoria_institucion ?? null,
+    convocatoria_osm_id:      p.convocatoria_osm_id ?? null,
+    convocatoria_ciudad_nombre: p.convocatoria_ciudad_nombre ?? null,
+    convocatoria_lat:         p.convocatoria_lat ?? null,
+    convocatoria_lon:         p.convocatoria_lon ?? null,
     dominio_email:            p.dominio_email ?? null,
     requiere_censo:           p.requiere_censo ?? false,
     saldo_euros:              p.saldo_euros ?? 0,
@@ -123,7 +127,8 @@ export const useProtestsStore = defineStore('protests', () => {
   }
   function scopeBadge(p) {
     if (p.scope === 'national') return { cls: 'sb-national', icon: '🏛️', label: p.countryName };
-    if (p.scope === 'regional') return { cls: 'sb-regional', icon: '🌐', label: 'Local' };
+    if (p.scope === 'regional') return { cls: 'sb-regional', icon: '🌐', label: 'Regional' };
+    if (p.scope === 'local')    return { cls: 'sb-local',    icon: '📍', label: p.convocatoria_ciudad_nombre || 'Local' };
     return { cls: 'sb-global', icon: '🌍', label: 'Global' };
   }
 

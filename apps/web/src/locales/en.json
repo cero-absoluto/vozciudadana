@@ -236,7 +236,14 @@
     "municipioLabel": "Municipality",
     "municipioPlaceholder": "Search municipality (e.g. Santander, Utrecht, Lyon...)",
     "municipioHint": "Select the exact municipality from the list. Used to classify participants by geographic proximity in the public report.",
-    "errMunicipio": "Please select a municipality for this local event"
+    "errMunicipio": "Please select a municipality for this local event",
+    "sourceTypePublicBroadcaster": "public broadcaster",
+    "sourceTypeReputableMedia": "reputable media",
+    "sourceTypePublicInstitution": "press",
+    "sourceTypeNgo": "NGO",
+    "sourceTypeAcademic": "academic",
+    "sourceTypeGovernment": "official source",
+    "sourceTypeUnknown": "unknown source"
   },
   "detail": {
     "back": "← Back to map",

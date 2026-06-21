@@ -75,13 +75,13 @@
     <div class="fg"><label>{{ $t('create.abusoLabel') }}</label>
   <select v-model="form.tipo_abuso">
     <option value="">{{ $t('create.abusoPlaceholder') }}</option>
-    <option value="corrupcion">{{ $t('create.abusoCorrupcion') }}</option>
-    <option value="nepotismo">{{ $t('create.abusoNepotismo') }}</option>
-    <option value="derechos">{{ $t('create.abusoDerechos') }}</option>
-    <option value="negligencia">{{ $t('create.abusoNegligencia') }}</option>
-    <option value="represion">{{ $t('create.abusoRepresion') }}</option>
-    <option value="opacidad">{{ $t('create.abusoOpacidad') }}</option>
-    <option value="otro">{{ $t('create.abusoOtro') }}</option>
+    <option value="corruption">{{ $t('create.abusoCorrupcion') }}</option>
+    <option value="nepotism">{{ $t('create.abusoNepotismo') }}</option>
+    <option value="rights_violation">{{ $t('create.abusoDerechos') }}</option>
+    <option value="negligence">{{ $t('create.abusoNegligencia') }}</option>
+    <option value="repression">{{ $t('create.abusoRepresion') }}</option>
+    <option value="opacity">{{ $t('create.abusoOpacidad') }}</option>
+    <option value="other_public_abuse">{{ $t('create.abusoOtro') }}</option>
   </select>
 </div>
 <div class="fg">

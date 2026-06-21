@@ -46,7 +46,7 @@
       :placeholder="$t('create.focalPlaceholder')"
       autocomplete="off">
     <!-- Validation status badge -->
-    <div v-if="targetStatus" style="margin-top:6px;font-size:11px;padding:6px 10px;border-radius:6px"
+    <div v-if="targetStatus" style="margin-top:6px;font-size:12px;padding:6px 10px;border-radius:6px"
       :style="{
         background: targetStatus==='ALLOWED' ? 'rgba(76,255,164,.1)' : targetStatus==='REJECTED' ? 'rgba(255,94,91,.1)' : targetStatus==='CHECKING' ? 'rgba(255,255,255,.05)' : 'rgba(255,179,71,.1)',
         border: targetStatus==='ALLOWED' ? '1px solid rgba(76,255,164,.3)' : targetStatus==='REJECTED' ? '1px solid rgba(255,94,91,.3)' : targetStatus==='CHECKING' ? '1px solid var(--border)' : '1px solid rgba(255,179,71,.3)',
@@ -66,7 +66,7 @@
         @mouseenter="e => e.target.style.background='var(--bg3)'"
         @mouseleave="e => e.target.style.background='transparent'">
         <div style="font-weight:600">{{ s.label }}</div>
-        <div style="font-size:10px;color:var(--text2)">{{ s.description }}</div>
+        <div style="font-size:12px;color:var(--text2)">{{ s.description }}</div>
       </div>
     </div>
   </div>
@@ -93,7 +93,7 @@
   <input type="text" v-model="form.fuente_url" :placeholder="$t('create.fuentePlaceholder')">
 
   <!-- Checking spinner -->
-  <div v-if="sourceChecking" style="font-size:11px;color:var(--text3);margin-top:6px;display:flex;align-items:center;gap:6px">
+  <div v-if="sourceChecking" style="font-size:12px;color:var(--text3);margin-top:6px;display:flex;align-items:center;gap:6px">
     <span style="animation:spin 1s linear infinite;display:inline-block">🔄</span> {{ $t('create.fuenteChecking') }}
   </div>
 
@@ -117,7 +117,7 @@
            sourceResult.source_validation_status === 'UNAVAILABLE_SOURCE' ? '⚠️' : '🔍' }}
       </span>
       <div style="flex:1;min-width:0">
-        <div style="font-size:11px;font-weight:700;margin-bottom:1px"
+        <div style="font-size:12px;font-weight:700;margin-bottom:1px"
           :style="{
             color: ['VERIFIED_SOURCE','RELEVANT_SOURCE'].includes(sourceResult.source_validation_status) ? 'var(--accent2)' :
                    ['WEAK_SOURCE','PAYWALLED_SOURCE','UNAVAILABLE_SOURCE'].includes(sourceResult.source_validation_status) ? 'var(--accent4)' :
@@ -126,14 +126,14 @@
           {{ sourceResult.source_domain }}
           <span style="font-weight:400;opacity:.6;text-transform:capitalize"> · {{ sourceResult.source_type?.replace(/_/g,' ') }}</span>
         </div>
-        <div style="font-size:10px;color:var(--text2);line-height:1.4">{{ sourceResult.message }}</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.4">{{ sourceResult.message }}</div>
       </div>
       <div style="flex-shrink:0;text-align:center">
         <div style="font-size:14px;font-weight:800;line-height:1"
           :style="{color: sourceResult.source_confidence_score >= 60 ? 'var(--accent2)' : sourceResult.source_confidence_score >= 40 ? 'var(--accent4)' : 'var(--accent3)'}">
           {{ sourceResult.source_confidence_score ?? '—' }}
         </div>
-        <div style="font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">score</div>
+        <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">score</div>
       </div>
     </div>
     <!-- Event-level documentary score — shown below the source card -->
@@ -145,16 +145,16 @@
           :style="{color: sourceResult.event_score >= 70 ? 'var(--accent2)' : sourceResult.event_score >= 40 ? 'var(--accent4)' : 'var(--accent3)'}">
           {{ sourceResult.event_score }}
         </div>
-        <div style="font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">{{ $t('create.eventScore') }}</div>
+        <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">{{ $t('create.eventScore') }}</div>
       </div>
-      <div style="font-size:11px;color:var(--text2);line-height:1.4">{{ sourceResult.event_score_message }}</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.4">{{ sourceResult.event_score_message }}</div>
     </div>
     <div v-if="sourceResult.source_title" style="padding:8px 14px;border-top:.5px solid var(--border);background:var(--bg2)">
-      <div style="font-size:11px;font-weight:600;margin-bottom:2px;color:var(--text)">{{ sourceResult.source_title }}</div>
-      <div v-if="sourceResult.source_description" style="font-size:10px;color:var(--text2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
+      <div style="font-size:12px;font-weight:600;margin-bottom:2px;color:var(--text)">{{ sourceResult.source_title }}</div>
+      <div v-if="sourceResult.source_description" style="font-size:12px;color:var(--text2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
         {{ sourceResult.source_description }}
       </div>
-      <div style="display:flex;gap:12px;margin-top:5px;font-size:9px;color:var(--text3)">
+      <div style="display:flex;gap:12px;margin-top:5px;font-size:12px;color:var(--text3)">
         <span v-if="sourceResult.published_at">📅 {{ sourceResult.published_at?.substring(0,10) }}</span>
         <span v-if="sourceResult.source_author">✍️ {{ sourceResult.source_author }}</span>
         <span v-if="sourceResult.language">🌐 {{ sourceResult.language }}</span>
@@ -162,7 +162,7 @@
     </div>
   </div>
 
-  <div v-else style="font-size:10px;color:var(--text3);margin-top:4px;opacity:.6">
+  <div v-else style="font-size:12px;color:var(--text3);margin-top:4px;opacity:.6">
     {{ $t('create.fuenteHint') }}
   </div>
 </div>
@@ -213,7 +213,7 @@
 </div>
       <div v-show="form.scope === 'regional' && form.convocatoria_institucion && form.dominio_email" 
   style="background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r2);padding:12px;margin-top:12px">
-  <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px">
+  <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px">
     {{ $t('create.censoTitle') }}
   </div>
   <div style="display:flex;flex-direction:column;gap:8px">
@@ -225,8 +225,8 @@
         <div v-if="!form.requiere_censo" style="width:5px;height:5px;border-radius:50%;background:white"></div>
       </div>
       <div>
-        <div style="font-size:11px;font-weight:500;margin-bottom:3px">{{ $t('create.censoAll') }}</div>
-        <div style="font-size:9px;color:var(--text3);line-height:1.5">{{ $t('create.censoAllDesc', { domain: form.dominio_email || 'tuinstitucion.edu' }) }}</div>
+        <div style="font-size:12px;font-weight:500;margin-bottom:3px">{{ $t('create.censoAll') }}</div>
+        <div style="font-size:12px;color:var(--text3);line-height:1.5">{{ $t('create.censoAllDesc', { domain: form.dominio_email || 'tuinstitucion.edu' }) }}</div>
       </div>
     </div>
     <div @click="form.requiere_censo = true"
@@ -237,8 +237,8 @@
         <div v-if="form.requiere_censo" style="width:5px;height:5px;border-radius:50%;background:white"></div>
       </div>
       <div>
-        <div style="font-size:11px;font-weight:500;margin-bottom:3px">{{ $t('create.censoDept') }}</div>
-        <div style="font-size:9px;color:var(--text3);line-height:1.5">{{ $t('create.censoDeptDesc') }}</div>
+        <div style="font-size:12px;font-weight:500;margin-bottom:3px">{{ $t('create.censoDept') }}</div>
+        <div style="font-size:12px;color:var(--text3);line-height:1.5">{{ $t('create.censoDeptDesc') }}</div>
       </div>
     </div>
   </div>
@@ -273,7 +273,7 @@
     <div class="mstep"><div class="mn">3</div>{{ $t('create.mod3') }}</div>
     <div class="mstep"><div class="mn">4</div>{{ $t('create.mod4') }}</div>
   </div>
-  <div style="margin-top:10px;padding-top:10px;border-top:.5px solid var(--border);font-size:10px;color:var(--text3);font-style:italic;text-align:center">
+  <div style="margin-top:10px;padding-top:10px;border-top:.5px solid var(--border);font-size:12px;color:var(--text3);font-style:italic;text-align:center">
     {{ $t('create.principleNote') }}
   </div>
 </div>
@@ -289,7 +289,7 @@
   position: absolute; left: 20px; top: -4px; z-index: 100;
   background: var(--bg2); border: .5px solid var(--border2);
   border-radius: var(--r); padding: 8px 10px;
-  font-size: 10px; color: var(--text2); width: 220px;
+  font-size:12px; color: var(--text2); width: 220px;
   line-height: 1.5; font-weight: 400;
 }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

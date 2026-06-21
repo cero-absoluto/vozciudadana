@@ -8,7 +8,7 @@
         <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin-bottom:4px">
           {{ $t('migrupo.title') }} {{ protest?.convocatoria_institucion || $t('migrupo.ourGroup') }}
         </div>
-        <div style="font-size:11px;color:var(--text3)">
+        <div style="font-size:12px;color:var(--text3)">
           {{ protest?.convocatoria_region || '' }} {{ protest?.dominio_email ? '· @' + protest.dominio_email : '' }}
         </div>
       </div>
@@ -39,7 +39,7 @@
               <label>{{ $t('migrupo.emailLabel') }}</label>
               <input type="email" v-model="genesisEmail"
                 :placeholder="`tu.nombre@${protest?.dominio_email}`">
-              <div v-if="genesisError" style="font-size:10px;color:var(--accent3);margin-top:4px">{{ genesisError }}</div>
+              <div v-if="genesisError" style="font-size:12px;color:var(--accent3);margin-top:4px">{{ genesisError }}</div>
             </div>
             <button class="btn-primary" style="width:100%;margin-top:8px"
               :disabled="loadingGenesis" @click="enviarOtpGenesis">
@@ -52,7 +52,7 @@
           <input type="text" v-model="genesisOtp" maxlength="6"
             placeholder="000000"
             style="width:100%;padding:14px;text-align:center;letter-spacing:10px;font-size:24px;font-weight:700;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:'Syne',sans-serif">
-          <div v-if="genesisOtpError" style="font-size:10px;color:var(--accent3);margin-top:6px">{{ genesisOtpError }}</div>
+          <div v-if="genesisOtpError" style="font-size:12px;color:var(--accent3);margin-top:6px">{{ genesisOtpError }}</div>
           <button class="btn-primary" style="width:100%;margin-top:12px"
             :disabled="loadingGenesis" @click="verificarOtpGenesis">
               {{ loadingGenesis ? $t('migrupo.verifying') : $t('migrupo.verifyCreate') }}
@@ -81,11 +81,11 @@
           </div>
         </div>
         <div style="margin-top:10px">
-          <div style="font-size:8px;color:var(--text3);margin-bottom:4px">{{ $t('migrupo.progressLabel') }}</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:4px">{{ $t('migrupo.progressLabel') }}</div>
           <div style="background:var(--bg4);border-radius:4px;height:6px;overflow:hidden">
             <div :style="{width: progresoPercent + '%', background:'var(--accent)', height:'100%', borderRadius:'4px', transition:'width .5s'}"></div>
           </div>
-          <div style="font-size:8px;color:var(--text3);margin-top:3px;text-align:right">
+          <div style="font-size:12px;color:var(--text3);margin-top:3px;text-align:right">
             {{ grupo.acreditados }} / {{ grupo.objetivo }} {{ $t('migrupo.progressGoal') }}
           </div>
         </div>
@@ -113,8 +113,8 @@
         </div>
         <div v-for="s in solicitudes" :key="s.id" style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:.5px solid var(--border)">
           <div style="flex:1">
-            <div style="font-size:11px;font-weight:500">{{ s.candidate_email || $t('migrupo.anonymousCandidate') }}</div>
-            <div style="font-size:9px;color:var(--text3)">{{ $t('migrupo.vouchesReceived', { received: s.vouches_recibidos, date: formatFecha(s.requested_at) }) }}</div>
+            <div style="font-size:12px;font-weight:500">{{ s.candidate_email || $t('migrupo.anonymousCandidate') }}</div>
+            <div style="font-size:12px;color:var(--text3)">{{ $t('migrupo.vouchesReceived', { received: s.vouches_recibidos, date: formatFecha(s.requested_at) }) }}</div>
             <div style="background:var(--bg4);border-radius:4px;height:4px;overflow:hidden;margin-top:4px;width:80px">
               <div :style="{width: (s.vouches_recibidos/2*100)+'%',background:'var(--accent4)',height:'100%',borderRadius:'4px'}"></div>
             </div>
@@ -122,36 +122,36 @@
           <button
             v-if="grupo.mis_vouches_restantes > 0 && !s.ya_avalado"
             @click="darVouch(s)"
-            style="padding:6px 12px;background:var(--accent);border:none;border-radius:var(--r);color:white;font-size:10px;font-weight:600;cursor:pointer">
+            style="padding:6px 12px;background:var(--accent);border:none;border-radius:var(--r);color:white;font-size:12px;font-weight:600;cursor:pointer">
             {{ $t('migrupo.vouch') }}
           </button>
-          <div v-else-if="s.ya_avalado" style="font-size:10px;color:var(--accent2)">{{ $t('migrupo.vouched') }}</div>
-          <div v-else style="font-size:10px;color:var(--text3)">{{ $t('migrupo.noVouches') }}</div>
+          <div v-else-if="s.ya_avalado" style="font-size:12px;color:var(--accent2)">{{ $t('migrupo.vouched') }}</div>
+          <div v-else style="font-size:12px;color:var(--text3)">{{ $t('migrupo.noVouches') }}</div>
         </div>
       </div>
 
       <!-- Invitar -->
       <div class="block" style="margin-bottom:20px">
         <div class="block-title">{{ $t('migrupo.inviteTitle') }}</div>
-        <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6">
           {{ $t('migrupo.inviteDesc') }}
         </div>
         <div style="font-size:12px;padding:6px 8px;background:rgba(255,107,107,.06);border:.5px solid rgba(255,107,107,.2);border-radius:var(--r);color:var(--accent3);margin-bottom:10px;line-height:1.5">
           {{ $t('migrupo.inviteWarning') }}
         </div>
-        <div style="font-size:9px;padding:6px 8px;background:rgba(124,111,255,.06);border:.5px solid var(--border);border-radius:var(--r);color:var(--text2);margin-bottom:10px;line-height:1.5">
+        <div style="font-size:12px;padding:6px 8px;background:rgba(124,111,255,.06);border:.5px solid var(--border);border-radius:var(--r);color:var(--text2);margin-bottom:10px;line-height:1.5">
           {{ $t('migrupo.invitesLeft', { n: grupo.mis_vouches_restantes }) }}
         </div>
-        <div v-if="linkInvitacion" style="background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:8px 10px;font-family:monospace;font-size:9px;color:var(--accent);word-break:break-all;margin-bottom:8px">
+        <div v-if="linkInvitacion" style="background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:8px 10px;font-family:monospace;font-size:12px;color:var(--accent);word-break:break-all;margin-bottom:8px">
           {{ linkInvitacion }}
         </div>
        <div style="display:flex;gap:8px">
           <button @click="generarYCompartirLink"
-            style="flex:1;padding:9px;background:var(--accent);border:none;border-radius:var(--r);color:white;font-size:11px;font-weight:600;cursor:pointer">
+            style="flex:1;padding:9px;background:var(--accent);border:none;border-radius:var(--r);color:white;font-size:12px;font-weight:600;cursor:pointer">
             {{ linkInvitacion ? $t('migrupo.regenerate') : $t('migrupo.generateLink') }}
           </button>
           <button v-if="linkInvitacion" @click="copiarLink"
-            style="padding:9px 14px;background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:11px;cursor:pointer">
+            style="padding:9px 14px;background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:12px;cursor:pointer">
             {{ $t('migrupo.copyBtn') }}
           </button>
         </div>

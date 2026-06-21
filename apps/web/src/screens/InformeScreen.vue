@@ -1,642 +1,780 @@
-<template>
-  <div class="screen active" id="s-informe">
-    <div class="scroll" style="padding:16px">
-
-      <!-- Cargando -->
-      <div v-if="loading" style="text-align:center;padding:40px">
-        <div class="spin-ring" style="margin:0 auto 12px"></div>
-        <div style="font-size:12px;color:var(--text3)">{{ $t('informe.loading') }}</div>
-      </div>
-
-      <!-- Error -->
-      <div v-else-if="error" style="text-align:center;padding:40px;color:var(--accent3)">
-        {{ $t('informe.notFound') }}
-      </div>
-
-      <!-- Informe -->
-      <div v-else-if="data" class="informe-layout">
-
-        <!-- COLUMNA IZQUIERDA -->
-        <div class="informe-left">
-
-          <!-- Cabecera -->
-          <div style="margin-bottom:20px">
-            <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">
-              {{ $t('informe.headerLabel') }}
-            </div>
-           <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.4px;margin-bottom:8px">
-              {{ data.protest.title }}
-            </div>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">
-              {{ data.protest.demands }}
-            </div>
-            <div v-if="data.protest.fuente_url" style="font-size:12px;color:var(--text3);margin-top:6px">
-              {{ $t('informe.fuente') }}
-              <a :href="data.protest.fuente_url" target="_blank"
-                style="color:var(--accent);text-decoration:underline;word-break:break-all">
-                {{ data.protest.fuente_url }}
-              </a>
-            </div>
-            <div v-if="data.protest.tipo_abuso" style="font-size:12px;color:var(--text3);margin-top:4px">
-              {{ $t('informe.tipoAbuso') }}
-              <span style="color:var(--accent4);font-weight:500">{{ tipoAbusoLabel }}</span>
-            </div>
-            <div style="font-size:12px;color:var(--text3)">
-              {{ formatDate(data.protest.starts_at) }} → {{ formatDate(data.protest.ends_at) }}
-            </div>
-          </div>
-
-          <!-- BLOQUE 1 — Titular -->
-          <div class="block" style="margin-bottom:14px">
-            <div class="block-title">{{ $t('informe.headlineBlock') }}</div>
-            <div style="font-size:14px;font-weight:600;line-height:1.5;color:var(--text)">
-              {{ $t('informe.headline', { count: data.total_adhesiones, country: data.protest.country_name, focal: data.protest.focal_point, demands: data.protest.demands }) }}
-            </div>
-          </div>
-
-          <!-- BLOQUE 5 — Distribución geográfica -->
-          <div class="block" style="margin-bottom:12px">
-            <div class="block-title">{{ $t('informe.geoTitle') }}</div>
-            <div style="font-size:14px;color:var(--text2);line-height:1.8;margin-bottom:8px">
-              <strong>{{ $t('informe.geoByRegion') }}</strong><br>
-              <span v-for="(count, region) in data.distribucion_regiones" :key="region">
-                {{ region }}: {{ count }} {{ count > 1 ? $t('informe.adhesiones') : $t('informe.adhesion') }} · 
-              </span>
-            </div>
-            <div style="font-size:14px;color:var(--text2);line-height:1.8">
-              <strong>{{ $t('informe.geoByCity') }}</strong><br>
-              <span v-for="ciudad in data.distribucion_ciudades.slice(0,10)" :key="ciudad">
-                {{ ciudad }} · 
-              </span>
-              <span v-if="data.distribucion_ciudades.length > 10">
-                {{ $t('informe.moreCities', { n: data.distribucion_ciudades.length - 10 }) }}
-              </span>
-            </div>
-          </div>
-
-        </div><!-- fin columna izquierda -->
-
-        <!-- COLUMNA DERECHA -->
-        <div class="informe-right">
-
-          <!-- BLOQUE FIABILIDAD — Calidad de la verificación -->
-          <div class="block" style="margin-bottom:12px">
-            <div class="block-title">{{ $t('informe.fiabilidadTitle') }}</div>
-            <div v-if="data.desglose_fiabilidad" style="display:flex;flex-direction:column;gap:8px">
-              
-              <!-- Alta -->
-              <div v-if="data.desglose_fiabilidad.alta.count > 0">
-                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-                  <span style="color:var(--accent2);font-weight:500">{{ $t('informe.fiabilidadAlta') }}</span>
-                  <span style="color:var(--text2)">{{ data.desglose_fiabilidad.alta.count }} {{ $t('informe.ciudadanos') }}</span>
-                </div>
-                <div style="background:var(--bg4);border-radius:4px;height:8px;overflow:hidden">
-                  <div :style="{width: pct(data.desglose_fiabilidad.alta.count) + '%', background:'var(--accent2)', height:'100%', borderRadius:'4px', transition:'width .5s'}"></div>
-                </div>
-                <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ data.desglose_fiabilidad.alta.descripcion }}</div>
-              </div>
-
-              <!-- Media -->
-              <div v-if="data.desglose_fiabilidad.media.count > 0">
-                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-                  <span style="color:var(--accent4);font-weight:500">{{ $t('informe.fiabilidadMedia') }}</span>
-                  <span style="color:var(--text2)">{{ data.desglose_fiabilidad.media.count }} {{ $t('informe.ciudadanos') }}</span>
-                </div>
-                <div style="background:var(--bg4);border-radius:4px;height:8px;overflow:hidden">
-                  <div :style="{width: pct(data.desglose_fiabilidad.media.count) + '%', background:'var(--accent4)', height:'100%', borderRadius:'4px', transition:'width .5s'}"></div>
-                </div>
-                <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ data.desglose_fiabilidad.media.descripcion }}</div>
-              </div>
-
-              <!-- Base -->
-              <div v-if="data.desglose_fiabilidad.base.count > 0">
-                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-                  <span style="color:var(--accent);font-weight:500">{{ $t('informe.fiabilidadBase') }}</span>
-                  <span style="color:var(--text2)">{{ data.desglose_fiabilidad.base.count }} {{ $t('informe.ciudadanos') }}</span>
-                </div>
-                <div style="background:var(--bg4);border-radius:4px;height:8px;overflow:hidden">
-                  <div :style="{width: pct(data.desglose_fiabilidad.base.count) + '%', background:'var(--accent)', height:'100%', borderRadius:'4px', transition:'width .5s'}"></div>
-                </div>
-                <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ data.desglose_fiabilidad.base.descripcion }}</div>
-              </div>
-
-              <!-- Sin dato -->
-              <div v-if="data.desglose_fiabilidad.sin_dato.count > 0">
-                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-                  <span style="color:var(--text3);font-weight:500">{{ $t('informe.fiabilidadSin') }}</span>
-                  <span style="color:var(--text2)">{{ data.desglose_fiabilidad.sin_dato.count }} {{ $t('informe.ciudadanos') }}</span>
-                </div>
-                <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ $t('informe.fiabilidadSinDesc') }}</div>
-              </div>
-
-            </div>
-            <div v-else style="font-size:12px;color:var(--text3)">{{ $t('informe.fiabilidadNoData') }}</div>
-          </div>
-
-          <!-- BLOQUE LOCAL — Desglose geográfico (solo para convocatorias locales) -->
-          <div v-if="data.desglose_geografico_local" class="block" style="margin-bottom:12px">
-            <div class="block-title">📍 {{ $t('informe.geoLocalTitle') }}</div>
-            <div style="font-size:12px;color:var(--text3);margin-bottom:12px">
-              {{ $t('informe.geoLocalSubtitle', { municipio: data.desglose_geografico_local.municipio }) }}
-            </div>
-
-            <!-- GPS local -->
-            <div style="margin-bottom:10px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                <span style="font-size:13px;font-weight:600;color:var(--accent2)">📍 {{ $t('informe.geoLocalVerified') }}</span>
-                <span style="font-size:13px;color:var(--text)">{{ data.desglose_geografico_local.gps_local }}</span>
-              </div>
-              <div style="height:6px;background:var(--bg3);border-radius:4px;overflow:hidden">
-                <div :style="{width: pctLocal(data.desglose_geografico_local.gps_local) + '%', background:'var(--accent2)', height:'100%', borderRadius:'4px', transition:'width .5s'}"></div>
-              </div>
-              <div style="font-size:11px;color:var(--text3);margin-top:2px">{{ $t('informe.geoLocalVerifiedDesc', { municipio: data.desglose_geografico_local.municipio }) }}</div>
-            </div>
-
-            <!-- Nacionales sin GPS local -->
-            <div style="margin-bottom:10px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                <span style="font-size:13px;font-weight:600;color:var(--accent4)">🇪🇸 {{ $t('informe.geoNational') }}</span>
-                <span style="font-size:13px;color:var(--text)">{{ data.desglose_geografico_local.nacionales_sin_gps }}</span>
-              </div>
-              <div style="height:6px;background:var(--bg3);border-radius:4px;overflow:hidden">
-                <div :style="{width: pctLocal(data.desglose_geografico_local.nacionales_sin_gps) + '%', background:'var(--accent4)', height:'100%', borderRadius:'4px', transition:'width .5s'}"></div>
-              </div>
-              <div style="font-size:11px;color:var(--text3);margin-top:2px">{{ $t('informe.geoNationalDesc') }}</div>
-            </div>
-
-            <!-- Internacionales -->
-            <div v-if="data.desglose_geografico_local.internacionales > 0" style="margin-bottom:10px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                <span style="font-size:13px;font-weight:600;color:var(--accent)">🌍 {{ $t('informe.geoInternational') }}</span>
-                <span style="font-size:13px;color:var(--text)">{{ data.desglose_geografico_local.internacionales }}</span>
-              </div>
-              <div style="height:6px;background:var(--bg3);border-radius:4px;overflow:hidden">
-                <div :style="{width: pctLocal(data.desglose_geografico_local.internacionales) + '%', background:'var(--accent)', height:'100%', borderRadius:'4px', transition:'width .5s'}"></div>
-              </div>
-              <div style="font-size:11px;color:var(--text3);margin-top:2px">{{ $t('informe.geoInternationalDesc') }}</div>
-            </div>
-          </div>
-
-          <!-- BLOQUE 2 — Los tres números -->
-          <div class="block" style="margin-bottom:12px">
-            <div class="block-title">{{ $t('informe.numbersTitle') }}</div>
-            <div class="stats-row">
-              <div class="sc">
-                <div class="sc-n" style="color:var(--accent)">{{ data.total_adhesiones }}</div>
-                <div class="sc-l">{{ $t('informe.statAdhesiones') }}</div>
-              </div>
-              <div class="sc">
-                <div class="sc-n" style="color:var(--accent2)">{{ data.ciudades_distintas }}</div>
-                <div class="sc-l">{{ $t('informe.statCiudades') }}</div>
-              </div>
-              <div class="sc">
-                <div class="sc-n" style="color:var(--accent4)">100%</div>
-                <div class="sc-l">{{ $t('informe.statVerificadas') }}</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- BLOQUE GPS — Nivel de verificación -->
-          <div class="block" style="margin-bottom:12px">
-            <div class="block-title">{{ $t('informe.gpsTitle') }}</div>
-            <div style="display:flex;gap:8px;margin-bottom:8px">
-              <div style="flex:1;background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.2);border-radius:var(--r);padding:10px;text-align:center">
-                <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--accent2)">{{ data.adhesiones_con_gps }}</div>
-                <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ $t('informe.gpsVerified') }}</div>
-              </div>
-              <div style="flex:1;background:rgba(124,111,255,.06);border:.5px solid var(--border);border-radius:var(--r);padding:10px;text-align:center">
-                <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--accent)">{{ data.adhesiones_sin_gps }}</div>
-                <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ $t('informe.gpsSim') }}</div>
-              </div>
-            </div>
-            <div style="font-size:12px;color:var(--text3);line-height:1.6">
-              {{ $t('informe.gpsNote') }}
-            </div>
-          </div>
-
-          <!-- BLOQUE 3 — Prueba de humanidad -->
-          <div class="block" style="margin-bottom:12px">
-            <div class="block-title">{{ $t('informe.humanidadTitle') }}</div>
-            <div style="font-size:14px;color:var(--text2);line-height:1.8">
-              - {{ data.paises_distintos }} {{ data.paises_distintos === 1 ? $t('informe.pais') : $t('informe.paises') }}<br>
-              - {{ data.idiomas_distintos }} {{ data.idiomas_distintos === 1 ? $t('informe.idioma') : $t('informe.idiomas') }}<br>
-              • {{ $t('informe.firstAdhesion') }} {{ formatDateTime(data.primera_adhesion) }}<br>
-              • {{ $t('informe.lastAdhesion') }} {{ formatDateTime(data.ultima_adhesion) }}
-            </div>
-          </div>
-
-          <!-- BLOQUE 4 — Velocidad de crecimiento -->
-          <div class="block" style="margin-bottom:12px">
-            <div class="block-title">{{ $t('informe.velocidadTitle') }}</div>
-            <div v-if="data.velocidad" style="margin-bottom:12px">
-              <div style="display:flex;gap:8px;margin-bottom:12px">
-                <div style="flex:1;background:var(--bg3);border-radius:var(--r);padding:10px;text-align:center">
-                  <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent2)">{{ data.velocidad.media_diaria }}</div>
-                  <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ $t('informe.velocidadMediaDiaria') }}</div>
-                </div>
-                <div v-if="data.velocidad.dia_pico" style="flex:1;background:var(--bg3);border-radius:var(--r);padding:10px;text-align:center">
-                  <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent)">{{ data.velocidad.dia_pico.count }}</div>
-                  <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ $t('informe.velocidadPico') }} {{ formatDate(data.velocidad.dia_pico.fecha) }}</div>
-                </div>
-              </div>
-              <div style="font-size:12px;color:var(--text3);margin-bottom:6px">{{ $t('informe.velocidadPorDia') }}</div>
-              <div style="display:flex;align-items:flex-end;gap:3px;height:80px">
-                <div v-for="d in data.velocidad.adhesiones_por_dia" :key="d.fecha"
-                  :style="{
-                    flex:1,
-                    background: d.count === data.velocidad.dia_pico?.count ? 'var(--accent2)' : 'var(--accent)',
-                    height: maxPct(d.count) + '%',
-                    borderRadius:'3px 3px 0 0',
-                    minHeight:'4px',
-                    opacity: d.count === data.velocidad.dia_pico?.count ? 1 : 0.6
-                  }">
-                </div>
-              </div>
-            </div>
-            <div v-else style="font-size:12px;color:var(--text3)">{{ $t('informe.velocidadNoData') }}</div>
-          </div>
-
-          <!-- BLOQUE 6 — Cadena de verificación -->
-          <div class="block" style="margin-bottom:12px">
-            <div class="block-title">{{ $t('informe.chainTitle') }}</div>
-            <div style="font-size:14px;color:var(--text2);line-height:1.8">
-              {{ $t('informe.chainBody') }}
-            </div>
-          </div>
-
-          <!-- BLOQUE 7 — Sello de transparencia -->
-          <div class="block" style="margin-bottom:20px">
-            <div class="block-title">{{ $t('informe.selloTitle') }}</div>
-            <div v-if="data.protest.hash_integridad" style="margin-bottom:12px;padding:12px 14px;background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.25);border-radius:var(--r)">
-              <div style="font-size:12px;color:var(--text3);margin-bottom:6px">{{ $t('informe.selloHashLabel') }}</div>
-              <div style="font-family:monospace;font-size:12px;color:var(--accent2);word-break:break-all;margin-bottom:8px">{{ data.protest.hash_integridad }}</div>
-              <div style="font-size:12px;color:var(--text3);line-height:1.5">{{ $t('informe.selloDesc') }}</div>
-              <div style="font-size:12px;color:var(--text3);margin-top:6px;padding-top:6px;border-top:.5px solid var(--border);font-family:monospace;opacity:.7">{{ $t('informe.selloVerify') }}</div>
-            </div>
-            <div v-else style="margin-bottom:12px;padding:10px 12px;background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r);font-size:12px;color:var(--text3)">
-              ⏳ {{ $t('informe.selloHashPending') }}
-            </div>
-
-            <!-- In-app integrity verifier -->
-            <div v-if="data.protest.hash_integridad" style="margin-top:10px">
-              <button @click="verifyIntegrity"
-                style="width:100%;padding:8px;background:rgba(76,255,164,.08);border:.5px solid rgba(76,255,164,.3);border-radius:var(--r);color:var(--accent2);font-size:12px;font-weight:600;cursor:pointer">
-                🔍 {{ verifyState === 'running' ? $t('informe.verifyRunning') : $t('informe.verifyBtn') }}
-              </button>
-              <div v-if="verifyResult" style="margin-top:8px;padding:8px 10px;border-radius:var(--r);font-size:12px;line-height:1.5"
-                :style="verifyResult === 'ok' ? 'background:rgba(76,255,164,.08);border:.5px solid rgba(76,255,164,.3)' : verifyResult === 'v1' ? 'background:rgba(124,111,255,.08);border:.5px solid rgba(124,111,255,.3)' : 'background:rgba(255,80,80,.08);border:.5px solid rgba(255,80,80,.3)'">
-                {{ verifyResult === 'ok' ? $t('informe.verifyOk') : verifyResult === 'v1' ? $t('informe.verifyV1') : $t('informe.verifyFail') }}
-              </div>
-            </div>
-            <div style="font-size:14px;color:var(--text2);line-height:1.8">
-              {{ $t('informe.selloSourceDesc') }}<br>
-              <button
-                onclick="window.open('https://github.com/cero-absoluto/vozciudadana','_blank')"
-                style="background:transparent;border:.5px solid var(--accent);border-radius:var(--r);padding:4px 10px;color:var(--accent);cursor:pointer;font-size:12px;margin-top:4px">
-                {{ $t('informe.selloSourceBtn') }}
-              </button><br><br>
-              {{ $t('informe.selloGenerated') }} {{ formatDateTime(new Date().toISOString()) }}<br>
-              {{ $t('informe.selloId') }} <span style="font-family:monospace;font-size:12px;color:var(--accent2)">{{ $route.params.id }}</span><br>
-              {{ $t('informe.selloBlockchain') }}
-            </div>
-          </div>
-
-        </div><!-- fin columna derecha -->
-
-        <!-- Botón volver + PDF + Embed -->
-        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-          <button class="btn-primary" style="flex:1" @click="$router.back()">{{ $t('informe.back') }}</button>
-          <button class="btn-primary" style="flex:1;background:var(--accent2);color:#000" @click="downloadPDF">{{ $t('informe.downloadPdf') }}</button>
-          <button class="btn-primary" style="flex:1;background:rgba(76,111,255,.2);border:.5px solid #4C6FFF;color:#4C6FFF" @click="showEmbed=true">{{ $t('informe.embedBtn') }}</button>
-        </div>
-
-        <!-- Embed modal -->
-        <div v-if="showEmbed" style="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px" @click.self="showEmbed=false">
-          <div style="background:#13111F;border:.5px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;max-width:480px;width:100%">
-            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">{{ $t('informe.embedTitle') }}</div>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">
-              {{ $t('informe.embedDesc') }}
-            </div>
-            <div style="background:#0C0B14;border:.5px solid rgba(255,255,255,.08);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;color:#4CFFA4;word-break:break-all;margin-bottom:12px;line-height:1.7">
-              {{ embedCode }}
-            </div>
-            <div style="display:flex;gap:8px">
-              <button class="btn-primary" style="flex:1;background:#4C6FFF" @click="copyEmbed">{{ copied ? $t('informe.embedCopied') : $t('informe.embedCopy') }}</button>
-              <button class="btn-primary" style="flex:1;background:transparent;border:.5px solid var(--border2);color:var(--text2)" @click="showEmbed=false">{{ $t('informe.embedClose') }}</button>
-            </div>
-            <!-- Preview -->
-            <div style="margin-top:16px;padding-top:14px;border-top:.5px solid var(--border)">
-              <div style="font-size:12px;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">{{ $t('informe.embedPreview') }}</div>
-              <div style="background:#0C0B14;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px 20px;max-width:320px">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                  <span style="font-size:12px;font-weight:700;color:#4CFFA4;text-transform:uppercase">🗳 Voice Protest</span>
-                  <span style="font-size:12px;color:#4CFFA4;background:rgba(76,255,164,.1);border-radius:20px;padding:2px 7px">● LIVE</span>
-                </div>
-                <div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:6px;line-height:1.4">{{ data?.protest?.title }}</div>
-                <div style="font-size:28px;font-weight:800;color:#4CFFA4;line-height:1">{{ data?.total_adhesiones?.toLocaleString('en') }}</div>
-                <div style="font-size:12px;color:#8884AA;margin-bottom:10px">{{ $t('informe.embedVerifiedCitizens') }}</div>
-                <div style="background:#4C6FFF;border-radius:8px;padding:8px;text-align:center;font-size:12px;font-weight:700;color:#fff">{{ $t('informe.embedJoin') }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-</template>
-
-<script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { useRoute } from 'vue-router';
-import * as api from '@/services/api.js';
-import { jsPDF } from 'jspdf';
-
-const route = useRoute();
-const { t } = useI18n();
-
-const tipoAbusoLabel = computed(() => {
-  const tipo = data.value?.protest?.tipo_abuso;
-  const map = {
-    corrupcion: t('informe.abusoCorrupcion'),
-    nepotismo: t('informe.abusoNepotismo'),
-    derechos: t('informe.abusoDerechos'),
-    negligencia: t('informe.abusoNegligencia'),
-    represion: t('informe.abusoRepresion'),
-    opacidad: t('informe.abusoOpacidad'),
-    otro: t('informe.abusoOtro'),
-  };
-  return map[tipo] || tipo || '—';
-});
-const data = ref(null);
-const verifyState  = ref('idle'); // idle | running
-const verifyResult = ref(null);   // null | ok | fail | v1
-
-async function verifyIntegrity() {
-  if (verifyState.value === 'running') return;
-  verifyState.value  = 'running';
-  verifyResult.value = null;
-
-  try {
-    const version = data.value?.protest?.integrity_version || 1;
-
-    if (version < 2) {
-      verifyResult.value = 'v1';
-      verifyState.value  = 'idle';
-      return;
-    }
-
-    const apiUrl = import.meta.env.VITE_API_URL;
-    const res = await fetch(`${apiUrl}/api/public/protests/${route.params.id}/integrity-data`);
-    if (!res.ok) throw new Error('Failed to fetch integrity data');
-    const d = await res.json();
-
-    // Recalculate hash in browser using SubtleCrypto
-    const sorted = [...d.public_commitments].sort();
-    const cities = Object.entries(d.city_distribution || {})
-      .sort((a,b) => a[0].localeCompare(b[0]))
-      .map(([k,v]) => `${k}:${v}`).join(',');
-    const rel = Object.entries(d.reliability_breakdown || {})
-      .sort((a,b) => a[0] - b[0])
-      .map(([k,v]) => `${k}:${v}`).join(',');
-
-    const input = [
-      d.protest_id, d.title, d.demands, d.scope, d.country,
-      d.total_adhesions, d.cities_count,
-      rel, cities,
-      d.first_adhesion || '',
-      d.last_adhesion  || '',
-      sorted.join('|')
-    ].join('|');
-
-    const msgBuffer  = new TextEncoder().encode(input);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray  = Array.from(new Uint8Array(hashBuffer));
-    const hashHex    = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-    verifyResult.value = hashHex === d.integrity_hash ? 'ok' : 'fail';
-  } catch {
-    verifyResult.value = 'fail';
-  } finally {
-    verifyState.value = 'idle';
+{
+  "app": {
+    "name": "Voice Protest",
+    "tagline1": "Verified Collective Voice",
+    "tagline2": "Private participation · Public verification",
+    "anon": "Protected"
+  },
+  "nav": {
+    "map": "Map",
+    "create": "Convene",
+    "file": "File",
+    "info": "Info",
+    "about": "How it works"
+  },
+  "auth": {
+    "title": "Your phone number",
+    "subtitle": "We send a 6-digit code. Your number is used for SMS verification and is then transformed into an irreversible mathematical fingerprint. The original number is not stored.",
+    "prefixLabel": "Country prefix",
+    "phoneLabel": "Phone number",
+    "phonePlaceholder": "600 000 000",
+    "hashHint": "Your number will be transformed into an irreversible HMAC-SHA256 identifier. The original is not stored.",
+    "hashLabel": "Fingerprint generated in real time",
+    "hashPlaceholder": "Enter your number...",
+    "sending": "Sending...",
+    "sendCode": "Send code →",
+    "otpSent": "6-digit code sent. Expires in 5 minutes.",
+    "otpDigit": "Digit {n} of the code",
+    "resendQuestion": "Didn't receive it?",
+    "resend": "Resend",
+    "resendToast": "Code resent",
+    "verify": "Verify →",
+    "advancedOptions": "⚙️ Advanced options",
+    "worldId": "World ID",
+    "worldIdBadge": "Maximum verifiable privacy",
+    "worldIdDesc": "Zero-Knowledge Proof.",
+    "highRisk": "High-risk mode",
+    "highRiskDesc": "High-risk protest. Take additional precautions if operating in a surveillance environment.",
+    "captchaLoading": "Verifying you're human...",
+    "captchaVerifying": "Verifying you're human...",
+    "captchaOk": "Verified — you're human. Enter your number.",
+    "captchaFail": "Could not verify reCAPTCHA. Continue if you're in development.",
+    "captchaError": "Could not verify reCAPTCHA. Continue if you're in development.",
+    "gpsTitle": "Strengthen your participation",
+    "gpsBody": "To strengthen the credibility of your participation, we'll ask you to share your location. This confirms you're in the right country and makes your participation harder to question.",
+    "gpsNote": "Exact coordinates are not stored. They are used temporarily to determine your city and region.",
+    "gpsAccept": "Strengthen my participation",
+    "gpsSkip": "Continue without location",
+    "gpsDecline": "Continue without location",
+    "anonNote": "Your identity is not visible to other participants. Only a cryptographic hash of your phone number is retained.",
+    "countryPrefix": "Country prefix",
+    "phoneNumber": "Phone number",
+    "noCode": "Didn't receive it?",
+    "resent": "Code resent",
+    "advancedOpts": "Advanced options",
+    "maxAnon": "Maximum verifiable privacy",
+    "highRiskSoon": "High-risk mode — coming soon",
+    "highRiskTitle": "High-risk mode",
+    "worldIdSoon": "World ID — coming soon",
+    "wrongCountry": "This event is only for citizens of {country}. Use a number from that country.",
+    "otpError": "Enter all 6 digits",
+    "otpIncorrect": "Incorrect or expired code. Request a new one if the problem persists.",
+    "sendError": "Error sending the code. Check your number and try again.",
+    "otpRateLimited": "For security reasons, please wait a few minutes before requesting another code.",
+    "verificationCannotContinue": "Verification cannot continue for this event."
+  },
+  "home": {
+    "geoConfidence": "Geographic confidence:",
+    "filterAll": "All",
+    "filterNational": "🏛️ National",
+    "filterRegional": "🌐 Local",
+    "filterGlobal": "🌍 Global",
+    "tabActive": "Active",
+    "tabQueue": "Queue",
+    "tabSlots": "Slots",
+    "overlayTitle": "Explore active protests",
+    "overlayBody": "Zoom in on the map to see events in your country. Tap a dot to view details.",
+    "overlayLive": "Active events on the map",
+    "overlayTap": "Tap to explore →",
+    "dotDocument": "Document",
+    "improveConfidence": "Improve your geographic confidence"
+  },
+  "active": {
+    "empty": "No active events",
+    "emptyDesc": "There are no active events in this country right now.",
+    "createBtn": "+ Create event",
+    "joined": "✓ Joined · {time} remaining",
+    "toastLocked": "🔒 Device locked until the active event ends",
+    "toastGeo": "🌍 You cannot participate: outside the geographic scope"
+  },
+  "queue": {
+    "info": "Citizens boost events in queue. The most boosted one moves up when a slot is free in its country.",
+    "boosted": "✓ Boosted",
+    "boost": "+ Boost"
+  },
+  "slots": {
+    "info": "Each country has 1 active slot (national). Global events don't compete with national ones.",
+    "infoRegional": "Active regional slots:",
+    "occupied": "Slot occupied: \"{title}\"...",
+    "freeQueue": "Free slot · {n} in queue",
+    "free": "Free slot",
+    "occupiedRegion": "Slot occupied: \"{title}\"..."
+  },
+  "create": {
+    "titleLabel": "Title *",
+    "titleTooltip": "Summarize the complaint in a clear sentence. Use verbs like \"demand\" or \"denounce\". Maximum 120 characters.",
+    "titlePlaceholder": "E.g.: Against government corruption",
+    "descLabel": "Description *",
+    "descTooltip": "Explain the abuse with concrete, verifiable facts. No opinions or personal assessments. Maximum 500 characters.",
+    "descPlaceholder": "Explain the reason with concrete facts.",
+    "demandsLabel": "What we demand *",
+    "demandsTooltip": "Use action verbs: demand, denounce, resign, investigate. NOT ALLOWED: ask, request, propose. Maximum 300 characters.",
+    "demandsPlaceholder": "E.g.: That the president resign · That the law be withdrawn",
+    "focalLabel": "Who it is directed at *",
+    "focalTooltip": "Institution or public office to which the demand is directed. Must be a public authority with decision-making power — government, parliament, court, ministry, public university, public hospital, regulatory body or similar. Political parties are not accepted as recipients.",
+    "focalPlaceholder": "E.g.: Parliament",
+    "abuseLabel": "Type of abuse *",
+    "abusePlaceholder": "Select type of abuse...",
+    "abusoLabel": "Type of abuse *",
+    "abusoPlaceholder": "Select type of abuse...",
+    "abuseCorrupcion": "Corruption or embezzlement",
+    "abusoCorrupcion": "Corruption or embezzlement",
+    "abuseNepotismo": "Nepotism or favoritism",
+    "abusoNepotismo": "Nepotism or favoritism",
+    "abuseDerechos": "Violation of fundamental rights",
+    "abusoDerechos": "Violation of fundamental rights",
+    "abuseNegligencia": "Serious negligence",
+    "abusoNegligencia": "Serious negligence",
+    "abuseRepresion": "Repression or censorship",
+    "abusoRepresion": "Repression or censorship",
+    "abuseOpacidad": "Opacity or lack of accountability",
+    "abusoOpacidad": "Opacity or lack of accountability",
+    "abuseOtro": "Other public power abuse",
+    "abusoOtro": "Other public power abuse",
+    "fuenteLabel": "Source proving the fact *",
+    "fuenteTooltip": "Automatic verification via Wikidata. Non-recognized media can also be valid.",
+    "fuentePlaceholder": "guardian.com/... or gov.uk/...",
+    "fuenteChecking": "Verifying source...",
+    "fuenteOficial": "Official body verified",
+    "fuenteVerified": "Source verified — {name}",
+    "fuenteUnknown": "Unrecognized source — make sure it's publicly accessible",
+    "fuenteInvalid": "Invalid URL",
+    "fuenteHint": "Link the article, official document or data proving the reported fact.",
+    "scopeTitle": "Geographic scope *",
+    "scopeNational": "National",
+    "scopeNationalLabel": "National",
+    "scopeNationalBadge": "National scope only",
+    "scopeNationalDesc": "Verified participants within this country only. Eligibility is determined through SIM verification and other integrity mechanisms. People who retain a SIM from this country may participate even if temporarily abroad.",
+    "scopeLocal": "Local",
+    "scopeRegionalLabel": "Local",
+    "scopeLocalBadge": "Local scope",
+    "scopeRegionalBadge": "Local scope",
+    "scopeLocalDesc": "Event of local scope",
+    "scopeRegionalDesc": "Event of local scope",
+    "scopeGlobal": "Global",
+    "scopeGlobalLabel": "Global",
+    "scopeGlobalBadge": "Any citizen",
+    "scopeGlobalDesc": "No geographic restriction.",
+    "paisLabel": "Country *",
+    "countryLabel": "Country *",
+    "paisPlaceholder": "Select a country...",
+    "countryPlaceholder": "Select a country...",
+    "regionLabel": "Region / Province *",
+    "regionPlaceholder": "E.g.: Noord-Holland, Catalonia, Île-de-France",
+    "institucionLabel": "Institution",
+    "institutionLabel": "Institution",
+    "optional": "optional",
+    "institutionOptional": "(optional)",
+    "institucionPlaceholder": "E.g.: Utrecht University, Vall d'Hebron Hospital",
+    "institutionPlaceholder": "E.g.: Utrecht University, Vall d'Hebron Hospital",
+    "institucionHint": "If it's a university or workplace event, enter the name.",
+    "institutionHint": "If it's a university or workplace event, enter the name.",
+    "dominioLabel": "Institutional email domain *",
+    "emailDomainLabel": "Institutional email domain *",
+    "dominioHint": "Only the part after the at sign — for example: uu.nl",
+    "emailDomainHint": "Only the part after the at sign — for example: uu.nl",
+    "censoTitle": "Who is this event directed at?",
+    "audienceTitle": "Who is this event directed at?",
+    "censoAll": "The entire institution",
+    "audienceAll": "The entire institution",
+    "censoAllDesc": "Any member with an institutional email ending in {domain} can participate",
+    "audienceAllDesc": "Any member with email {domain} can participate",
+    "censoDept": "A specific department or group",
+    "audienceGroup": "A specific department or group",
+    "censoDeptDesc": "Create a dynamic census and join — members verify each other, only those vouched by group colleagues enter",
+    "audienceGroupDesc": "Create a dynamic census and join — members verify each other, only those vouched by group colleagues enter",
+    "dateLabel": "Event date *",
+    "riskLabel": "Risk level",
+    "riskLow": "Low — full democracy",
+    "riskMed": "Medium — restrictions",
+    "riskHigh": "High — authoritarian regime",
+    "riskCritical": "Critical — active repression",
+    "riskWarn": "High-risk protest. Participants should take additional precautions.",
+    "riskWarning": "⚠️ High-risk protest. Participants should take additional precautions.",
+    "modTitle": "Automatic validation criteria",
+    "mod1": "Verifiable source — link to article, official document or statistical data",
+    "mod2": "Public recipient — institution with public funds or mandate (not political parties)",
+    "mod3": "Abuse complaint — not improvement requests or political preferences",
+    "mod4": "Action verbs — demand, denounce, resign. Not: ask, request, propose",
+    "validationTitle": "✅ Automatic validation criteria",
+    "validationStep1": "Verifiable source — link to article, official document or statistical data",
+    "validationStep2": "Public recipient — institution with public funds or mandate (not political parties)",
+    "validationStep3": "Abuse complaint — not improvement requests or political preferences",
+    "validationStep4": "Action verbs — demand, denounce, resign. Not: ask, request, propose",
+    "submit": "Create event →",
+    "errTitle": "Title is required",
+    "errDesc": "Description is required",
+    "errDemands": "Indicate what you demand",
+    "errFocal": "Please select an institution from the suggestions list — type a name and choose from the dropdown",
+    "errDate": "Event date is required",
+    "errPais": "Select the country for the event",
+    "errCountry": "Select the country for the event",
+    "errRegion": "Indicate the region or province",
+    "errDominio": "Indicate the institutional email domain",
+    "errEmailDomain": "Indicate the institutional email domain",
+    "errAbuso": "Select the type of abuse",
+    "errAbuse": "Select the type of abuse",
+    "errFuente": "Indicate the source proving the fact",
+    "confirmWeakVerb": "We detected a verb that may weaken your demand (\"request\", \"ask\", etc.).\n\nDo you want to continue anyway?",
+    "errWeakVerb": "We detected a verb that may weaken your demand (\"request\", \"ask\", etc.).\n\nDo you want to continue anyway?",
+    "errVerb": "Demands must include action verbs like \"demand\", \"denounce\" or \"require\".",
+    "errNoActionVerb": "Demands must include action verbs like \"demand\", \"denounce\" or \"require\".",
+    "confirmPublish": "Confirm you want to publish this event?\n\n\"{title}\"\n\nOnce published it cannot be edited or deleted.",
+    "successToast": "✓ Event created — it now appears on the map",
+    "errTargetRejected": "This entity is not accepted. Voice Protest only accepts public institutions with a public mandate or public funds — not political parties, private companies or individuals.",
+    "errTargetChecking": "Verifying with Wikidata...",
+    "createdOk": "✓ Protest created — it now appears on the map.",
+    "errTargetRejectedShort": "Not allowed on Voice Protest",
+    "errTargetReview": "Needs manual review before publishing",
+    "createdSaldo": "✓ Protest created — fund it from the protest page to start receiving verified adhesions.",
+    "endsAt": "Your protest will end on",
+    "principleNote": "Voice Protest verifies participation. It does not verify truth.",
+    "eventScore": "event",
+    "scopeLocalCity": "Local — city/municipality",
+    "scopeLocalCityBadge": "Local scope",
+    "scopeLocalCityDesc": "Event of local scope. Participants with GPS confirmed within the municipality appear as locally verified in the public report.",
+    "municipioLabel": "Municipality",
+    "municipioPlaceholder": "Search municipality (e.g. Santander, Utrecht, Lyon...)",
+    "municipioHint": "Select the exact municipality from the list. Used to classify participants by geographic proximity in the public report.",
+    "errMunicipio": "Please select a municipality for this local event"
+  },
+  "detail": {
+    "back": "← Back to map",
+    "statAdheridos": "Supporters",
+    "statCiudades": "Cities",
+    "statRestante": "Remaining",
+    "geoValidation": "Geographic validation",
+    "geoSim": "SIM / Prefix",
+    "geoIp": "IP / Location",
+    "geoDiff": "✗ Different country",
+    "geoConfidence": "Geographic confidence",
+    "lockMsg": "🔒 Device locked:",
+    "geoMsg": "🌍 Outside geographic scope:",
+    "secTitle": "Security guarantees",
+    "secHash": "HMAC-SHA256 identifier",
+    "secHashSub": "After verification, your number is transformed into an irreversible HMAC-SHA256 pseudonymous identifier. The original number is not stored.",
+    "secSms": "SMS verification",
+    "secSmsSub": "Your number verifies you as a unique participant connected to the relevant community. One verified number, one adhesion.",
+    "secOne": "One verified number · one adhesion per scope",
+    "aboutTitle": "About this event",
+    "demandsTitle": "⚡ What we demand",
+    "riskHigh": "🕵️ High-risk regime. Your adhesion is pseudonymous. No location data is collected. Your phone number is not stored — only its cryptographic hash.",
+    "riskGlobal": "🌍 Global protest. Your participation will be verified as coming from a unique participant. Your identity is not visible to other participants.",
+    "riskCensus": "👥 Census-based event. Your adhesion is verified through your institutional email + peer vouching.",
+    "riskEmail": "📧 Institutional verification. You will verify your identity through your institutional email.",
+    "riskNormal": "🛡️ Your adhesion is pseudonymous. Your number is transformed into an irreversible cryptographic hash. Your identity is not visible to other participants.",
+    "joinJoined": "✓ Joined — identity protected",
+    "joinLocked": "🔒 Device locked",
+    "joinGeo": "🌍 Out of scope",
+    "joinCensus": "👥 Join the census",
+    "joinInitCensus": "🌱 Start the census",
+    "joinEmail": "📧 Verify email and join",
+    "joinAnon": "Join — identity protected",
+    "viral": "VIRAL",
+    "viralMake": "Make it viral",
+    "viralShared": "shared",
+    "myGroup": "👥 My group",
+    "seeCensus": "👥 See the census",
+    "viralCount": "{count} people have already made this event VIRAL",
+    "viralCountSuffix": "people have already made this event VIRAL",
+    "aboutThisCall": "About this event",
+    "whatWeDemand": "⚡ What we demand",
+    "speedToday": "new supporters today",
+    "trendUp": "↑ more than yesterday",
+    "trendDown": "↓ fewer than yesterday",
+    "donTitle": "💰 Independent funding",
+    "donPosibles": "possible supporters",
+    "donSaldo": "Balance:",
+    "donCount": "{count} donations · {total}€ total",
+    "donAgotado": "⚠️ Balance depleted — this event needs your support",
+    "donApoyar": "☕ Support this event",
+    "donAgotadoHint": "Cover 20 verifications for €1 and invite others to contribute.",
+    "joinSinSaldo": "No funds — support this protest",
+    "closesOn": "Closes on",
+    "directedAt": "Directed at",
+    "typeOfAbuse": "Type of abuse",
+    "source": "Source"
+  },
+  "verify": {
+    "spinVerifying": "Verifying your participation...",
+    "spinRegistering": "Registering verified adhesion...",
+    "spinGenerating": "Generating your receipt...",
+    "successTitle": "Your voice counts!",
+    "successBody": "Your verified adhesion has been recorded. Your identity is protected — only an irreversible HMAC-SHA256 pseudonymous identifier derived from your phone number is retained.",
+    "receipt": "Receipt:",
+    "viral": "🔥 VIRAL — Make it viral now",
+    "backDetail": "← See the event",
+    "seeReport": "📊 See full report",
+    "goMap": "Go to world map",
+    "toastError": "Error registering adhesion: {msg}",
+    "toast": "✓ Verified adhesion registered",
+    "toastNational": "Cannot join. This protest is only for verified participants connected to the national scope of {country}.",
+    "notiOn": "🔔 Notifications enabled",
+    "notiOff": "🔔 Notify me when it closes",
+    "toastAlready": "You have already joined this protest with this phone number.",
+    "toastSinSaldo": "This protest has no funds. Support it to enable adhesions.",
+    "notiInfo": "If you enable notifications, your browser will be linked to this protest to send you the result. This slightly reduces your pseudonymity. If you prefer maximum privacy, do not enable notifications."
+  },
+  "about": {
+    "heroTitle": "The tool. No tricks.",
+    "heroBody": "Voice Protest is not affiliated with any ideology, political party or institution. It is neutral infrastructure for verified participation, accessible from anywhere and without physical risk.",
+    "manifesto": "\"A street protest measures who can be there that day. We measure verifiable support from those who choose to participate — using technical safeguards designed to verify that each adhesion comes from a unique participant connected to the relevant community.\"",
+    "manifestoLabel": "Core principle:",
+    "sec1Title": "What Voice Protest is — and isn't",
+    "card1Title": "Public abuse report",
+    "card1Body": "Corruption, nepotism, serious negligence, repression, opacity. Against institutions using public money or mandate.",
+    "card2Title": "Not a petition platform",
+    "card2Body": "We don't accept improvement requests, proposals or political preferences. Change.org exists for that.",
+    "card3Title": "Public recipient",
+    "card3Body": "Institutions that exercise public functions or use public funds: governments, parliaments, local councils, public universities, public hospitals, public media, among others.",
+    "card4Title": "Verifiable fact",
+    "card4Body": "Every event must include a source — press article, official document or statistical data.",
+    "card5Title": "Action verbs",
+    "card5Body": "Demand, denounce, resign, investigate, dismiss. Not: ask, request, propose, thank.",
+    "card6Title": "Automatic validation",
+    "card6Body": "The form validates verifiable source, type of abuse and action verbs, according to the platform's published rules.",
+    "sec2Title": "Geographic scope — how it works",
+    "geo1Title": "National",
+    "geo1Body": "Verified participants in that country only. Eligibility is determined through SIM verification and additional geographic indicators.",
+    "geo2Title": "Local",
+    "geo2Body": "Region, province, city, district or institution. Institutional protests may require verification via the corresponding email domain.",
+    "geo3Title": "Global",
+    "geo3Body": "No geographic restriction. The report shows distribution by country.",
+    "geo4Title": "1 adhesion per protest",
+    "geo4Body": "Each verified phone number can only adhere once to each protest, regardless of the device used.",
+    "geo5Title": "Independent scopes",
+    "geo5Body": "Joining a protest does not prevent joining others of a different scope. National, local and global protests are independent from each other.",
+    "sec3Title": "Membership census — local events",
+    "censo1Title": "Institutional email",
+    "censo1Body": "Verify your membership in a university, hospital, organisation or community with an institutional domain configured for that protest.",
+    "censo2Title": "Vouch graph",
+    "censo2Body": "Accredited members can vouch for new participants. The number of vouches required is configurable per group. Founding groups can be accredited automatically.",
+    "censo3Title": "Email not stored",
+    "censo3Body": "The email is used solely for verification and transformed into an irreversible HMAC-SHA256 identifier. The original email is not stored persistently.",
+    "censo4Title": "Dynamic census",
+    "censo4Body": "The census is built from real verifications and accredited adhesions. No external member list is imported.",
+    "sec4Title": "Security",
+    "seg1Title": "Pseudonymous verification",
+    "seg1Body": "Your phone number is used solely for initial verification. It is then transformed into an irreversible HMAC-SHA256 pseudonymous identifier. The original number is not retained after verification is complete.",
+    "seg2Title": "SMS verified",
+    "seg2Body": "One real number, one adhesion per protest. Significantly reduces duplicate participation and impersonation attempts.",
+    "seg3Title": "Public verifiability",
+    "seg3Body": "Reports include integrity hashes and verifiable public commitments. Anyone can verify that published results match the data recorded at protest closure.",
+    "openTitle": "Transparency & Open Data",
+    "openCard1Title": "Public API",
+    "openCard1Body": "Free API for researchers and journalists. Aggregated data, no authentication required. →",
+    "openCard2Title": "Open Source",
+    "openCard2Body": "Full source code available under AGPL 3.0 at <a href=\"https://github.com/cero-absoluto/vozciudadana\" target=\"_blank\" style=\"color:var(--accent)\">GitHub</a>.",
+    "principleNote": "Voice Protest verifies participation. It does not verify truth.",
+    "openCard3Teaser": "No advertising. No data sales. No tracking cookies.",
+    "openCard4Teaser": "No institutional funding. No large donors. Individual contributions up to €100."
+  },
+  "informe": {
+    "loading": "Loading report...",
+    "notFound": "The event was not found.",
+    "headerLabel": "Verified public report",
+    "fuente": "📎 Source:",
+    "tipoAbuso": "⚠️ Type of abuse:",
+    "headlineBlock": "📢 Political headline",
+    "headline": "{count} verified participants from {country} demand from {focal}: \"{demands}\"",
+    "geoTitle": "📍 Geographic distribution",
+    "geoByRegion": "By region:",
+    "geoByCity": "By city:",
+    "moreCities": "and {n} more cities.",
+    "adhesion": "adhesion",
+    "adhesiones": "adhesions",
+    "fiabilidadTitle": "🔬 Verification quality",
+    "fiabilidadAlta": "High reliability (85-95%)",
+    "fiabilidadMedia": "Medium reliability (75-84%)",
+    "fiabilidadBase": "Base reliability (60-74%)",
+    "fiabilidadSin": "Unclassified",
+    "fiabilidadSinDesc": "Adhesions prior to the reliability system",
+    "fiabilidadNoData": "No reliability data available.",
+    "ciudadanos": "verified participants",
+    "numbersTitle": "🔢 The three numbers",
+    "statAdhesiones": "Adhesions",
+    "statCiudades": "Cities",
+    "statVerificadas": "Verified",
+    "gpsTitle": "📍 Geographic verification level",
+    "gpsVerified": "GPS verified ✅",
+    "gpsSim": "SIM/IP only 📱",
+    "gpsNote": "Adhesions with confirmed GPS certify the participant's physical location at the time of joining.",
+    "humanidadTitle": "🧠 Proof of humanity",
+    "pais": "distinct country",
+    "paises": "distinct countries",
+    "idioma": "distinct language",
+    "idiomas": "distinct languages",
+    "firstAdhesion": "First adhesion:",
+    "lastAdhesion": "Last adhesion:",
+    "penetracionTitle": "🌍 Universe penetration",
+    "penetracionBody": "{count} verified adhesions out of an eligible universe of participants from {country} connected to this scope.",
+    "chainTitle": "🔒 Verification chain",
+    "chainBody": "Each adhesion was verified via: reCAPTCHA v3 (proof of humanity) + SMS OTP (real number) + HMAC-SHA256 hash (pseudonymisation) + device uniqueness.",
+    "selloTitle": "🔐 Integrity seal",
+    "selloHashLabel": "HMAC-SHA256 integrity hash — calculated at close from all adhesion nullifiers:",
+    "selloSourceBtn": "View source code on GitHub →",
+    "selloGenerated": "Report generated:",
+    "selloId": "Event ID:",
+    "selloBlockchain": "Public integrity ledger — planned for v2.0. Not yet implemented.",
+    "back": "← Back",
+    "abusoCorrupcion": "Corruption or embezzlement",
+    "abusoNepotismo": "Nepotism or favoritism",
+    "abusoDerechos": "Violation of fundamental rights",
+    "abusoNegligencia": "Serious negligence",
+    "abusoRepresion": "Repression or censorship",
+    "abusoOpacidad": "Opacity or lack of accountability",
+    "abusoOtro": "Other public power abuse",
+    "velocidadTitle": "📈 Growth speed",
+    "velocidadMediaDiaria": "Daily average",
+    "velocidadPico": "Peak —",
+    "velocidadPorDia": "Adhesions per day",
+    "velocidadNoData": "No speed data available.",
+    "selloSourceDesc": "Publicly audited source code:",
+    "downloadPdf": "⬇ Download PDF",
+    "embedBtn": "＜/＞ Embed",
+    "embedTitle": "＜/＞ Embed this protest",
+    "embedDesc": "Copy this line of code and paste it anywhere in your article, blog or website. The counter updates in real time.",
+    "embedCopied": "✅ Copied!",
+    "embedCopy": "📋 Copy code",
+    "embedClose": "Close",
+    "embedPreview": "Preview",
+    "embedVerifiedCitizens": "verified participants",
+    "embedJoin": "🗳️ Join — identity protected",
+    "selloDesc": "This hash is calculated at the moment the protest closes using HMAC-SHA256 applied to the protest ID, final count, reliability breakdown, city distribution, adhesion timestamps and all internal identifiers. It serves as a tamper-evident seal — any modification after closure would produce a different hash. Independent public verification with full data disclosure is planned for a future version.",
+    "selloVerify": "Note: The current integrity hash is an internal cryptographic seal calculated at protest closure. Public independent verification will be available in a future version.",
+    "selloHashPending": "Integrity hash will be calculated when the protest closes.",
+    "verifyBtn": "Verify integrity",
+    "verifyRunning": "Verifying...",
+    "verifyOk": "✅ Integrity verified — this report matches the public integrity data.",
+    "verifyFail": "❌ Integrity mismatch — the report may have been modified or the data is inconsistent.",
+    "verifyV1": "ℹ️ This report uses integrity version 1 (internal seal). Public independent verification is available from version 2 onwards.",
+    "verifyNoHash": "No integrity hash available for this protest.",
+    "geoLocalTitle": "Geographic participation breakdown",
+    "geoLocalSubtitle": "Local event — {municipio}. Participants are classified by their geographic proximity at the time of adhesion.",
+    "geoLocalVerified": "GPS verified in municipality",
+    "geoLocalVerifiedDesc": "Participants with GPS confirmed within {municipio} at the time of adhesion.",
+    "geoNational": "National participants",
+    "geoNationalDesc": "Participants without local GPS confirmation. May include residents temporarily outside the municipality.",
+    "geoInternational": "International participants",
+    "geoInternationalDesc": "Participants with a SIM from a different country."
+  },
+  "invite": {
+    "loading": "Validating invitation...",
+    "title": "You've been invited to the group",
+    "howTitle": "ℹ️ How it works",
+    "howBody": "By accepting, you'll verify your institutional email. The endorsement of the person who invited you is registered automatically.\n\nIf you were invited directly by the genesis node, you'll be accredited without needing additional endorsements.\n\nIf invited by another member, you'll need 1 more endorsement from any accredited member.",
+    "privacyTitle": "🔒 Your privacy",
+    "privacyBody": "Your email is used solely for verification. It is then transformed into an irreversible cryptographic hash and the original is not retained. Your identity is not visible to other participants.",
+    "warning": "⚠️ This link is single-use and expires in 48 hours. If you're not a group member, please don't use it.",
+    "accept": "Accept invitation →",
+    "reject": "Decline",
+    "invalidTitle": "Invalid invitation",
+    "invalidBody": "This link has expired, has been used the maximum number of times, or doesn't exist.",
+    "goMap": "Go to map →",
+    "errorInvalid": "Error — invalid invitation"
+  },
+  "migrupo": {
+    "back": "← Back",
+    "title": "My Group —",
+    "noExistsTitle": "The census doesn't exist yet",
+    "noExistsBody": "Be the first to start it. As the genesis node you can invite colleagues and endorse their requests.",
+    "noCensusTitle": "The census doesn't exist yet",
+    "noCensusBody": "Be the first to start it. As the genesis node you can invite colleagues and endorse their requests.",
+    "initCensus": "Start the census",
+    "genesisTitle": "📧 Verify your institutional email",
+    "verifyEmail": "📧 Verify your institutional email",
+    "genesisBody": "Enter your email {domain} to become the genesis node of the census.",
+    "genesisIntro": "Enter your email {domain} to become the genesis node of the census.",
+    "emailLabel": "Your institutional email",
+    "sendCode": "Request code →",
+    "requestCode": "Request code →",
+    "sending": "Sending...",
+    "otpTitle": "Enter the code",
+    "enterCode": "Enter the code",
+    "verifyCreate": "Verify and create census →",
+    "verifying": "Verifying...",
+    "statusTitle": "Census status",
+    "censusStatusTitle": "📊 Census status",
+    "statAccredited": "Accredited",
+    "statPending": "Pending",
+    "statMyVouches": "My vouches",
+    "progressLabel": "Census progress",
+    "progressGoal": "goal",
+    "myStatusTitle": "👤 My status",
+    "genesis": "⭐ Genesis node",
+    "accredited": "✓ Accredited",
+    "vouchesGiven": "You've given {given} vouches · You can give {remaining} more",
+    "pendingTitle": "🔔 Pending requests ({count})",
+    "noPending": "No pending requests.",
+    "anonymousCandidate": "Candidate pending verification",
+    "vouchesReceived": "{received}/2 vouches · Requested {date}",
+    "vouch": "Vouch",
+    "vouched": "✓ Vouched",
+    "noVouches": "No vouches",
+    "inviteTitle": "🔗 Invite colleagues",
+    "inviteDesc": "Generate a personal link for each colleague in your group you want to invite. Each link is single-use and expires in 48 hours.",
+    "inviteWarning": "⚠️ This link is personal and non-transferable. If you forward it and an outsider uses it, you compromise the census integrity.",
+    "invitesLeft": "📊 Available invitations: {n} remaining",
+    "regenerate": "↺ Regenerate and share",
+    "generateLink": "🔗 Generate and share link",
+    "copyBtn": "📋",
+    "toastCreated": "✓ Census started — you are the genesis node",
+    "toastVouched": "✓ Vouch registered",
+    "toastLoadError": "Error loading group status",
+    "toastVouchError": "Could not register the vouch. Please try again.",
+    "errorSend": "Error sending the code.",
+    "otpError": "Enter the 6-digit code",
+    "shareTitle": "Join the census of {name}",
+    "shareText": "I invite you to join the verified census. Only for group members — don't share this link outside.",
+    "ourGroup": "our group",
+    "linkCopied": "✓ Link copied — share it only with your colleagues",
+    "errorDomain": "The email must be from the {domain} domain",
+    "errorCreateGroup": "Error creating the group.",
+    "toastLinkError": "Could not generate the invitation link. Please try again.",
+    "linkCopyError": "Could not copy — copy the link manually"
+  },
+  "unirse": {
+    "back": "← Back",
+    "title": "Join the group",
+    "emailTitle": "📧 Verify your institutional email",
+    "emailBody": "To join the group you need to verify that you have a {domain} email. The email won't be stored.",
+    "step1Title": "📧 Verify your institutional email",
+    "step1Body": "To join the group you need to verify that you have a {domain} email. The email won't be stored.",
+    "emailLabel": "Institutional email *",
+    "sendCode": "Send code →",
+    "sending": "Sending...",
+    "privacyNote": "🔒 Your email is converted into an irreversible cryptographic hash. Your identity is not visible to other participants.",
+    "hashNote": "🔒 Your email is converted into an irreversible cryptographic hash. Your identity is not visible to other participants.",
+    "otpTitle": "📬 Enter the code",
+    "otpBody": "We've sent a 6-digit code to your email. It expires in 10 minutes.",
+    "step2Title": "📬 Enter the code",
+    "step2Body": "We've sent a 6-digit code to your email. It expires in 10 minutes.",
+    "verifyCode": "Verify code →",
+    "verifying": "Verifying...",
+    "changeEmail": "← Change email",
+    "successTitle": "Request sent",
+    "successBody": "Your email has been verified and your request is pending endorsements. You need {n} more endorsement from accredited colleagues to join the group. Coordinate with them.",
+    "step3Title": "Request sent",
+    "step3Body": "Your email has been verified and your request is pending endorsements.\n\nYou need {n} more endorsement from accredited colleagues to join the group.\nCoordinate with them.",
+    "step4Title": "🎉 Accredited!",
+    "step4Body": "Your email has been verified and you've been automatically accredited as a census member.\n\nYou can now join the event and invite other colleagues.",
+    "goMap": "Go to map →",
+    "errEmail": "Enter your institutional email",
+    "errDomain": "Email must be from domain {domain}",
+    "errOtp": "Enter the 6-digit code",
+    "errOtpWrong": "Incorrect or expired code.",
+    "institution": "Institution",
+    "yourInstitution": "your institution",
+    "errorSend": "Error sending the code.",
+    "accreditedTitle": "Accredited!"
+  },
+  "verificacional": {
+    "title": "🏛️ Institutional verification",
+    "subtitle": "Enter your {domain} email to verify your membership.",
+    "emailLabel": "Institutional email *",
+    "sendCode": "Send code →",
+    "sending": "Sending...",
+    "back": "← Back",
+    "otpTitle": "Code sent",
+    "otpSubtitle": "We've sent a 6-digit code to your email. It expires in 10 minutes.",
+    "otpLabel": "Verification code *",
+    "verifyCode": "Verify code →",
+    "verifying": "Verifying...",
+    "changeEmail": "← Change email",
+    "successTitle": "Adhesion registered!",
+    "successBody": "Your voice has been counted and verified. Your identity is protected.",
+    "receipt": "Receipt:",
+    "viral": "🔥 VIRAL — Make it viral now",
+    "backDetail": "← See the event",
+    "goMap": "Go to world map",
+    "errEmail": "Enter your institutional email",
+    "errEmailInvalid": "Invalid email",
+    "errDomain": "Email must be from domain {domain}",
+    "errOtp": "Enter the 6-digit code",
+    "errOtpWrong": "Incorrect or expired code.",
+    "yourInstitution": "your institution",
+    "errorSend": "Error sending the code. Please try again."
+  },
+  "share": {
+    "previewLabel": "🔥 Message that will be sent",
+    "whatsapp": "WhatsApp",
+    "whatsappDesc": "Send the message to your contacts and groups",
+    "telegram": "Telegram",
+    "telegramDesc": "Spread it in channels and groups",
+    "copy": "Copy link + message",
+    "copyDesc": "For TikTok, Instagram, X, Facebook or wherever you want",
+    "close": "Close",
+    "viralMsg": "Hi, I just joined this verified protest. I encourage you to participate: {url}",
+    "toastWA": "🔥 Shared via WhatsApp",
+    "toastTG": "🔥 Shared via Telegram",
+    "toastCopy": "📋 Copied! Paste it on TikTok, Instagram or wherever you want"
+  },
+  "install": {
+    "title": "Install Voice Protest",
+    "subtitle": "Follow the result in real time · No App Store · No one's permission",
+    "btn": "Install",
+    "toastInstalled": "✓ Voice Protest installed"
+  },
+  "map": {
+    "hint": "Click a country to filter · scroll to zoom",
+    "clearFilter": "Show all",
+    "legendTitle": "Activity",
+    "legendNone": "No activity",
+    "legendLow": "Low",
+    "legendMed": "Medium",
+    "legendHigh": "High/Critical"
+  },
+  "archivo": {
+    "title": "📁 File",
+    "subtitle": "Closed events — citizen memory",
+    "filterAll": "All types",
+    "filterNational": "National",
+    "filterRegional": "Regional",
+    "filterGlobal": "Global",
+    "filterAllCountries": "All countries",
+    "sortDate": "Most recent",
+    "sortAdheridos": "Most supporters",
+    "empty": "No closed events match these filters",
+    "seeReport": "See final report →",
+    "loading": "Loading archive...",
+    "badgeNational": "National",
+    "badgeRegional": "Regional",
+    "badgeGlobal": "Global",
+    "metaAdheridos": "supporters",
+    "metaCiudades": "cities"
+  },
+  "api": {
+    "openData": "Open Data",
+    "title": "Public API",
+    "desc": "Voice Protest provides a free, open API for researchers, journalists and developers. All data is aggregated and anonymised — no personal data is ever exposed.",
+    "badgeFree": "✅ Free",
+    "badgeNoAuth": "🔓 No auth required",
+    "badgeAggregated": "📊 Aggregated only",
+    "baseUrlTitle": "Base URL",
+    "rateLimitTitle": "Rate limit",
+    "rateLimitDesc": "120 requests per minute per IP. No authentication required.",
+    "exampleResponse": "Example response (illustrative)",
+    "tryIt": "▶ Try it",
+    "tryUtrecht": "▶ Try with Utrecht",
+    "endpoint1Desc": "Global platform statistics — total protests, adhesions, countries.",
+    "endpoint2Desc": "List all protests with aggregated data.",
+    "endpoint2Params": "Query params:",
+    "endpoint3Desc": "Full data for a single protest including reliability breakdown, geographic distribution and growth stats.",
+    "attributionTitle": "Attribution",
+    "attributionDesc": "When using this data, please credit:",
+    "badgeAGPL": "Code: AGPL 3.0",
+    "endpoint4Desc": "Public commitments and integrity data needed to independently verify the published report.",
+    "endpoint4Note": "This endpoint materialises the public verifiability of Voice Protest. Anyone can use it to verify that the published hash matches exactly the data in the report.",
+    "attributionLine": "Voice Protest — voiceprotest.org",
+    "attributionSource": "Source code available on GitHub (AGPL 3.0)",
+    "attributionData": "Public data provided by Voice Protest."
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "updated": "Last updated: June 2026",
+    "principleTitle": "Our principle",
+    "principleBody": "Voice Protest is built on the principle that democratic participation must not require sacrificing privacy. We collect only what is strictly necessary to verify that each adhesion is real and unique. Voice Protest provides pseudonymous participation — your identity is not visible to other participants and is not retained after verification, but a cryptographic identifier derived from your phone number is kept to prevent duplicate adhesions.",
+    "collectTitle": "What we collect",
+    "collect1Title": "Cryptographic hash of your phone number",
+    "collect1Body": "Your phone number is transmitted over HTTPS to our server solely to send the SMS verification code and to extract your country prefix for geographic eligibility. It is not stored persistently after this process is complete. Only its HMAC-SHA256 hash — a pseudonymous identifier — is retained to prevent duplicate adhesions. The original number cannot reasonably be recovered from the stored identifier.",
+    "collect2Title": "Approximate location — city and region only",
+    "collect2Body": "If you grant GPS permission, the coordinates are used to determine your city, region and country via the Nominatim service (OpenStreetMap geocoding). This call is always made via our server — never directly from your browser. Nominatim receives our server's IP address, not yours. Coordinates are discarded immediately after geocoding and are never stored in the database.",
+    "collect3Title": "Random device identifier",
+    "collect3Body": "Voice Protest generates a random identifier on your device to help prevent duplicate adhesions, abuse of verification systems and automated mass requests. This identifier contains no personal information and is used solely to protect the integrity and security of the platform.",
+    "collect4Title": "Language preference",
+    "collect4Body": "Your browser sends an Accept-Language header with each request to our server. Your in-app language preference is stored locally on your device only and is not transmitted separately.",
+    "neverTitle": "Our privacy commitments",
+    "never1": "We do not store your phone number. It is used solely to send the verification SMS and is not retained after that process is complete. Only its HMAC-SHA256 hash — a pseudonymous identifier — is stored.",
+    "never2": "We do not use cookies for tracking or advertising.",
+    "never3": "Voice Protest does not sell or monetise personal data.",
+    "never4": "Voice Protest does not provide direct access to participation data to governments, political parties or institutions. We may be required to comply with lawful court orders under applicable Dutch and EU law.",
+    "never5": "We do not display advertising of any kind.",
+    "providersTitle": "Service providers",
+    "providersDesc": "The following third-party services are used solely to operate the platform. They process data on our behalf and are bound by data processing agreements.",
+    "providerSupabase": "Database and authentication",
+    "providerRailway": "Backend server infrastructure — US West (California, USA). Data processed by the server (phone number during OTP, GPS coordinates during geocoding) is temporarily transferred to the US. It is not stored in Railway — only in Supabase (EU).",
+    "providerTwilio": "SMS verification (OTP)",
+    "providerResend": "Transactional email",
+    "providerRecaptcha": "Bot protection (background, no cookies)",
+    "cookiesTitle": "Cookies",
+    "cookiesBody": "Voice Protest does not use tracking cookies or advertising cookies. Language and UI preferences are stored in your browser's localStorage — they never leave your device and require no consent banner.",
+    "retentionTitle": "Data retention",
+    "retentionBody": "Individual adhesion data (hashed phone number, approximate location, reliability score) is soft-deleted 90 days after a protest closes — meaning it is marked as deleted and excluded from all queries. The public report is never deleted: it contains only statistical aggregates (total count, cities, reliability breakdown) and no personal data of any kind. No individual adhesion can be traced from the public report.",
+    "controllerTitle": "Data controller",
+    "sourceNote": "All source code is publicly auditable under AGPL 3.0 licence.",
+    "reportNote": "The public verified report",
+    "reportNoteBody": "The public report generated by each protest contains only aggregated statistics — total adhesions, geographic distribution, reliability breakdown. It contains no personally identifiable data and is designed to remain accessible indefinitely. It is the public, auditable record of verified participation.",
+    "metadataTitle": "Technical metadata stored per adhesion",
+    "metadataBody": "For each adhesion we store: HMAC-SHA256 hash of phone number, city and region (from geocoding), random device identifier, reliability score (60–95%), geographic signals used (GPS / SIM / IP), approximate timestamp (rounded to the nearest hour) and a boolean confirming whether GPS was active. We document these data transparently and in full because we believe participants have the right to know exactly what information is retained.",
+    "pushTitle": "Push notifications (optional)",
+    "pushBody": "If you choose to enable push notifications after joining a protest, your browser's push endpoint — a technical identifier assigned by your browser provider (Google, Mozilla, etc.) — is stored linked to that protest. This endpoint is used solely to send you the result notification and is deleted when the protest closes. Enabling notifications slightly reduces your pseudonymity. It is entirely optional and requires your explicit consent.",
+    "abuseTitle": "Protection against abuse",
+    "abuseBody": "To protect verification resources and prevent automated use of the platform, Voice Protest may temporarily record pseudonymous technical identifiers — such as HMAC-SHA256 hashes of phone numbers, pseudonymous IP hashes and random device identifiers. These records are used exclusively to prevent fraud, spam and abuse of verification systems. They are automatically deleted after 7 days.",
+    "gpsStorageNote": "GPS coordinates are temporarily stored in the browser's local storage solely to pass them between screens during the adhesion process. They are deleted immediately after the adhesion is registered — before the process completes. They are never sent to any server in their original form, nor retained in the browser after the process ends.",
+    "nullifiersTitle": "Nullifiers and public commitments",
+    "nullifiersBody": "To ensure each phone number can only adhere once per protest, the system calculates a nullifier — a unique identifier derived from the phone hash and protest identifier — and verifies it does not already exist. The nullifier is never published. Instead, at protest closure, public commitments — SHA256(protest_id + nullifier) — are generated, allowing anyone to verify the report integrity hash without revealing identities or enabling cross-protest correlation.",
+    "integrityRecordsTitle": "Permanent integrity records",
+    "integrityRecordsBody": "At protest closure, the data needed for public verification — public commitments, geographic distribution, integrity hash — are saved in a permanent record (integrity_records). This record survives the 90-day deletion of individual adhesions, designed to remain available long-term.",
+    "institutionalEmailTitle": "Institutional email",
+    "institutionalEmailBody": "For protests with institutional verification, the participant provides an email address from the configured domain. This email is used solely to send the OTP verification code. Like the phone number, the original email is not stored — it is transformed into an irreversible HMAC-SHA256 hash. The email is never used for subsequent communications or shared with the protest convener.",
+    "donationsTitle": "Donations",
+    "donationsBody": "Donations are processed through external payment providers (such as Ko-fi and PayPal), which may process the donor's personal data — name, email, payment details — as part of completing the transaction. Voice Protest does not store the donor's identity, email or payment information. The platform records only the donation amount, currency, payment provider, timestamp and a non-identifying technical reference, used solely to update the protest's funding balance and the platform sustainability fund.",
+    "providerNominatim": "GPS geocoding — converts coordinates into city, region and country. All calls are made via our backend server. Nominatim receives our server's IP address, never the user's.",
+    "providerNominatimRegion": "EU / Variable (distributed OpenStreetMap infrastructure)",
+    "providerGithub": "Static frontend hosting (voiceprotest.org). GitHub Pages may receive the IP address of each visitor when serving the application files.",
+    "providerGithubRegion": "US"
+  },
+  "funding": {
+    "title": "Funding & Independence Policy",
+    "updated": "Last updated: June 2026",
+    "principleTitle": "Our founding principle",
+    "principleBody": "Voice Protest exists to provide an independent infrastructure for verified civic participation. Independence is a fundamental requirement of the platform. Voice Protest seeks to fund its operating costs through voluntary contributions from individuals, without financial control or influence from governments, political parties, companies or institutions.",
+    "costsTitle": "What it costs to run Voice Protest",
+    "costsDesc": "Voice Protest operates at minimal cost. Full transparency on current infrastructure:",
+    "costRailway": "Backend server infrastructure",
+    "costSupabase": "Database and authentication (currently free tier)",
+    "costTwilio": "SMS verification — per adhesion",
+    "costResend": "Institutional email verification (currently free tier)",
+    "costDomain": "voiceprotest.org domain",
+    "smsCost": "💬 SMS verification generates a variable cost per verification attempt — typically a few cents, depending on country, provider and retries. Contributions associated with a protest help cover these technical costs. Participating does not require payment.",
+    "acceptTitle": "What we accept",
+    "accept1": "Individual contributions from any person, up to the applicable per-donation limit.",
+    "accept2": "Small recurring contributions to cover operational costs.",
+    "accept3": "Contributions directed at covering infrastructure, security audits or technical improvements.",
+    "accept4": "Contributions from people who believe in the value of verified, independent participation.",
+    "rejectTitle": "What we do not accept",
+    "reject1": "Funding from political parties, governments or state institutions.",
+    "reject2": "Corporate, institutional or any funding from entities seeking to influence the governance, moderation or decisions of the platform. Voice Protest does not seek this type of funding. When a contribution is identifiable as coming from an entity that would compromise the independence of the project, it may be refused or returned.",
+    "reject3": "Donations conditioned on any change to platform behaviour, content moderation or results.",
+    "reject4": "Advertising of any kind.",
+    "reject5": "Revenue from the sale or commercialisation of user data.",
+    "reject6": "Funding that would create any conflict of interest with the platform's independence.",
+    "independenceTitle": "Independence guarantee",
+    "independenceBody": "Financial contributions do not grant control over the platform, its governance or any protest published on it. Donors do not receive privileged access, visibility advantages or the ability to influence moderation decisions. The editorial and technical independence of the platform is non-negotiable. If Voice Protest cannot be sustained through independent individual contributions, it will reduce its operational capacity rather than compromise this principle.",
+    "supportTitle": "How to support Voice Protest",
+    "supportBody": "If you believe in verified, independent participation, you can support the platform's operating costs through Ko-fi. Contributions go towards SMS, email, servers, domain, security and audits. The project is currently developed voluntarily and contributions are not used to pay salaries.",
+    "transparencyNote": "All source code is publicly auditable under AGPL 3.0.",
+    "transparencyTitle": "Financial transparency",
+    "transparencyBody": "Voice Protest maintains an internal financial record covering donations, operating costs and platform fund movements. Public transparency reports will be published progressively as the platform grows. The first report will be published when there is sufficient financial activity for the information to be meaningful. Voice Protest does not sell influence. Contributions only help cover the technical costs needed for verified participants to participate.",
+    "donationsNote": "Donations made through Ko-fi are registered automatically. Individual contributions are capped at €100 per donation to keep financing participatory. Donations received through other channels may still be registered manually.",
+    "donorPrivacyNote": "Ko-fi and PayPal may know your name and email as payment processors. Voice Protest does not store your identity — only the donation amount and currency are recorded to update this event's funding balance.",
+    "noInfluenceTitle": "Voice Protest does not sell influence",
+    "noInfluence1": "Contributions help cover technical costs.",
+    "noInfluence2": "They do not buy visibility.",
+    "noInfluence3": "They do not buy influence.",
+    "noInfluence4": "They do not buy results.",
+    "verificationProtectionTitle": "Protection of verification resources",
+    "verificationProtectionBody": "Voice Protest applies technical measures to prevent abusive verification code requests, automated attempts and malicious consumption of resources. These measures help protect the funds allocated to SMS and email verification so they can be used for legitimate participation.",
+    "splitTitle": "How protest donations are allocated",
+    "splitBody": "Donations directed to a specific protest are split between: 90% allocated to that protest's verification budget, and 10% allocated to the platform sustainability fund. This split may be adjusted in the future and will always be publicly documented.",
+    "surplusTitle": "Unused verification funds",
+    "surplusBody": "When a protest closes with unused verification funds, the remaining balance may be transferred to the platform sustainability fund and used exclusively for infrastructure, verification systems, security audits and platform maintenance.",
+    "allocationTitle": "How donations are allocated",
+    "allocationBody": "Contributions may be divided between protest verification resources and the long-term sustainability of Voice Protest. The allocation model is publicly documented and may evolve as the project matures. Donations made from a specific event's screen are automatically assigned to that event's verification balance. Donations made directly through Ko-fi without a reference to a specific event are credited to the platform sustainability fund.",
+    "sustainabilityTitle": "Platform sustainability fund",
+    "sustainabilityBody": "The sustainability fund exists to preserve the long-term independence of Voice Protest. It may be used for hosting, security, verification systems, audits and future maintenance of the platform.",
+    "limitTitle": "Per-donation limit",
+    "limitBody": "To preserve the independence and participatory nature of the project, individual contributions are currently limited to €100 per donation. The purpose is that protests are funded collectively by many participants, not promoted by a single large donor. If a payment above this limit is received, only €100 is registered as a computable contribution. Any excess is held for manual review and is not automatically credited to the protest balance or the platform fund.",
+    "corporateNote": "Voice Protest is funded primarily through small individual contributions. It does not seek funding from companies, political parties, public administrations or organisations seeking to influence the governance of the project."
   }
 }
-const loading = ref(true);
-const error = ref(false);
-const showEmbed = ref(false);
-const copied = ref(false);
-
-const embedCode = computed(() =>
-  `<script src="https://www.voiceprotest.org/widget.js?id=${route.params.id}"><\/script>`
-);
-
-function copyEmbed() {
-  navigator.clipboard.writeText(embedCode.value).then(() => {
-    copied.value = true;
-    setTimeout(() => { copied.value = false; }, 2000);
-  });
-}
-
-onMounted(async () => {
-  try {
-    const res = await fetch(
-      `${import.meta.env.VITE_API_URL}/api/protests/${route.params.id}/informe`
-    );
-    if (!res.ok) throw new Error('Not found');
-    data.value = await res.json();
-  } catch {
-    error.value = true;
-  } finally {
-    loading.value = false;
-  }
-});
-
-function formatDate(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('es-ES', {
-    day: 'numeric', month: 'long', year: 'numeric'
-  });
-}
-
-function formatDateTime(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleString('es-ES', {
-    day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
-  });
-}
-
-function pct(count) {
-  if (!data.value?.total_adhesiones) return 0;
-  return Math.round((count / data.value.total_adhesiones) * 100);
-}
-
-function pctLocal(count) {
-  const total = data.value?.desglose_geografico_local?.total;
-  if (!total) return 0;
-  return Math.round((count / total) * 100);
-}
-  function maxPct(count) {
-  if (!data.value?.velocidad?.adhesiones_por_dia?.length) return 0;
-  const max = Math.max(...data.value.velocidad.adhesiones_por_dia.map(d => d.count));
-  return max > 0 ? Math.round((count / max) * 100) : 0;
-}
-
-function downloadPDF() {
-  const d = data.value;
-  if (!d) return;
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const W = 210; const M = 18; const CW = W - M * 2;
-  let y = 0;
-
-  function nl(h = 7) { y += h; }
-  function line() { doc.setDrawColor(76,255,164); doc.setLineWidth(0.3); doc.line(M, y, W - M, y); nl(6); }
-  function h1(txt) { doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(255,255,255); doc.text(txt, M, y); nl(12); }
-  function h2(txt) { doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(76,255,164); doc.text(txt.toUpperCase(), M, y); nl(8); }
-  function body(txt, opts={}) {
-    doc.setFont('helvetica', opts.bold ? 'bold' : 'normal');
-    doc.setFontSize(11); doc.setTextColor(220,218,240);
-    const lines = doc.splitTextToSize(txt, CW);
-    lines.forEach(l => { if (y > 265) { doc.addPage(); setPageBg(); y = 22; } doc.text(l, M, y); nl(7); });
-  }
-  function kv(k, v) {
-    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(76,255,164);
-    doc.text(k + ':', M, y);
-    doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(240,238,255);
-    const val = doc.splitTextToSize(String(v), CW - 48);
-    doc.text(val[0], M + 48, y);
-    nl(7);
-  }
-  function setPageBg() { doc.setFillColor(12,11,20); doc.rect(0,0,210,297,'F'); }
-
-  // PAGE 1
-  setPageBg();
-  y = 20;
-
-  // Header band
-  doc.setFillColor(30,27,50); doc.rect(0, 10, 210, 30, 'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(76,255,164);
-  doc.text('VOICE PROTEST — VERIFIED PUBLIC REPORT', M, 18);
-  doc.setFontSize(8); doc.setTextColor(180,178,200);
-  doc.text('www.voiceprotest.org', M, 24);
-  doc.setFontSize(8); doc.setTextColor(140,138,170);
-  doc.text('Generated: ' + new Date().toISOString(), M, 30);
-  y = 46;
-
-  // Title
-  doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(255,255,255);
-  const titleLines = doc.splitTextToSize(d.protest.title, CW);
-  titleLines.forEach(l => { doc.text(l, M, y); nl(8); });
-  nl(2);
-
-  // Political headline
-  if (d.protest.demands && d.protest.focal_point) {
-    doc.setFillColor(20,18,35); doc.rect(M-2, y-4, CW+4, 14, 'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255,179,71);
-    const headline = d.total_adhesiones + ' verified citizens demand to ' + d.protest.focal_point + ': ' + d.protest.demands;
-    const hl = doc.splitTextToSize(headline, CW);
-    hl.forEach(l => { doc.text(l, M, y); nl(5); });
-    nl(3);
-  }
-
-  line();
-
-  // Section 1 — Convocation details
-  h2('1. CONVOCATION DETAILS');
-  kv('Country', d.protest.country_name || '—');
-  kv('Scope', d.protest.scope || '—');
-  kv('Focal point', d.protest.focal_point || '—');
-  kv('Start date', d.protest.starts_at ? new Date(d.protest.starts_at).toLocaleDateString('en-GB') : '—');
-  kv('End date', d.protest.ends_at ? new Date(d.protest.ends_at).toLocaleDateString('en-GB') : '—');
-  if (d.protest.tipo_abuso) kv('Abuse type', d.protest.tipo_abuso);
-  if (d.protest.fuente_url) kv('Source', d.protest.fuente_url);
-  if (d.protest.demands) { nl(1); body('Demands: ' + d.protest.demands); }
-  nl(2); line();
-
-  // Section 2 — Key figures
-  h2('2. KEY FIGURES');
-  kv('Total verified adhesions', d.total_adhesiones);
-  kv('Distinct cities', d.ciudades_distintas);
-  kv('Distinct countries', d.paises_distintos);
-  kv('Distinct languages', d.idiomas_distintos);
-  kv('Adhesions with GPS', d.adhesiones_con_gps + ' (' + Math.round(d.adhesiones_con_gps/Math.max(d.total_adhesiones,1)*100) + '%)');
-  kv('Adhesions SIM/IP only', d.adhesiones_sin_gps);
-  kv('First adhesion', d.primera_adhesion ? new Date(d.primera_adhesion).toLocaleString('en-GB') : '—');
-  kv('Last adhesion', d.ultima_adhesion ? new Date(d.ultima_adhesion).toLocaleString('en-GB') : '—');
-  nl(2); line();
-
-  // Section 3 — Verification quality
-  h2('3. VERIFICATION QUALITY');
-  if (d.desglose_fiabilidad) {
-    const fi = d.desglose_fiabilidad;
-    if (fi.alta?.count > 0) kv('High reliability (85-95%)', fi.alta.count + ' citizens — ' + (fi.alta.descripcion || ''));
-    if (fi.media?.count > 0) kv('Medium reliability (75-84%)', fi.media.count + ' citizens — ' + (fi.media.descripcion || ''));
-    if (fi.base?.count > 0) kv('Base reliability (60-74%)', fi.base.count + ' citizens — ' + (fi.base.descripcion || ''));
-    if (fi.sin_dato?.count > 0) kv('Unclassified', fi.sin_dato.count + ' citizens (prior to reliability system)');
-  }
-  nl(2); line();
-
-  // Section 4 — Geographic distribution
-  h2('4. GEOGRAPHIC DISTRIBUTION');
-  if (d.distribucion_regiones && Object.keys(d.distribucion_regiones).length > 0) {
-    body('By region:', {bold:true});
-    Object.entries(d.distribucion_regiones).forEach(([r, c]) => body('  ' + r + ': ' + c + ' adhesion' + (c>1?'s':'') ));
-    nl(1);
-  }
-  if (d.distribucion_ciudades?.length > 0) {
-    body('Top cities: ' + d.distribucion_ciudades.slice(0,15).join(' · '));
-    if (d.distribucion_ciudades.length > 15) body('...and ' + (d.distribucion_ciudades.length-15) + ' more cities.');
-  }
-  nl(2); line();
-
-  // Section 5 — Growth velocity
-  h2('5. GROWTH VELOCITY');
-  if (d.velocidad) {
-    kv('Daily average', d.velocidad.media_diaria + ' adhesions/day');
-    if (d.velocidad.dia_pico) kv('Peak day', d.velocidad.dia_pico.count + ' adhesions on ' + new Date(d.velocidad.dia_pico.fecha).toLocaleDateString('en-GB'));
-    if (d.velocidad.adhesiones_por_dia?.length > 0) {
-      nl(1);
-      body('Daily breakdown:', {bold:true});
-      d.velocidad.adhesiones_por_dia.forEach(dd => body('  ' + new Date(dd.fecha).toLocaleDateString('en-GB') + ': ' + dd.count + ' adhesions'));
-    }
-  }
-  nl(2); line();
-
-  // Section 6 — Verification chain
-  h2('6. VERIFICATION CHAIN');
-  body('Each adhesion was verified through a multi-layer process:');
-  body('  1. reCAPTCHA v3 — proof of humanity (bot detection)');
-  body('  2. SMS OTP — real phone number verification (one adhesion per number)');
-  body('  3. HMAC-SHA256 pseudonymous identifier — phone number not stored after verification. Direct personal identifiers are not stored after verification.');
-  body('  4. Device uniqueness — one device per protest scope');
-  body('  5. Geographic verification — SIM prefix, IP geolocation, GPS (optional)');
-  nl(2); line();
-
-  // Section 7 — Transparency seal
-  h2('7. TRANSPARENCY SEAL');
-  kv('Convocation ID', route.params.id);
-  kv('Open source', 'github.com/cero-absoluto/vozciudadana');
-  kv('License', 'AGPL 3.0 — publicly auditable');
-  kv('Report generated', new Date().toISOString());
-  if (d.protest.hash_integridad) {
-    nl(1);
-    body('Integrity hash (HMAC-SHA256 at closure):', {bold:true});
-    doc.setFont('courier','normal'); doc.setFontSize(9); doc.setTextColor(76,255,164);
-    const hashLines = doc.splitTextToSize(d.protest.hash_integridad, CW);
-    hashLines.forEach(l => { doc.text(l, M, y); nl(4); });
-  }
-
-  // Footer on all pages
-  const totalPages = doc.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    doc.setFillColor(20,18,35); doc.rect(0, 285, 210, 12, 'F');
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(140,138,170);
-    doc.text('Voice Protest — Verified Citizen Protest Platform — AGPL 3.0', M, 291);
-    doc.text('Page ' + i + ' of ' + totalPages, W - M, 291, {align:'right'});
-  }
-
-  const filename = 'vozciudadana-report-' + d.protest.title.replace(/[^a-z0-9]/gi,'-').toLowerCase().slice(0,40) + '.pdf';
-  doc.save(filename);
-}
-</script>

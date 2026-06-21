@@ -595,16 +595,16 @@
     "copy": "Copier lien + message",
     "copyDesc": "Pour TikTok, Instagram, X, Facebook ou où vous voulez",
     "close": "Fermer",
-    "viralMsg": "LE PEUPLE PARLE.\n{count} voix. Sans violence. Sans peur.\nParticipants vérifiés uniquement. Chaque adhésion, unique.\n{url}",
-    "toastWA": "🔥 Le peuple commande ! Partagé via WhatsApp",
-    "toastTG": "🔥 Le peuple commande ! Partagé via Telegram",
+    "viralMsg": "Bonjour, je viens de rejoindre cette protestation vérifiée. Je t'encourage à participer : {url}",
+    "toastWA": "🔥 Partagé via WhatsApp",
+    "toastTG": "🔥 Partagé via Telegram",
     "toastCopy": "📋 Copié ! Collez-le sur TikTok, Instagram ou où vous voulez"
   },
   "install": {
     "title": "Installer Voice Protest",
     "subtitle": "Suivez le résultat en temps réel · Sans App Store · Sans autorisation",
     "btn": "Installer",
-    "toastInstalled": "✓ Voice Protest installée. Le peuple commande !"
+    "toastInstalled": "✓ Voice Protest installée"
   },
   "map": {
     "hint": "Cliquez sur un pays pour filtrer · molette pour zoomer",

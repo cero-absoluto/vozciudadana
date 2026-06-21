@@ -10,3 +10,13 @@ Master design document. Foundational philosophy, design, privacy, participation 
 
 ### 3.-VoiceProtest_AuditAlignment_v2_1.docx
 Audit Alignment, Threat Model and Participation Framework, v2.1. Defines what Voice Protest measures, what it does not measure, privacy limits, threat model, and the canonical statement of what the platform claims and does not claim.
+
+## Related documentation
+
+Operational and technical reference documents (configuration guides, setup procedures, troubleshooting) are stored in `/docs/operations/`.
+
+Governance history (audit trail, correction records) is stored in `/docs/governance/`.
+
+
+
+These currently live in the application (INFO screens) and should be added here as standalone files to keep this folder complete.

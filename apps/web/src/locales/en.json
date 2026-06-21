@@ -67,7 +67,7 @@
     "geoConfidence": "Geographic confidence:",
     "filterAll": "All",
     "filterNational": "🏛️ National",
-    "filterRegional": "🌐 Local",
+    "filterRegional": "🌐 Regional",
     "filterGlobal": "🌍 Global",
     "tabActive": "Active",
     "tabQueue": "Queue",
@@ -77,7 +77,8 @@
     "overlayLive": "Active events on the map",
     "overlayTap": "Tap to explore →",
     "dotDocument": "Document",
-    "improveConfidence": "Improve your geographic confidence"
+    "improveConfidence": "Improve your geographic confidence",
+    "filterLocal": "📍 Local"
   },
   "active": {
     "empty": "No active events",

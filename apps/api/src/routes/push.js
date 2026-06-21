@@ -31,6 +31,7 @@ export default async function pushRoutes(app) {
           protest_id:   { type: 'string', nullable: true },
           ends_at:      { type: 'string', nullable: true },
           locale:       { type: 'string', nullable: true },
+          timezone:     { type: 'string', nullable: true },
           subscription: {
             type: 'object',
             required: ['endpoint', 'keys'],
@@ -50,7 +51,7 @@ export default async function pushRoutes(app) {
       },
     },
   }, async (req, reply) => {
-    const { device_id, protest_id, ends_at, locale, subscription } = req.body;
+    const { device_id, protest_id, ends_at, locale, timezone, subscription } = req.body;
     const { endpoint, keys: { p256dh, auth } } = subscription;
 
     await supabase.from('push_subscriptions').upsert({
@@ -61,6 +62,7 @@ export default async function pushRoutes(app) {
       protest_id: protest_id || null,
       ends_at:    ends_at    || null,
       locale:     locale || 'en',
+      timezone:   timezone   || null,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'endpoint' });
 
@@ -140,6 +142,7 @@ export default async function pushRoutes(app) {
     const dead = [];
 
     await Promise.allSettled(subs.map(async sub => {
+      if (type === 'closing' && isNighttime(sub.timezone)) return;
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
@@ -195,14 +198,27 @@ export default async function pushRoutes(app) {
 
     const { data: subs } = await supabase
       .from('push_subscriptions')
-      .select('endpoint, p256dh, auth, locale')
+      .select('endpoint, p256dh, auth, locale, timezone')
       .in('device_id', deviceIds);
 
     if (!subs?.length || !initVapid()) return 0;
 
+    // Night filter — don't send 'closing' push between 23:00 and 07:00 local time
+    function isNighttime(timezone) {
+      if (!timezone) return false;
+      try {
+        const hour = parseInt(
+          new Intl.DateTimeFormat('en', { hour: 'numeric', hour12: false, timeZone: timezone })
+            .format(new Date())
+        );
+        return hour >= 23 || hour < 7;
+      } catch { return false; }
+    }
+
     let sent = 0;
     const dead = [];
     await Promise.allSettled(subs.map(async sub => {
+      if (type === 'closing' && isNighttime(sub.timezone)) return;
       try {
         const lang = (sub.locale || 'en').substring(0, 2);
         const texts = NOTIF_TEXTS[type]?.[lang] || NOTIF_TEXTS[type]?.['en'];

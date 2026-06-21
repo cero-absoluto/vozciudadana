@@ -703,8 +703,14 @@ const COUNTRIES = [
 ];
 
 const endsAt = computed(() => {
+  // Use local timezone so 08:00 = 08:00 in the convocante's city, not 08:00 UTC
+  const tzOffset  = -new Date().getTimezoneOffset();
+  const tzHours   = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, '0');
+  const tzMinutes = String(Math.abs(tzOffset) % 60).padStart(2, '0');
+  const tzSign    = tzOffset >= 0 ? '+' : '-';
+  const tzSuffix  = `${tzSign}${tzHours}:${tzMinutes}`;
   if (!form.starts_at) return null;
-  const start = new Date(form.starts_at + 'T08:00:00.000Z');
+  const start = new Date(form.starts_at + `T08:00:00${tzSuffix}`);
   const end = new Date(start.getTime() + form.duration_h * 3_600_000);
   return end.toLocaleString(locale.value || 'en', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -732,6 +738,7 @@ function selectScope(s) {
   form.region = null;
   if (s === 'regional') form.duration_h = 8;
   else if (s === 'national') form.duration_h = 36;
+  else if (s === 'local') form.duration_h = 8;   // ciudad/municipio — mismo ciclo que regional
   else form.duration_h = 72;
 }
 
@@ -790,7 +797,13 @@ function submit() {
 
   protests.createProtest({
     ...form,
-    starts_at: form.starts_at ? form.starts_at + 'T08:00:00.000Z' : null,
+    // Encode starts_at with local timezone so 08:00 = 08:00 in the convocante's city
+    const tzOffset  = -new Date().getTimezoneOffset();
+    const tzHours   = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, '0');
+    const tzMinutes = String(Math.abs(tzOffset) % 60).padStart(2, '0');
+    const tzSign    = tzOffset >= 0 ? '+' : '-';
+    const tzSuffix  = `${tzSign}${tzHours}:${tzMinutes}`;
+    starts_at: form.starts_at ? form.starts_at + `T08:00:00${tzSuffix}` : null,
     convocatoria_pais: form.convocatoria_pais || null,
     convocatoria_region: form.convocatoria_region || null,
     convocatoria_institucion: form.convocatoria_institucion || null,

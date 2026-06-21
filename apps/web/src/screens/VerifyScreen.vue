@@ -84,6 +84,7 @@ async function activarNotificacion() {
     const protestEndsAt = protests.protests.find(p => String(p.id) === protestId)?.ends_at || null;
 
     const locale = localStorage.getItem('vc_lang') || navigator.language?.substring(0, 2) || 'en';
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
 
     await fetch(`${import.meta.env.VITE_API_URL}/api/push/subscribe`, {
       method: 'POST',
@@ -93,6 +94,7 @@ async function activarNotificacion() {
         protest_id:   protestId,
         ends_at:      protestEndsAt,
         locale,
+        timezone,
         subscription: sub,
       }),
     });

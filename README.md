@@ -46,15 +46,32 @@ These rules are enforced server-side and apply equally to web users and direct A
 | 🔍 Publicly verifiable reports | Closed reports include SHA-256 integrity hashes and public commitments. Anyone can verify results independently using the in-app verifier or the public API. |
 | 📡 Public commitments | Per-adhesion commitments — `SHA256(protest_id + nullifier)` — enable hash verification without revealing identities or enabling cross-protest correlation. |
 | 📋 Integrity log | Public record of integrity hashes maintained through GitHub. Updated manually at each protest closure. |
-| 📍 GPS verification | Optional location signal raises reliability scoring. GPS geocoding is always routed through the backend server — Nominatim receives the server's IP address, not the participant's. |
+| 📍 GPS verification | Optional location signal raises reliability scoring. GPS geocoding is always routed through the backend server — Nominatim receives the server's IP address, not the participant's. For local events, GPS classifies adhesions into three tiers in the public report: locally verified, national, and international. |
 | 👥 Dynamic census | Wave-based trust system with peer vouching for local/institutional events |
 | 📧 Institutional email | Any institutional domain for university/workplace events |
-| 🌍 Geographic scopes | National · Local/Regional · Global |
+| 🌍 Geographic scopes | National · Regional · Local (city/municipality) · Global |
 | 📊 Public report | Live data, PDF export, embeddable widget for media |
 | 🔌 Public API | Free, no auth required. For researchers and journalists |
 | 💰 Participant funding | Per-event balance funded by participant donations (capped at €100 per computable donation) |
 | 📁 Persistent public record | Closed events and integrity snapshots designed to be preserved indefinitely |
-| 🔔 Push notifications | Result alert at closure. Auto-deleted after event ends |
+| 🔔 Push notifications | Three automated alerts per event: when the event starts, one hour before closure (suppressed during nighttime hours in the participant's local timezone), and when the final result is published. Auto-deleted after event ends. |
+
+---
+
+## Geographic Scopes
+
+Voice Protest supports four geographic scopes. The scope is declared by the event creator and determines eligibility signals, default duration, and the structure of the public report.
+
+| Scope | Eligibility | Default duration | Notes |
+|-------|-------------|-----------------|-------|
+| 🏧 National | Verified SIM from the declared country. Residents abroad with a national SIM remain eligible. | 36h (closes at 20:00 — prime time) | Geographic distribution shown in report |
+| 🌐 Regional | National SIM required. Regional scope is a declaration by the creator, not a technical restriction. | 8h (closes at 16:00 — afternoon news) | For regional/provincial institutions |
+| 📍 Local | Any verified phone number. GPS classifies adhesions in the report but is not required to participate. | 8h (closes at 16:00) | Municipality identified by OSM ID — validated for all 27 EU member states |
+| 🌍 Global | Any verified phone number, no geographic restriction. | 72h | Geographic distribution by country shown in report |
+
+All start times are encoded in the event creator's local timezone. 08:00 always means 08:00 in the creator's city.
+
+For local events, the public report shows three counters: participants with GPS confirmed within the declared municipality, national participants without local GPS, and international participants. GPS is a verification signal — not a participation requirement. Voice Protest verifies participation, not legitimacy. A resident temporarily absent from the municipality retains the right to participate.
 
 ---
 
@@ -68,6 +85,7 @@ These rules are enforced server-side and apply equally to web users and direct A
 | SMS Verification | Twilio Verify |
 | Email | Resend |
 | GPS Geocoding | Nominatim (OpenStreetMap) — via backend proxy, never called directly from the browser |
+| Municipality search | Nominatim (OpenStreetMap) — OSM relation ID (admin_level=8) for reliable cross-language matching |
 | Source validation | Wikidata API |
 | Donations | Ko-fi + PayPal (webhook integration with donor data minimisation) |
 

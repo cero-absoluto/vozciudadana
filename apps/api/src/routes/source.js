@@ -37,12 +37,20 @@ function classifyDomain(domain, wikidataType) {
   if (wikidataType) return wikidataType;
   if (OFFICIAL_TLDS.some(tld => domain.endsWith(tld))) return 'official_government';
   if (domain.endsWith('.edu') || domain.endsWith('.ac.uk')) return 'academic';
-  if (KNOWN_OFFICIAL.has(domain)) {
-    if (['bbc.com','bbc.co.uk','rtve.es','euronews.com'].includes(domain)) return 'public_broadcaster';
+
+  // Check both the full domain and its registrable domain (eTLD+1)
+  // so subdomains like eldiariocantabria.publico.es are classified correctly.
+  const parts = domain.replace(/\.$/, '').split('.');
+  const registrable = parts.length >= 2 ? parts.slice(-2).join('.') : domain;
+
+  const domainToCheck = KNOWN_OFFICIAL.has(domain) ? domain : (KNOWN_OFFICIAL.has(registrable) ? registrable : null);
+
+  if (domainToCheck) {
+    if (['bbc.com','bbc.co.uk','rtve.es','euronews.com'].includes(domainToCheck)) return 'public_broadcaster';
     if (['reuters.com','apnews.com','theguardian.com','ft.com','nytimes.com',
          'washingtonpost.com','elpais.com','elmundo.es','lavanguardia.com',
-         'lemonde.fr','spiegel.de','economist.com'].includes(domain)) return 'reputable_media';
-    if (['amnesty.org','hrw.org','transparency.org'].includes(domain)) return 'ngo';
+         'lemonde.fr','spiegel.de','economist.com'].includes(domainToCheck)) return 'reputable_media';
+    if (['amnesty.org','hrw.org','transparency.org'].includes(domainToCheck)) return 'ngo';
     return 'public_institution';
   }
   if (UNIVERSITY_MEDIA.has(domain)) return 'academic';

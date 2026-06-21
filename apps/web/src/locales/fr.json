@@ -448,7 +448,15 @@
     "verifyOk": "✅ Intégrité vérifiée — ce rapport correspond aux données d'intégrité publiques.",
     "verifyFail": "❌ Discordance d'intégrité — le rapport peut avoir été modifié ou les données sont incohérentes.",
     "verifyV1": "ℹ️ Ce rapport utilise la version d'intégrité 1 (sceau interne). La vérification publique indépendante est disponible à partir de la version 2.",
-    "verifyNoHash": "Aucun hash d'intégrité disponible pour cette protestation."
+    "verifyNoHash": "Aucun hash d'intégrité disponible pour cette protestation.",
+    "geoLocalTitle": "Répartition géographique de la participation",
+    "geoLocalSubtitle": "Événement local — {municipio}. Les participants sont classés selon leur proximité géographique au moment de l'adhésion.",
+    "geoLocalVerified": "GPS vérifié dans la commune",
+    "geoLocalVerifiedDesc": "Participants avec GPS confirmé dans {municipio} au moment de l'adhésion.",
+    "geoNational": "Participants nationaux",
+    "geoNationalDesc": "Participants sans confirmation GPS locale. Peut inclure des résidents temporairement absents de la commune.",
+    "geoInternational": "Participants internationaux",
+    "geoInternationalDesc": "Participants avec une SIM d'un autre pays."
   },
   "invite": {
     "loading": "Validation de l'invitation...",

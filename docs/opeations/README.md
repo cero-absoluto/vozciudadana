@@ -1,7 +1,11 @@
-# Operations
+# Operations Documentation
 
-Operational and deployment documentation.
+This folder contains operational and technical reference documents for Voice Protest.
 
-This folder contains implementation-specific documentation for external services, deployment procedures, infrastructure configuration and operational maintenance.
+These documents describe how specific systems work, how to configure them, and how to maintain them. They are not constitutional documents — they do not define what Voice Protest is or what it claims.
 
-Documents in this folder are not canonical governance documents and may change as the platform evolves.
+## Documents in this folder
+
+### Ko-fi_Reference.md
+Complete Ko-fi reference: initial setup, webhook configuration, content-type technical notes, donation routing, multi-protest mapping guide, Supabase verification queries and troubleshooting.
+

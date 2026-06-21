@@ -72,7 +72,7 @@ export const useDeviceStore = defineStore('device', () => {
           // Only update the UI selector if the user hasn't manually chosen a prefix
           simName.value = countryNames[data.country_code] || data.country_code;
           simPrefix.value = countryPrefixes[data.country_code] || '';
-          simCountry.value = data.country_code; // Show IP country when no SIM selected
+          // simCountry stays as default (ES) until user explicitly selects a prefix
         }
       }
     } catch { /* silencioso */ }

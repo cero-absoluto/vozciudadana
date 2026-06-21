@@ -594,16 +594,16 @@
     "copy": "Copiar enlace + mensaje",
     "copyDesc": "Para TikTok, Instagram, X, Facebook o donde quieras",
     "close": "Cerrar",
-    "viralMsg": "EL PUEBLO MANDA.\n{count} voces. Sin violencia. Sin miedo.\nSolo participantes verificados. Cada adhesión, única.\n{url}",
-    "toastWA": "🔥 ¡El pueblo manda! Compartido por WhatsApp",
-    "toastTG": "🔥 ¡El pueblo manda! Compartido por Telegram",
+    "viralMsg": "Hola, acabo de adherirme a esta protesta verificada. Te animo a que participes: {url}",
+    "toastWA": "🔥 Compartido por WhatsApp",
+    "toastTG": "🔥 Compartido por Telegram",
     "toastCopy": "📋 ¡Copiado! Pégalo en TikTok, Instagram o donde quieras"
   },
   "install": {
     "title": "Instalar Voice Protest",
     "subtitle": "Sigue el resultado en tiempo real · Sin App Store · Sin permisos de nadie",
     "btn": "Instalar",
-    "toastInstalled": "✓ Voice Protest instalada. ¡El pueblo manda!"
+    "toastInstalled": "✓ Voice Protest instalada"
   },
   "map": {
     "hint": "Clic en un país para filtrar · rueda para zoom",

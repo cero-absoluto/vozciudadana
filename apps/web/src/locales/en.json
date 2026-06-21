@@ -448,7 +448,15 @@
     "verifyOk": "✅ Integrity verified — this report matches the public integrity data.",
     "verifyFail": "❌ Integrity mismatch — the report may have been modified or the data is inconsistent.",
     "verifyV1": "ℹ️ This report uses integrity version 1 (internal seal). Public independent verification is available from version 2 onwards.",
-    "verifyNoHash": "No integrity hash available for this protest."
+    "verifyNoHash": "No integrity hash available for this protest.",
+    "geoLocalTitle": "Geographic participation breakdown",
+    "geoLocalSubtitle": "Local event — {municipio}. Participants are classified by their geographic proximity at the time of adhesion.",
+    "geoLocalVerified": "GPS verified in municipality",
+    "geoLocalVerifiedDesc": "Participants with GPS confirmed within {municipio} at the time of adhesion.",
+    "geoNational": "National participants",
+    "geoNationalDesc": "Participants without local GPS confirmation. May include residents temporarily outside the municipality.",
+    "geoInternational": "International participants",
+    "geoInternationalDesc": "Participants with a SIM from a different country."
   },
   "invite": {
     "loading": "Validating invitation...",

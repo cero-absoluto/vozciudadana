@@ -229,7 +229,14 @@
     "createdSaldo": "✓ Protest created — fund it from the protest page to start receiving verified adhesions.",
     "endsAt": "Your protest will end on",
     "principleNote": "Voice Protest verifies participation. It does not verify truth.",
-    "eventScore": "event"
+    "eventScore": "event",
+    "scopeLocalCity": "Local — city/municipality",
+    "scopeLocalCityBadge": "Local scope",
+    "scopeLocalCityDesc": "Event of local scope. Participants with GPS confirmed within the municipality appear as locally verified in the public report.",
+    "municipioLabel": "Municipality",
+    "municipioPlaceholder": "Search municipality (e.g. Santander, Utrecht, Lyon...)",
+    "municipioHint": "Select the exact municipality from the list. Used to classify participants by geographic proximity in the public report.",
+    "errMunicipio": "Please select a municipality for this local event"
   },
   "detail": {
     "back": "← Back to map",

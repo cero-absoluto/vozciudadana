@@ -192,6 +192,40 @@
   </select>
 </div>
 
+<!-- Municipality search — only for local scope -->
+<div v-if="form.scope === 'local'" class="fg" style="margin-top:12px">
+  <label>{{ $t('create.municipioLabel') }} *</label>
+  <div style="position:relative">
+    <input
+      type="text"
+      v-model="municipioQuery"
+      :placeholder="$t('create.municipioPlaceholder')"
+      @input="onMunicipioInput"
+      autocomplete="off"
+    >
+    <div v-if="municipioChecking" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text3)">⏳</div>
+  </div>
+  <!-- Results dropdown -->
+  <div v-if="municipioResults.length" style="background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);margin-top:4px;max-height:200px;overflow-y:auto">
+    <div
+      v-for="r in municipioResults"
+      :key="r.osm_id"
+      @click="selectMunicipio(r)"
+      style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:.5px solid var(--border)"
+      :style="{background: form.convocatoria_osm_id === r.osm_id ? 'rgba(76,255,164,.08)' : 'transparent'}"
+    >
+      <div style="font-weight:600;color:var(--text)">{{ r.name }}</div>
+      <div style="color:var(--text3);font-size:11px">{{ r.display_name }}</div>
+    </div>
+  </div>
+  <!-- Selected municipality confirmation -->
+  <div v-if="form.convocatoria_osm_id && !municipioResults.length" style="margin-top:6px;padding:8px 12px;background:rgba(76,255,164,.06);border:.5px solid var(--accent2);border-radius:var(--r);font-size:12px;color:var(--accent2)">
+    ✅ {{ form.convocatoria_ciudad_nombre }}
+    <span @click="clearMunicipio" style="float:right;cursor:pointer;color:var(--text3)">✕</span>
+  </div>
+  <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">{{ $t('create.municipioHint') }}</div>
+</div>
+
 <div v-if="form.scope === 'regional'" class="fg" style="margin-top:12px">
   <label>{{ $t('create.regionLabel') }}</label>
   <input type="text" v-model="form.convocatoria_region" :placeholder="$t('create.regionPlaceholder')">
@@ -318,10 +352,61 @@ const form = reactive({
   convocatoria_region: '',
   convocatoria_institucion: '',
   dominio_email: '',
+  convocatoria_osm_id: null,
+  convocatoria_ciudad_nombre: '',
   tipo_abuso: '',
   fuente_url: '',
   requiere_censo: false,
 });
+
+// ── Municipality search state (for scope = local) ──────────────────────────
+const municipioQuery    = ref('');
+const municipioResults  = ref([]);
+const municipioChecking = ref(false);
+let municipioDebounce   = null;
+
+function onMunicipioInput() {
+  clearTimeout(municipioDebounce);
+  form.convocatoria_osm_id = null;
+  form.convocatoria_ciudad_nombre = '';
+  municipioResults.value = [];
+  if (municipioQuery.value.trim().length < 2) return;
+  municipioDebounce = setTimeout(() => searchMunicipio(municipioQuery.value.trim()), 500);
+}
+
+async function searchMunicipio(q) {
+  municipioChecking.value = true;
+  try {
+    // Search Nominatim for municipalities (admin_level=8) matching the query.
+    // Using the public Nominatim API — same as we use for reverse geocoding,
+    // routed through our backend proxy to protect user IP.
+    const API_BASE = import.meta.env.VITE_API_URL || 'https://api.voiceprotest.org';
+    const res = await fetch(
+      `${API_BASE}/api/geocode/search?q=${encodeURIComponent(q)}&level=8`
+    );
+    if (!res.ok) throw new Error('Search failed');
+    const data = await res.json();
+    municipioResults.value = data.results || [];
+  } catch {
+    municipioResults.value = [];
+  } finally {
+    municipioChecking.value = false;
+  }
+}
+
+function selectMunicipio(result) {
+  form.convocatoria_osm_id = result.osm_id;
+  form.convocatoria_ciudad_nombre = result.name;
+  municipioQuery.value = result.name;
+  municipioResults.value = [];
+}
+
+function clearMunicipio() {
+  form.convocatoria_osm_id = null;
+  form.convocatoria_ciudad_nombre = '';
+  municipioQuery.value = '';
+  municipioResults.value = [];
+}
 
 const tooltip = ref(null);
 const fuenteStatus = ref(null);
@@ -635,6 +720,7 @@ const sortedCountries = computed(() => {
 const scopes = computed(() => [
   { key:'national', icon:'🏧', label: t('create.scopeNational'), badgeClass:'sb-national', badgeLabel: t('create.scopeNationalBadge'), bg:'rgba(124,111,255,.08)', desc: t('create.scopeNationalDesc') },
   { key:'regional', icon:'🌐', label: t('create.scopeLocal'),    badgeClass:'sb-regional', badgeLabel: t('create.scopeLocalBadge'),    bg:'rgba(255,179,71,.08)',   desc: t('create.scopeLocalDesc') },
+  { key:'local',    icon:'📍', label: t('create.scopeLocalCity'), badgeClass:'sb-local',    badgeLabel: t('create.scopeLocalCityBadge'), bg:'rgba(76,200,255,.08)',  desc: t('create.scopeLocalCityDesc') },
   { key:'global',   icon:'🌍', label: t('create.scopeGlobal'),   badgeClass:'sb-global',   badgeLabel: t('create.scopeGlobalBadge'),   bg:'rgba(76,255,164,.08)',   desc: t('create.scopeGlobalDesc') },
 ]);
 
@@ -658,6 +744,7 @@ function submit() {
   if (form.scope === 'regional' && !form.convocatoria_pais) { ui.showToast(t('create.errPais')); return; }
   if (form.scope === 'regional' && !form.convocatoria_region.trim()) { ui.showToast(t('create.errRegion')); return; }
   if (form.scope === 'regional' && form.convocatoria_institucion && !form.dominio_email.trim()) { ui.showToast(t('create.errDominio')); return; }
+  if (form.scope === 'local' && !form.convocatoria_osm_id) { ui.showToast(t('create.errMunicipio')); return; }
   if (!form.tipo_abuso) { ui.showToast(t('create.errAbuso')); return; }
   if (!form.fuente_url.trim()) { ui.showToast(t('create.errFuente')); return; }
 
@@ -704,6 +791,8 @@ function submit() {
     convocatoria_pais: form.convocatoria_pais || null,
     convocatoria_region: form.convocatoria_region || null,
     convocatoria_institucion: form.convocatoria_institucion || null,
+    convocatoria_osm_id: form.convocatoria_osm_id || null,
+    convocatoria_ciudad_nombre: form.convocatoria_ciudad_nombre || null,
     dominio_email: form.dominio_email || null,
     tipo_abuso: form.tipo_abuso || null,
     fuente_url: form.fuente_url || null,

@@ -71,12 +71,14 @@ export const useProtestsStore = defineStore('protests', () => {
       const national = sorted.filter(p => p.scope === 'national' && p.country === device.simCountry);
       const global   = sorted.filter(p => p.scope === 'global');
       const regional = sorted.filter(p => p.scope === 'regional');
+      const local    = sorted.filter(p => p.scope === 'local');
       const others   = sorted.filter(p => p.scope === 'national' && p.country !== device.simCountry);
-      // 1 nacional propio + 1 global + resto ordenado por heat
+      // 1 nacional propio + 1 global + 1 regional + 1 local + resto ordenado por heat
       const top = [
         ...(national.length ? [national[0]] : []),
         ...(global.length   ? [global[0]]   : []),
         ...(regional.slice(0, 1)),
+        ...(local.slice(0, 1)),
         ...others.slice(0, 2),
       ];
       // Deduplicar

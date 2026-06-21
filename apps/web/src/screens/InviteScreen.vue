@@ -5,7 +5,7 @@
       <!-- Cargando -->
       <div v-if="estado === 'cargando'" style="text-align:center;padding:60px 20px">
         <div class="spin-ring" style="margin:0 auto 12px"></div>
-        <div style="font-size:11px;color:var(--text3)">{{ $t('invite.loading') }}</div>
+        <div style="font-size:12px;color:var(--text3)">{{ $t('invite.loading') }}</div>
       </div>
 
       <!-- Invitación válida -->
@@ -22,19 +22,19 @@
 
         <div class="block" style="margin-bottom:12px">
           <div class="block-title">{{ $t('invite.howTitle') }}</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.8">
+          <div style="font-size:12px;color:var(--text2);line-height:1.8">
             {{ $t('invite.howBody') }}
           </div>
         </div>
 
         <div class="block" style="margin-bottom:20px">
           <div class="block-title">{{ $t('invite.privacyTitle') }}</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.8">
+          <div style="font-size:12px;color:var(--text2);line-height:1.8">
             {{ $t('invite.privacyBody') }}
           </div>
         </div>
 
-        <div style="font-size:9px;padding:6px 8px;background:rgba(255,107,107,.06);border:.5px solid rgba(255,107,107,.2);border-radius:var(--r);color:var(--accent3);margin-bottom:20px;line-height:1.5">
+        <div style="font-size:12px;padding:6px 8px;background:rgba(255,107,107,.06);border:.5px solid rgba(255,107,107,.2);border-radius:var(--r);color:var(--accent3);margin-bottom:20px;line-height:1.5">
           {{ $t('invite.warning') }}
         </div>
 
@@ -43,7 +43,7 @@
           {{ $t('invite.accept') }}
         </button>
         <button @click="$router.push('/')"
-          style="width:100%;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:10px;cursor:pointer">
+          style="width:100%;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:12px;cursor:pointer">
           {{ $t('invite.reject') }}
         </button>
       </div>
@@ -54,7 +54,7 @@
         <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-bottom:8px">
           {{ $t('invite.invalidTitle') }}
         </div>
-        <div style="font-size:11px;color:var(--text3);line-height:1.7;margin-bottom:24px">
+        <div style="font-size:12px;color:var(--text3);line-height:1.7;margin-bottom:24px">
           {{ $t('invite.invalidBody') }}
         </div>
         <button class="btn-primary" style="width:100%" @click="$router.push('/')">

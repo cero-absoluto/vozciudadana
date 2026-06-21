@@ -762,7 +762,7 @@
     "surplusTitle": "Fondos de verificación no utilizados",
     "surplusBody": "Cuando una convocatoria se cierra con fondos de verificación no utilizados, el saldo restante podrá transferirse al fondo de sostenibilidad de la plataforma y usarse exclusivamente para infraestructura, sistemas de verificación, auditorías de seguridad y mantenimiento de la plataforma.",
     "allocationTitle": "Cómo se distribuyen las donaciones",
-    "allocationBody": "Las contribuciones pueden dividirse entre los recursos de verificación de las convocatorias y la sostenibilidad a largo plazo de Voice Protest. El modelo de distribución está documentado públicamente y puede evolucionar a medida que el proyecto madure.",
+    "allocationBody": "Las contribuciones pueden dividirse entre los recursos de verificación de las convocatorias y la sostenibilidad a largo plazo de Voice Protest. El modelo de distribución está documentado públicamente y puede evolucionar a medida que el proyecto madure. Las donaciones realizadas desde la pantalla de una convocatoria específica se asignan automáticamente al saldo de verificación de esa convocatoria. Las donaciones realizadas directamente en Ko-fi sin referencia a una convocatoria concreta se acreditan al fondo de sostenibilidad de la plataforma.",
     "sustainabilityTitle": "Fondo de sostenibilidad de la plataforma",
     "sustainabilityBody": "El fondo de sostenibilidad existe para preservar la independencia a largo plazo de Voice Protest. Puede utilizarse para alojamiento, seguridad, sistemas de verificación, auditorías y mantenimiento futuro de la plataforma.",
     "limitTitle": "Límite por donación",

@@ -7,7 +7,7 @@
       <div class="device-bar">
         <div class="dev-flag">{{ deviceFlag }}</div>
         <div class="dev-info">
-          <div class="dev-country">{{ device.simName }}{{ device.regionLabel ? ' · ' + device.regionLabel : '' }}</div>
+          <div class="dev-country">{{ displayCountryName }}{{ device.regionLabel ? ' · ' + device.regionLabel : '' }}</div>
           <div class="dev-conf">
             {{ $t('home.geoConfidence') }} <span :style="{color: confColor}">{{ device.confidence }}%</span>
           </div>
@@ -32,6 +32,7 @@
           <button class="pill" :class="{active: protests.filter==='all'}"      @click="setFilter('all')">{{ $t('home.filterAll') }}</button>
           <button class="pill" :class="{active: protests.filter==='national'}" @click="setFilter('national')">{{ $t('home.filterNational') }}</button>
           <button class="pill" :class="{active: protests.filter==='regional'}" @click="setFilter('regional')">{{ $t('home.filterRegional') }}</button>
+          <button class="pill" :class="{active: protests.filter==='local'}"    @click="setFilter('local')">{{ $t('home.filterLocal') }}</button>
           <button class="pill" :class="{active: protests.filter==='global'}"   @click="setFilter('global')">{{ $t('home.filterGlobal') }}</button>
         </div>
         <div class="global-chip">
@@ -136,6 +137,14 @@ const deviceFlag = computed(() => {
   // a hardcoded country list that was missing most countries (e.g. Malta).
   const codePoints = code.toUpperCase().split('').map(c => 0x1F1E6 - 65 + c.charCodeAt(0));
   return String.fromCodePoint(...codePoints);
+});
+
+// Show IP country name when user hasn't manually selected a SIM prefix
+// This fixes the bug where "España" was shown even when in Malta on WiFi
+const displayCountryName = computed(() => {
+  const simSetByUser = localStorage.getItem('vc_sim_set_by_user');
+  if (simSetByUser) return device.simName;
+  return device.ipCountryName || device.simName;
 });
 const strengtheningGps = ref(false);
 async function strengthenGps() {

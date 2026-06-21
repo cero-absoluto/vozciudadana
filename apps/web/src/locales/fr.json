@@ -763,7 +763,7 @@
     "surplusTitle": "Fonds de vérification inutilisés",
     "surplusBody": "Lorsqu'une protestation se clôture avec des fonds de vérification inutilisés, le solde restant peut être transféré au fonds de durabilité de la plateforme et utilisé exclusivement pour l'infrastructure, les systèmes de vérification, les audits de sécurité et la maintenance.",
     "allocationTitle": "Comment les dons sont répartis",
-    "allocationBody": "Les contributions peuvent être réparties entre les ressources de vérification des protestations et la durabilité à long terme de Voice Protest. Le modèle de répartition est documenté publiquement et peut évoluer.",
+    "allocationBody": "Les contributions peuvent être réparties entre les ressources de vérification des protestations et la durabilité à long terme de Voice Protest. Le modèle de répartition est documenté publiquement et peut évoluer. Les dons effectués depuis l'écran d'un événement spécifique sont automatiquement affectés au solde de vérification de cet événement. Les dons effectués directement via Ko-fi sans référence à un événement spécifique sont crédités au fonds de pérennité de la plateforme.",
     "sustainabilityTitle": "Fonds de durabilité de la plateforme",
     "sustainabilityBody": "Le fonds de durabilité existe pour préserver l'indépendance à long terme de Voice Protest. Il peut être utilisé pour l'hébergement, la sécurité, les systèmes de vérification, les audits et la maintenance.",
     "limitTitle": "Limite par don",

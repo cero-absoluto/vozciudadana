@@ -241,14 +241,16 @@ async function sendSMS() {
           localStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
           localStorage.setItem('vc_gps_ts', Date.now());
           try {
+            // Reverse geocode via backend proxy — never call Nominatim directly
+            // from the browser (would expose user's real IP to OpenStreetMap).
+            const API_BASE = import.meta.env.VITE_API_URL || 'https://api.voiceprotest.org';
             const geoRes = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`,
-              { headers: { 'Accept-Language': 'es' } }
+              `${API_BASE}/api/geocode?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`
             );
             const geoData = await geoRes.json();
-            const gpsCiudad = geoData.address?.city || geoData.address?.town || geoData.address?.village || null;
-            const gpsRegion = geoData.address?.state || null;
-            const gpsPais = geoData.address?.country || null;
+            const gpsCiudad = geoData.city    || null;
+            const gpsRegion = geoData.region  || null;
+            const gpsPais   = geoData.country || null;
             localStorage.setItem('vc_geo_ciudad', gpsCiudad || '');
             localStorage.setItem('vc_geo_region', gpsRegion || '');
             localStorage.setItem('vc_geo_pais', gpsPais || '');

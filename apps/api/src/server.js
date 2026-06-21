@@ -14,6 +14,7 @@ import publicRoutes     from './routes/public.js';
 import pushRoutes       from './routes/push.js';
 import sourceRoutes     from './routes/source.js';
 import kofiWebhookRoutes from './routes/webhooks.js';
+import geocodeRoutes    from './routes/geocode.js';
 
 const app = Fastify({
   logger: true,
@@ -53,6 +54,7 @@ app.register(publicRoutes,      { prefix: '/api/public' });
 app.register(pushRoutes,        { prefix: '/api/push' });
 app.register(sourceRoutes,      { prefix: '/api/source' });
 app.register(kofiWebhookRoutes, { prefix: '/api/webhooks' });
+app.register(geocodeRoutes,     { prefix: '/api/geocode' });
 
 app.get('/health', async () => ({ status: 'ok' }));
 

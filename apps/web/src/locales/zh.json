@@ -722,7 +722,8 @@
     "providerNominatim": "GPS地理编码——将坐标转换为城市和地区。所有调用均通过我们的后端服务器进行。Nominatim接收我们服务器的IP地址，而非用户的IP地址。",
     "providerNominatimRegion": "EU / 可变（OpenStreetMap分布式基础设施）",
     "providerGithub": "静态前端托管（voiceprotest.org）。GitHub Pages在提供应用文件时可能接收每位访客的IP地址。",
-    "providerGithubRegion": "US"
+    "providerGithubRegion": "US",
+    "pushTimezone": "如果您激活推送通知，我们还可能存储您设备的时区，以避免在夜间（本地时间23:00–07:00）向您发送非必要提醒。此信息仅用于安排通知，并在活动结束时随您的订阅一并删除。"
   },
   "funding": {
     "title": "资金与独立政策",

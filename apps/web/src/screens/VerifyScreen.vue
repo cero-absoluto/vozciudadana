@@ -26,6 +26,17 @@
           {{ notiActivada ? $t('verify.notiOn') : $t('verify.notiOff') }}
         </button>
 
+        <!-- Peldaño 1.5 — GPS local (solo para convocatorias locales, si no tiene GPS aún) -->
+        <div v-if="isLocalProtest && !device.gpsReady" style="margin-bottom:10px">
+          <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:6px;padding:8px 10px;background:rgba(76,200,255,.06);border-radius:var(--r);border:.5px solid rgba(76,200,255,.25)">
+            {{ $t('verify.gpsLocalInfo', { ciudad: localCiudad }) }}
+          </div>
+          <button @click="reforzarGpsLocal"
+            style="width:100%;margin-bottom:6px;padding:12px;background:rgba(76,200,255,.12);border:.5px solid #4CC8FF;border-radius:var(--r);color:#4CC8FF;font-size:13px;font-weight:700;cursor:pointer">
+            📍 {{ reforzandoGps ? '...' : $t('verify.gpsLocalBtn') }}
+          </button>
+        </div>
+
         <!-- Peldaño 2 — VIRAL -->
         <button class="suc-share" style="width:100%;margin-bottom:10px" @click="ui.showShareModal = true">
           {{ $t('verify.viral') }}
@@ -61,6 +72,18 @@ const success    = ref(false);
 const spinMsg    = ref('');
 const receiptHash = ref('');
 const notiActivada = ref(false);
+
+// Local scope GPS reinforce
+const isLocalProtest = ref(false);
+const localCiudad    = ref('');
+const reforzandoGps  = ref(false);
+
+async function reforzarGpsLocal() {
+  if (reforzandoGps.value || device.gpsReady) return;
+  reforzandoGps.value = true;
+  await device.requestGps();
+  reforzandoGps.value = false;
+}
 
 async function activarNotificacion() {
   if (notiActivada.value) return;
@@ -180,6 +203,14 @@ const target = lastId
   for (let i = 0; i < 64; i++) h += c[Math.floor(Math.random() * 16)];
   receiptHash.value = h;
   success.value = true;
+
+  // Check if this is a local protest to show GPS reinforce button
+  const joinedProtest = protests.protests.find(p => String(p.id) === sessionStorage.getItem('vc_last_joined'));
+  if (joinedProtest?.scope === 'local') {
+    isLocalProtest.value = true;
+    localCiudad.value = joinedProtest.convocatoria_ciudad_nombre || 'el municipio';
+  }
+
   ui.showToast(t('verify.toast'));
   setTimeout(() => ui.revealInstallBanner(), 1500);
 });
@@ -195,3 +226,4 @@ function goDetail() {
   else    router.push('/');
 }
 </script>
+

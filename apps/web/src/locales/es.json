@@ -321,7 +321,9 @@
     "toastAlready": "Ya te has adherido a esta convocatoria con este número de teléfono.",
     "toastSinSaldo": "Esta convocatoria no tiene saldo. Apóyala para activar las adhesiones.",
     "notiInfo": "Si activas las notificaciones, tu navegador quedará vinculado a esta convocatoria para enviarte el resultado. Esto reduce ligeramente tu pseudonimidad. Si prefieres máxima privacidad, no actives las notificaciones.",
-    "toastError": "Error al registrar la adhesión: {msg}"
+    "toastError": "Error al registrar la adhesión: {msg}",
+    "gpsLocalInfo": "Esta es una convocatoria local de {ciudad}. Si estás en el municipio ahora mismo, refuerza tu participación con tu ubicación — aparecerás como participante local verificado en el informe público.",
+    "gpsLocalBtn": "Refuerza tu participación"
   },
   "about": {
     "heroTitle": "La herramienta. Sin trampa.",

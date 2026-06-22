@@ -81,8 +81,29 @@ const reforzandoGps  = ref(false);
 async function reforzarGpsLocal() {
   if (reforzandoGps.value || device.gpsReady) return;
   reforzandoGps.value = true;
-  await device.requestGps();
-  reforzandoGps.value = false;
+  try {
+    await device.requestGps();
+    // Send GPS coordinates to backend using the single-use update token
+    const token    = sessionStorage.getItem('vc_gps_update_token');
+    const protestId = sessionStorage.getItem('vc_last_joined');
+    if (token && protestId && device.gpsLat && device.gpsLng) {
+      const API_BASE = import.meta.env.VITE_API_URL || 'https://api.voiceprotest.org';
+      await fetch(`${API_BASE}/api/protests/${protestId}/adhesion`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gps_update_token: token,
+          gps_lat:          device.gpsLat,
+          gps_lng:          device.gpsLng,
+          gps_accuracy:     device.gpsAccuracy ?? null,
+        }),
+      });
+      // Token is single-use — remove from sessionStorage after sending
+      sessionStorage.removeItem('vc_gps_update_token');
+    }
+  } catch { /* silencioso */ } finally {
+    reforzandoGps.value = false;
+  }
 }
 
 async function activarNotificacion() {
@@ -160,8 +181,8 @@ const target = lastId
       try {
         token = await window.grecaptcha.execute(import.meta.env.VITE_RECAPTCHA_KEY, { action: 'join_protest' });
       } catch { /* dev */ }
-      await import('@/services/api.js').then(api =>
-  api.joinProtest(target.id, {
+      await import('@/services/api.js').then(async api => {
+  const joinRes = await api.joinProtest(target.id, {
     phone_hash:      phoneHash,
     device_id:       deviceId,
     sms_sent:        smsSent,
@@ -172,8 +193,12 @@ const target = lastId
    ip_ciudad:  localStorage.getItem('vc_geo_ciudad') || device.ipCity || null,
    ip_pais:    localStorage.getItem('vc_geo_pais') || device.ipCountryName || null,
    ip_region:  localStorage.getItem('vc_geo_region') || device.ipRegion || null,
-  })
-);
+  });
+  // Store GPS update token for post-adhesion GPS reinforcement (local scope only)
+  if (joinRes?.gps_update_token) {
+    sessionStorage.setItem('vc_gps_update_token', joinRes.gps_update_token);
+  }
+});
     } catch (e) {
       if (e.code === 'NATIONAL_ONLY') {
         ui.showToast(t('verify.toastNational'));

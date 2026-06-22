@@ -728,6 +728,8 @@ export default async function protestRoutes(app) {
     }
 
     // Update adhesion — single write
+    // ciudad/region/pais are NOT updated — they were set correctly at join time from IP
+    // GPS only adds gps_confirmed, osm_id and fiabilidad signals
     await supabase.from('adhesions').update({
       gps_lat,
       gps_lng,
@@ -736,9 +738,6 @@ export default async function protestRoutes(app) {
       adhesion_osm_id,
       fiabilidad:      nuevaFiabilidad,
       senales:         senales.join(','),
-      ...(ciudad && { ciudad }),
-      ...(region && { region }),
-      ...(pais   && { pais }),
     }).eq('id', tokenRow.adhesion_id);
 
     // Invalidate token — one-time use

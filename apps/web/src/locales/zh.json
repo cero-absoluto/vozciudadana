@@ -733,7 +733,9 @@
     "providerNominatimRegion": "EU / 可变（OpenStreetMap分布式基础设施）",
     "providerGithub": "静态前端托管（voiceprotest.org）。GitHub Pages在提供应用文件时可能接收每位访客的IP地址。",
     "providerGithubRegion": "US",
-    "pushTimezone": "如果您激活推送通知，我们还可能存储您设备的时区，以避免在夜间（本地时间23:00–07:00）向您发送非必要提醒。此信息仅用于安排通知，并在活动结束时随您的订阅一并删除。"
+    "pushTimezone": "如果您激活推送通知，我们还可能存储您设备的时区，以避免在夜间（本地时间23:00–07:00）向您发送非必要提醒。此信息仅用于安排通知，并在活动结束时随您的订阅一并删除。",
+    "providerIpapi": "IP地理定位——根据IP地址估算国家、城市和地区。原始IP不存储。",
+    "ipGeoProxy": "Voice Protest可能使用其后端服务器收到的IP地址，通过外部IP地理定位提供商估算国家、城市和地区。原始IP地址不会被存储。只有近似结果可用作地理可靠性信号。"
   },
   "funding": {
     "title": "资金与独立政策",

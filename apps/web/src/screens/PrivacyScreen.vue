@@ -161,6 +161,7 @@ const providers = computed(() => [
   { name: 'Resend',    role: t('privacy.providerResend'),    country: 'US' },
   { name: 'Google reCAPTCHA', role: t('privacy.providerRecaptcha'), country: 'US' },
   { name: 'Nominatim (OpenStreetMap)', role: t('privacy.providerNominatim'), country: t('privacy.providerNominatimRegion') },
+  { name: 'ipapi.co', role: t('privacy.providerIpapi'), country: 'EU' },
   { name: 'GitHub Pages', role: t('privacy.providerGithub'), country: t('privacy.providerGithubRegion') },
 ]);
 </script>

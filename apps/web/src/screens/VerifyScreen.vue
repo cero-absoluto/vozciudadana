@@ -132,6 +132,7 @@ const target = lastId
     try {
       const phoneHash = sessionStorage.getItem('vc_phone_hash');
       const deviceId  = sessionStorage.getItem('vc_device_id');
+      const smsSent   = sessionStorage.getItem('vc_sms_sent') === 'true';
       let token = '';
       try {
         token = await window.grecaptcha.execute(import.meta.env.VITE_RECAPTCHA_KEY, { action: 'join_protest' });
@@ -140,6 +141,7 @@ const target = lastId
   api.joinProtest(target.id, {
     phone_hash:      phoneHash,
     device_id:       deviceId,
+    sms_sent:        smsSent,
     recaptcha_token: token || 'dev',
    gps_lat:         ui.gpsLat ?? (localStorage.getItem('vc_gps_lat') ? parseFloat(localStorage.getItem('vc_gps_lat')) : null),
    gps_lng:         ui.gpsLng ?? (localStorage.getItem('vc_gps_lng') ? parseFloat(localStorage.getItem('vc_gps_lng')) : null),

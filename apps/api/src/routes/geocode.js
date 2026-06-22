@@ -112,3 +112,36 @@ export default async function geocodeRoutes(app) {
     }
   });
 }
+
+// ── IP geolocation proxy — GET /api/ipinfo ─────────────────────────────────
+// Privacy proxy for IP-based country detection.
+// Auditor conditions (June 2026):
+// 1. No IP bruta stored in DB
+// 2. No IP logged
+// 3. Return only country_code, country_name, city, region
+// 4. Short timeout — if ipapi fails, return empty (join continues with reduced score)
+// 6. IP geolocation never determines eligibility alone — only contributes to score
+export async function ipinfoRoutes(app) {
+  app.get('/', {
+    config: { rateLimit: { max: 60, timeWindow: '1 minute' } },
+  }, async (req, reply) => {
+    const forwarded = req.headers['x-forwarded-for'];
+    const ip = forwarded ? forwarded.split(',')[0].trim() : req.ip;
+    try {
+      const res = await fetch(`https://ipapi.co/${ip}/json/`, {
+        headers: { 'User-Agent': 'VoiceProtest/1.0 (voiceprotest.org)' },
+        signal: AbortSignal.timeout(4000),
+      });
+      if (!res.ok) return reply.send({});
+      const data = await res.json();
+      return {
+        country_code: data.country_code || null,
+        country_name: data.country_name || null,
+        city:         data.city         || null,
+        region:       data.region       || null,
+      };
+    } catch {
+      return {};
+    }
+  });
+}

@@ -637,12 +637,114 @@ export default async function protestRoutes(app) {
       }
     } catch { /* silencioso */ }
 
+    // Generate a single-use GPS update token — auditor requirement:
+    // nullifier must never travel to the client; use a separate token instead.
+    let gps_update_token = null;
+    if (protest.scope === 'local') {
+      const { randomUUID } = await import('crypto');
+      gps_update_token = randomUUID();
+      await supabase.from('gps_update_tokens').insert({
+        token:       gps_update_token,
+        adhesion_id: data.id,
+        protest_id:  req.params.id,
+      });
+    }
+
     return reply.code(201).send({
       receipt: data.id,
       scope: protest.scope,
       convocatoria_osm_id: protest.convocatoria_osm_id ?? null,
       convocatoria_ciudad_nombre: protest.convocatoria_ciudad_nombre ?? null,
+      gps_update_token,
     });
+  });
+
+  // PATCH /api/protests/:id/adhesion — update GPS data post-adhesion
+  // Auditor conditions (June 2026):
+  // - nullifier never sent to client — uses single-use token instead
+  // - GPS update is one-time only (token invalidated after use)
+  // - Token expires after 24h
+  // - Fiabilidad recalculated with GPS signal
+  app.patch('/:id/adhesion', {
+    schema: {
+      params: { type: 'object', properties: { id: { type: 'string', format: 'uuid' } }, required: ['id'] },
+      body: {
+        type: 'object',
+        required: ['gps_update_token', 'gps_lat', 'gps_lng'],
+        properties: {
+          gps_update_token: { type: 'string' },
+          gps_lat:          { type: 'number' },
+          gps_lng:          { type: 'number' },
+          gps_accuracy:     { type: 'number', nullable: true },
+        },
+        additionalProperties: false,
+      },
+    },
+  }, async (req, reply) => {
+    const { gps_update_token, gps_lat, gps_lng, gps_accuracy } = req.body;
+
+    // Validate token — must exist, not used, not expired, match protest
+    const { data: tokenRow } = await supabase
+      .from('gps_update_tokens')
+      .select('adhesion_id, used, expires_at, protest_id')
+      .eq('token', gps_update_token)
+      .maybeSingle();
+
+    if (!tokenRow) return reply.status(404).send({ error: 'Token not found' });
+    if (tokenRow.used) return reply.status(409).send({ error: 'Token already used' });
+    if (new Date(tokenRow.expires_at) < new Date()) return reply.status(410).send({ error: 'Token expired' });
+    if (tokenRow.protest_id !== req.params.id) return reply.status(403).send({ error: 'Token mismatch' });
+
+    // Reverse geocode GPS coordinates via Nominatim (backend proxy — user IP not exposed)
+    let adhesion_osm_id = null;
+    let ciudad = null, region = null, pais = null;
+    try {
+      const geoRes = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${gps_lat}&lon=${gps_lng}&format=json&zoom=10`,
+        { headers: { 'Accept-Language': 'es', 'User-Agent': 'VoiceProtest/1.0' }, signal: AbortSignal.timeout(6000) }
+      );
+      const geoData = await geoRes.json();
+      ciudad = geoData.address?.city || geoData.address?.town || geoData.address?.village || null;
+      region = geoData.address?.state || geoData.address?.county || null;
+      pais   = geoData.address?.country || null;
+      if (geoData.osm_id) adhesion_osm_id = parseInt(geoData.osm_id);
+    } catch { /* silencioso — GPS update proceeds without osm_id */ }
+
+    // Recalculate fiabilidad with GPS signal
+    // GPS + SIM = 92%, GPS + SIM + IP = 95%
+    const { data: adhesion } = await supabase
+      .from('adhesions')
+      .select('senales, fiabilidad')
+      .eq('id', tokenRow.adhesion_id)
+      .maybeSingle();
+
+    let nuevaFiabilidad = adhesion?.fiabilidad || 75;
+    let senales = adhesion?.senales ? adhesion.senales.split(',') : [];
+    if (!senales.includes('gps')) {
+      senales.push('gps');
+      if (senales.includes('sim') && senales.includes('ip')) nuevaFiabilidad = 95;
+      else if (senales.includes('sim')) nuevaFiabilidad = 92;
+      else nuevaFiabilidad = 60;
+    }
+
+    // Update adhesion — single write
+    await supabase.from('adhesions').update({
+      gps_lat,
+      gps_lng,
+      gps_accuracy:    gps_accuracy ?? null,
+      gps_confirmed:   true,
+      adhesion_osm_id,
+      fiabilidad:      nuevaFiabilidad,
+      senales:         senales.join(','),
+      ...(ciudad && { ciudad }),
+      ...(region && { region }),
+      ...(pais   && { pais }),
+    }).eq('id', tokenRow.adhesion_id);
+
+    // Invalidate token — one-time use
+    await supabase.from('gps_update_tokens').update({ used: true }).eq('token', gps_update_token);
+
+    return { ok: true, fiabilidad: nuevaFiabilidad, adhesion_osm_id };
   });
 
   // POST /api/protests/:id/viral — record a share

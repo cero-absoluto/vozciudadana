@@ -17,7 +17,18 @@
             <!-- Escalera de acción -->
       <div style="width:100%;margin-top:8px">
 
-        <!-- Peldaño 1 — Notificación (first — ensures user gets result) -->
+        <!-- Peldaño 0 — GPS local (solo para convocatorias locales, si no tiene GPS aún) -->
+        <div v-if="isLocalProtest && !device.gpsReady" style="margin-bottom:10px">
+          <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:6px;padding:8px 10px;background:rgba(76,200,255,.06);border-radius:var(--r);border:.5px solid rgba(76,200,255,.25)">
+            {{ $t('verify.gpsLocalInfo', { ciudad: localCiudad }) }}
+          </div>
+          <button @click="reforzarGpsLocal"
+            style="width:100%;margin-bottom:10px;padding:12px;background:rgba(76,200,255,.12);border:.5px solid #4CC8FF;border-radius:var(--r);color:#4CC8FF;font-size:13px;font-weight:700;cursor:pointer">
+            📍 {{ reforzandoGps ? '...' : $t('verify.gpsLocalBtn') }}
+          </button>
+        </div>
+
+        <!-- Peldaño 1 — Notificación -->
         <div v-if="!notiActivada" style="font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:6px;padding:8px 10px;background:var(--bg2);border-radius:var(--r);border:.5px solid var(--border)">
           {{ $t('verify.notiInfo') }}
         </div>
@@ -25,17 +36,6 @@
           style="width:100%;margin-bottom:10px;padding:12px;background:rgba(76,111,255,.12);border:.5px solid #4C6FFF;border-radius:var(--r);color:#4C6FFF;font-size:13px;font-weight:700;cursor:pointer">
           {{ notiActivada ? $t('verify.notiOn') : $t('verify.notiOff') }}
         </button>
-
-        <!-- Peldaño 1.5 — GPS local (solo para convocatorias locales, si no tiene GPS aún) -->
-        <div v-if="isLocalProtest && !device.gpsReady" style="margin-bottom:10px">
-          <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:6px;padding:8px 10px;background:rgba(76,200,255,.06);border-radius:var(--r);border:.5px solid rgba(76,200,255,.25)">
-            {{ $t('verify.gpsLocalInfo', { ciudad: localCiudad }) }}
-          </div>
-          <button @click="reforzarGpsLocal"
-            style="width:100%;margin-bottom:6px;padding:12px;background:rgba(76,200,255,.12);border:.5px solid #4CC8FF;border-radius:var(--r);color:#4CC8FF;font-size:13px;font-weight:700;cursor:pointer">
-            📍 {{ reforzandoGps ? '...' : $t('verify.gpsLocalBtn') }}
-          </button>
-        </div>
 
         <!-- Peldaño 2 — VIRAL -->
         <button class="suc-share" style="width:100%;margin-bottom:10px" @click="ui.showShareModal = true">
@@ -226,4 +226,5 @@ function goDetail() {
   else    router.push('/');
 }
 </script>
+
 

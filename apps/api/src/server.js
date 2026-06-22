@@ -55,6 +55,8 @@ app.register(pushRoutes,        { prefix: '/api/push' });
 app.register(sourceRoutes,      { prefix: '/api/source' });
 app.register(kofiWebhookRoutes, { prefix: '/api/webhooks' });
 app.register(geocodeRoutes,     { prefix: '/api/geocode' });
+import { ipinfoRoutes } from './routes/geocode.js';
+app.register(ipinfoRoutes,      { prefix: '/api/ipinfo' });
 
 app.get('/health', async () => ({ status: 'ok' }));
 

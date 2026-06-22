@@ -733,7 +733,9 @@
     "providerNominatimRegion": "EU / Variable (infraestructura distribuida de OpenStreetMap)",
     "providerGithub": "Hosting del frontend estático (voiceprotest.org). GitHub Pages puede recibir la dirección IP de cada visitante al servir los archivos de la aplicación.",
     "providerGithubRegion": "US",
-    "pushTimezone": "Si activas las notificaciones push, también podemos almacenar la zona horaria de tu dispositivo para evitar enviarte avisos no esenciales durante la noche (23:00–07:00 hora local). Esta información se usa exclusivamente para programar notificaciones y se elimina junto con la suscripción cuando la convocatoria se cierra."
+    "pushTimezone": "Si activas las notificaciones push, también podemos almacenar la zona horaria de tu dispositivo para evitar enviarte avisos no esenciales durante la noche (23:00–07:00 hora local). Esta información se usa exclusivamente para programar notificaciones y se elimina junto con la suscripción cuando la convocatoria se cierra.",
+    "providerIpapi": "Geolocalización IP — estima país, ciudad y región a partir de la IP. La IP bruta no se almacena.",
+    "ipGeoProxy": "Voice Protest puede usar la dirección IP recibida por su servidor backend para estimar el país, ciudad y región a través de un proveedor externo de geolocalización IP. La dirección IP bruta no se almacena. Solo el resultado aproximado puede usarse como señal de fiabilidad geográfica."
   },
   "funding": {
     "title": "Política de Financiación e Independencia",

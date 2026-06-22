@@ -733,7 +733,9 @@
     "providerNominatimRegion": "EU / Variable (distributed OpenStreetMap infrastructure)",
     "providerGithub": "Static frontend hosting (voiceprotest.org). GitHub Pages may receive the IP address of each visitor when serving the application files.",
     "providerGithubRegion": "US",
-    "pushTimezone": "If you activate push notifications, we may also store your device's timezone to avoid sending non-essential alerts during nighttime hours (23:00–07:00 local time). This information is used exclusively to schedule notifications and is deleted alongside your subscription when the event closes."
+    "pushTimezone": "If you activate push notifications, we may also store your device's timezone to avoid sending non-essential alerts during nighttime hours (23:00–07:00 local time). This information is used exclusively to schedule notifications and is deleted alongside your subscription when the event closes.",
+    "providerIpapi": "IP geolocation — estimates country, city and region from the IP address. Raw IP is not stored.",
+    "ipGeoProxy": "Voice Protest may use the IP address received by its backend server to estimate country, city and region through an external IP geolocation provider. The raw IP address is not stored. Only the approximate result may be used as a geographic reliability signal."
   },
   "funding": {
     "title": "Funding & Independence Policy",

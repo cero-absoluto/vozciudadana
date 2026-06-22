@@ -436,6 +436,7 @@ export default async function protestRoutes(app) {
           gps_lat:         { type: 'number', nullable: true },
           gps_lng:         { type: 'number', nullable: true },
           gps_accuracy:    { type: 'number', nullable: true },
+          sms_sent:        { type: 'boolean', nullable: true },
           ip_ciudad:       { type: 'string', nullable: true },
           ip_pais:         { type: 'string', nullable: true },
           ip_region:       { type: 'string', nullable: true },
@@ -444,7 +445,7 @@ export default async function protestRoutes(app) {
       },
     },
   }, async (req, reply) => {
-    const { phone_hash, doc_hash, device_id, recaptcha_token, gps_lat, gps_lng, gps_accuracy, ip_ciudad, ip_pais, ip_region } = req.body;
+    const { phone_hash, doc_hash, device_id, recaptcha_token, gps_lat, gps_lng, gps_accuracy, ip_ciudad, ip_pais, ip_region, sms_sent } = req.body;
     await verifyRecaptcha(recaptcha_token, 'join_protest', reply);
 
     // Fetch protest metadata and idempotency check in parallel
@@ -590,8 +591,8 @@ export default async function protestRoutes(app) {
     await supabase.rpc('update_cities_count', { protest_id: req.params.id });
     if (rpcErr) req.log.error({ rpcErr }, 'increment_protest_count failed');
 
-    // Descontar saldo por adhesion y registrar movimiento financiero
-    if (protest.saldo_euros !== null && protest.saldo_euros > 0) {
+    // Descontar saldo por adhesion — solo si se envió SMS real (sms_sent !== false)
+    if (protest.saldo_euros !== null && protest.saldo_euros > 0 && sms_sent !== false) {
       await supabase.from('protests')
         .update({ saldo_euros: Math.max(0, protest.saldo_euros - SMS_COST_EUR) })
         .eq('id', req.params.id);

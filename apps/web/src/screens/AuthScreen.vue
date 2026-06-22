@@ -272,6 +272,7 @@ async function sendSMS() {
     const phoneHash = await sha256('+' + dialCode.value + v);
     sessionStorage.setItem('vc_phone_hash', phoneHash);
     sessionStorage.setItem('vc_device_id', device.getDeviceId());
+    sessionStorage.setItem('vc_sms_sent', 'false');
     router.push('/verify');
     return;
   }
@@ -313,6 +314,7 @@ async function verifyOTP() {
     const deviceId  = device.getDeviceId();
     sessionStorage.setItem('vc_phone_hash', phoneHash);
     sessionStorage.setItem('vc_device_id',  deviceId);
+    sessionStorage.setItem('vc_sms_sent', 'true');
     const res = await api.verifyOtp({ phone: '+' + dialCode.value + v, otp: code, device_id: deviceId, country_code: countryCode.value });
     // Sync local device_id with the canonical one from the server (anchored to phone_hash).
     // If localStorage was cleared and the phone was already verified, the server returns

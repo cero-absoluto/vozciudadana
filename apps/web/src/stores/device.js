@@ -34,7 +34,8 @@ export const useDeviceStore = defineStore('device', () => {
   });
   async function detectCountryByIp() {
     try {
-    const res = await fetch('https://ipapi.co/json/');
+    const API_BASE = import.meta.env.VITE_API_URL || 'https://api.voiceprotest.org';
+    const res = await fetch(`${API_BASE}/api/ipinfo`);
      const data = await res.json();
       if (data.country_code) {
         ipCountry.value = data.country_code;

@@ -517,17 +517,8 @@ export default async function protestRoutes(app) {
       } catch { /* silencioso */ }
     }
 
-    // Si no hay GPS o falló, usar datos de IP enviados por el frontend
-    if (!ciudad) {
-      ciudad = ip_ciudad || null;
-      region = ip_region || null;
-      pais   = ip_pais   || null;
-    }
-
-    // Si tampoco hay datos del frontend, consultar ipapi.co como último recurso
-    // usando la IP real del usuario (x-forwarded-for), no la IP de Railway.
-    // Aprobado por auditor — mismas condiciones de privacidad que /api/ipinfo.
-    // La IP bruta no se almacena. Solo ciudad/región/país como señal informativa.
+    // Si no hay GPS, consultar ipapi.co con la IP real del usuario
+    // NO usar ip_ciudad del frontend — puede estar cacheado incorrectamente
     if (!ciudad) {
       try {
         const geoRes = await fetch(`https://ipapi.co/${ip}/json/`, {

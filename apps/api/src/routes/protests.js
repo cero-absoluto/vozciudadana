@@ -524,14 +524,20 @@ export default async function protestRoutes(app) {
       pais   = ip_pais   || null;
     }
 
-    // Si tampoco hay datos del frontend, consultar ip-api como último recurso
+    // Si tampoco hay datos del frontend, consultar ipapi.co como último recurso
+    // usando la IP real del usuario (x-forwarded-for), no la IP de Railway.
+    // Aprobado por auditor — mismas condiciones de privacidad que /api/ipinfo.
+    // La IP bruta no se almacena. Solo ciudad/región/país como señal informativa.
     if (!ciudad) {
       try {
-        const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country&lang=es`);
+        const geoRes = await fetch(`https://ipapi.co/${ip}/json/`, {
+          headers: { 'User-Agent': 'VoiceProtest/1.0 (voiceprotest.org)' },
+          signal: AbortSignal.timeout(4000),
+        });
         const geo = await geoRes.json();
-        ciudad = geo.city || null;
-        region = geo.regionName || null;
-        pais   = geo.country || null;
+        ciudad = geo.city         || null;
+        region = geo.region       || null;
+        pais   = geo.country_name || null;
       } catch { /* silencioso */ }
     }
 

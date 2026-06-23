@@ -137,7 +137,9 @@
           <div v-if="data.desglose_geografico_local" class="block" style="margin-bottom:12px">
             <div class="block-title">📍 {{ $t('informe.geoLocalTitle') }}</div>
             <div style="font-size:12px;color:var(--text3);margin-bottom:12px">
-              {{ $t('informe.geoLocalSubtitle', { municipio: data.desglose_geografico_local.municipio }) }}
+              {{ data.desglose_geografico_local.scope === 'regional'
+                ? $t('informe.geoRegionalSubtitle', { region: data.desglose_geografico_local.municipio })
+                : $t('informe.geoLocalSubtitle', { municipio: data.desglose_geografico_local.municipio }) }}
             </div>
 
             <!-- GPS local -->

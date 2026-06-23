@@ -200,14 +200,14 @@
   </select>
 </div>
 
-<!-- Municipality search — only for local scope -->
-<div v-if="form.scope === 'local'" class="fg" style="margin-top:12px">
-  <label>{{ $t('create.municipioLabel') }} *</label>
+<!-- Geographic entity search — for local scope (municipality) and regional scope (region/province) -->
+<div v-if="form.scope === 'local' || form.scope === 'regional'" class="fg" style="margin-top:12px">
+  <label>{{ form.scope === 'local' ? $t('create.municipioLabel') : $t('create.regionOsmLabel') }} *</label>
   <div style="position:relative">
     <input
       type="text"
       v-model="municipioQuery"
-      :placeholder="$t('create.municipioPlaceholder')"
+      :placeholder="form.scope === 'local' ? $t('create.municipioPlaceholder') : $t('create.regionOsmPlaceholder')"
       @input="onMunicipioInput"
       autocomplete="off"
     >
@@ -226,12 +226,14 @@
       <div style="color:var(--text3);font-size:11px">{{ r.display_name }}</div>
     </div>
   </div>
-  <!-- Selected municipality confirmation -->
+  <!-- Selected entity confirmation -->
   <div v-if="form.convocatoria_osm_id && !municipioResults.length" style="margin-top:6px;padding:8px 12px;background:rgba(76,255,164,.06);border:.5px solid var(--accent2);border-radius:var(--r);font-size:12px;color:var(--accent2)">
     ✅ {{ form.convocatoria_ciudad_nombre }}
     <span @click="clearMunicipio" style="float:right;cursor:pointer;color:var(--text3)">✕</span>
   </div>
-  <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">{{ $t('create.municipioHint') }}</div>
+  <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">
+    {{ form.scope === 'local' ? $t('create.municipioHint') : $t('create.regionOsmHint') }}
+  </div>
 </div>
 
 <div v-if="form.scope === 'regional'" class="fg" style="margin-top:12px">
@@ -389,12 +391,11 @@ function onMunicipioInput() {
 async function searchMunicipio(q) {
   municipioChecking.value = true;
   try {
-    // Search Nominatim for municipalities (admin_level=8) matching the query.
-    // Using the public Nominatim API — same as we use for reverse geocoding,
-    // routed through our backend proxy to protect user IP.
     const API_BASE = import.meta.env.VITE_API_URL || 'https://api.voiceprotest.org';
+    // level=8 for local (municipality), level=4 for regional (admin region)
+    const level = form.scope === 'regional' ? '4' : '8';
     const res = await fetch(
-      `${API_BASE}/api/geocode/search?q=${encodeURIComponent(q)}&level=8`
+      `${API_BASE}/api/geocode/search?q=${encodeURIComponent(q)}&level=${level}`
     );
     if (!res.ok) throw new Error('Search failed');
     const data = await res.json();
@@ -771,6 +772,7 @@ function submit() {
   if (form.scope === 'regional' && !form.convocatoria_region.trim()) { ui.showToast(t('create.errRegion')); return; }
   if (form.scope === 'regional' && form.convocatoria_institucion && !form.dominio_email.trim()) { ui.showToast(t('create.errDominio')); return; }
   if (form.scope === 'local' && !form.convocatoria_osm_id) { ui.showToast(t('create.errMunicipio')); return; }
+  if (form.scope === 'regional' && !form.convocatoria_osm_id) { ui.showToast(t('create.errRegionOsm')); return; }
   if (!form.tipo_abuso) { ui.showToast(t('create.errAbuso')); return; }
   if (!form.fuente_url.trim()) { ui.showToast(t('create.errFuente')); return; }
 
@@ -838,4 +840,5 @@ function submit() {
   }, 800);
 }
 </script>
+
 

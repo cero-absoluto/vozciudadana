@@ -244,7 +244,11 @@
     "sourceTypeNgo": "NGO",
     "sourceTypeAcademic": "academic",
     "sourceTypeGovernment": "official source",
-    "sourceTypeUnknown": "unknown source"
+    "sourceTypeUnknown": "unknown source",
+    "regionOsmLabel": "Region / Province",
+    "regionOsmPlaceholder": "Search region (e.g. Cantabria, Bavaria, Lombardy...)",
+    "regionOsmHint": "Select the exact region from the list. Used to classify participants by geographic proximity in the public report.",
+    "errRegionOsm": "Please select a region for this regional event"
   },
   "detail": {
     "back": "← Back to map",
@@ -466,7 +470,8 @@
     "geoNational": "National participants",
     "geoNationalDesc": "Participants without local GPS confirmation. May include residents temporarily outside the municipality.",
     "geoInternational": "International participants",
-    "geoInternationalDesc": "Participants with a SIM from a different country."
+    "geoInternationalDesc": "Participants with a SIM from a different country.",
+    "geoRegionalSubtitle": "Regional event — {region}. Participants are classified by their geographic proximity at the time of adhesion."
   },
   "invite": {
     "loading": "Validating invitation...",

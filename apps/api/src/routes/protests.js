@@ -371,13 +371,14 @@ export default async function protestRoutes(app) {
     // ── Local scope requires a municipality OSM ID ─────────────────────────
     // For local protests, the convocante must select a specific municipality
     // via the Nominatim search in the frontend. The osm_id is stored and used
-    // later to classify participants by geographic proximity in the report.
-    // GPS is NOT used as an exclusion filter — it is used as a signal that
-    // enriches the report with local/national/international breakdown.
-    if (scope === 'local' && !convocatoria_osm_id) {
+    // Both local and regional scopes require an OSM geographic entity
+    // to enable the three-tier geographic breakdown in the public report.
+    if ((scope === 'local' || scope === 'regional') && !convocatoria_osm_id) {
       return reply.status(400).send({
-        error: 'Municipality required',
-        reason: 'Local protests must specify a municipality. Please select a municipality from the search.',
+        error: 'Geographic entity required',
+        reason: scope === 'local'
+          ? 'Local protests must specify a municipality. Please select a municipality from the search.'
+          : 'Regional protests must specify a region. Please select a region from the search.',
       });
     }
 
@@ -497,8 +498,10 @@ export default async function protestRoutes(app) {
     // Si hay GPS, usar geocodificación GPS (más precisa) ignorando IP
     if (gps_lat != null && gps_lng != null) {
       try {
+        // Use zoom=10 for local (municipality), zoom=6 for regional (admin region)
+        const zoomLevel = protest.scope === 'regional' ? 6 : 10;
         const geoRes = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${gps_lat}&lon=${gps_lng}&format=json&zoom=10`,
+          `https://nominatim.openstreetmap.org/reverse?lat=${gps_lat}&lon=${gps_lng}&format=json&zoom=${zoomLevel}`,
           { headers: { 'Accept-Language': 'es', 'User-Agent': 'VozCiudadana/1.0' } }
         );
         const geoData = await geoRes.json();
@@ -508,10 +511,10 @@ export default async function protestRoutes(app) {
         region = geoData.address?.state || geoData.address?.county || null;
         pais   = geoData.address?.country || null;
 
-        // Extract osm_id for local scope municipality matching.
-        // zoom=10 targets the municipality level (admin_level=8) in most EU countries.
+        // Extract osm_id for local and regional scope municipality/region matching.
+        // zoom=10 targets municipality level; zoom=6 targets region level.
         // Stored as adhesion_osm_id and used in the informe geographic breakdown.
-        if (geoData.osm_id && protest.scope === 'local') {
+        if (geoData.osm_id && (protest.scope === 'local' || protest.scope === 'regional')) {
           adhesion_osm_id = parseInt(geoData.osm_id);
         }
       } catch { /* silencioso */ }
@@ -934,7 +937,7 @@ export default async function protestRoutes(app) {
     // 2. National participants (SIM from same country, no local GPS)
     // 3. International participants (SIM from different country)
     let desglose_geografico_local = null;
-    if (protest.scope === 'local' && protest.convocatoria_osm_id) {
+    if ((protest.scope === 'local' || protest.scope === 'regional') && protest.convocatoria_osm_id) {
       const gps_local = adhesions.filter(a =>
         a.adhesion_osm_id && a.adhesion_osm_id === protest.convocatoria_osm_id
       ).length;
@@ -949,7 +952,9 @@ export default async function protestRoutes(app) {
       ).length;
 
       desglose_geografico_local = {
+        // For regional scope, this is the region name; for local, the municipality name
         municipio: protest.convocatoria_ciudad_nombre,
+        scope: protest.scope,
         gps_local,
         gps_nacional,
         nacionales_sin_gps,

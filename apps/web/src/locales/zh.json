@@ -244,7 +244,11 @@
     "sourceTypeNgo": "非政府组织",
     "sourceTypeAcademic": "学术来源",
     "sourceTypeGovernment": "官方来源",
-    "sourceTypeUnknown": "未知来源"
+    "sourceTypeUnknown": "未知来源",
+    "regionOsmLabel": "地区 / 省份",
+    "regionOsmPlaceholder": "搜索地区（例如：广东省、巴伐利亚...）",
+    "regionOsmHint": "从列表中选择确切的地区。用于在公开报告中按地理距离对参与者进行分类。",
+    "errRegionOsm": "请为此地区活动选择一个地区"
   },
   "detail": {
     "back": "← 返回地图",
@@ -466,7 +470,8 @@
     "geoNational": "全国参与者",
     "geoNationalDesc": "没有本地GPS确认的参与者。可能包括暂时不在市辖区内的居民。",
     "geoInternational": "国际参与者",
-    "geoInternationalDesc": "使用其他国家SIM卡的参与者。"
+    "geoInternationalDesc": "使用其他国家SIM卡的参与者。",
+    "geoRegionalSubtitle": "地区活动 — {region}。参与者按参与时的地理位置进行分类。"
   },
   "invite": {
     "loading": "验证邀请中...",

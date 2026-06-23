@@ -244,7 +244,11 @@
     "sourceTypeNgo": "ONG",
     "sourceTypeAcademic": "source académique",
     "sourceTypeGovernment": "source officielle",
-    "sourceTypeUnknown": "source inconnue"
+    "sourceTypeUnknown": "source inconnue",
+    "regionOsmLabel": "Région / Province",
+    "regionOsmPlaceholder": "Rechercher la région (ex: Bretagne, Bavière, Lombardie...)",
+    "regionOsmHint": "Sélectionnez la région exacte dans la liste. Utilisé pour classer les participants par proximité géographique dans le rapport public.",
+    "errRegionOsm": "Veuillez sélectionner une région pour cet événement régional"
   },
   "detail": {
     "back": "← Retour à la carte",
@@ -466,7 +470,8 @@
     "geoNational": "Participants nationaux",
     "geoNationalDesc": "Participants sans confirmation GPS locale. Peut inclure des résidents temporairement absents de la commune.",
     "geoInternational": "Participants internationaux",
-    "geoInternationalDesc": "Participants avec une SIM d'un autre pays."
+    "geoInternationalDesc": "Participants avec une SIM d'un autre pays.",
+    "geoRegionalSubtitle": "Événement régional — {region}. Les participants sont classés selon leur proximité géographique au moment de l'adhésion."
   },
   "invite": {
     "loading": "Validation de l'invitation...",

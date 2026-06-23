@@ -244,7 +244,11 @@
     "sourceTypeNgo": "ONG",
     "sourceTypeAcademic": "fuente académica",
     "sourceTypeGovernment": "fuente oficial",
-    "sourceTypeUnknown": "fuente desconocida"
+    "sourceTypeUnknown": "fuente desconocida",
+    "regionOsmLabel": "Región / Provincia",
+    "regionOsmPlaceholder": "Busca la región (ej: Cantabria, Andalucía, Cataluña...)",
+    "regionOsmHint": "Selecciona la región exacta de la lista. Se usa para clasificar a los participantes por proximidad geográfica en el informe público.",
+    "errRegionOsm": "Selecciona una región para esta convocatoria regional"
   },
   "detail": {
     "back": "← Volver al mapa",
@@ -466,7 +470,8 @@
     "geoNational": "Participantes nacionales",
     "geoNationalDesc": "Participantes sin confirmación GPS local. Puede incluir residentes temporalmente fuera del municipio.",
     "geoInternational": "Participantes internacionales",
-    "geoInternationalDesc": "Participantes con SIM de otro país."
+    "geoInternationalDesc": "Participantes con SIM de otro país.",
+    "geoRegionalSubtitle": "Convocatoria regional — {region}. Los participantes se clasifican según su proximidad geográfica en el momento de la adhesión."
   },
   "invite": {
     "loading": "Validando invitación...",

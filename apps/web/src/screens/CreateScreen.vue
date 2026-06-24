@@ -237,11 +237,6 @@
 </div>
 
 <div v-if="form.scope === 'regional'" class="fg" style="margin-top:12px">
-  <label>{{ $t('create.regionLabel') }}</label>
-  <input type="text" v-model="form.convocatoria_region" :placeholder="$t('create.regionPlaceholder')">
-</div>
-
-<div v-if="form.scope === 'regional'" class="fg" style="margin-top:12px">
   <label>{{ $t('create.institucionLabel') }} <span style="font-weight:400;opacity:.6">({{ $t('create.optional') }})</span></label>
   <input type="text" v-model="form.convocatoria_institucion" :placeholder="$t('create.institucionPlaceholder')">
   <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">{{ $t('create.institucionHint') }}</div>
@@ -381,6 +376,7 @@ function onMunicipioInput() {
   clearTimeout(municipioDebounce);
   form.convocatoria_osm_id = null;
   form.convocatoria_ciudad_nombre = '';
+  form.convocatoria_region = '';
   form.convocatoria_lat = null;
   form.convocatoria_lon = null;
   municipioResults.value = [];
@@ -412,6 +408,9 @@ function selectMunicipio(result) {
   form.convocatoria_ciudad_nombre = result.name;
   form.convocatoria_lat = result.lat ?? null;
   form.convocatoria_lon = result.lon ?? null;
+  // For regional scope the OSM entity IS the region: keep convocatoria_region
+  // in sync so the group screen and group invites still show the region label.
+  if (form.scope === 'regional') form.convocatoria_region = result.name;
   municipioQuery.value = result.name;
   municipioResults.value = [];
 }
@@ -419,6 +418,7 @@ function selectMunicipio(result) {
 function clearMunicipio() {
   form.convocatoria_osm_id = null;
   form.convocatoria_ciudad_nombre = '';
+  form.convocatoria_region = '';
   form.convocatoria_lat = null;
   form.convocatoria_lon = null;
   municipioQuery.value = '';
@@ -769,7 +769,6 @@ function submit() {
   if (!form.starts_at) { ui.showToast(t('create.errDate')); return; }
   if (form.scope === 'national' && !form.convocatoria_pais) { ui.showToast(t('create.errPais')); return; }
   if (form.scope === 'regional' && !form.convocatoria_pais) { ui.showToast(t('create.errPais')); return; }
-  if (form.scope === 'regional' && !form.convocatoria_region.trim()) { ui.showToast(t('create.errRegion')); return; }
   if (form.scope === 'regional' && form.convocatoria_institucion && !form.dominio_email.trim()) { ui.showToast(t('create.errDominio')); return; }
   if (form.scope === 'local' && !form.convocatoria_osm_id) { ui.showToast(t('create.errMunicipio')); return; }
   if (form.scope === 'regional' && !form.convocatoria_osm_id) { ui.showToast(t('create.errRegionOsm')); return; }

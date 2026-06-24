@@ -62,8 +62,9 @@
           </div>
         </div>
       </div>
-      <!-- Geo validation — colapsable -->
-      <div v-if="protest.scope !== 'global'" class="geo-validation">
+      <!-- Geo validation — colapsable. Hidden for institutional convocatorias,
+           which are verified by institutional email, not by SIM/GPS geography. -->
+      <div v-if="protest.scope !== 'global' && !protest.dominio_email" class="geo-validation">
         <div class="gv-title" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center" @click="geoOpen = !geoOpen">
           <span>{{ $t('detail.geoValidation') }}</span>
           <span style="font-size:12px;color:var(--text2)">{{ geoOpen ? '▲' : '▼' }}</span>

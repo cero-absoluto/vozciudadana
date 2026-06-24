@@ -180,19 +180,39 @@
   <div>
     <div class="scope-section">
       <div class="scope-section-title">{{ $t('create.scopeTitle') }}</div>
+
+      <!-- Block 1 — Geographic participation -->
+      <div class="scope-group-title">{{ $t('create.scopeGeoTitle') }}</div>
+      <div class="scope-group-sub">{{ $t('create.scopeGeoSubtitle') }}</div>
       <div class="scope-opts">
-        <div v-for="s in scopes" :key="s.key"
-          class="scope-opt" :class="{sel: form.scope === s.key}"
+        <div v-for="s in geoScopes" :key="s.key"
+          class="scope-opt" :class="{sel: uiScope === s.key}"
           @click="selectScope(s.key)">
           <div class="so-ico" :style="{background: s.bg}">{{ s.icon }}</div>
           <div class="so-txt">
             <div class="so-title">{{ s.label }} <span class="scope-badge" :class="s.badgeClass">{{ s.badgeLabel }}</span></div>
             <div class="so-desc">{{ s.desc }}</div>
           </div>
-          <div class="so-radio" :class="{on: form.scope === s.key}"></div>
+          <div class="so-radio" :class="{on: uiScope === s.key}"></div>
         </div>
       </div>
-<div v-if="form.scope === 'national' || form.scope === 'regional'" class="fg" style="margin-top:12px">
+
+      <!-- Block 2 — Institutional participation -->
+      <div class="scope-group-title" style="margin-top:18px">{{ $t('create.scopeInstTitle') }}</div>
+      <div class="scope-group-sub">{{ $t('create.scopeInstSubtitle') }}</div>
+      <div class="scope-opts">
+        <div v-for="s in instScopes" :key="s.key"
+          class="scope-opt" :class="{sel: uiScope === s.key}"
+          @click="selectScope(s.key)">
+          <div class="so-ico" :style="{background: s.bg}">{{ s.icon }}</div>
+          <div class="so-txt">
+            <div class="so-title">{{ s.label }} <span class="scope-badge" :class="s.badgeClass">{{ s.badgeLabel }}</span></div>
+            <div class="so-desc">{{ s.desc }}</div>
+          </div>
+          <div class="so-radio" :class="{on: uiScope === s.key}"></div>
+        </div>
+      </div>
+<div v-if="uiScope === 'national' || uiScope === 'regional'" class="fg" style="margin-top:12px">
   <label>{{ $t('create.paisLabel') }}</label>
   <select v-model="form.convocatoria_pais">
     <option value="">{{ $t('create.paisPlaceholder') }}</option>
@@ -201,13 +221,13 @@
 </div>
 
 <!-- Geographic entity search — for local scope (municipality) and regional scope (region/province) -->
-<div v-if="form.scope === 'local' || form.scope === 'regional'" class="fg" style="margin-top:12px">
-  <label>{{ form.scope === 'local' ? $t('create.municipioLabel') : $t('create.regionOsmLabel') }} *</label>
+<div v-if="uiScope === 'local' || uiScope === 'regional'" class="fg" style="margin-top:12px">
+  <label>{{ uiScope === 'local' ? $t('create.municipioLabel') : $t('create.regionOsmLabel') }} *</label>
   <div style="position:relative">
     <input
       type="text"
       v-model="municipioQuery"
-      :placeholder="form.scope === 'local' ? $t('create.municipioPlaceholder') : $t('create.regionOsmPlaceholder')"
+      :placeholder="uiScope === 'local' ? $t('create.municipioPlaceholder') : $t('create.regionOsmPlaceholder')"
       @input="onMunicipioInput"
       autocomplete="off"
     >
@@ -232,52 +252,35 @@
     <span @click="clearMunicipio" style="float:right;cursor:pointer;color:var(--text3)">✕</span>
   </div>
   <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">
-    {{ form.scope === 'local' ? $t('create.municipioHint') : $t('create.regionOsmHint') }}
+    {{ uiScope === 'local' ? $t('create.municipioHint') : $t('create.regionOsmHint') }}
   </div>
 </div>
 
-<div v-if="form.scope === 'regional'" class="fg" style="margin-top:12px">
-  <label>{{ $t('create.institucionLabel') }} <span style="font-weight:400;opacity:.6">({{ $t('create.optional') }})</span></label>
+<div v-if="form.institutionalMode" class="fg" style="margin-top:12px">
+  <label>{{ $t('create.institucionLabel') }} *</label>
   <input type="text" v-model="form.convocatoria_institucion" :placeholder="$t('create.institucionPlaceholder')">
   <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">{{ $t('create.institucionHint') }}</div>
 </div>
 
-<div v-show="form.scope === 'regional' && form.convocatoria_institucion" class="fg" style="margin-top:12px">
+<div v-show="form.institutionalMode" class="fg" style="margin-top:12px">
  <label>{{ $t('create.dominioLabel') }}</label>
 <div style="display:flex;align-items:center;gap:0">
   <div style="padding:9px 10px;background:var(--bg3);border:.5px solid var(--border);border-right:none;border-radius:var(--r) 0 0 var(--r);font-size:15px;color:var(--text3);font-family:'DM Sans',sans-serif">@</div>
-  <input type="text" v-model="form.dominio_email" placeholder="uu.nl, uab.cat, upf.edu" style="border-radius:0 var(--r) var(--r) 0;flex:1">
+  <input type="text" v-model="form.dominio_email" placeholder="uu.nl, students.uu.nl, hospital.org" style="border-radius:0 var(--r) var(--r) 0;flex:1">
 </div>
 <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">{{ $t('create.dominioHint') }}</div>
 </div>
-      <div v-show="form.scope === 'regional' && form.convocatoria_institucion && form.dominio_email" 
+      <!-- Verification model is determined by the chosen institutional card -->
+      <div v-show="form.institutionalMode && form.dominio_email"
   style="background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r2);padding:12px;margin-top:12px">
-  <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px">
-    {{ $t('create.censoTitle') }}
-  </div>
-  <div style="display:flex;flex-direction:column;gap:8px">
-    <div @click="form.requiere_censo = false"
-      style="display:flex;align-items:flex-start;gap:10px;padding:10px;border-radius:var(--r);cursor:pointer;transition:all .15s"
-      :style="{background: !form.requiere_censo ? 'rgba(124,111,255,.08)' : 'var(--bg3)', border: !form.requiere_censo ? '.5px solid var(--accent)' : '.5px solid var(--border)'}">
-      <div style="width:14px;height:14px;border-radius:50%;border:.5px solid var(--border2);flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center"
-        :style="{borderColor: !form.requiere_censo ? 'var(--accent)' : 'var(--border2)', background: !form.requiere_censo ? 'var(--accent)' : 'transparent'}">
-        <div v-if="!form.requiere_censo" style="width:5px;height:5px;border-radius:50%;background:white"></div>
+  <div style="display:flex;align-items:flex-start;gap:10px">
+    <div style="font-size:16px;flex-shrink:0">{{ form.requiere_censo ? '🏛️' : '📧' }}</div>
+    <div>
+      <div style="font-size:12px;font-weight:600;margin-bottom:3px">
+        {{ form.requiere_censo ? $t('create.censoDept') : $t('create.censoAll') }}
       </div>
-      <div>
-        <div style="font-size:12px;font-weight:500;margin-bottom:3px">{{ $t('create.censoAll') }}</div>
-        <div style="font-size:12px;color:var(--text3);line-height:1.5">{{ $t('create.censoAllDesc', { domain: form.dominio_email || 'tuinstitucion.edu' }) }}</div>
-      </div>
-    </div>
-    <div @click="form.requiere_censo = true"
-      style="display:flex;align-items:flex-start;gap:10px;padding:10px;border-radius:var(--r);cursor:pointer;transition:all .15s"
-      :style="{background: form.requiere_censo ? 'rgba(124,111,255,.08)' : 'var(--bg3)', border: form.requiere_censo ? '.5px solid var(--accent)' : '.5px solid var(--border)'}">
-      <div style="width:14px;height:14px;border-radius:50%;border:.5px solid var(--border2);flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center"
-        :style="{borderColor: form.requiere_censo ? 'var(--accent)' : 'var(--border2)', background: form.requiere_censo ? 'var(--accent)' : 'transparent'}">
-        <div v-if="form.requiere_censo" style="width:5px;height:5px;border-radius:50%;background:white"></div>
-      </div>
-      <div>
-        <div style="font-size:12px;font-weight:500;margin-bottom:3px">{{ $t('create.censoDept') }}</div>
-        <div style="font-size:12px;color:var(--text3);line-height:1.5">{{ $t('create.censoDeptDesc') }}</div>
+      <div style="font-size:12px;color:var(--text3);line-height:1.5">
+        {{ form.requiere_censo ? $t('create.censoDeptDesc') : $t('create.censoAllDesc', { domain: form.dominio_email || 'tuinstitucion.edu' }) }}
       </div>
     </div>
   </div>
@@ -332,6 +335,17 @@
   line-height: 1.5; font-weight: 400;
 }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.scope-group-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--text2); margin: 4px 0 2px;
+}
+.scope-group-sub {
+  font-size: 12px; color: var(--text3); line-height: 1.5; margin-bottom: 10px;
+}
+.sb-inst {
+  background: rgba(124,111,255,.15);
+  color: var(--accent);
+}
 </style>
 
 <script setup>
@@ -352,6 +366,7 @@ const form = reactive({
   title: '', description: '', demands: '', focal_point: '',
   target_wikidata_id: '', target_type: '', target_country: '', target_validation: '',
   scope: 'national', region: null,
+  institutionalMode: false,
   duration_h: 36, risk_level: 'low', starts_at: '',
   convocatoria_pais: '',
   convocatoria_region: '',
@@ -743,20 +758,52 @@ const sortedCountries = computed(() => {
     .sort((a, b) => a.name.localeCompare(b.name));
 });
 
-const scopes = computed(() => [
-  { key:'national', icon:'🏧', label: t('create.scopeNational'), badgeClass:'sb-national', badgeLabel: t('create.scopeNationalBadge'), bg:'rgba(124,111,255,.08)', desc: t('create.scopeNationalDesc') },
-  { key:'regional', icon:'🌐', label: t('create.scopeLocal'),    badgeClass:'sb-regional', badgeLabel: t('create.scopeLocalBadge'),    bg:'rgba(255,179,71,.08)',   desc: t('create.scopeLocalDesc') },
-  { key:'local',    icon:'📍', label: t('create.scopeLocalCity'), badgeClass:'sb-local',    badgeLabel: t('create.scopeLocalCityBadge'), bg:'rgba(76,200,255,.08)',  desc: t('create.scopeLocalCityDesc') },
-  { key:'global',   icon:'🌍', label: t('create.scopeGlobal'),   badgeClass:'sb-global',   badgeLabel: t('create.scopeGlobalBadge'),   bg:'rgba(76,255,164,.08)',   desc: t('create.scopeGlobalDesc') },
+// ── Two participation models, presented as separate blocks ─────────────────
+// Geographic scopes map 1:1 to the backend `scope` enum.
+const geoScopes = computed(() => [
+  { key:'national', icon:'🏧', label: t('create.scopeNational'),      badgeClass:'sb-national', badgeLabel: t('create.scopeNationalBadge'),      bg:'rgba(124,111,255,.08)', desc: t('create.scopeNationalDesc') },
+  { key:'regional', icon:'🌐', label: t('create.scopeRegionalLabel'), badgeClass:'sb-regional', badgeLabel: t('create.scopeRegionalBadge'),      bg:'rgba(255,179,71,.08)',  desc: t('create.scopeRegionalDesc') },
+  { key:'local',    icon:'📍', label: t('create.scopeLocalCity'),     badgeClass:'sb-local',    badgeLabel: t('create.scopeLocalCityBadge'),     bg:'rgba(76,200,255,.08)',  desc: t('create.scopeLocalCityDesc') },
+  { key:'global',   icon:'🌍', label: t('create.scopeGlobal'),        badgeClass:'sb-global',   badgeLabel: t('create.scopeGlobalBadge'),        bg:'rgba(76,255,164,.08)',  desc: t('create.scopeGlobalDesc') },
 ]);
 
-function selectScope(s) {
-  form.scope = s;
+// Institutional model is a distinct participation type. Internally it reuses the
+// existing backend fields (scope='regional' + dominio_email [+ requiere_censo]);
+// it does NOT introduce a new backend scope.
+const instScopes = computed(() => [
+  { key:'inst_email',  icon:'📧', label: t('create.scopeInstEmail'),  badgeClass:'sb-inst', badgeLabel: t('create.scopeInstEmailBadge'),  bg:'rgba(124,111,255,.08)', desc: t('create.scopeInstEmailDesc') },
+  { key:'inst_census', icon:'🏛️', label: t('create.scopeInstCensus'), badgeClass:'sb-inst', badgeLabel: t('create.scopeInstCensusBadge'), bg:'rgba(124,111,255,.08)', desc: t('create.scopeInstCensusDesc') },
+]);
+
+// uiScope tracks the visually selected card. It differs from form.scope because
+// both institutional cards map to the same data scope ('regional').
+const uiScope = ref('national');
+
+function selectScope(key) {
+  uiScope.value = key;
   form.region = null;
-  if (s === 'regional') form.duration_h = 8;
-  else if (s === 'national') form.duration_h = 36;
-  else if (s === 'local') form.duration_h = 8;   // ciudad/municipio — mismo ciclo que regional
-  else form.duration_h = 72;
+  if (key === 'inst_email' || key === 'inst_census') {
+    // Institutional participation — verified by institutional email (+ census).
+    // No geographic entity required; clear any geo state from a previous choice.
+    form.scope = 'regional';
+    form.institutionalMode = true;
+    form.requiere_censo = (key === 'inst_census');
+    form.convocatoria_pais = '';
+    clearMunicipio();
+    form.duration_h = 72;
+  } else {
+    // Geographic participation — verified by SIM of the selected country.
+    form.scope = key;
+    form.institutionalMode = false;
+    form.requiere_censo = false;
+    form.convocatoria_institucion = '';
+    form.dominio_email = '';
+    if (key !== 'local' && key !== 'regional') clearMunicipio();
+    if (key === 'national')      form.duration_h = 36;
+    else if (key === 'regional') form.duration_h = 8;
+    else if (key === 'local')    form.duration_h = 8;
+    else                         form.duration_h = 72;
+  }
 }
 
 function submit() {
@@ -767,11 +814,16 @@ function submit() {
   if (targetStatus.value === 'REJECTED') { ui.showToast(t('create.errTargetRejected')); return; }
   if (targetStatus.value === 'CHECKING') { ui.showToast(t('create.errTargetChecking')); return; }
   if (!form.starts_at) { ui.showToast(t('create.errDate')); return; }
-  if (form.scope === 'national' && !form.convocatoria_pais) { ui.showToast(t('create.errPais')); return; }
-  if (form.scope === 'regional' && !form.convocatoria_pais) { ui.showToast(t('create.errPais')); return; }
-  if (form.scope === 'regional' && form.convocatoria_institucion && !form.dominio_email.trim()) { ui.showToast(t('create.errDominio')); return; }
-  if (form.scope === 'local' && !form.convocatoria_osm_id) { ui.showToast(t('create.errMunicipio')); return; }
-  if (form.scope === 'regional' && !form.convocatoria_osm_id) { ui.showToast(t('create.errRegionOsm')); return; }
+  if (!form.institutionalMode) {
+    // Geographic participation
+    if ((form.scope === 'national' || form.scope === 'regional') && !form.convocatoria_pais) { ui.showToast(t('create.errPais')); return; }
+    if (form.scope === 'local' && !form.convocatoria_osm_id) { ui.showToast(t('create.errMunicipio')); return; }
+    if (form.scope === 'regional' && !form.convocatoria_osm_id) { ui.showToast(t('create.errRegionOsm')); return; }
+  } else {
+    // Institutional participation (email domain, optionally + census)
+    if (!form.convocatoria_institucion.trim()) { ui.showToast(t('create.errInstitucion')); return; }
+    if (!form.dominio_email.trim()) { ui.showToast(t('create.errDominio')); return; }
+  }
   if (!form.tipo_abuso) { ui.showToast(t('create.errAbuso')); return; }
   if (!form.fuente_url.trim()) { ui.showToast(t('create.errFuente')); return; }
 
@@ -818,8 +870,11 @@ function submit() {
     const tzMinutes = String(Math.abs(tzOffset) % 60).padStart(2, '0');
     const tzSign    = tzOffset >= 0 ? '+' : '-';
     const tzSuffix  = `${tzSign}${tzHours}:${tzMinutes}`;
+    // institutionalMode is a UI-only flag — never sent to the backend
+    // (the create schema uses additionalProperties:false).
+    const { institutionalMode, ...formData } = form;
     return {
-    ...form,
+    ...formData,
     starts_at: form.starts_at ? form.starts_at + `T08:00:00${tzSuffix}` : null,
     convocatoria_pais: form.convocatoria_pais || null,
     convocatoria_region: form.convocatoria_region || null,

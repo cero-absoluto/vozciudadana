@@ -735,14 +735,16 @@ const COUNTRIES = [
 ];
 
 const endsAt = computed(() => {
-  // Use local timezone so 08:00 = 08:00 in the convocante's city, not 08:00 UTC
-  const tzOffset  = -new Date().getTimezoneOffset();
-  const tzHours   = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, '0');
-  const tzMinutes = String(Math.abs(tzOffset) % 60).padStart(2, '0');
-  const tzSign    = tzOffset >= 0 ? '+' : '-';
-  const tzSuffix  = `${tzSign}${tzHours}:${tzMinutes}`;
-  if (!form.starts_at) return null;
-  const start = new Date(form.starts_at + `T08:00:00${tzSuffix}`);
+  // Guard against incomplete or out-of-range dates — e.g. a half-typed year
+  // like "0006-07-30" from the native date input, which is a technically valid
+  // (year 6 AD) date and would render an absurd preview with an LMT offset.
+  if (!form.starts_at || form.starts_at < minDate) return null;
+  // 08:00 in the convocante's local time on the selected date. Building from
+  // local components applies the correct DST offset for that date (not today's),
+  // so a winter convocatoria created in summer still reads 08:00 local.
+  const [y, m, d] = form.starts_at.split('-').map(Number);
+  const start = new Date(y, m - 1, d, 8, 0, 0, 0);
+  if (Number.isNaN(start.getTime())) return null;
   const end = new Date(start.getTime() + form.duration_h * 3_600_000);
   return end.toLocaleString(locale.value || 'en', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -813,7 +815,7 @@ function submit() {
   if (!form.focal_point.trim()) { ui.showToast(t('create.errFocal')); return; }
   if (targetStatus.value === 'REJECTED') { ui.showToast(t('create.errTargetRejected')); return; }
   if (targetStatus.value === 'CHECKING') { ui.showToast(t('create.errTargetChecking')); return; }
-  if (!form.starts_at) { ui.showToast(t('create.errDate')); return; }
+  if (!form.starts_at || form.starts_at < minDate) { ui.showToast(t('create.errDate')); return; }
   if (!form.institutionalMode) {
     // Geographic participation
     if ((form.scope === 'national' || form.scope === 'regional') && !form.convocatoria_pais) { ui.showToast(t('create.errPais')); return; }
@@ -865,17 +867,22 @@ function submit() {
   };
 
   protests.createProtest((() => {
-    const tzOffset  = -new Date().getTimezoneOffset();
-    const tzHours   = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, '0');
-    const tzMinutes = String(Math.abs(tzOffset) % 60).padStart(2, '0');
-    const tzSign    = tzOffset >= 0 ? '+' : '-';
-    const tzSuffix  = `${tzSign}${tzHours}:${tzMinutes}`;
     // institutionalMode is a UI-only flag — never sent to the backend
     // (the create schema uses additionalProperties:false).
     const { institutionalMode, ...formData } = form;
+    // 08:00 in the convocante's local time on the selected date. Building the
+    // Date from local components lets the engine apply the correct DST offset
+    // for *that* date (not today's), then .toISOString() yields the right UTC
+    // instant. Out-of-range dates are already rejected above.
+    let startsAtIso = null;
+    if (form.starts_at) {
+      const [y, m, d] = form.starts_at.split('-').map(Number);
+      const startLocal = new Date(y, m - 1, d, 8, 0, 0, 0);
+      if (!Number.isNaN(startLocal.getTime())) startsAtIso = startLocal.toISOString();
+    }
     return {
     ...formData,
-    starts_at: form.starts_at ? form.starts_at + `T08:00:00${tzSuffix}` : null,
+    starts_at: startsAtIso,
     convocatoria_pais: form.convocatoria_pais || null,
     convocatoria_region: form.convocatoria_region || null,
     convocatoria_institucion: form.convocatoria_institucion || null,

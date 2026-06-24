@@ -368,12 +368,13 @@ export default async function protestRoutes(app) {
     }
     const { computedTargetValidation } = admission;
 
-    // ── Local scope requires a municipality OSM ID ─────────────────────────
-    // For local protests, the convocante must select a specific municipality
-    // via the Nominatim search in the frontend. The osm_id is stored and used
-    // Both local and regional scopes require an OSM geographic entity
-    // to enable the three-tier geographic breakdown in the public report.
-    if ((scope === 'local' || scope === 'regional') && !convocatoria_osm_id) {
+    // ── Local/regional scopes require an OSM geographic entity ─────────────
+    // Both local and regional scopes require an OSM geographic entity to enable
+    // the three-tier geographic breakdown in the public report.
+    // EXCEPTION: institutional convocatorias (those carrying an institutional
+    // email domain) are a distinct participation model verified by email, not by
+    // geography — they reuse scope='regional' internally but require no OSM entity.
+    if ((scope === 'local' || scope === 'regional') && !convocatoria_osm_id && !dominio_email) {
       return reply.status(400).send({
         error: 'Geographic entity required',
         reason: scope === 'local'

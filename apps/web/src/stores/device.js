@@ -16,15 +16,20 @@ export const useDeviceStore = defineStore('device', () => {
   const langCountry = ref(null);
 
   const confidence = computed(() => {
-    // GPS is the strongest signal — if available, dominates the score
+    // GPS is the strongest physical-presence signal. When available, IP+GPS
+    // agreement dominates the score; timezone and language are auxiliary signals
+    // (they reflect device configuration, not physical location) and are compared
+    // against the GPS country — so a person physically present abroad with a
+    // foreign-configured device is not penalised.
     if (gpsReady.value) {
-      let score = 60; // GPS base
-      if (ipCountry.value) score += 25;  // IP also present
-      if (tzCountry.value && tzCountry.value === ipCountry.value) score += 10;
-      if (langCountry.value && langCountry.value === ipCountry.value) score += 5;
+      let score = 60; // GPS base — physical presence
+      if (ipCountry.value) score += 15;                                                  // IP also present
+      if (gpsCountryCode.value && gpsCountryCode.value === ipCountry.value) score += 20;  // GPS agrees with IP (real physical agreement)
+      if (tzCountry.value   && tzCountry.value   === gpsCountryCode.value) score += 10;   // timezone matches GPS country
+      if (langCountry.value && langCountry.value === gpsCountryCode.value) score += 5;    // language matches GPS country
       return Math.min(100, score);
     }
-    // Without GPS: IP + secondary signals
+    // Without GPS: IP + secondary signals (timezone, language)
     let score = 0;
     if (ipCountry.value) score += 40;
     if (tzCountry.value  && tzCountry.value  === ipCountry.value) score += 30;
@@ -148,6 +153,7 @@ export const useDeviceStore = defineStore('device', () => {
   const gpsCity     = ref(null);
   const gpsRegion   = ref(null);
   const gpsPais     = ref(null);
+  const gpsCountryCode = ref(null);  // ISO code (e.g. 'MT') — for confidence comparisons; gpsPais keeps the display name
   const gpsReady    = ref(false);
 
   async function requestGps() {
@@ -169,6 +175,7 @@ export const useDeviceStore = defineStore('device', () => {
             gpsCity.value   = geo.city   || null;
             gpsRegion.value = geo.region || null;
             gpsPais.value   = geo.country || null;
+            gpsCountryCode.value = geo.country_code || null;
           } catch { /* silencioso */ }
           gpsReady.value = true;
           resolve(true);
@@ -184,6 +191,6 @@ export const useDeviceStore = defineStore('device', () => {
     confidence, myRegions, regionLabel,
     setDocCountry, getLocks, setLock, getDeviceId, setDeviceId,
     tzCountry, langCountry, detectSecondarySignals, detectCountryByIp, ipRegion, ipCountryName,
-    gpsLat, gpsLng, gpsAccuracy, gpsCity, gpsRegion, gpsPais, gpsReady, requestGps,
+    gpsLat, gpsLng, gpsAccuracy, gpsCity, gpsRegion, gpsPais, gpsCountryCode, gpsReady, requestGps,
   };
 });

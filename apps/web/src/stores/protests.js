@@ -111,8 +111,12 @@ export const useProtestsStore = defineStore('protests', () => {
     }
 
     if (p.scope === 'national') {
+      // National eligibility = SIM country matches the convocatoria's country.
+      // Geographic confidence is INFORMATIVE ONLY (shown in the report) and must
+      // not block adhesion — otherwise legitimate citizens whose auxiliary
+      // signals (IP/GPS/timezone/language) are weak or misaligned would be
+      // unfairly excluded. Auxiliary signals describe signal quality, not rights.
       if (device.simCountry !== p.country) return { ok: false, geo: true, msg: `Esta convocatoria es exclusivamente para ciudadanos de ${p.countryName}.` };
-      if (device.confidence < 60) return { ok: false, geo: true, msg: `Confianza geográfica insuficiente (${device.confidence}%).` };
     }
    if (p.scope === 'regional') {
       if (p.dominio_email) return { ok: true };

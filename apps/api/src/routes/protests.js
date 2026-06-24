@@ -645,11 +645,24 @@ export default async function protestRoutes(app) {
       });
     }
 
+    // ── Territorial match (separate axis from geographic confidence) ────────
+    // local_verified answers "is this participant physically inside the
+    // convocatoria's declared territory?" — derived from the GPS→OSM entity,
+    // NOT from the device confidence score (which only measures signal quality).
+    // The two must never be conflated by readers of the report.
+    const isTerritorial = (protest.scope === 'local' || protest.scope === 'regional') && protest.convocatoria_osm_id != null;
+    const local_verified = isTerritorial
+      ? (adhesion_osm_id != null && adhesion_osm_id === protest.convocatoria_osm_id)
+      : null;
+
     return reply.code(201).send({
       receipt: data.id,
       scope: protest.scope,
       convocatoria_osm_id: protest.convocatoria_osm_id ?? null,
       convocatoria_ciudad_nombre: protest.convocatoria_ciudad_nombre ?? null,
+      local_verified,
+      geo_scope_match:  isTerritorial ? (protest.scope === 'local' ? 'municipality' : 'region') : null,
+      geo_scope_source: (isTerritorial && adhesion_osm_id != null) ? 'gps_osm' : null,
       gps_update_token,
     });
   });
@@ -961,6 +974,17 @@ export default async function protestRoutes(app) {
         nacionales_sin_gps,
         internacionales,
         total: adhesions.length,
+        // Explicit, named territorial-verification field. Kept deliberately
+        // separate from any confidence/fiabilidad metric: local_verified means
+        // "GPS placed the participant inside the convocatoria's declared OSM
+        // entity", NOT "high signal confidence". Journalists, participants and
+        // auditors must not read a confidence percentage as territorial belonging.
+        local_verified: {
+          count:            gps_local,
+          total:            adhesions.length,
+          geo_scope_match:  protest.scope === 'local' ? 'municipality' : 'region',
+          geo_scope_source: 'gps_osm',
+        },
       };
     }
 

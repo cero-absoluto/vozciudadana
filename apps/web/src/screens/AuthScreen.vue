@@ -173,22 +173,11 @@ onMounted(async () => {
   }
 });
 
-/** Real SHA-256 hash using the Web Crypto API. */
-async function sha256(text) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-const hashDisplay = ref(t('auth.hashPlaceholder'));
-watch([countryCode, phone], async () => {
-  const v = phone.value.replace(/\D/g, '');
-  if (v.length >= 4) {
-    const h = await sha256('+' + dialCode.value + v);
-    hashDisplay.value = 'sha256:' + h;
-  } else {
-    hashDisplay.value = t('auth.hashPlaceholder');
-  }
-});
+  // The pseudonymous identifier is computed server-side with HMAC after OTP
+  // verification — it is never derived in the browser (a client-side hash could
+  // only be plain SHA-256, which is dictionary-attackable). We therefore show an
+  // explanatory message instead of a live, inaccurate client-side hash preview.
+  const hashDisplay = ref(t('auth.hashPlaceholder'));
 
 import * as api from '@/services/api.js';
 import { useDeviceStore } from '@/stores/device.js';

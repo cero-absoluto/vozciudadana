@@ -64,7 +64,7 @@ Voice Protest supports four geographic scopes. The scope is declared by the even
 
 | Scope | Eligibility | Default duration | Notes |
 |-------|-------------|-----------------|-------|
-| 🏧 National | Verified SIM from the declared country. Residents abroad with a national SIM remain eligible. | 36h (closes at 20:00 — prime time) | Geographic distribution shown in report |
+| 🏛️ National | Verified SIM from the declared country. Residents abroad with a national SIM remain eligible. | 36h (closes at 20:00 — prime time) | Geographic distribution shown in report |
 | 🌐 Regional | National SIM required. Regional scope is a declaration by the creator, not a technical restriction. | 8h (closes at 16:00 — afternoon news) | For regional/provincial institutions |
 | 📍 Local | Any verified phone number. GPS classifies adhesions in the report but is not required to participate. | 8h (closes at 16:00) | Municipality identified by OSM ID — validated for all 27 EU member states |
 | 🌍 Global | Any verified phone number, no geographic restriction. | 72h | Geographic distribution by country shown in report |
@@ -143,6 +143,8 @@ Scores indicate verification-signal strength and are not statistical probabiliti
 4. A per-protest `nullifier = HMAC-SHA256(phone_hash + protest_id)` prevents duplicate adhesions.
 5. A `public_commitment = SHA256(protest_id + nullifier)` is generated — safe to publish, enabling independent hash verification without revealing identity or enabling cross-protest correlation.
 6. At closure, `integrity_hash = SHA256(canonical_input + sorted_public_commitments)` is calculated and anchored in the public integrity log.
+
+Institutional participants follow the same flow with their institutional email in place of a phone number: the email is verified by one-time code and transformed into an `HMAC-SHA256` identifier server-side, with the same per-protest nullifier.
 
 ---
 
@@ -269,7 +271,7 @@ This project is open source under AGPL 3.0. Contributions welcome.
 
 Before contributing, please review:
 - `docs/canonical/3.-VoiceProtest_AuditAlignment_v2_1.docx` — canonical reference document
-- `docs/canonical/2.-VoiceProtest_v3_5_beta_auditado_final.docx` — master design document (Spanish)
+- `docs/canonical/2.-VoiceProtest_v3_5_beta_auditado_final.docx` — master design document (English)
 
 Areas where help is most needed:
 

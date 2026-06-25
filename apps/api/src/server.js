@@ -16,6 +16,20 @@ import sourceRoutes     from './routes/source.js';
 import kofiWebhookRoutes from './routes/webhooks.js';
 import geocodeRoutes    from './routes/geocode.js';
 
+// ── Fail-fast on missing identity-hashing secrets in production ─────────────
+// Identity hashing (phone, institutional email) and nullifiers depend on these
+// server-side secrets. Without them the code would fall back to plain SHA-256 /
+// a 'dev-secret', which is dictionary-attackable and correlatable. In production
+// that silent downgrade is unacceptable, so the server refuses to start.
+if (process.env.NODE_ENV === 'production') {
+  const missing = ['PHONE_HASH_SECRET', 'NULLIFIER_SECRET'].filter(k => !process.env[k]);
+  if (missing.length) {
+    console.error(`[SECURITY] Refusing to start: missing required secret(s) in production: ${missing.join(', ')}. ` +
+      `Identity hashes would silently downgrade to plain SHA-256 / dev-secret.`);
+    process.exit(1);
+  }
+}
+
 const app = Fastify({
   logger: true,
   bodyLimit: 65_536, // 64 KB max request body

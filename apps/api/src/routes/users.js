@@ -159,7 +159,7 @@ export default async function userRoutes(app) {
       .eq('phone_hash', phone_hash)
       .maybeSingle();
 
-    if (existing) return { verified: true, device_id: existing.id };
+    if (existing) return { verified: true, device_id: existing.id, phone_hash };
 
     const user_agent = req.headers['user-agent'] || null;
     const { data, error } = await supabase
@@ -169,7 +169,7 @@ export default async function userRoutes(app) {
       .single();
 
     if (error) throw error;
-    return { verified: true, device_id: data.id };
+    return { verified: true, device_id: data.id, phone_hash };
   });
 
   // GET /api/users/device/:id/locks
@@ -189,6 +189,29 @@ export default async function userRoutes(app) {
 
     if (error) throw error;
     return data;
+  });
+
+  // GET /api/users/device/:id — return the device's canonical (server-side HMAC)
+  // phone_hash. Used by the "already verified, skip OTP" fast path so the client
+  // never has to (and never should) compute an identity hash itself. The hash is
+  // produced only as a side effect of a prior OTP verification, never on demand,
+  // so this is not a hashing oracle: it only returns a hash that already exists.
+  app.get('/device/:id', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string', minLength: 8, maxLength: 128 } },
+        required: ['id'],
+      },
+    },
+  }, async (req, reply) => {
+    const { data } = await supabase
+      .from('devices')
+      .select('id, phone_hash, country_code')
+      .eq('id', req.params.id)
+      .maybeSingle();
+    if (!data) return reply.notFound('Device not found');
+    return { device_id: data.id, phone_hash: data.phone_hash, country_code: data.country_code };
   });
 }
 

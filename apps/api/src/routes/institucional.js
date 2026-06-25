@@ -1,6 +1,20 @@
 import { supabase } from '../services/supabase.js';
-import { createHash } from 'crypto';
+import { createHash, createHmac } from 'crypto';
 import { Resend } from 'resend';
+
+// Identity hash for institutional emails. Mirrors hashPhone() in users.js:
+// low-entropy identifiers — phone numbers, and institutional emails such as
+// name.surname@university.edu — must be HMAC'd with a server-side secret, never
+// plain SHA-256, or they are trivially recoverable by dictionary attack. Reuses
+// PHONE_HASH_SECRET, which is conceptually an identity-hash secret, not phone-specific.
+function hashEmail(email) {
+  const secret = process.env.PHONE_HASH_SECRET;
+  if (!secret) {
+    console.warn('[SECURITY] PHONE_HASH_SECRET not set — using plain SHA-256 for email. Set this variable in production.');
+    return createHash('sha256').update(email.toLowerCase()).digest('hex');
+  }
+  return createHmac('sha256', secret).update(email.toLowerCase()).digest('hex');
+}
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -76,8 +90,8 @@ export default async function institucionalRoutes(app) {
       return reply.badRequest(`El email debe ser del dominio @${protest.dominio_email}`);
     }
 
-    // 3. Hash del email
-    const emailHash = createHash('sha256').update(email.toLowerCase()).digest('hex');
+    // 3. Hash del email (HMAC — ver hashEmail)
+    const emailHash = hashEmail(email);
 
     // 4. Rate limiting
     const { data: rateLimit } = await supabase
@@ -158,8 +172,8 @@ export default async function institucionalRoutes(app) {
   }, async (req, reply) => {
     const { email, otp, protest_id } = req.body;
 
-    // 1. Hash del email
-    const emailHash = createHash('sha256').update(email.toLowerCase()).digest('hex');
+    // 1. Hash del email (HMAC — ver hashEmail)
+    const emailHash = hashEmail(email);
 
     // 2. Buscar OTP válido
     const { data: otpRecord } = await supabase
@@ -204,22 +218,34 @@ export default async function institucionalRoutes(app) {
     const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
     let ciudad = null, region = null, pais = null;
     try {
-      const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,countryCode,country&lang=es`);
+      // Unified with the SMS path: ipapi.co with the user's real IP (not ip-api.com)
+      const geoRes = await fetch(`https://ipapi.co/${ip}/json/`, {
+        headers: { 'User-Agent': 'VoiceProtest/1.0 (voiceprotest.org)' },
+        signal: AbortSignal.timeout(4000),
+      });
       const geo = await geoRes.json();
-      ciudad = geo.city || null;
-      region = geo.regionName || null;
-      pais = geo.country || null;
+      ciudad = geo.city         || null;
+      region = geo.region       || null;
+      pais   = geo.country_name || null;
     } catch { /* silencioso */ }
 
     const idioma = req.headers['accept-language']?.split(',')[0] || null;
     const created_at = new Date(Math.floor(Date.now() / 3_600_000) * 3_600_000).toISOString();
+
+    // Per-convocatoria nullifier — mirrors the SMS path exactly:
+    // nullifier = HMAC(identityHash + protest_id). A raw, reused identity hash
+    // would let an external observer correlate the same participant across
+    // different convocatorias; the per-protest HMAC prevents that correlation.
+    const nullifier = createHmac('sha256', process.env.NULLIFIER_SECRET || 'dev-secret')
+      .update(emailHash + protest_id)
+      .digest('hex');
 
     await supabase.from('adhesions').insert({
       protest_id,
       phone_hash:  emailHash,
       device_id:   emailHash.substring(0, 32),
       ciudad, region, pais, idioma,
-      nullifier:   emailHash,
+      nullifier,
       created_at,
       fiabilidad:  90,
       senales:     'email_otp',
@@ -229,6 +255,7 @@ export default async function institucionalRoutes(app) {
     await supabase.rpc('increment_protest_count', { protest_id });
     await supabase.rpc('update_cities_count', { protest_id });
 
-    return { receipt: member.id, verified: true };
+    return { receipt: member.id, verified: true, email_hash: emailHash };
   });
 }
+

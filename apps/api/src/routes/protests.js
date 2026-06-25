@@ -736,17 +736,23 @@ export default async function protestRoutes(app) {
     }
 
     // Update adhesion — single write
-    // ciudad/region/pais are NOT updated — they were set correctly at join time from IP
-    // GPS only adds gps_confirmed, osm_id and fiabilidad signals
-    await supabase.from('adhesions').update({
-      gps_lat,
-      gps_lng,
-      gps_accuracy:    gps_accuracy ?? null,
+    // ciudad/region/pais are NOT updated — they were set correctly at join time from IP.
+    // GPS coordinates (gps_lat/gps_lng/gps_accuracy) are NEVER stored: those columns
+    // were removed in migration 20260607_gps_confirmed.sql to align the database with
+    // the privacy policy. GPS is used here only to reverse-geocode and derive osm_id;
+    // only the gps_confirmed boolean, the derived osm_id and the reliability signals
+    // are persisted. (Writing the dropped columns previously made this UPDATE fail
+    // silently, so GPS reinforcement never actually upgraded the adhesion.)
+    const { error: updErr } = await supabase.from('adhesions').update({
       gps_confirmed:   true,
       adhesion_osm_id,
       fiabilidad:      nuevaFiabilidad,
       senales:         senales.join(','),
     }).eq('id', tokenRow.adhesion_id);
+    if (updErr) {
+      req.log.error({ updErr }, 'GPS reinforcement update failed');
+      return reply.status(500).send({ error: 'GPS update failed' });
+    }
 
     // Invalidate token — one-time use
     await supabase.from('gps_update_tokens').update({ used: true }).eq('token', gps_update_token);

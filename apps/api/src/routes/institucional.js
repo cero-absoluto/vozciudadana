@@ -10,6 +10,9 @@ import { Resend } from 'resend';
 function hashEmail(email) {
   const secret = process.env.PHONE_HASH_SECRET;
   if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('[SECURITY] PHONE_HASH_SECRET is required in production. Server cannot start without it.');
+    }
     console.warn('[SECURITY] PHONE_HASH_SECRET not set — using plain SHA-256 for email. Set this variable in production.');
     return createHash('sha256').update(email.toLowerCase()).digest('hex');
   }
@@ -258,4 +261,3 @@ export default async function institucionalRoutes(app) {
     return { receipt: member.id, verified: true, email_hash: emailHash };
   });
 }
-

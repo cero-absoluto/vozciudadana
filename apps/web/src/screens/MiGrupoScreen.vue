@@ -224,8 +224,8 @@ async function verificarOtpGenesis() {
   }
   loadingGenesis.value = true;
   try {
-    await api.verifyEmailOtp({ email: genesisEmail.value, otp: genesisOtp.value, protest_id: protestId });
-    const hash = await sha256(genesisEmail.value.toLowerCase());
+    const res = await api.verifyEmailOtp({ email: genesisEmail.value, otp: genesisOtp.value, protest_id: protestId });
+    const hash = res.email_hash;  // server-side HMAC, not client SHA-256
     const data = await api.crearGrupo({
       protest_id:   protestId,
       genesis_hash: hash,

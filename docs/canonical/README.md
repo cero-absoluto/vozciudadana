@@ -1,14 +1,13 @@
-
 # Canonical Documentation
 
-These documents define the current audited reality of Voice Protest. They are authoritative and supersede previous drafts.
+These documents define the current audited reality of Voice Protest. They are authoritative and supersede previous drafts. They reflect the audited state of the platform as of 24 June 2026; the running record of the corrections that produced this state is kept in `/docs/governance/` (Audit Trail).
 
 ## Documents in this folder
 
-### 2.-VoiceProtest_v3_5_beta_auditado_final.docx
-Master design document. Foundational philosophy, design, privacy, participation model, public reporting and technical architecture. Written in Spanish. The most complete reference for the project's foundational thinking.
+**2.-VoiceProtest_v3_5_beta_auditado_final.docx**
+Master design document. Foundational philosophy, design, privacy, participation model, public reporting and technical architecture. Written in English. The most complete reference for the project's foundational thinking.
 
-### 3.-VoiceProtest_AuditAlignment_v2_1.docx
+**3.-VoiceProtest_AuditAlignment_v2_1.docx**
 Audit Alignment, Threat Model and Participation Framework, v2.1. Defines what Voice Protest measures, what it does not measure, privacy limits, threat model, platform admission rules, and the canonical statement of what the platform claims and does not claim. This is the primary public reference document for auditors, journalists and researchers.
 
 ## Related documentation
@@ -21,8 +20,8 @@ Governance history (audit trail, security audit records, correction records) is 
 
 The following canonical documents are referenced by the platform but not yet mirrored in this folder as standalone files:
 
-- Privacy Policy (currently in app INFO screens and locales)
-- Funding & Independence Policy (currently in app INFO screens and locales)
-- Repository README
+* Privacy Policy (currently in app INFO screens and locales)
+* Funding & Independence Policy (currently in app INFO screens and locales)
+* Repository README
 
 These should be added here as standalone files to keep this folder complete and self-contained for external reviewers.

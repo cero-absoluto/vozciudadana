@@ -268,9 +268,10 @@ async function sendSMS() {
   // Si el dispositivo ya está verificado, saltar OTP
   const existingDevice = await api.fetchDeviceLocks(device.getDeviceId());
   if (existingDevice && existingDevice.length > 0) {
-    const v = phone.value.replace(/\D/g, '');
-    const phoneHash = await sha256('+' + dialCode.value + v);
-    sessionStorage.setItem('vc_phone_hash', phoneHash);
+    // Device already verified — fetch the canonical server-side (HMAC) phone_hash.
+    // The client never recomputes an identity hash itself.
+    const dev = await api.fetchDevice(device.getDeviceId());
+    sessionStorage.setItem('vc_phone_hash', dev.phone_hash);
     sessionStorage.setItem('vc_device_id', device.getDeviceId());
     sessionStorage.setItem('vc_sms_sent', 'false');
     router.push('/verify');
@@ -310,12 +311,15 @@ async function verifyOTP() {
   sending.value = true;
   try {
     const v = phone.value.replace(/\D/g, '');
-    const phoneHash = await sha256('+' + countryCode.value + v);
     const deviceId  = device.getDeviceId();
-    sessionStorage.setItem('vc_phone_hash', phoneHash);
-    sessionStorage.setItem('vc_device_id',  deviceId);
-    sessionStorage.setItem('vc_sms_sent', 'true');
     const res = await api.verifyOtp({ phone: '+' + dialCode.value + v, otp: code, device_id: deviceId, country_code: countryCode.value });
+    // The identity hash is computed server-side with HMAC and returned here.
+    // The client never derives a persistent identity hash itself (a browser
+    // cannot hold the HMAC secret, so any client-side hash would be plain
+    // SHA-256 and dictionary-attackable).
+    sessionStorage.setItem('vc_phone_hash', res.phone_hash);
+    sessionStorage.setItem('vc_device_id',  res.device_id || deviceId);
+    sessionStorage.setItem('vc_sms_sent', 'true');
     // Sync local device_id with the canonical one from the server (anchored to phone_hash).
     // If localStorage was cleared and the phone was already verified, the server returns
     // the original device_id so the user keeps their identity across sessions.

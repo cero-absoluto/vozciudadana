@@ -120,11 +120,6 @@ const loading = ref(false);
 const emailError = ref('');
 const otpError = ref('');
 
-async function sha256(text) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
 async function solicitarOtp() {
   emailError.value = '';
   if (!email.value.trim()) { emailError.value = 'Introduce tu email institucional'; return; }
@@ -203,4 +198,3 @@ async function verificarOtp() {
   }
 }
 </script>
-

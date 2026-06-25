@@ -127,6 +127,10 @@ export function fetchDeviceLocks(deviceId) {
   return request('GET', `/api/users/device/${deviceId}/locks`);
 }
 
+export function fetchDevice(deviceId) {
+  return request('GET', `/api/users/device/${deviceId}`);
+}
+
 // ── Reference data ────────────────────────────────────────────────────────────
 
 /**

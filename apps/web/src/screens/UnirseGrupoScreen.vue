@@ -152,14 +152,16 @@ async function verificarOtp() {
   }
   loading.value = true;
   try {
-    // 1. Verificar OTP y registrar adhesión institucional
-    await api.verifyEmailOtp({ email: email.value, otp: otp.value, protest_id: protestId });
+    // 1. Verificar OTP y registrar adhesión institucional.
+    //    El servidor devuelve el email_hash (HMAC); el cliente no lo calcula.
+    const res = await api.verifyEmailOtp({ email: email.value, otp: otp.value, protest_id: protestId });
 
-    // 2. Calcular hash del email
-    const emailHash = await sha256(email.value.toLowerCase());
+    // 2. Usar el hash del servidor (HMAC), no SHA-256 en cliente
+    const emailHash = res.email_hash;
     sessionStorage.setItem('vc_email_hash', emailHash);
 
-    // 3. Solicitar unirse al grupo
+    // 3. Solicitar unirse al grupo. El email crudo viaja solo en tránsito; el
+    //    backend lo enmascara (j***@dominio) y nunca persiste el correo en claro.
    const groupId = sessionStorage.getItem('vc_group_id');
     const inviteToken = route.query.invite || sessionStorage.getItem('vc_invite_token');
     if (groupId) {
@@ -201,3 +203,4 @@ async function verificarOtp() {
   }
 }
 </script>
+

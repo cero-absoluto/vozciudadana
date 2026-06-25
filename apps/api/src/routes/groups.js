@@ -1,5 +1,17 @@
 import { supabase } from '../services/supabase.js';
 
+// Mask an email for display to vouchers in the trusted-census flow. Vouching
+// requires a human to recognise the candidate, so SOME identifying hint is
+// shown — but the raw address is NEVER persisted. We store only this masked
+// form (e.g. "j***@uu.nl"). Idempotent: masking an already-masked value is a
+// no-op, so it is safe regardless of what the client sends.
+function maskEmail(email) {
+  if (!email || typeof email !== 'string' || !email.includes('@')) return null;
+  const [local, domain] = email.split('@');
+  if (!local || !domain) return null;
+  return `${local.slice(0, 1)}***@${domain}`;
+}
+
 /** @param {import('fastify').FastifyInstance} app */
 export default async function gruposRoutes(app) {
 
@@ -148,7 +160,7 @@ export default async function gruposRoutes(app) {
         await supabase.from('vouch_requests').insert({
           group_id,
           candidate_hash:  email_hash,
-          candidate_email: req.body.candidate_email || null,
+          candidate_email: maskEmail(req.body.candidate_email),
           status:          'pending',
         });
       }

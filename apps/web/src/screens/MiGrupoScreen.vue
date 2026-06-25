@@ -192,11 +192,6 @@ const genesisOtpError = ref('');
 const genesisOtpVisible = ref(false);
 const loadingGenesis = ref(false);
 
-async function sha256(text) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
 async function enviarOtpGenesis() {
   genesisError.value = '';
   const dominio = protest.value?.dominio_email || '';

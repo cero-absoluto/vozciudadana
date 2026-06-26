@@ -805,5 +805,48 @@
     "limitTitle": "单次捐款限额",
     "limitBody": "为保护项目的独立性和参与性，个人捐款目前限制为每次捐款100欧元。目的是让抗议活动由许多参与者集体资助，而不是由单一大额捐赠者推动。如果收到超过此限额的付款，只有100欧元会被登记为可计算捐款。超出部分将等待人工审核，不会自动计入抗议活动余额或平台基金。",
     "corporateNote": "Voice Protest主要通过小额个人捐款资助。不寻求来自企业、政党、公共行政机构或寻求影响项目治理的组织的资金。"
+  },
+  "evidence": {
+    "title": "证据范围声明",
+    "demonstratesTitle": "本报告所证明的内容",
+    "outsideScopeTitle": "本报告范围之外的内容",
+    "methodsTitle": "所采用的验证方法",
+    "admissionTitle": "已应用的准入规则",
+    "participationRate": "{eligible} 名注册者中的 {count} 名（{rate}%）。",
+    "demonstrates": {
+      "unique_participation_phone": "唯一且经过验证的参与：每条联署都来自一个不同的、经过验证的电话号码，每次召集仅计一次。",
+      "unique_participation_email": "唯一且经过验证的参与：每条联署都来自一个不同的、经过验证的机构电子邮箱，每次召集仅计一次。",
+      "sim_country": "每位参与者持有在 {country} 注册的 SIM 卡。",
+      "country_breakdown": "记录每位参与者的国家，并在地理分布中显示。",
+      "local_verified_municipality": "{total} 条联署中有 {count} 条经过地理验证：GPS 将参与者定位在所申报的市镇（{territory}）范围内，并与其 OpenStreetMap 实体进行核对。",
+      "local_verified_region": "{total} 条联署中有 {count} 条经过地理验证：GPS 将参与者定位在所申报的地区（{territory}）范围内，并与其 OpenStreetMap 实体进行核对。",
+      "institutional_affiliation": "每位参与者在机构域名 {domain} 下持有经过验证的邮箱，证明其与该机构的隶属关系。",
+      "census_vouching": "隶属关系还通过机构普查中的同伴担保得到进一步支持。",
+      "public_auditability": "结果可公开审计：已结束的报告包含完整性哈希值和每条联署的公开承诺，任何人都可独立验证。"
+    },
+    "not": {
+      "affiliation_geographic": "参与者属于某一特定受影响群体：未验证任何地域或机构归属。",
+      "region_presence": "参与者实际身处 {territory}：地区范围由发起人声明，参与者按全国身份验证，而非按身处该地区验证。",
+      "residence": "参与者在 {territory} 合法居住：GPS 是一种验证信号，而非居住证明，且可被伪造。",
+      "institutional_role": "参与者在机构中的角色或身份（例如在读学生与教职员工之分），也不代表整个机构。",
+      "truth": "所报告的事实属实：Voice Protest 记录的是经过验证的参与，而非主张的真伪。",
+      "representative": "结果代表整个受影响人群：它衡量的是选择参与的人。"
+    },
+    "methods": {
+      "sms_otp": "通过一次性短信验证码核验真实电话号码（Twilio Verify）。",
+      "email_otp": "通过机构邮箱一次性验证码核验（域名 {domain}）。",
+      "census_vouching": "机构普查中的同伴担保。",
+      "sim_country": "SIM 卡注册国家信号。",
+      "gps_osm_municipality": "将 GPS 反向地理编码，与所申报市镇（{territory}）的 OpenStreetMap 实体进行核对。",
+      "gps_osm_region": "将 GPS 反向地理编码，与所申报地区（{territory}）的 OpenStreetMap 实体进行核对。",
+      "ip": "近似的 IP 地理定位，用作次要信号（不以明文存储）。"
+    },
+    "admission": {
+      "public_institution": "收件方为公共机构，已在 Wikidata 上验证（{wikidata}）。",
+      "abuse_category": "已申报具体的公共滥用类别：{category}。",
+      "source_accepted": "已提供并接受了文献来源。",
+      "petition_filter": "来源已通过请愿平台过滤（change.org、avaaz.org 等被拒绝）。",
+      "wikidata_verified": "收件方验证已在服务器端通过 Wikidata API 完成。"
+    }
   }
 }

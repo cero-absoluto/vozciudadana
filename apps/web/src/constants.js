@@ -76,7 +76,7 @@ export const fmtTime = s => {
   return `${m}m ${String(s % 60).padStart(2,'0')}s`;
 };
 export const heatColor = h => {
-  if (!h)     return '#1fc3e0'; // sin convocatoria → cian vibrante (superficie)
+  if (!h)     return '#3a4a5c'; // sin convocatoria → cian vibrante (superficie)
   if (h < 30) return '#2ecc71'; // baja actividad → verde
   if (h < 55) return '#f4d03f'; // media → amarillo
   if (h < 80) return '#f39c12'; // alta → naranja

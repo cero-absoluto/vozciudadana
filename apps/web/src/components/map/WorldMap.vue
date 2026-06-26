@@ -16,7 +16,7 @@
     </div>
     <div class="map-legend">
       <div class="ml-title">{{ $t('map.legendTitle') }}</div>
-      <div class="ml-row"><div class="ml-sq" style="background:#1fc3e0"></div>{{ $t('map.legendNone') }}</div>
+      <div class="ml-row"><div class="ml-sq" style="background:#189b8e"></div>{{ $t('map.legendNone') }}</div>
       <div class="ml-row"><div class="ml-sq" style="background:#2ecc71"></div>{{ $t('map.legendLow') }}</div>
       <div class="ml-row"><div class="ml-sq" style="background:#f4d03f"></div>{{ $t('map.legendMed') }}</div>
       <div class="ml-row"><div class="ml-sq" style="background:#ff2424"></div>{{ $t('map.legendHigh') }}</div>

@@ -16,8 +16,8 @@
     </div>
     <div class="map-legend">
       <div class="ml-title">{{ $t('map.legendTitle') }}</div>
-      <div class="ml-row"><div class="ml-sq" style="background:#1f2d3d"></div>{{ $t('map.legendNone') }}</div>
-      <div class="ml-row"><div class="ml-sq" style="background:#3d8bf0"></div>{{ $t('map.legendLow') }}</div>
+      <div class="ml-row"><div class="ml-sq" style="background:#3a4a5c"></div>{{ $t('map.legendNone') }}</div>
+      <div class="ml-row"><div class="ml-sq" style="background:#2e9bff"></div>{{ $t('map.legendLow') }}</div>
       <div class="ml-row"><div class="ml-sq" style="background:#e8a020"></div>{{ $t('map.legendMed') }}</div>
       <div class="ml-row"><div class="ml-sq" style="background:#ff2020"></div>{{ $t('map.legendHigh') }}</div>
     </div>
@@ -72,7 +72,7 @@ function getHeat(iso) {
 function drawFrame() {
   if (!worldData || !ctx) return;
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#0a1628'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#071019'; ctx.fillRect(0, 0, W, H);
 
   topojson.feature(worldData, worldData.objects.countries).features.forEach(f => {
     const iso = f.id ? String(f.id).padStart(3, '0') : null;
@@ -240,7 +240,7 @@ function setupEvents() {
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (lastTouchDist > 0) {
         const ratio = dist / lastTouchDist;
-        zoom = Math.min(10, Math.max(0.7, zoom * ratio));
+        zoom = Math.min(50, Math.max(0.7, zoom * ratio));
         buildProj();
       }
       lastTouchDist = dist;
@@ -269,7 +269,7 @@ function setupEvents() {
   }, { passive: false });
 }
 
-function zoomIn()    { zoom = Math.min(10, zoom * 1.3); buildProj(); }
+function zoomIn()    { zoom = Math.min(50, zoom * 1.3); buildProj(); }
 function zoomOut()   { zoom = Math.max(0.7, zoom / 1.3); buildProj(); }
 function resetView() { zoom = 1; offX = 0; offY = 0; buildProj(); }
 

@@ -76,13 +76,11 @@ export const fmtTime = s => {
   return `${m}m ${String(s % 60).padStart(2,'0')}s`;
 };
 export const heatColor = h => {
-  if (!h)     return '#39424d'; // sin convocatoria → tierra (PLACEHOLDER neutro, se decide aparte)
-  if (h < 16) return '#3b6bff'; // azul     — actividad mínima (con convocatoria)
-  if (h < 33) return '#1fc3e0'; // cian
-  if (h < 50) return '#2ecc71'; // verde
-  if (h < 66) return '#f4d03f'; // amarillo
-  if (h < 83) return '#f39c12'; // naranja
-  return '#ff2424';             // rojo intenso — máxima actividad
+  if (!h)     return '#1fc3e0'; // sin convocatoria → cian vibrante (superficie)
+  if (h < 30) return '#2ecc71'; // baja actividad → verde
+  if (h < 55) return '#f4d03f'; // media → amarillo
+  if (h < 80) return '#f39c12'; // alta → naranja
+  return '#ff2424';             // máxima actividad → rojo intenso
 };
 export const lighten = hex => {
   const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);

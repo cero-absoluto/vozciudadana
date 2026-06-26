@@ -805,5 +805,48 @@
     "limitTitle": "Per-donation limit",
     "limitBody": "To preserve the independence and participatory nature of the project, individual contributions are currently limited to €100 per donation. The purpose is that protests are funded collectively by many participants, not promoted by a single large donor. If a payment above this limit is received, only €100 is registered as a computable contribution. Any excess is held for manual review and is not automatically credited to the protest balance or the platform fund.",
     "corporateNote": "Voice Protest is funded primarily through small individual contributions. It does not seek funding from companies, political parties, public administrations or organisations seeking to influence the governance of the project."
+  },
+  "evidence": {
+    "title": "Statement of Evidential Scope",
+    "demonstratesTitle": "What this report demonstrates",
+    "outsideScopeTitle": "Outside the scope of this report",
+    "methodsTitle": "Verification methods used",
+    "admissionTitle": "Admission rules applied",
+    "participationRate": "{count} of {eligible} registered ({rate}%).",
+    "demonstrates": {
+      "unique_participation_phone": "Unique, verified participation: each adhesion comes from a distinct verified phone number, counted once per convocatoria.",
+      "unique_participation_email": "Unique, verified participation: each adhesion comes from a distinct verified institutional email address, counted once per convocatoria.",
+      "sim_country": "Each participant holds a SIM registered in {country}.",
+      "country_breakdown": "The country of each participant is recorded and shown in the geographic breakdown.",
+      "local_verified_municipality": "{count} of {total} adhesions were geographically verified: GPS placed the participant inside the declared municipality ({territory}), matched against its OpenStreetMap entity.",
+      "local_verified_region": "{count} of {total} adhesions were geographically verified: GPS placed the participant inside the declared region ({territory}), matched against its OpenStreetMap entity.",
+      "institutional_affiliation": "Each participant holds a verified email address in the institutional domain {domain}, evidencing affiliation with that institution.",
+      "census_vouching": "Affiliation is additionally supported by peer vouching within the institutional census.",
+      "public_auditability": "The result is publicly auditable: the closed report carries an integrity hash and per-adhesion public commitments that anyone can verify independently."
+    },
+    "not": {
+      "affiliation_geographic": "That participants belong to any specific affected community: no territorial or institutional membership was verified.",
+      "region_presence": "That participants are physically in {territory}: regional scope is a declaration by the creator, and participants are verified as national, not as present in the region.",
+      "residence": "That participants are legally resident in {territory}: GPS is a verification signal, not proof of residence, and can be spoofed.",
+      "institutional_role": "The participant's role or status within the institution (for example active student versus staff), nor that the whole institution is represented.",
+      "truth": "That the reported facts are true: Voice Protest records verified participation, not the validity of the claim.",
+      "representative": "That the result represents the entire affected population: it measures those who chose to participate."
+    },
+    "methods": {
+      "sms_otp": "SMS one-time-password verification of a real phone number (Twilio Verify).",
+      "email_otp": "Institutional email one-time-password verification (domain {domain}).",
+      "census_vouching": "Peer vouching within the institutional census.",
+      "sim_country": "SIM country-of-registration signal.",
+      "gps_osm_municipality": "GPS reverse-geocoded against the OpenStreetMap entity of the declared municipality ({territory}).",
+      "gps_osm_region": "GPS reverse-geocoded against the OpenStreetMap entity of the declared region ({territory}).",
+      "ip": "Approximate IP geolocation, used as a secondary signal (not stored in plain text)."
+    },
+    "admission": {
+      "public_institution": "Recipient is a public institution, verified on Wikidata ({wikidata}).",
+      "abuse_category": "A specific public-abuse category was declared: {category}.",
+      "source_accepted": "A documentary source was provided and accepted.",
+      "petition_filter": "The source passed the petition-platform filter (change.org, avaaz.org, etc. are rejected).",
+      "wikidata_verified": "Recipient validation was performed server-side via the Wikidata API."
+    }
   }
 }

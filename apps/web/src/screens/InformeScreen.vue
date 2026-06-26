@@ -54,6 +54,46 @@
             </div>
           </div>
 
+          <!-- BLOQUE — Alcance de la evidencia (autogenerado, determinista; sin iconos ni jerarquía visual) -->
+          <div v-if="data.evidential_scope" class="block" style="margin-bottom:14px">
+            <div class="block-title">{{ $t('evidence.title') }}</div>
+
+            <div style="margin-top:8px">
+              <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px">{{ $t('evidence.demonstratesTitle') }}</div>
+              <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.55;color:var(--text)">
+                <li v-for="(it,i) in data.evidential_scope.demonstrates" :key="'ev-d-'+i">{{ $t('evidence.'+it.key, it.params || {}) }}</li>
+              </ul>
+            </div>
+
+            <div v-if="data.evidential_scope.participation_rate" style="margin-top:8px;font-size:13px;color:var(--text)">
+              {{ $t('evidence.participationRate', {
+                   count: data.evidential_scope.participation_rate.count,
+                   eligible: data.evidential_scope.participation_rate.eligible,
+                   rate: data.evidential_scope.participation_rate.rate }) }}
+            </div>
+
+            <div style="margin-top:10px">
+              <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px">{{ $t('evidence.outsideScopeTitle') }}</div>
+              <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.55;color:var(--text3)">
+                <li v-for="(it,i) in data.evidential_scope.outside_scope" :key="'ev-o-'+i">{{ $t('evidence.'+it.key, it.params || {}) }}</li>
+              </ul>
+            </div>
+
+            <div style="margin-top:10px">
+              <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px">{{ $t('evidence.methodsTitle') }}</div>
+              <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.55;color:var(--text2)">
+                <li v-for="(it,i) in data.evidential_scope.methods" :key="'ev-m-'+i">{{ $t('evidence.'+it.key, it.params || {}) }}</li>
+              </ul>
+            </div>
+
+            <div v-if="data.evidential_scope.admission_rules && data.evidential_scope.admission_rules.length" style="margin-top:10px">
+              <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px">{{ $t('evidence.admissionTitle') }}</div>
+              <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.55;color:var(--text2)">
+                <li v-for="(it,i) in data.evidential_scope.admission_rules" :key="'ev-a-'+i">{{ $t('evidence.'+it.key, it.params || {}) }}</li>
+              </ul>
+            </div>
+          </div>
+
           <!-- BLOQUE 5 — Distribución geográfica -->
           <div class="block" style="margin-bottom:12px">
             <div class="block-title">{{ $t('informe.geoTitle') }}</div>

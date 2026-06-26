@@ -16,8 +16,8 @@
     </div>
     <div class="map-legend">
       <div class="ml-title">{{ $t('map.legendTitle') }}</div>
-      <div class="ml-row"><div class="ml-sq" style="background:#1a3a5c"></div>{{ $t('map.legendNone') }}</div>
-      <div class="ml-row"><div class="ml-sq" style="background:#2d5a8e"></div>{{ $t('map.legendLow') }}</div>
+      <div class="ml-row"><div class="ml-sq" style="background:#1f2d3d"></div>{{ $t('map.legendNone') }}</div>
+      <div class="ml-row"><div class="ml-sq" style="background:#3d8bf0"></div>{{ $t('map.legendLow') }}</div>
       <div class="ml-row"><div class="ml-sq" style="background:#e8a020"></div>{{ $t('map.legendMed') }}</div>
       <div class="ml-row"><div class="ml-sq" style="background:#ff2020"></div>{{ $t('map.legendHigh') }}</div>
     </div>
@@ -65,7 +65,8 @@ function buildProj() {
 function getHeat(iso) {
   const a2 = ISO_NUM_TO_A2[iso];
   const p = props.protests.find(x => x.country === a2);
-  return p?.heat || 0;
+  if (!p) return 0;                  // sin convocatoria → tierra apagada
+  return Math.max(p.heat || 0, 5);   // con convocatoria → al menos la franja visible (azul)
 }
 
 function drawFrame() {

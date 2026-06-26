@@ -16,10 +16,10 @@
     </div>
     <div class="map-legend">
       <div class="ml-title">{{ $t('map.legendTitle') }}</div>
-      <div class="ml-row"><div class="ml-sq" style="background:#3a4a5c"></div>{{ $t('map.legendNone') }}</div>
-      <div class="ml-row"><div class="ml-sq" style="background:#2e9bff"></div>{{ $t('map.legendLow') }}</div>
-      <div class="ml-row"><div class="ml-sq" style="background:#e8a020"></div>{{ $t('map.legendMed') }}</div>
-      <div class="ml-row"><div class="ml-sq" style="background:#ff2020"></div>{{ $t('map.legendHigh') }}</div>
+      <div class="ml-row"><div class="ml-sq" style="background:#39424d"></div>{{ $t('map.legendNone') }}</div>
+      <div class="ml-row"><div class="ml-sq" style="background:#3b6bff"></div>{{ $t('map.legendLow') }}</div>
+      <div class="ml-row"><div class="ml-sq" style="background:#2ecc71"></div>{{ $t('map.legendMed') }}</div>
+      <div class="ml-row"><div class="ml-sq" style="background:#ff2424"></div>{{ $t('map.legendHigh') }}</div>
     </div>
     <div class="mtt" ref="tooltipEl"></div>
   </div>
@@ -314,3 +314,4 @@ onUnmounted(() => {
   }
 });
 </script>
+

@@ -1,5 +1,6 @@
 import { supabase } from '../services/supabase.js';
 import { createHmac } from 'crypto';
+import { buildEvidentialScope } from '../lib/evidentialScope.js';
 
 const VALID_SCOPES    = ['national', 'regional', 'local', 'global'];
 const VALID_REGIONS   = ['region', 'provincia', 'ciudad', 'distrito', 'institucion'];
@@ -1018,6 +1019,18 @@ export default async function protestRoutes(app) {
     const adhesionesHoy = porDia[hoy] || 0;
     const adhesionesAyer = porDia[ayer] || 0;
 
+    // Statement of Evidential Scope — deterministic, generated from the report
+    // metadata (scope, dominio_email, requiere_censo, local_verified). It cannot
+    // be authored or edited by the convocatoria creator; it is part of the
+    // evidence system, exactly like the integrity hash. participation_rate stays
+    // null unless a real, auditable registered census exists for the convocatoria
+    // (census_eligible is intentionally not passed until that exists — never estimated).
+    const evidential_scope = buildEvidentialScope(protest, {
+      total: protest.count,
+      desglose_geografico_local,
+      paises_distintos: paises.length,
+    });
+
     return {
       protest,
       total_adhesiones: protest.count,
@@ -1045,6 +1058,7 @@ export default async function protestRoutes(app) {
         tendencia_hoy:      adhesionesHoy - adhesionesAyer,
       },
       desglose_geografico_local,
+      evidential_scope,
     };
   });
 }

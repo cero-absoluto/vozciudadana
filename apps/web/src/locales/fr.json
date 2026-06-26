@@ -805,5 +805,48 @@
     "limitTitle": "Limite par don",
     "limitBody": "Pour préserver l'indépendance et le caractère participatif du projet, les contributions individuelles sont actuellement limitées à 100 € par don. L'objectif est que les protestations soient financées collectivement par de nombreux participants, et non promues par un seul grand donateur. Si un paiement supérieur à cette limite est reçu, seuls 100 € sont enregistrés comme contribution imputable. L'excédent est mis en attente de révision manuelle et n'est pas automatiquement crédité au solde de la protestation ni au fonds de la plateforme.",
     "corporateNote": "Voice Protest se finance principalement par de petites contributions individuelles. Il ne recherche pas de financement d'entreprises, de partis politiques ou d'organisations cherchant à influencer la gouvernance."
+  },
+  "evidence": {
+    "title": "Portée de la preuve",
+    "demonstratesTitle": "Ce que ce rapport établit",
+    "outsideScopeTitle": "Hors du périmètre de ce rapport",
+    "methodsTitle": "Méthodes de vérification utilisées",
+    "admissionTitle": "Règles d'admission appliquées",
+    "participationRate": "{count} sur {eligible} inscrits ({rate} %).",
+    "demonstrates": {
+      "unique_participation_phone": "Participation unique et vérifiée : chaque adhésion provient d'un numéro de téléphone vérifié distinct, comptabilisé une seule fois par convocation.",
+      "unique_participation_email": "Participation unique et vérifiée : chaque adhésion provient d'une adresse e-mail institutionnelle vérifiée distincte, comptabilisée une seule fois par convocation.",
+      "sim_country": "Chaque participant possède une SIM enregistrée en {country}.",
+      "country_breakdown": "Le pays de chaque participant est enregistré et présenté dans la répartition géographique.",
+      "local_verified_municipality": "{count} adhésions sur {total} ont été vérifiées géographiquement : le GPS a situé le participant dans la commune déclarée ({territory}), confrontée à son entité OpenStreetMap.",
+      "local_verified_region": "{count} adhésions sur {total} ont été vérifiées géographiquement : le GPS a situé le participant dans la région déclarée ({territory}), confrontée à son entité OpenStreetMap.",
+      "institutional_affiliation": "Chaque participant possède une adresse e-mail vérifiée dans le domaine institutionnel {domain}, attestant son affiliation à cette institution.",
+      "census_vouching": "L'affiliation est en outre étayée par le parrainage entre pairs au sein du recensement institutionnel.",
+      "public_auditability": "Le résultat est publiquement vérifiable : le rapport clôturé comporte un hash d'intégrité et des engagements publics par adhésion que chacun peut vérifier de façon indépendante."
+    },
+    "not": {
+      "affiliation_geographic": "Que les participants appartiennent à une communauté concernée précise : aucune appartenance territoriale ou institutionnelle n'a été vérifiée.",
+      "region_presence": "Que les participants soient physiquement en {territory} : la portée régionale est une déclaration du créateur, et les participants sont vérifiés comme nationaux, non comme présents dans la région.",
+      "residence": "Que les participants résident légalement en {territory} : le GPS est un signal de vérification, non une preuve de résidence, et peut être falsifié.",
+      "institutional_role": "Le rôle ou le statut du participant au sein de l'institution (par exemple étudiant actif ou personnel), ni que l'ensemble de l'institution soit représenté.",
+      "truth": "Que les faits rapportés soient vrais : Voice Protest enregistre une participation vérifiée, non la validité de la plainte.",
+      "representative": "Que le résultat représente l'ensemble de la population concernée : il mesure ceux qui ont choisi de participer."
+    },
+    "methods": {
+      "sms_otp": "Vérification par code à usage unique (SMS) d'un numéro de téléphone réel (Twilio Verify).",
+      "email_otp": "Vérification par code à usage unique de l'e-mail institutionnel (domaine {domain}).",
+      "census_vouching": "Parrainage entre pairs au sein du recensement institutionnel.",
+      "sim_country": "Signal du pays d'enregistrement de la SIM.",
+      "gps_osm_municipality": "GPS géocodé en sens inverse par rapport à l'entité OpenStreetMap de la commune déclarée ({territory}).",
+      "gps_osm_region": "GPS géocodé en sens inverse par rapport à l'entité OpenStreetMap de la région déclarée ({territory}).",
+      "ip": "Géolocalisation IP approximative, utilisée comme signal secondaire (non stockée en clair)."
+    },
+    "admission": {
+      "public_institution": "Le destinataire est une institution publique, vérifiée sur Wikidata ({wikidata}).",
+      "abuse_category": "Une catégorie précise d'abus public a été déclarée : {category}.",
+      "source_accepted": "Une source documentaire a été fournie et acceptée.",
+      "petition_filter": "La source a passé le filtre des plateformes de pétition (change.org, avaaz.org, etc. sont rejetées).",
+      "wikidata_verified": "La validation du destinataire a été effectuée côté serveur via l'API Wikidata."
+    }
   }
 }

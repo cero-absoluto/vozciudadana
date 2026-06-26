@@ -76,8 +76,8 @@ export const fmtTime = s => {
   return `${m}m ${String(s % 60).padStart(2,'0')}s`;
 };
 export const heatColor = h => {
-  if (!h)     return '#1f2d3d'; // sin convocatoria → tierra apagada (claramente "inactivo")
-  if (h < 40) return '#3d8bf0'; // con convocatoria → azul claramente visible
+  if (!h)     return '#3a4a5c'; // sin convocatoria → tierra gris-azulada, visible sobre el mar
+  if (h < 40) return '#2e9bff'; // con convocatoria → azul vivo, alto contraste
   if (h < 65) return '#e8a020';
   if (h < 85) return '#e84020';
   return '#ff2020';

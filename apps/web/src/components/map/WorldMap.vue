@@ -16,7 +16,7 @@
     </div>
     <div class="map-legend">
       <div class="ml-title">{{ $t('map.legendTitle') }}</div>
-      <div class="ml-row"><div class="ml-sq" style="background:#189b8e"></div>{{ $t('map.legendNone') }}</div>
+      <div class="ml-row"><div class="ml-sq" style="background:#3e4854"></div>{{ $t('map.legendNone') }}</div>
       <div class="ml-row"><div class="ml-sq" style="background:#2ecc71"></div>{{ $t('map.legendLow') }}</div>
       <div class="ml-row"><div class="ml-sq" style="background:#f4d03f"></div>{{ $t('map.legendMed') }}</div>
       <div class="ml-row"><div class="ml-sq" style="background:#ff2424"></div>{{ $t('map.legendHigh') }}</div>
@@ -79,7 +79,7 @@ function drawFrame() {
     ctx.beginPath(); gp(f);
     ctx.fillStyle = iso === hovered ? lighten(heatColor(getHeat(iso))) : heatColor(getHeat(iso));
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 0.5; ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 0.7; ctx.stroke();
   });
 
   const t = Date.now();
@@ -205,7 +205,7 @@ function setupEvents() {
 
   c.addEventListener('wheel', e => {
     e.preventDefault();
-    zoom = Math.min(50, Math.max(0.7, zoom * (e.deltaY > 0 ? 0.82 : 1.4)));
+    zoom = Math.min(100, Math.max(0.7, zoom * (e.deltaY > 0 ? 0.82 : 1.4)));
     buildProj();
   }, { passive: false });
 
@@ -240,7 +240,7 @@ function setupEvents() {
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (lastTouchDist > 0) {
         const ratio = dist / lastTouchDist;
-        zoom = Math.min(50, Math.max(0.7, zoom * ratio));
+        zoom = Math.min(100, Math.max(0.7, zoom * ratio));
         buildProj();
       }
       lastTouchDist = dist;
@@ -269,7 +269,7 @@ function setupEvents() {
   }, { passive: false });
 }
 
-function zoomIn()    { zoom = Math.min(50, zoom * 1.3); buildProj(); }
+function zoomIn()    { zoom = Math.min(100, zoom * 1.3); buildProj(); }
 function zoomOut()   { zoom = Math.max(0.7, zoom / 1.3); buildProj(); }
 function resetView() { zoom = 1; offX = 0; offY = 0; buildProj(); }
 

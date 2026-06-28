@@ -58,10 +58,6 @@
         </button>
         <div v-if="advOpen" style="margin-top:8px">
           <div class="auth-opts">
-            <div class="auth-opt" @click="ui.showToast($t('auth.worldIdSoon'))">
-              <div class="ao-ico" style="background:rgba(124,111,255,.08)">🌐</div>
-              <div><div class="ao-title">World ID<span class="ao-badge badge-max">{{ $t('auth.worldIdBadge') }}</span></div><div class="ao-desc">{{ $t('auth.worldIdDesc') }}</div></div>
-            </div>
             <div class="auth-opt" @click="ui.showToast($t('auth.highRiskSoon'))">
               <div class="ao-ico" style="background:rgba(255,107,107,.08)">🕵️</div>
               <div><div class="ao-title">{{ $t('auth.highRiskTitle') }}</div><div class="ao-desc">{{ $t('auth.highRiskDesc') }}</div></div>

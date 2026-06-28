@@ -50,21 +50,6 @@
         <button class="btn-primary" style="width:100%" @click="verifyOTP">{{ $t('auth.verify') }}</button>
       </div>
 
-      <!-- Advanced options -->
-      <div style="width:100%;margin-top:14px">
-        <button @click="advOpen = !advOpen"
-          style="width:100%;padding:10px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);font-size:13px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px">
-          {{ $t('auth.advancedOptions') }} <span>{{ advOpen ? '▲' : '▼' }}</span>
-        </button>
-        <div v-if="advOpen" style="margin-top:8px">
-          <div class="auth-opts">
-            <div class="auth-opt" @click="ui.showToast($t('auth.highRiskSoon'))">
-              <div class="ao-ico" style="background:rgba(255,107,107,.08)">🕵️</div>
-              <div><div class="ao-title">{{ $t('auth.highRiskTitle') }}</div><div class="ao-desc">{{ $t('auth.highRiskDesc') }}</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
 <!-- Modal GPS -->
       <div v-if="showGpsModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px">
         <div style="background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r2);padding:24px;max-width:340px;width:100%">
@@ -111,7 +96,6 @@ const sending      = ref(false);
 const otpVisible   = ref(false);
 const otpDigits    = ref(['1','2','3','4','5','6']);
 const otpRefs      = ref([]);
-const advOpen      = ref(false);
   const showGpsModal = ref(false);
 let gpsResolve = null;
 

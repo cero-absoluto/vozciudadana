@@ -594,6 +594,13 @@ export default async function protestRoutes(app) {
     await supabase.rpc('update_cities_count', { protest_id: req.params.id });
     if (rpcErr) req.log.error({ rpcErr }, 'increment_protest_count failed');
 
+    // Retención de dispositivos (Opción A): refrescar la ventana de actividad en
+    // cada adhesión efectiva → la purga por 270 días de inactividad es deslizante.
+    const { error: lsErr } = await supabase.from('devices')
+      .update({ last_seen: new Date().toISOString() })
+      .eq('id', device_id);
+    if (lsErr) req.log.error({ lsErr }, 'last_seen refresh failed');
+
     // Descontar saldo por adhesion — solo si se envió SMS real (sms_sent !== false)
     if (protest.saldo_euros !== null && protest.saldo_euros > 0 && sms_sent !== false) {
       await supabase.from('protests')

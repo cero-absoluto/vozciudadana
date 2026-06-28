@@ -114,7 +114,8 @@ export default async function pushRoutes(app) {
     const { data: adhesions } = await supabase
       .from('adhesions')
       .select('device_id')
-      .eq('protest_id', protest_id);
+      .eq('protest_id', protest_id)
+      .is('anonymized_at', null);
 
     if (!adhesions?.length) return { sent: 0 };
 
@@ -191,7 +192,8 @@ export default async function pushRoutes(app) {
       .from('adhesions')
       .select('device_id')
       .eq('protest_id', protestId)
-      .is('deleted_at', null);
+      .is('deleted_at', null)
+      .is('anonymized_at', null);
 
     if (!adhesions?.length) return 0;
     const deviceIds = adhesions.map(a => a.device_id);

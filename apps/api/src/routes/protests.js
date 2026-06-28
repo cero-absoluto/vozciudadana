@@ -454,7 +454,7 @@ export default async function protestRoutes(app) {
     // Fetch protest metadata and idempotency check in parallel
     const [{ data: protest, error: protestErr }, { data: existing }] = await Promise.all([
       supabase.from('protests').select('scope, country, saldo_euros, convocatoria_osm_id, convocatoria_ciudad_nombre').eq('id', req.params.id).maybeSingle(),
-      supabase.from('adhesions').select('id').eq('protest_id', req.params.id).eq('device_id', device_id).is('deleted_at', null).maybeSingle(),
+      supabase.from('adhesions').select('id').eq('protest_id', req.params.id).eq('device_id', device_id).is('deleted_at', null).is('anonymized_at', null).maybeSingle(),
     ]);
 
     if (protestErr || !protest) return reply.notFound('Protest not found');
@@ -470,6 +470,7 @@ export default async function protestRoutes(app) {
       .eq('protest_id', req.params.id)
       .eq('nullifier', nullifierCheck)
       .is('deleted_at', null)
+      .is('anonymized_at', null)
       .maybeSingle();
     if (existingNullifier) return reply.conflict('Phone already joined this protest');
 

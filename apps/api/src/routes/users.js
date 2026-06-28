@@ -87,6 +87,7 @@ export default async function userRoutes(app) {
         .eq('protest_id', protest_id)
         .eq('nullifier', nullifierCheck)
         .is('deleted_at', null)
+        .is('anonymized_at', null)
         .maybeSingle();
       if (existingNullifier) {
         return reply.code(200).send({ sent: false });
@@ -185,7 +186,8 @@ export default async function userRoutes(app) {
     const { data, error } = await supabase
       .from('adhesions')
       .select('protest_id, protests(scope, region, ends_at)')
-      .eq('device_id', req.params.id);
+      .eq('device_id', req.params.id)
+      .is('anonymized_at', null);
 
     if (error) throw error;
     return data;

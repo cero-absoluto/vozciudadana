@@ -205,8 +205,15 @@ function setupEvents() {
 
   c.addEventListener('wheel', e => {
     e.preventDefault();
+    const rect = c.getBoundingClientRect();
+    const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+    const geo = proj.invert([sx, sy]);            // punto geográfico bajo el cursor (antes de escalar)
     zoom = Math.min(100, Math.max(0.7, zoom * (e.deltaY > 0 ? 0.82 : 1.4)));
     buildProj();
+    if (geo) {                                    // zoom-to-cursor: recoloca ese punto bajo el cursor
+      const p = proj(geo);
+      if (p) { offX += sx - p[0]; offY += sy - p[1]; buildProj(); }
+    }
   }, { passive: false });
 
   // ── TOUCH EVENTS (móvil) ──────────────────────────────
@@ -239,9 +246,17 @@ function setupEvents() {
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (lastTouchDist > 0) {
+        const rect = c.getBoundingClientRect();
+        const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+        const my = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+        const geo = proj.invert([mx, my]);        // punto bajo el centro del pellizco
         const ratio = dist / lastTouchDist;
         zoom = Math.min(100, Math.max(0.7, zoom * ratio));
         buildProj();
+        if (geo) {                                // zoom-to-pinch: mantiene fijo ese punto
+          const p = proj(geo);
+          if (p) { offX += mx - p[0]; offY += my - p[1]; buildProj(); }
+        }
       }
       lastTouchDist = dist;
     }

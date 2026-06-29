@@ -813,7 +813,7 @@
       "local_verified_region": "{count} adhésions sur {total} ont été vérifiées géographiquement : le GPS a situé le participant dans la région déclarée ({territory}), confrontée à son entité OpenStreetMap.",
       "institutional_affiliation": "Chaque participant possède une adresse e-mail vérifiée dans le domaine institutionnel {domain}. Cela apporte des éléments à l'appui d'une affiliation institutionnelle.",
       "census_vouching": "L'affiliation est en outre étayée par le parrainage entre pairs au sein du recensement institutionnel.",
-      "public_auditability": "Le résultat est publiquement vérifiable : le rapport clôturé comporte un hash d'intégrité et des engagements publics par adhésion que chacun peut vérifier de façon indépendante."
+      "public_auditability": "Le résultat est auditable : le rapport clôturé comporte un hash d'intégrité et enregistre des engagements publics par adhésion. La vérification publique indépendante, avec divulgation complète de ces engagements, est disponible à partir de la version d'intégrité 2."
     },
     "not": {
       "affiliation_geographic": "Que les participants appartiennent à une communauté concernée précise : aucune appartenance territoriale ou institutionnelle n'a été vérifiée.",

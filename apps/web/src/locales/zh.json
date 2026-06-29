@@ -813,7 +813,7 @@
       "local_verified_region": "{total} 条联署中有 {count} 条经过地理验证：GPS 将参与者定位在所申报的地区（{territory}）范围内，并与其 OpenStreetMap 实体进行核对。",
       "institutional_affiliation": "每位参与者在机构域名 {domain} 下持有经过验证的邮箱。这提供了支持机构隶属关系的证据。",
       "census_vouching": "隶属关系还通过机构普查中的同伴担保得到进一步支持。",
-      "public_auditability": "结果可公开审计：已结束的报告包含完整性哈希值和每条联署的公开承诺，任何人都可独立验证。"
+      "public_auditability": "结果可审计：已结束的报告包含完整性哈希值，并记录每条联署的公开承诺。完整的独立公开验证（含这些承诺的完整披露）自完整性版本2起提供。"
     },
     "not": {
       "affiliation_geographic": "参与者属于某一特定受影响群体：未验证任何地域或机构归属。",

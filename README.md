@@ -148,6 +148,20 @@ Institutional participants follow the same flow with their institutional email i
 
 ---
 
+## Data & retention
+
+Voice Protest stores only what verification requires, and bounds how long it keeps it:
+
+- **No raw phone numbers or GPS coordinates** are ever stored. Phone numbers become server-side `HMAC-SHA256` pseudonyms; GPS is discarded immediately after geocoding.
+- **Individual adhesions are irreversibly anonymised 90 days after a protest closes.** Every individual or linkable field (phone hash, nullifier, device id, fine-grained location, public commitment) is permanently set to null. The aggregate row is kept so the closed public report stays intact; the auditable snapshot lives in `integrity_records` and is retained indefinitely with no personal data.
+- **Verified-device records** (the `devices` table maps a random device id to a phone-number hash, so returning participants skip SMS re-verification and duplicate participation is prevented) are **deleted after 270 days of inactivity** — a sliding window refreshed on each adhesion. A device that returns later simply re-verifies once by SMS.
+- **OTP records** are deleted after 7 days; **push subscriptions** at protest closure or when permission is revoked.
+- **Row Level Security** is enabled on every table in the database; all writes go through the backend admission rules (service-role key), never the public anon key.
+
+Full detail is in the canonical privacy document (`docs/canonical/`) and the security audit (`docs/governance/`).
+
+---
+
 ## Project Structure
 
 ```

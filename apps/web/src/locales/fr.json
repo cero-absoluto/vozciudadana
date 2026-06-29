@@ -328,7 +328,7 @@
     "toastAlready": "Vous avez déjà adhéré à cette protestation avec ce numéro de téléphone.",
     "toastSinSaldo": "Cette protestation n'a pas de fonds. Soutenez-la pour activer les adhésions.",
     "notiInfo": "Si vous activez les notifications, votre navigateur sera lié à cette protestation pour vous envoyer le résultat. Cela réduit légèrement votre pseudonymat. Si vous préférez une confidentialité maximale, ne les activez pas.",
-    "gpsLocalInfo": "Cet événement est local à {ciudad}. Si vous êtes dans la commune en ce moment, renforcez votre participation avec votre localisation — vous apparaîtrez comme participant local vérifié dans le rapport public.",
+    "gpsLocalInfo": "Cet événement est local à {ciudad}. Si vous êtes dans la commune en ce moment, renforcez votre participation avec votre localisation — vous apparaîtrez avec une preuve de vérification géographique locale dans le rapport public.",
     "gpsLocalBtn": "Renforcer ma participation"
   },
   "about": {

@@ -16,7 +16,7 @@
     </div>
     <div class="map-legend">
       <div class="ml-title">{{ $t('map.legendTitle') }}</div>
-      <div class="ml-row"><div class="ml-sq" style="background:#3e4854"></div>{{ $t('map.legendNone') }}</div>
+      <div class="ml-row"><div class="ml-sq" style="background:#1e4a7a"></div>{{ $t('map.legendNone') }}</div>
       <div class="ml-row"><div class="ml-sq" style="background:#2ecc71"></div>{{ $t('map.legendLow') }}</div>
       <div class="ml-row"><div class="ml-sq" style="background:#f4d03f"></div>{{ $t('map.legendMed') }}</div>
       <div class="ml-row"><div class="ml-sq" style="background:#ff2424"></div>{{ $t('map.legendHigh') }}</div>
@@ -72,7 +72,7 @@ function getHeat(iso) {
 function drawFrame() {
   if (!worldData || !ctx) return;
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#082a35'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#0a1628'; ctx.fillRect(0, 0, W, H);
 
   topojson.feature(worldData, worldData.objects.countries).features.forEach(f => {
     const iso = f.id ? String(f.id).padStart(3, '0') : null;

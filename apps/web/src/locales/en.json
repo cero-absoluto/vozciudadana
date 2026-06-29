@@ -813,7 +813,7 @@
       "local_verified_region": "{count} of {total} adhesions were geographically verified: GPS placed the participant inside the declared region ({territory}), matched against its OpenStreetMap entity.",
       "institutional_affiliation": "Each participant holds a verified email address in the institutional domain {domain}. This provides evidence supporting institutional affiliation.",
       "census_vouching": "Affiliation is additionally supported by peer vouching within the institutional census.",
-      "public_auditability": "The result is publicly auditable: the closed report carries an integrity hash and per-adhesion public commitments that anyone can verify independently."
+      "public_auditability": "The result is auditable: the closed report carries an integrity hash and records per-adhesion public commitments. Full independent public verification, with complete disclosure of those commitments, is available from integrity version 2."
     },
     "not": {
       "affiliation_geographic": "That participants belong to any specific affected community: no territorial or institutional membership was verified.",

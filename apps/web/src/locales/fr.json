@@ -731,7 +731,7 @@
     "nullifiersTitle": "Nullifiers et engagements publics",
     "nullifiersBody": "Pour garantir qu'un numéro de téléphone ne peut adhérer qu'une seule fois par protestation, le système calcule un nullifier et vérifie qu'il n'existe pas déjà. Le nullifier n'est jamais publié. À la clôture, des engagements publics — SHA256(protest_id + nullifier) — sont générés, permettant à quiconque de vérifier le hash d'intégrité sans révéler d'identités.",
     "integrityRecordsTitle": "Enregistrements d'intégrité permanents",
-    "integrityRecordsBody": "À la clôture, les données nécessaires à la vérification publique sont sauvegardées dans un enregistrement permanent (integrity_records), conçu pour rester disponible à long terme.",
+    "integrityRecordsBody": "À la clôture, les données nécessaires à la vérification publique sont sauvegardées dans un enregistrement permanent (integrity_records). Cet enregistrement survit à l'anonymisation des adhésions individuelles au bout de 90 jours et est conçu pour rester disponible à long terme.",
     "institutionalEmailTitle": "Email institutionnel",
     "institutionalEmailBody": "Pour les protestations avec vérification institutionnelle, l'email est utilisé uniquement pour envoyer le code OTP. L'email original n'est pas stocké — il est transformé en hachage HMAC-SHA256 irréversible. Il n'est jamais utilisé pour des communications ultérieures.",
     "donationsTitle": "Dons",

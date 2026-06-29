@@ -731,7 +731,7 @@
     "nullifiersTitle": "Nullifiers and public commitments",
     "nullifiersBody": "To ensure each phone number can only adhere once per protest, the system calculates a nullifier — a unique identifier derived from the phone hash and protest identifier — and verifies it does not already exist. The nullifier is never published. Instead, at protest closure, public commitments — SHA256(protest_id + nullifier) — are generated, allowing anyone to verify the report integrity hash without revealing identities or enabling cross-protest correlation.",
     "integrityRecordsTitle": "Permanent integrity records",
-    "integrityRecordsBody": "At protest closure, the data needed for public verification — public commitments, geographic distribution, integrity hash — are saved in a permanent record (integrity_records). This record survives the 90-day deletion of individual adhesions, designed to remain available long-term.",
+    "integrityRecordsBody": "At protest closure, the data needed for public verification — public commitments, geographic distribution, integrity hash — are saved in a permanent record (integrity_records). This record survives the 90-day anonymisation of individual adhesions, designed to remain available long-term.",
     "institutionalEmailTitle": "Institutional email",
     "institutionalEmailBody": "For protests with institutional verification, the participant provides an email address from the configured domain. This email is used solely to send the OTP verification code. Like the phone number, the original email is not stored — it is transformed into an irreversible HMAC-SHA256 hash. The email is never used for subsequent communications or shared with the protest convener.",
     "donationsTitle": "Donations",

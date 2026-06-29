@@ -46,7 +46,7 @@ These rules are enforced server-side and apply equally to web users and direct A
 | 🔍 Publicly verifiable reports | Closed reports include SHA-256 integrity hashes and public commitments. Anyone can verify results independently using the in-app verifier or the public API. |
 | 📡 Public commitments | Per-adhesion commitments — `SHA256(protest_id + nullifier)` — enable hash verification without revealing identities or enabling cross-protest correlation. |
 | 📋 Integrity log | Public record of integrity hashes maintained through GitHub. Updated manually at each protest closure. |
-| 📍 GPS verification | Optional location signal raises reliability scoring. GPS geocoding is always routed through the backend server — Nominatim receives the server's IP address, not the participant's. For local events, GPS classifies adhesions into three tiers in the public report: locally verified, national, and international. |
+| 📍 GPS verification | Optional location signal raises reliability scoring. GPS geocoding is always routed through the backend server — Nominatim receives the server's IP address, not the participant's. For local events, GPS classifies adhesions into three tiers in the public report: GPS-confirmed within the municipality, national, and international. |
 | 👥 Dynamic census | Wave-based trust system with peer vouching for local/institutional events |
 | 📧 Institutional email | Any institutional domain for university/workplace events |
 | 🌍 Geographic scopes | National · Regional · Local (city/municipality) · Global |

@@ -75,12 +75,27 @@
     <div class="fg"><label>{{ $t('create.abusoLabel') }}</label>
   <select v-model="form.tipo_abuso">
     <option value="">{{ $t('create.abusoPlaceholder') }}</option>
-    <option value="corruption">{{ $t('create.abusoCorrupcion') }}</option>
-    <option value="nepotism">{{ $t('create.abusoNepotismo') }}</option>
-    <option value="rights_violation">{{ $t('create.abusoDerechos') }}</option>
-    <option value="negligence">{{ $t('create.abusoNegligencia') }}</option>
-    <option value="repression">{{ $t('create.abusoRepresion') }}</option>
-    <option value="opacity">{{ $t('create.abusoOpacidad') }}</option>
+    <optgroup :label="$t('create.abuseGroupIntegrity')">
+      <option value="corruption">{{ $t('create.abusoCorrupcion') }}</option>
+      <option value="influence_peddling">{{ $t('create.abusoInfluencias') }}</option>
+      <option value="nepotism">{{ $t('create.abusoNepotismo') }}</option>
+      <option value="illicit_enrichment">{{ $t('create.abusoEnriquecimiento') }}</option>
+      <option value="procurement">{{ $t('create.abusoContratacion') }}</option>
+    </optgroup>
+    <optgroup :label="$t('create.abuseGroupMaladmin')">
+      <option value="opacity">{{ $t('create.abusoOpacidad') }}</option>
+      <option value="info_access">{{ $t('create.abusoAccesoInfo') }}</option>
+      <option value="undue_delay">{{ $t('create.abusoRetraso') }}</option>
+      <option value="discrimination">{{ $t('create.abusoDiscriminacion') }}</option>
+      <option value="negligence">{{ $t('create.abusoNegligencia') }}</option>
+      <option value="legal_breach">{{ $t('create.abusoIncumplimiento') }}</option>
+    </optgroup>
+    <optgroup :label="$t('create.abuseGroupRights')">
+      <option value="repression">{{ $t('create.abusoRepresion') }}</option>
+      <option value="rights_violation">{{ $t('create.abusoDerechos') }}</option>
+      <option value="excessive_force">{{ $t('create.abusoFuerza') }}</option>
+      <option value="surveillance">{{ $t('create.abusoVigilancia') }}</option>
+    </optgroup>
     <option value="other_public_abuse">{{ $t('create.abusoOtro') }}</option>
   </select>
 </div>

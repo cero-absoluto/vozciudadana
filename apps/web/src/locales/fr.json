@@ -60,6 +60,7 @@
     "filterNational": "🏛️ National",
     "filterRegional": "🌐 Régional",
     "filterGlobal": "🌍 Mondial",
+    "filterInstitutional": "🏢 Institutionnel",
     "tabActive": "Actifs",
     "tabQueue": "File d'attente",
     "tabSlots": "Créneaux",
@@ -171,6 +172,8 @@
     "institucionPlaceholder": "Ex : Université de Paris, Hôpital de la Pitié-Salpêtrière",
     "institutionPlaceholder": "Ex : Université de Paris, Hôpital de la Pitié-Salpêtrière",
     "institucionHint": "Nom de l'université, de l'hôpital, de l'organisme ou de l'entreprise publique concernée.",
+    "institucionPaisLabel": "Pays de l'institution (optionnel)",
+    "institucionPaisHint": "Sert uniquement à situer l'institution sur la carte. N'affecte pas l'éligibilité : la vérification se fait par e-mail.",
     "institutionHint": "S'il s'agit d'un événement universitaire ou professionnel, indiquez le nom.",
     "dominioLabel": "Domaine email institutionnel *",
     "emailDomainLabel": "Domaine email institutionnel *",
@@ -841,3 +844,4 @@
     }
   }
 }
+

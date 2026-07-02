@@ -186,6 +186,7 @@ a:hover{opacity:.8}
 .scope-badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700}
 .sb-national{background:rgba(124,111,255,.12);color:var(--accent);border:.5px solid var(--border2)}
 .sb-regional{background:rgba(255,179,71,.12);color:var(--accent4);border:.5px solid rgba(255,179,71,.25)}
+.sb-inst{background:rgba(255,124,176,.14);color:#FF7CB0;border:.5px solid rgba(255,124,176,.3)}
 .sb-global{background:rgba(76,255,164,.12);color:var(--accent2);border:.5px solid rgba(76,255,164,.2)}
 /* PANEL TABS */
 .panel-tabs{display:flex;flex-shrink:0;border-bottom:1px solid var(--border)}
@@ -574,3 +575,4 @@ a:hover{opacity:.8}
 .api-result{font-family:monospace;font-size:11px;color:var(--accent2);background:#0C0B14;border:.5px solid rgba(76,255,164,.25);border-radius:6px;padding:12px;overflow-x:auto;white-space:pre;line-height:1.7;margin-top:8px;max-height:220px;overflow-y:auto}
 .api-try-btn{margin-top:10px;padding:7px 16px;background:rgba(76,111,255,.15);border:.5px solid #4C6FFF;border-radius:var(--r);color:#4C6FFF;font-size:13px;font-weight:700;cursor:pointer}
 .api-try-btn:hover{background:rgba(76,111,255,.28)}
+

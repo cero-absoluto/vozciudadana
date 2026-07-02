@@ -32,7 +32,7 @@ import * as d3 from 'd3';
 
 const { t } = useI18n({ useScope: 'global' });
 import * as topojson from 'topojson-client';
-import { ISO_NUM_TO_A2, COORDS, REGION_COORDS, heatColor, lighten, fmt, fmtTime, REGIONS } from '@/constants.js';
+import { ISO_NUM_TO_A2, COORDS, REGION_COORDS, heatColor, lighten, fmt, fmtTime, REGIONS, displayScope } from '@/constants.js';
 
 const props = defineProps({
   protests:          { type: Array,  required: true },
@@ -83,7 +83,7 @@ function drawFrame() {
   });
 
   const t = Date.now();
-  const vis = props.filter === 'all' ? props.protests : props.protests.filter(p => p.scope === props.filter);
+  const vis = props.filter === 'all' ? props.protests : props.protests.filter(p => displayScope(p) === props.filter);
   // ── Malta — punto fijo siempre visible ──
   if (zoom > 3) {
     const maltaCoords = proj([14.5, 35.9]);

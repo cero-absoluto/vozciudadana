@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { REGIONS, inRegion, fmtTime } from '@/constants.js';
+import { REGIONS, inRegion, fmtTime, displayScope } from '@/constants.js';
 import { useDeviceStore } from './device.js';
 import * as api from '@/services/api.js';
 
 const SCOPE_COLOR = { national: '#7C6FFF', regional: '#FFB347', local: '#4CC8FF', global: '#4CFFA4' };
+const INST_COLOR = '#FF7CB0'; // institutional events, distinct on the map
 
 /** Map an API protest record to the shape the UI expects. */
 function normalizeProtest(p) {
@@ -19,7 +20,7 @@ function normalizeProtest(p) {
     count:       p.count ?? 0,
     heat:        p.heat ?? 5,
     timer:       Math.max(0, Math.floor((endsAt - Date.now()) / 1000)),
-    color:       SCOPE_COLOR[p.scope] ?? '#7C6FFF',
+    color:       p.dominio_email ? INST_COLOR : (SCOPE_COLOR[p.scope] ?? '#7C6FFF'),
     cities:      p.cities_count ?? 0,
     desc:        p.description,
     demands:     p.demands ?? '',
@@ -63,26 +64,27 @@ export const useProtestsStore = defineStore('protests', () => {
 
   const filteredProtests = computed(() => {
     const device = useDeviceStore();
-    let list = filter.value === 'all' ? protests.value : protests.value.filter(p => p.scope === filter.value);
+    let list = filter.value === 'all' ? protests.value : protests.value.filter(p => displayScope(p) === filter.value);
     if (countryFilter.value) {
       const byCountry = list.filter(p => p.country === countryFilter.value);
       if (byCountry.length) list = byCountry;
     }
     const sorted = [...list].sort((a, b) => b.heat - a.heat);
 
-    // En modo 'all' sin filtro de país: mostrar 1 nacional del dispositivo + 1 global
+    // En modo 'all' sin filtro de país: mostrar 1 de cada categoría de display
     if (filter.value === 'all' && !countryFilter.value) {
-      const national = sorted.filter(p => p.scope === 'national' && p.country === device.simCountry);
-      const global   = sorted.filter(p => p.scope === 'global');
-      const regional = sorted.filter(p => p.scope === 'regional');
-      const local    = sorted.filter(p => p.scope === 'local');
-      const others   = sorted.filter(p => p.scope === 'national' && p.country !== device.simCountry);
-      // 1 nacional propio + 1 global + 1 regional + 1 local + resto ordenado por heat
+      const national      = sorted.filter(p => displayScope(p) === 'national' && p.country === device.simCountry);
+      const global        = sorted.filter(p => displayScope(p) === 'global');
+      const regional      = sorted.filter(p => displayScope(p) === 'regional');
+      const local         = sorted.filter(p => displayScope(p) === 'local');
+      const institutional = sorted.filter(p => displayScope(p) === 'institutional');
+      const others        = sorted.filter(p => displayScope(p) === 'national' && p.country !== device.simCountry);
       const top = [
         ...(national.length ? [national[0]] : []),
         ...(global.length   ? [global[0]]   : []),
         ...(regional.slice(0, 1)),
         ...(local.slice(0, 1)),
+        ...(institutional.slice(0, 1)),
         ...others.slice(0, 2),
       ];
       // Deduplicar
@@ -101,8 +103,8 @@ export const useProtestsStore = defineStore('protests', () => {
       const active = protests.value.find(x => x.scope === 'national' && x.joined && x.id !== p.id);
       if (active) return { ok: false, lock: true, msg: `Tu dispositivo ya está adherido a "${active.title}" (${fmtTime(active.timer)} restante).` };
     }
-    if (p.scope === 'regional') {
-      const active = protests.value.find(x => x.scope === 'regional' && x.region === p.region && x.joined && x.id !== p.id);
+    if (p.scope === 'regional' && !p.dominio_email) {
+      const active = protests.value.find(x => x.scope === 'regional' && !x.dominio_email && x.region === p.region && x.joined && x.id !== p.id);
       if (active) return { ok: false, lock: true, msg: `Tu dispositivo ya está adherido a una convocatoria del bloque ${REGIONS[p.region]?.name}.` };
     }
     if (p.scope === 'global') {
@@ -130,6 +132,7 @@ export const useProtestsStore = defineStore('protests', () => {
       return { ok: true };
   }
   function scopeBadge(p) {
+    if (p.dominio_email)        return { cls: 'sb-inst',     icon: '🏢', label: p.convocatoria_institucion || p.dominio_email || 'Institucional' };
     if (p.scope === 'national') return { cls: 'sb-national', icon: '🏛️', label: p.countryName };
     if (p.scope === 'regional') return { cls: 'sb-regional', icon: '🌐', label: 'Regional' };
     if (p.scope === 'local')    return { cls: 'sb-local',    icon: '📍', label: p.convocatoria_ciudad_nombre || 'Local' };

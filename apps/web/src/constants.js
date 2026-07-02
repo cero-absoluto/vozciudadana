@@ -87,3 +87,7 @@ export const lighten = hex => {
   return `rgb(${Math.min(255,r+55)},${Math.min(255,g+55)},${Math.min(255,b+55)})`;
 };
 export const inRegion = (regionKey, country) => REGIONS[regionKey]?.members.includes(country) || false;
+
+// Display-level scope: institutional events are stored as scope='regional'
+// with an email domain, but should be presented as their own category.
+export const displayScope = (p) => (p && p.dominio_email) ? 'institutional' : (p ? p.scope : null);

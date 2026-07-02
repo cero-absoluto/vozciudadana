@@ -34,6 +34,7 @@
           <button class="pill" :class="{active: protests.filter==='regional'}" @click="setFilter('regional')">{{ $t('home.filterRegional') }}</button>
           <button class="pill" :class="{active: protests.filter==='local'}"    @click="setFilter('local')">{{ $t('home.filterLocal') }}</button>
           <button class="pill" :class="{active: protests.filter==='global'}"   @click="setFilter('global')">{{ $t('home.filterGlobal') }}</button>
+          <button class="pill" :class="{active: protests.filter==='institutional'}" @click="setFilter('institutional')">{{ $t('home.filterInstitutional') }}</button>
         </div>
         <div class="global-chip">
           <div class="red-dot"></div>

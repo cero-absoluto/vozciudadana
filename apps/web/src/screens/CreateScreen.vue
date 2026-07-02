@@ -270,6 +270,17 @@
 </div>
 <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">{{ $t('create.dominioHint') }}</div>
 </div>
+
+<!-- Optional institution country — used only to place the institution on the map.
+     Does NOT affect eligibility (institutional events are verified by email). -->
+<div v-if="form.institutionalMode" class="fg" style="margin-top:12px">
+  <label>{{ $t('create.institucionPaisLabel') }}</label>
+  <select v-model="form.convocatoria_pais">
+    <option value="">{{ $t('create.paisPlaceholder') }}</option>
+    <option v-for="c in sortedCountries" :key="c.code" :value="c.code">{{ c.name }}</option>
+  </select>
+  <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">{{ $t('create.institucionPaisHint') }}</div>
+</div>
       <!-- Verification model is determined by the chosen institutional card -->
       <div v-show="form.institutionalMode && form.dominio_email"
   style="background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r2);padding:12px;margin-top:12px">

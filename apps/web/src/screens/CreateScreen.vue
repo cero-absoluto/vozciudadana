@@ -460,7 +460,7 @@ const ALLOWED_TYPES = new Set([
   'Q1193236','Q11033','Q1004705','Q7275','Q2297946','Q1002697',
   'Q327333','Q37260','Q35749','Q637846','Q11204','Q15284',
   'Q6465','Q2659904','Q178706','Q1639634','Q270791',
-  'Q15265344','Q3918','Q16917','Q178790','Q190928','Q35120','Q43229',
+  'Q15265344','Q3918','Q16917','Q178790','Q190928','Q35120',
   'Q30185','Q1255921','Q294414','Q4164871','Q699567','Q83307',
   'Q372436','Q107363442','Q48352','Q2101','Q212238','Q13218630',
   'Q16533','Q193391','Q82955','Q1097498','Q15275719','Q42178','Q486839',
@@ -476,7 +476,6 @@ const ALLOWED_TYPES = new Set([
   'Q2188189', // municipal council
   'Q253019',  // prefecture
   'Q1752939', // administrative division
-  'Q7210356', // political organisation
   'Q4120845', // regional government
   'Q6243229', // regulatory agency
   'Q748720',  // public authority
@@ -551,11 +550,14 @@ async function validateTarget(wikidataId, label) {
   targetWikiId.value = wikidataId;
   targetName.value   = label;
   try {
+    // Walk the subclass hierarchy (P31 then P279* transitively), so a specific
+    // national type is recognised through its parent classes without needing a
+    // per-country whitelist entry. Must stay in sync with verifyTargetBackend.
     const sparql = `SELECT DISTINCT ?type ?typeLabel ?countryLabel WHERE {
-      wd:${wikidataId} wdt:P31 ?type .
+      wd:${wikidataId} wdt:P31/wdt:P279* ?type .
       OPTIONAL { wd:${wikidataId} wdt:P17 ?country . }
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en" . }
-    } LIMIT 30`;
+    } LIMIT 200`;
     const res = await fetch('https://query.wikidata.org/sparql?query=' + encodeURIComponent(sparql) + '&format=json');
     const data = await res.json();
     const bindings = data.results.bindings;
@@ -563,20 +565,24 @@ async function validateTarget(wikidataId, label) {
     const countryBinding = bindings.find(b => b.countryLabel);
     targetCountry.value = countryBinding?.countryLabel?.value || '';
     let allowed = false, rejected = false, typeLabel = '';
+    // Scan the whole class closure and collect both signals. ALLOWED wins over
+    // REJECTED so a public enterprise (also a "business" higher up) is admitted,
+    // while a private company or political party — which never reach an allowed
+    // public class — are rejected.
     for (const b of bindings) {
       const typeId = b.type.value.split('/').pop();
       const tLabel = b.typeLabel?.value || typeId;
       if (!typeLabel) typeLabel = tLabel;
-      if (REJECTED_TYPES.has(typeId)) { rejected = true; typeLabel = tLabel; break; }
-      if (ALLOWED_TYPES.has(typeId))  { allowed  = true; typeLabel = tLabel; }
+      if (ALLOWED_TYPES.has(typeId))       { allowed  = true; typeLabel = tLabel; }
+      else if (REJECTED_TYPES.has(typeId)) { rejected = true; }
     }
     targetType.value = typeLabel;
-    if (rejected) {
-      targetStatus.value = 'REJECTED';
-      form.focal_point = ''; form.target_wikidata_id = ''; form.target_type = ''; form.target_country = ''; form.target_validation = 'REJECTED';
-    } else if (allowed) {
+    if (allowed) {
       targetStatus.value = 'ALLOWED';
       form.focal_point = label; form.target_wikidata_id = wikidataId; form.target_type = typeLabel; form.target_country = targetCountry.value; form.target_validation = 'ALLOWED';
+    } else if (rejected) {
+      targetStatus.value = 'REJECTED';
+      form.focal_point = ''; form.target_wikidata_id = ''; form.target_type = ''; form.target_country = ''; form.target_validation = 'REJECTED';
     } else {
       targetStatus.value = 'NEEDS_REVIEW';
       form.focal_point = label; form.target_wikidata_id = wikidataId; form.target_type = typeLabel; form.target_country = targetCountry.value; form.target_validation = 'NEEDS_REVIEW';
@@ -762,11 +768,12 @@ const sortedCountries = computed(() => {
 
 // ── Two participation models, presented as separate blocks ─────────────────
 // Geographic scopes map 1:1 to the backend `scope` enum.
+// Order shown to the user: global → national → regional → local
 const geoScopes = computed(() => [
+  { key:'global',   icon:'🌍', label: t('create.scopeGlobal'),        badgeClass:'sb-global',   badgeLabel: t('create.scopeGlobalBadge'),        bg:'rgba(76,255,164,.08)',  desc: t('create.scopeGlobalDesc') },
   { key:'national', icon:'🏧', label: t('create.scopeNational'),      badgeClass:'sb-national', badgeLabel: t('create.scopeNationalBadge'),      bg:'rgba(124,111,255,.08)', desc: t('create.scopeNationalDesc') },
   { key:'regional', icon:'🌐', label: t('create.scopeRegionalLabel'), badgeClass:'sb-regional', badgeLabel: t('create.scopeRegionalBadge'),      bg:'rgba(255,179,71,.08)',  desc: t('create.scopeRegionalDesc') },
   { key:'local',    icon:'📍', label: t('create.scopeLocalCity'),     badgeClass:'sb-local',    badgeLabel: t('create.scopeLocalCityBadge'),     bg:'rgba(76,200,255,.08)',  desc: t('create.scopeLocalCityDesc') },
-  { key:'global',   icon:'🌍', label: t('create.scopeGlobal'),        badgeClass:'sb-global',   badgeLabel: t('create.scopeGlobalBadge'),        bg:'rgba(76,255,164,.08)',  desc: t('create.scopeGlobalDesc') },
 ]);
 
 // Institutional model is a distinct participation type. Internally it reuses the

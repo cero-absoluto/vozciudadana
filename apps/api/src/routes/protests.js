@@ -13,13 +13,29 @@ const VALID_RISK      = ['low', 'med', 'high', 'critical'];
 
 // 1. Closed list of accepted abuse types — tipo_abuso is required and must
 //    be one of these values. null or arbitrary strings are rejected.
+//    Grounded in recognised public-integrity frameworks: UNCAC (corruption),
+//    European Ombudsman / EU Charter art. 41 (maladministration), and the
+//    ECHR / EU Charter (rights). The target must still be a public institution.
 const VALID_ABUSE_TYPES = new Set([
-  'corruption',           // Corruption or embezzlement
-  'nepotism',             // Nepotism or favoritism
-  'rights_violation',     // Violation of fundamental rights
-  'negligence',           // Serious negligence
-  'repression',           // Repression or censorship
+  // — Integrity and corruption (UNCAC ch. III) —
+  'corruption',           // Corruption, bribery or embezzlement (art. 15–17)
+  'influence_peddling',   // Trading in influence (art. 18)
+  'nepotism',             // Nepotism, favouritism or conflict of interest
+  'illicit_enrichment',   // Illicit enrichment (art. 20)
+  'procurement',          // Public procurement irregularities
+  // — Maladministration (European Ombudsman / EU Charter art. 41) —
   'opacity',              // Opacity or lack of accountability
+  'info_access',          // Denial of access to public information
+  'undue_delay',          // Unjustified delay or administrative silence
+  'discrimination',       // Discrimination or unequal treatment
+  'negligence',           // Gross negligence or mismanagement of public services
+  'legal_breach',         // Failure to fulfil a legal obligation
+  // — Rights and liberties (ECHR / EU Charter) —
+  'repression',           // Repression of protest or censorship
+  'rights_violation',     // Violation of fundamental rights
+  'excessive_force',      // Excessive use of force or police abuse
+  'surveillance',         // Unlawful surveillance or privacy violation
+  // — Catch-all —
   'other_public_abuse',   // Other public power abuse
 ]);
 

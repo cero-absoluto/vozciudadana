@@ -80,8 +80,8 @@ export const useProtestsStore = defineStore('protests', () => {
       const institutional = sorted.filter(p => displayScope(p) === 'institutional');
       const others        = sorted.filter(p => displayScope(p) === 'national' && p.country !== device.simCountry);
       const top = [
-        ...(national.length ? [national[0]] : []),
         ...(global.length   ? [global[0]]   : []),
+        ...(national.length ? [national[0]] : []),
         ...(regional.slice(0, 1)),
         ...(local.slice(0, 1)),
         ...(institutional.slice(0, 1)),

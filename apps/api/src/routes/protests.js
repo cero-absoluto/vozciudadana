@@ -191,7 +191,7 @@ const BACKEND_ALLOWED_TYPES = new Set([
   'Q1193236','Q11033','Q1004705','Q7275','Q2297946','Q1002697',
   'Q327333','Q37260','Q35749','Q637846','Q11204','Q15284',
   'Q6465','Q2659904','Q178706','Q1639634','Q270791',
-  'Q15265344','Q3918','Q16917','Q178790','Q190928','Q35120','Q43229',
+  'Q15265344','Q3918','Q16917','Q178790','Q190928','Q35120',
   'Q30185','Q1255921','Q294414','Q4164871','Q699567','Q83307',
   'Q372436','Q107363442','Q48352','Q2101','Q212238','Q13218630',
   'Q16533','Q193391','Q82955','Q1097498','Q15275719','Q42178','Q486839',
@@ -209,39 +209,61 @@ const BACKEND_ALLOWED_TYPES = new Set([
   'Q2074737', // municipality of Spain
 ]);
 
+// Per-process cache of verdicts by entity ID. Only successful classifications
+// are cached (never a transient timeout), so repeated targets are instant and
+// resilient to brief Wikidata hiccups. Cleared on restart; a persistent table
+// is the recommended next step so manual-review decisions accumulate.
+const _targetCache = new Map();
+
 /**
  * Verify a Wikidata entity server-side.
  * Returns 'ALLOWED', 'REJECTED', or 'NEEDS_REVIEW'.
  * Never trusts the client-supplied target_validation.
+ *
+ * Instead of matching only the entity's direct type (P31) against a flat list
+ * of leaf QIDs — which forces us to enumerate every national institution type
+ * by hand — we walk the subclass hierarchy transitively (P31/P279*) and match
+ * the resulting class closure against a small set of public-institution
+ * classes. A "ministry of X" or "city council of Y" is then recognised through
+ * its parent classes automatically, without a per-country whitelist entry.
+ *
+ * ALLOWED takes precedence over REJECTED: a public enterprise is also, higher
+ * up the tree, a "business", so we must let the allowed public class win;
+ * a private company or a political party never reaches an allowed public class
+ * and is therefore rejected.
  *
  * Privacy note: this call goes from our backend to Wikidata's public SPARQL
  * endpoint using the entity ID only — no user data is transmitted.
  */
 async function verifyTargetBackend(wikidataId) {
   if (!wikidataId || !/^Q\d+$/.test(wikidataId)) return 'NEEDS_REVIEW';
+  if (_targetCache.has(wikidataId)) return _targetCache.get(wikidataId);
   try {
     const sparql = `SELECT DISTINCT ?type WHERE {
-      wd:${wikidataId} wdt:P31 ?type .
-    } LIMIT 30`;
+      wd:${wikidataId} wdt:P31/wdt:P279* ?type .
+    } LIMIT 400`;
     const url = 'https://query.wikidata.org/sparql?query=' +
       encodeURIComponent(sparql) + '&format=json';
     const res = await fetch(url, {
       headers: { 'User-Agent': 'VoiceProtest/1.0 (voiceprotest.org)' },
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return 'NEEDS_REVIEW';
     const json = await res.json();
     const types = json.results?.bindings ?? [];
-    let allowed = false;
+    let allowed = false, rejected = false;
     for (const row of types) {
       const typeId = row.type?.value?.split('/').pop();
-      if (BACKEND_REJECTED_TYPES.has(typeId)) return 'REJECTED';
-      if (BACKEND_ALLOWED_TYPES.has(typeId)) allowed = true;
+      if (BACKEND_ALLOWED_TYPES.has(typeId))  allowed  = true;
+      if (BACKEND_REJECTED_TYPES.has(typeId)) rejected = true;
     }
-    return allowed ? 'ALLOWED' : 'NEEDS_REVIEW';
+    const verdict = allowed ? 'ALLOWED' : (rejected ? 'REJECTED' : 'NEEDS_REVIEW');
+    _targetCache.set(wikidataId, verdict);
+    return verdict;
   } catch {
     // Wikidata timeout or network error — fail safe to NEEDS_REVIEW,
     // not to ALLOWED. The event is created but stays pending review.
+    // Not cached, so a later retry can still classify the entity.
     return 'NEEDS_REVIEW';
   }
 }

@@ -1,81 +1,102 @@
-<template>
-  <div>
-    <div v-if="!protests.length" style="padding:20px 14px;text-align:center">
-      <div style="font-size:22px;margin-bottom:8px">🌍</div>
-      <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:4px">{{ $t('active.empty') }}</div>
-      <div style="font-size:10px;color:var(--text3);line-height:1.6">{{ $t('active.emptyDesc') }}</div>
-      <button @click="$router.push('/create')"
-        style="margin-top:10px;padding:7px 14px;background:var(--accent);border:none;border-radius:var(--r);color:white;font-size:10px;cursor:pointer">
-        {{ $t('active.createBtn') }}
-      </button>
-    </div>
-    <div v-for="p in protests" :key="p.id">
-      <div class="p-item"
-        :class="{ locked: isBlocked(p), 'joined-item': p.joined }"
-        @click="handleClick(p)">
-        <div class="pi-heat" :style="{ background: p.color+'18', color: p.color }">{{ p.heat }}°</div>
-        <div class="pi-info">
-          <div class="pi-title" style="white-space:normal;overflow:visible;text-overflow:unset">{{ p.title }}</div>
-          <div class="pi-meta">
-            <span class="scope-badge" :class="store.scopeBadge(p).cls">{{ store.scopeBadge(p).icon }} {{ badgeLabel(p) }}</span>
-            <span v-if="p.country">{{ localizedCountry(p.country, locale) }}</span>
-          </div>
-          <div class="pi-bar" :style="{ width: p.heat + '%', background: p.color }"></div>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:5px">
-            <div @click.stop="router.push(`/informe/${p.id}`)"
-              style="cursor:pointer;font-size:14px;opacity:.7" title="Ver informe público">📄</div>
-            <div v-if="isBlocked(p)" style="font-size:14px">🔒</div>
-            <div class="pi-count" style="font-size:13px">{{ fmt(p.count) }}</div>
-            <div style="font-size:12px;color:var(--text2);font-weight:600">{{ fmtTime(p.timer) }}</div>
-            <div v-if="p.ends_at" style="font-size:11px;color:var(--text3);margin-top:2px">{{ fmtCloseDate(p.ends_at) }}</div>
-          </div>
-        </div>
-      </div>
-      <!-- status strips -->
-      <div v-if="p.joined"                  class="joined-strip">{{ $t('active.joined', { time: fmtTime(p.timer) }) }}</div>
-      <div v-else-if="cj(p).lock"           class="lock-strip">🔒 {{ cj(p).msg }}</div>
-      <div v-else-if="cj(p).geo"            class="geo-strip">🌍 {{ cj(p).msg }}</div>
-      
-    </div>
-  </div>
-</template>
+// ── Shared constants ────────────────────────────────────────────────────────
+export const REGIONS = {
+  region:      {name:'Región',       icon:'🌍', members:[]},
+  provincia:   {name:'Provincia',    icon:'🏙️', members:[]},
+  ciudad:      {name:'Ciudad',       icon:'🌆', members:[]},
+  distrito:    {name:'Distrito',     icon:'🏘️', members:[]},
+  institucion: {name:'Institución',  icon:'🎓', members:[]},
+};
 
-<script setup>
-import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
-const router = useRouter();
-const { t, locale } = useI18n();
-import { useProtestsStore } from '@/stores/protests.js';
-import { useUiStore }       from '@/stores/ui.js';
-import { fmt, fmtTime, localizedCountry } from '@/constants.js';
+export const ISO_NUM_TO_A2 = {
+  '004':'AF','008':'AL','012':'DZ','020':'AD','024':'AO','028':'AG','032':'AR','036':'AU','040':'AT','031':'AZ',
+  '044':'BS','048':'BH','050':'BD','052':'BB','112':'BY','056':'BE','084':'BZ','204':'BJ','064':'BT','068':'BO',
+  '070':'BA','072':'BW','076':'BR','096':'BN','100':'BG','854':'BF','108':'BI','116':'KH','120':'CM','124':'CA',
+  '140':'CF','148':'TD','152':'CL','156':'CN','170':'CO','174':'KM','180':'CD','178':'CG','188':'CR','384':'CI',
+  '191':'HR','192':'CU','196':'CY','203':'CZ','208':'DK','262':'DJ','212':'DM','214':'DO','218':'EC','818':'EG',
+  '222':'SV','226':'GQ','232':'ER','233':'EE','231':'ET','242':'FJ','246':'FI','250':'FR','266':'GA','270':'GM',
+  '268':'GE','276':'DE','288':'GH','300':'GR','308':'GD','320':'GT','324':'GN','328':'GY','332':'HT','340':'HN',
+  '348':'HU','356':'IN','360':'ID','364':'IR','368':'IQ','372':'IE','376':'IL','380':'IT','388':'JM','392':'JP',
+  '400':'JO','398':'KZ','404':'KE','410':'KR','408':'KP','414':'KW','417':'KG','418':'LA','428':'LV','422':'LB',
+  '426':'LS','430':'LR','434':'LY','440':'LT','442':'LU','807':'MK','450':'MG','454':'MW','458':'MY','462':'MV',
+  '466':'ML','470':'MT','478':'MR','480':'MU','484':'MX','498':'MD','496':'MN','504':'MA','508':'MZ','516':'NA',
+  '524':'NP','528':'NL','554':'NZ','558':'NI','562':'NE','566':'NG','578':'NO','512':'OM','586':'PK','591':'PA',
+  '598':'PG','600':'PY','604':'PE','608':'PH','616':'PL','620':'PT','634':'QA','642':'RO','643':'RU','646':'RW',
+  '682':'SA','686':'SN','694':'SL','703':'SK','705':'SI','090':'SB','710':'ZA','724':'ES','729':'SD','740':'SR',
+  '748':'SZ','752':'SE','756':'CH','760':'SY','764':'TH','768':'TG','776':'TO','780':'TT','788':'TN','792':'TR',
+  '800':'UG','804':'UA','784':'AE','826':'GB','840':'US','858':'UY','704':'VN','887':'YE','894':'ZM','716':'ZW',
+};
 
-function fmtCloseDate(endsAt) {
-  if (!endsAt) return '';
-  return new Date(endsAt).toLocaleString(undefined, {
-    weekday: 'short', day: 'numeric', month: 'short',
-    hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
-  });
-}
+export const COORDS = {
+  '470':[14.5,35.9],'724':[-3.7,40.4],'862':[-66.9,10.5],'364':[53.7,32.4],'250':[2.3,46.2],
+  '484':[-102,23.6],'643':[37.6,55.7],'792':[35.2,38.9],'112':[28,53.7],
+  '276':[10.4,51.2],'380':[12.5,41.9],'840':[-100,38],'076':[-47,-15],
+  '356':[78.9,20.6],'156':[104,35.9],'410':[127.7,35.9],'360':[113.9,-0.8],
+  '566':[8.7,9.1],'710':[25.1,-29],'818':[30.8,26.8],'682':[45.1,23.9],
+  '528':[5.3,52.1],'620':[-8.2,39.4],'056':[4.3,50.8],'040':[14.5,47.5],
+  '752':[18.1,59.3],'578':[10.7,59.9],'208':[10.0,56.0],'246':[25.7,61.9],
+  '372':[-8.2,53.4],'756':[8.2,46.8],'616':[19.1,52.2],'203':[15.5,49.8],
+  '348':[19.0,47.2],'642':[25.0,46.0],'100':[25.5,42.7],'191':[15.2,45.1],
+  '703':[19.5,48.7],'705':[14.5,46.1],'233':[25.0,58.6],'428':[24.1,56.9],
+  '440':[23.9,55.9],'442':[6.1,49.6],'192':[-79.5,22.0],'214':[-70.2,18.7],
+  '388':[-77.3,18.1],'600':[-58.4,-23.4],'858':[-56.2,-32.5],'152':[-71.5,-35.7],
+  '170':[-74.3,4.5],'604':[-75.0,-10.0],'218':[-78.5,-1.8],'068':[-65.2,-16.3],
+  '032':[-63.6,-38.4],'188':[-84.2,9.9],'591':[-80.0,8.5],'320':[-90.2,15.5],
+  '340':[-86.2,14.8],'222':[-88.9,13.8],'388':[-77.3,18.1],'586':[69.3,30.4],
+  '050':[90.4,23.7],'144':[80.7,7.9],'104':[96.9,16.9],'764':[100.5,15.5],
+  '704':[108.3,14.1],'116':[104.9,12.6],'418':[102.5,18.0],'458':[109.7,4.2],
+  '608':[121.8,12.9],'400':[36.2,31.2],'422':[35.9,33.9],'376':[34.9,31.5],
+  '760':[38.3,35.0],'887':[47.6,15.6],'634':[51.2,25.3],'784':[53.8,23.4],
+  '414':[47.5,29.4],'496':[106.9,47.9],'398':[66.9,48.0],'860':[64.6,41.3],
+  '404':[37.9,-0.0],'800':[32.3,1.4],'834':[34.9,-6.4],'716':[29.2,-19.0],
+  '894':[27.8,-13.1],'454':[34.3,-13.3],'508':[35.0,-18.7],'646':[30.1,-1.9],
+  '108':[29.9,-3.4],'174':[43.4,-11.7],'706':[45.3,6.1],'288':[1.0,7.9],
+  '566':[8.7,9.1],'324':[[-10.9,10.9]],'430':[-9.4,6.4],'686':[-14.5,14.5],
+  '204':[2.3,9.3],'148':[18.7,15.5],'232':[38.9,15.2],'231':[40.5,9.1],
+  '504':[-7.1,31.8],'788':[9.1,34.0],'012':[3.0,28.0],'434':[17.2,26.3],
+};
 
-const props  = defineProps({ protests: Array });
-const emit   = defineEmits(['open']);
-const store  = useProtestsStore();
-const ui     = useUiStore();
+export const REGION_COORDS = {
+  eu:       [ 10.0, 51.0],
+  mercosur: [-58.0,-20.0],
+  asean:    [108.0, 14.0],
+  latam:    [-65.0,-10.0],
+  g20:      [ 20.0, 30.0],
+  global:   [-30.0, 25.0],
+};
 
-const cj         = p => store.canJoin(p);
-const isBlocked  = p => { const r = cj(p); return !r.ok && !r.joined; };
+// ── Helpers ─────────────────────────────────────────────────────────────────
+export const fmt = n => Math.round(n).toLocaleString('es-ES');
+export const fmtTime = s => {
+  if (s <= 0) return 'Finalizada';
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${String(m).padStart(2,'0')}m`;
+  return `${m}m ${String(s % 60).padStart(2,'0')}s`;
+};
+export const heatColor = h => {
+  if (!h)     return '#1e4a7a'; // sin convocatoria → azul (superficie)
+  if (h < 30) return '#2ecc71'; // baja actividad → verde
+  if (h < 55) return '#f4d03f'; // media → amarillo
+  if (h < 80) return '#f39c12'; // alta → naranja
+  return '#ff2424';             // máxima actividad → rojo intenso
+};
+export const lighten = hex => {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgb(${Math.min(255,r+55)},${Math.min(255,g+55)},${Math.min(255,b+55)})`;
+};
+export const inRegion = (regionKey, country) => REGIONS[regionKey]?.members.includes(country) || false;
 
-// National badge shows the country — localise it to the current UI language
-// instead of the fixed string stored at creation. Other badges keep their label.
-function badgeLabel(p) {
-  if (p.scope === 'national' && !p.dominio_email && p.country) return localizedCountry(p.country, locale.value);
-  return store.scopeBadge(p).label;
-}
+// Display-level scope: institutional events are stored as scope='regional'
+// with an email domain, but should be presented as their own category.
+export const displayScope = (p) => (p && p.dominio_email) ? 'institutional' : (p ? p.scope : null);
 
-function handleClick(p) {
-  const r = cj(p);
-  if (r.joined || r.ok) emit('open', p.id);
-  else if (r.lock)      ui.showToast(t('active.toastLocked'));
-  else if (r.geo)       ui.showToast(t('active.toastGeo'));
-}
-</script>
+// Localised country name from an ISO alpha-2 code, using the browser's own
+// Intl data — so the country shows in the UI language instead of a fixed
+// Spanish string stored at creation time. Falls back to the code on error.
+export const localizedCountry = (code, locale) => {
+  if (!code) return '';
+  try { return new Intl.DisplayNames([locale || 'en'], { type: 'region' }).of(String(code).toUpperCase()) || code; }
+  catch { return code; }
+};

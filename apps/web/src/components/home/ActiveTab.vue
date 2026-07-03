@@ -17,8 +17,8 @@
         <div class="pi-info">
           <div class="pi-title" style="white-space:normal;overflow:visible;text-overflow:unset">{{ p.title }}</div>
           <div class="pi-meta">
-            <span class="scope-badge" :class="store.scopeBadge(p).cls">{{ store.scopeBadge(p).icon }} {{ store.scopeBadge(p).label }}</span>
-            <span>{{ p.countryName }}</span>
+            <span class="scope-badge" :class="store.scopeBadge(p).cls">{{ store.scopeBadge(p).icon }} {{ badgeLabel(p) }}</span>
+            <span v-if="p.country">{{ localizedCountry(p.country, locale) }}</span>
           </div>
           <div class="pi-bar" :style="{ width: p.heat + '%', background: p.color }"></div>
           <div style="display:flex;align-items:center;gap:10px;margin-top:5px">
@@ -44,10 +44,10 @@
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 const router = useRouter();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 import { useProtestsStore } from '@/stores/protests.js';
 import { useUiStore }       from '@/stores/ui.js';
-import { fmt, fmtTime }     from '@/constants.js';
+import { fmt, fmtTime, localizedCountry } from '@/constants.js';
 
 function fmtCloseDate(endsAt) {
   if (!endsAt) return '';
@@ -64,6 +64,13 @@ const ui     = useUiStore();
 
 const cj         = p => store.canJoin(p);
 const isBlocked  = p => { const r = cj(p); return !r.ok && !r.joined; };
+
+// National badge shows the country — localise it to the current UI language
+// instead of the fixed string stored at creation. Other badges keep their label.
+function badgeLabel(p) {
+  if (p.scope === 'national' && !p.dominio_email && p.country) return localizedCountry(p.country, locale.value);
+  return store.scopeBadge(p).label;
+}
 
 function handleClick(p) {
   const r = cj(p);

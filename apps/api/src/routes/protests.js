@@ -422,6 +422,17 @@ export default async function protestRoutes(app) {
       });
     }
 
+    // ── Institutional convocatorias must declare the institution's country ─────
+    // Eligibility stays by email (not territorial), but the country places the
+    // institution on the map so it can be reached through the country-first
+    // navigation. Without it the convocatoria would be unreachable on the map.
+    if (dominio_email && !convocatoria_pais) {
+      return reply.status(400).send({
+        error: 'Country required',
+        reason: "Institutional convocatorias must declare the institution's country so they appear on the map.",
+      });
+    }
+
     const { data, error } = await supabase
       .from('protests')
       .insert({

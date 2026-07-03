@@ -39,6 +39,8 @@ const props = defineProps({
   filter:            { type: String, default: 'all' },
   countryFilter:     { type: String, default: null },
   countryFilterName: { type: String, default: null },
+  homeCountry:       { type: String, default: '' },
+  fallbackCountry:   { type: String, default: '' },
   height:            { type: Number, default: 220 },
 });
 const emit = defineEmits(['country-click', 'protest-click', 'clear-country']);
@@ -61,6 +63,62 @@ function buildProj() {
     .translate([W / 2 + offX, H / 2 + offY]);
   gp = d3.geoPath(proj, ctx);
 }
+
+let autoFramed = null;   // null | 'ip' | 'sim' — which signal we auto-framed with
+let userMoved  = false;  // once the user pans/zooms/taps, stop auto-framing
+
+// Frame the map on a country (by alpha-2), leaving a margin around it so the
+// neighbouring countries stay visible — the country fills ~`fill` of the
+// viewport, the rest is breathing room. Used for the initial view (SIM
+// country) and when the user taps a country.
+function frameCountry(a2, fill = 0.6) {
+  if (!worldData || !ctx || !a2 || !W || !H) return;
+  const numIso = Object.entries(ISO_NUM_TO_A2).find(([, v]) => v === a2)?.[0];
+  if (!numIso) return;
+  const target = String(numIso).padStart(3, '0');
+  const feat = topojson.feature(worldData, worldData.objects.countries).features
+    .find(f => f.id && String(f.id).padStart(3, '0') === target);
+  if (!feat) return;
+  const base = (W / 640) * 112;
+  // Measure the country's projected size at zoom 1, centred.
+  const p1 = d3.geoNaturalEarth1().scale(base).translate([W / 2, H / 2]);
+  const b = d3.geoPath(p1).bounds(feat);
+  const w = b[1][0] - b[0][0], h = b[1][1] - b[0][1];
+  if (!(w > 0 && h > 0)) return;
+  // Zoom so the country fills ~`fill` of the viewport; clamp to sane bounds so
+  // tiny countries don't zoom to street level nor huge ones stay world-sized.
+  let z = Math.min((fill * W) / w, (fill * H) / h);
+  z = Math.min(9, Math.max(1, z));
+  // Re-measure at that zoom and centre the country's bounding box.
+  const pz = d3.geoNaturalEarth1().scale(base * z).translate([W / 2, H / 2]);
+  const bz = d3.geoPath(pz).bounds(feat);
+  zoom = z;
+  offX = W / 2 - (bz[0][0] + bz[1][0]) / 2;
+  offY = H / 2 - (bz[0][1] + bz[1][1]) / 2;
+  buildProj();
+}
+
+// Auto-frame with the best signal available *without asking permission*:
+// the SIM country if already known, otherwise the IP country (which arrives on
+// its own). If the SIM shows up later and the user hasn't touched the map, we
+// upgrade the framing to it — the SIM always wins over the IP, but only as an
+// improvement, never as a requirement. Once the user moves the map, we stop.
+function autoFrame() {
+  if (userMoved || !worldData || !W) return;
+  const sim = props.homeCountry, ip = props.fallbackCountry;
+  if (sim && autoFramed !== 'sim')      { frameCountry(sim); autoFramed = 'sim'; }
+  else if (!sim && ip && !autoFramed)   { frameCountry(ip);  autoFramed = 'ip';  }
+}
+
+// Re-run whenever either signal becomes available.
+watch(() => props.homeCountry,     () => autoFrame());
+watch(() => props.fallbackCountry, () => autoFrame());
+
+// When the country filter is cleared, return to the best home framing
+// (a natural "back to my country" after exploring elsewhere).
+watch(() => props.countryFilter, (nv, ov) => {
+  if (!nv && ov) { const c = props.homeCountry || props.fallbackCountry; if (c) frameCountry(c); }
+});
 
 function getHeat(iso) {
   const a2 = ISO_NUM_TO_A2[iso];
@@ -162,7 +220,7 @@ function setupEvents() {
     if (mousedown) {
       const dist = Math.sqrt((e.clientX - dragStartX) ** 2 + (e.clientY - dragStartY) ** 2);
       if (dist > 4) drag = true;
-      if (drag) { offX = ox + (e.clientX - dragStartX); offY = oy + (e.clientY - dragStartY); buildProj(); return; }
+      if (drag) { userMoved = true; offX = ox + (e.clientX - dragStartX); offY = oy + (e.clientY - dragStartY); buildProj(); return; }
     }
     const rect = c.getBoundingClientRect();
     const ttx = (e.clientX - rect.left) > rect.width * 0.6 ? (e.clientX - rect.left) - 188 : (e.clientX - rect.left) + 10;
@@ -201,10 +259,13 @@ function setupEvents() {
     const name = found.properties?.name || iso;
     const a2   = ISO_NUM_TO_A2[iso] || iso;
     emit('country-click', a2, name);
+    frameCountry(a2);   // recenter the map on the tapped country
+    userMoved = true;   // user chose a country — stop auto-framing to SIM
   });
 
   c.addEventListener('wheel', e => {
     e.preventDefault();
+    userMoved = true;
     const rect = c.getBoundingClientRect();
     const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
     const geo = proj.invert([sx, sy]);            // punto geográfico bajo el cursor (antes de escalar)
@@ -240,8 +301,9 @@ function setupEvents() {
       const dx = e.touches[0].clientX - touchStartX;
       const dy = e.touches[0].clientY - touchStartY;
       if (Math.sqrt(dx*dx+dy*dy) > 4) drag = true;
-      if (drag) { offX = touchOx + dx; offY = touchOy + dy; buildProj(); }
+      if (drag) { userMoved = true; offX = touchOx + dx; offY = touchOy + dy; buildProj(); }
     } else if (e.touches.length === 2) {
+      userMoved = true;
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const dist = Math.sqrt(dx * dx + dy * dy);
@@ -284,8 +346,8 @@ function setupEvents() {
   }, { passive: false });
 }
 
-function zoomIn()    { zoom = Math.min(100, zoom * 1.3); buildProj(); }
-function zoomOut()   { zoom = Math.max(0.7, zoom / 1.3); buildProj(); }
+function zoomIn()    { userMoved = true; zoom = Math.min(100, zoom * 1.3); buildProj(); }
+function zoomOut()   { userMoved = true; zoom = Math.max(0.7, zoom / 1.3); buildProj(); }
 function resetView() { zoom = 1; offX = 0; offY = 0; buildProj(); }
 
 onMounted(() => {
@@ -297,6 +359,7 @@ onMounted(() => {
 
   d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json').then(data => {
     worldData = data;
+    autoFrame();
     drawFrame();
   });
 

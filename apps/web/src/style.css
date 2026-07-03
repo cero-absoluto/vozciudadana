@@ -474,6 +474,14 @@ a:hover{opacity:.8}
 .verif-loading{background:rgba(124,111,255,.08);border:.5px solid var(--border2);color:var(--text2)}
 /* ── MOBILE FONT SIZE IMPROVEMENTS ── */
 @media(max-width:899px){
+  /* HOME en móvil: el mapa queda fijo arriba y la LISTA de convocatorias
+     se desplaza debajo. Antes #home-right no tenía altura acotada, así que
+     la lista crecía fuera del área visible y el contenedor la recortaba
+     (sin scroll). min-height:0 permite que el hijo flex encoja y active el
+     overflow. Afecta a las tres pestañas (Activas/Cola/Slots). */
+  #home-left{flex-shrink:0}
+  #home-right{flex:1;display:flex;flex-direction:column;min-height:0}
+  .panel-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
   html,body{font-size:16px}
  .pi-title{font-size:16px!important;color:var(--text)!important;font-weight:600!important}
   .topbar-sub{font-size:11px !important;opacity:1 !important;color:var(--text) !important}

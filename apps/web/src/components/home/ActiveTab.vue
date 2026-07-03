@@ -44,7 +44,7 @@
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 const router = useRouter();
-const { t, locale } = useI18n();
+const { t, locale } = useI18n({ useScope: 'global' });
 import { useProtestsStore } from '@/stores/protests.js';
 import { useUiStore }       from '@/stores/ui.js';
 import { fmt, fmtTime, localizedCountry } from '@/constants.js';

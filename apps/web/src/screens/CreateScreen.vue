@@ -289,7 +289,7 @@
 <!-- Optional institution country — used only to place the institution on the map.
      Does NOT affect eligibility (institutional events are verified by email). -->
 <div v-if="form.institutionalMode" class="fg" style="margin-top:12px">
-  <label>{{ $t('create.institucionPaisLabel') }}</label>
+  <label>{{ $t('create.institucionPaisLabel') }} *</label>
   <select v-model="form.convocatoria_pais">
     <option value="">{{ $t('create.paisPlaceholder') }}</option>
     <option v-for="c in sortedCountries" :key="c.code" :value="c.code">{{ c.name }}</option>
@@ -858,6 +858,7 @@ function submit() {
     // Institutional participation (email domain, optionally + census)
     if (!form.convocatoria_institucion.trim()) { ui.showToast(t('create.errInstitucion')); return; }
     if (!form.dominio_email.trim()) { ui.showToast(t('create.errDominio')); return; }
+    if (!form.convocatoria_pais) { ui.showToast(t('create.errInstitucionPais')); return; }
   }
   if (!form.tipo_abuso) { ui.showToast(t('create.errAbuso')); return; }
   if (!form.fuente_url.trim()) { ui.showToast(t('create.errFuente')); return; }

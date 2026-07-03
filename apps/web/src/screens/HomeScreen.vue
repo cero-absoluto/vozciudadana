@@ -68,6 +68,8 @@
         :filter="protests.filter"
         :country-filter="protests.countryFilter"
         :country-filter-name="countryFilterName"
+        :home-country="device.simCountry"
+        :fallback-country="device.ipCountry"
         :height="220"
         @country-click="onCountryClick"
         @clear-country="clearCountryFilter"

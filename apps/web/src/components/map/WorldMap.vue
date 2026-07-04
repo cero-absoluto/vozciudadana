@@ -4,7 +4,7 @@
     <div class="map-hint" id="map-hint">
       <template v-if="countryFilterName">
         📍 {{ countryFilterName }} —
-        <span style="margin-left:4px;cursor:pointer;color:var(--accent);font-size:8px;text-decoration:underline"
+        <span style="margin-left:4px;cursor:pointer;color:var(--accent);font-size:11px;text-decoration:underline"
               @click="$emit('clear-country')">✕ {{ $t('map.clearFilter') }}</span>
       </template>
       <template v-else>{{ $t('map.hint') }}</template>

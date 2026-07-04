@@ -65,9 +65,11 @@ export const useProtestsStore = defineStore('protests', () => {
   const filteredProtests = computed(() => {
     const device = useDeviceStore();
     let list = filter.value === 'all' ? protests.value : protests.value.filter(p => displayScope(p) === filter.value);
+    // Al pinchar un país, filtrar ESTRICTAMENTE a ese país (nacional, regional,
+    // local e institucional — todas llevan p.country). Si no hay ninguna, la
+    // lista queda vacía (estado vacío), en vez de mostrar las de otros países.
     if (countryFilter.value) {
-      const byCountry = list.filter(p => p.country === countryFilter.value);
-      if (byCountry.length) list = byCountry;
+      list = list.filter(p => p.country === countryFilter.value);
     }
     const sorted = [...list].sort((a, b) => b.heat - a.heat);
 

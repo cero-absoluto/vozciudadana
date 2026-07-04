@@ -67,6 +67,23 @@ function buildProj() {
 let autoFramed = null;   // null | 'ip' | 'sim' — which signal we auto-framed with
 let userMoved  = false;  // once the user pans/zooms/taps, stop auto-framing
 
+// Return the country's largest landmass as a single-polygon feature. Countries
+// with far-flung overseas territories (France, the Netherlands, the USA, Spain…)
+// are MultiPolygons whose full bounding box spans much of the globe; framing on
+// that box zooms out to world. Framing on the largest polygon (the mainland)
+// gives a sensible, local view.
+function mainlandFeature(feat) {
+  const g = feat.geometry;
+  if (!g || g.type !== 'MultiPolygon' || g.coordinates.length <= 1) return feat;
+  let best = null, bestArea = -1;
+  for (const coords of g.coordinates) {
+    const poly = { type: 'Polygon', coordinates: coords };
+    const a = d3.geoArea(poly);
+    if (a > bestArea) { bestArea = a; best = poly; }
+  }
+  return { type: 'Feature', properties: feat.properties, geometry: best };
+}
+
 // Frame the map on a country (by alpha-2), leaving a margin around it so the
 // neighbouring countries stay visible — the country fills ~`fill` of the
 // viewport, the rest is breathing room. Used for the initial view (SIM
@@ -79,10 +96,11 @@ function frameCountry(a2, fill = 0.6) {
   const feat = topojson.feature(worldData, worldData.objects.countries).features
     .find(f => f.id && String(f.id).padStart(3, '0') === target);
   if (!feat) return;
+  const mf = mainlandFeature(feat);
   const base = (W / 640) * 112;
-  // Measure the country's projected size at zoom 1, centred.
+  // Measure the mainland's projected size at zoom 1, centred.
   const p1 = d3.geoNaturalEarth1().scale(base).translate([W / 2, H / 2]);
-  const b = d3.geoPath(p1).bounds(feat);
+  const b = d3.geoPath(p1).bounds(mf);
   const w = b[1][0] - b[0][0], h = b[1][1] - b[0][1];
   if (!(w > 0 && h > 0)) return;
   // Zoom so the country fills ~`fill` of the viewport; clamp to sane bounds so
@@ -91,7 +109,7 @@ function frameCountry(a2, fill = 0.6) {
   z = Math.min(9, Math.max(1, z));
   // Re-measure at that zoom and centre the country's bounding box.
   const pz = d3.geoNaturalEarth1().scale(base * z).translate([W / 2, H / 2]);
-  const bz = d3.geoPath(pz).bounds(feat);
+  const bz = d3.geoPath(pz).bounds(mf);
   zoom = z;
   offX = W / 2 - (bz[0][0] + bz[1][0]) / 2;
   offY = H / 2 - (bz[0][1] + bz[1][1]) / 2;
@@ -338,6 +356,8 @@ function setupEvents() {
           const name = found.properties?.name || iso;
           const a2 = ISO_NUM_TO_A2[iso] || iso;
           emit('country-click', a2, name);
+          frameCountry(a2);   // recenter the map on the tapped country (mobile)
+          userMoved = true;
         }
       }
     }

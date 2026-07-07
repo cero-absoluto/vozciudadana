@@ -113,17 +113,19 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useProtestsStore } from '@/stores/protests.js';
 import { useDeviceStore }   from '@/stores/device.js';
 import WorldMap   from '@/components/map/WorldMap.vue';
 import ActiveTab  from '@/components/home/ActiveTab.vue';
 import QueueTab   from '@/components/home/QueueTab.vue';
 import SlotsTab   from '@/components/home/SlotsTab.vue';
-import { fmt, ISO_NUM_TO_A2 } from '@/constants.js';
+import { fmt, ISO_NUM_TO_A2, localizedCountry } from '@/constants.js';
 
 const router   = useRouter();
 const protests = useProtestsStore();
 const device   = useDeviceStore();
+const { locale } = useI18n({ useScope: 'global' });
 
 const tab = ref('active');
 const showMapOverlay = ref(!localStorage.getItem('vc_map_intro'));
@@ -159,7 +161,7 @@ const deviceFlag = computed(() => {
   return String.fromCodePoint(...codePoints);
 });
 
-const displayCountryName = computed(() => device.simName);
+const displayCountryName = computed(() => localizedCountry(device.simCountry, locale.value) || device.simName);
 const strengtheningGps = ref(false);
 async function strengthenGps() {
   if (strengtheningGps.value || device.gpsReady) return;

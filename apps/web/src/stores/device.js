@@ -6,7 +6,7 @@ export const useDeviceStore = defineStore('device', () => {
   const simPrefix  = ref('');
   const simCountry = ref('');
   const simName    = ref('');
-  const ipCountry     = ref('');
+  const ipCountry     = ref(localStorage.getItem('vc_ip_country') || '');
   const ipCity        = ref('');
   const ipRegion      = ref(null);
   const ipCountryName = ref(null);
@@ -44,6 +44,7 @@ export const useDeviceStore = defineStore('device', () => {
      const data = await res.json();
       if (data.country_code) {
         ipCountry.value = data.country_code;
+        try { localStorage.setItem('vc_ip_country', data.country_code); } catch {}
         ipCity.value = data.city || '';
         ipRegion.value = data.region || null;
         ipCountryName.value = data.country_name || null;

@@ -3,6 +3,14 @@
 
     <!-- Left column: map + filters -->
     <div id="home-left">
+      <!-- Compact 3-step strip (gateway) -->
+      <div class="steps-strip">
+        <div class="ss-item"><span class="ss-n">1</span> {{ $t('home.stepJoin') }}</div>
+        <span class="ss-arr">→</span>
+        <div class="ss-item"><span class="ss-n">2</span> {{ $t('home.stepVerify') }}</div>
+        <span class="ss-arr">→</span>
+        <div class="ss-item"><span class="ss-n">3</span> {{ $t('home.stepResults') }}</div>
+      </div>
       <!-- Device status bar -->
       <div class="device-bar">
         <div class="dev-flag">{{ deviceFlag }}</div>
@@ -76,8 +84,8 @@
       />
     </div>
 
-    <!-- Right column: panels -->
-    <div id="home-right">
+    <!-- Right column: panels (shown once a country or scope is selected) -->
+    <div id="home-right" v-if="protests.countryFilter || protests.filter !== 'all'">
       <div class="panel-tabs">
         <button class="ptab" :class="{active: tab==='active'}" @click="tab='active'">{{ $t('home.tabActive') }}</button>
         <button class="ptab" :class="{active: tab==='queue'}"  @click="tab='queue'">{{ $t('home.tabQueue') }}</button>

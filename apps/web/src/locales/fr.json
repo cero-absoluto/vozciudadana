@@ -55,7 +55,7 @@
     "verificationCannotContinue": "La vérification ne peut pas continuer pour cet événement."
   },
   "home": {
-    "geoConfidence": "Confiance des preuves géographiques :",
+    "geoConfidence": "Ta voix compte à",
     "filterAll": "Tous",
     "filterNational": "🏛️ National",
     "filterRegional": "🌐 Régional",
@@ -75,7 +75,7 @@
     "overlayLive": "Événements actifs sur la carte",
     "overlayTap": "Appuyer pour explorer →",
     "dotDocument": "Document",
-    "improveConfidence": "Renforcez vos preuves géographiques",
+    "improveConfidence": "Place ton point et mets-les sous pression",
     "filterLocal": "📍 Local"
   },
   "active": {

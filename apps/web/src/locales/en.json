@@ -55,7 +55,7 @@
     "verificationCannotContinue": "Verification cannot continue for this event."
   },
   "home": {
-    "geoConfidence": "Geographic evidence confidence:",
+    "geoConfidence": "Your voice counts at",
     "filterAll": "All",
     "filterNational": "🏛️ National",
     "filterRegional": "🌐 Regional",
@@ -75,7 +75,7 @@
     "overlayLive": "Active events on the map",
     "overlayTap": "Tap to explore →",
     "dotDocument": "Document",
-    "improveConfidence": "Strengthen your geographic evidence",
+    "improveConfidence": "Drop your pin and make them sweat",
     "filterLocal": "📍 Local"
   },
   "active": {

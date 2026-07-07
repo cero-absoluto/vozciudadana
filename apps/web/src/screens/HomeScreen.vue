@@ -161,7 +161,7 @@ const deviceFlag = computed(() => {
   return String.fromCodePoint(...codePoints);
 });
 
-const displayCountryName = computed(() => localizedCountry(device.simCountry, locale.value) || device.simName);
+const displayCountryName = computed(() => localizedCountry(device.simCountry || device.ipCountry, locale.value) || device.simName);
 const strengtheningGps = ref(false);
 async function strengthenGps() {
   if (strengtheningGps.value || device.gpsReady) return;

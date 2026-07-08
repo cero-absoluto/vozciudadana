@@ -89,16 +89,22 @@ a:hover{opacity:.8}
   /* Topbar full width */
   .topbar{max-width:100%;border-bottom:1px solid var(--border);padding:18px 24px}
   .bottom-nav{max-width:100%;padding:0 24px}
-  .topbar-sub{font-size:13px !important;opacity:1 !important;color:var(--text) !important}
+  .topbar-sub{font-size:15px !important;opacity:1 !important;color:var(--text) !important}
   .logo-mark{width:44px;height:44px}
   .logo-mark svg{width:44px;height:44px}
   /* Modal wider on desktop */
   .modal{max-width:480px}
   #install-banner{max-width:860px}
   /* HOME pantalla principal */
-  .dev-country{font-size:16px}
-  .dev-conf{font-size:13px}
-  .pill{font-size:13px;padding:5px 12px}
+  .dev-country{font-size:20px}
+  .dev-conf{font-size:17px}
+  .pill{font-size:15px;padding:7px 14px}
+  /* home: textos más grandes en PC (franja 3 pasos + drop your pin) */
+  .steps-strip .ss-tx b{font-size:15px}
+  .steps-strip .ss-tx span{font-size:13px}
+  .steps-strip .ss-ic svg{width:27px;height:27px}
+  .steps-strip .ss-num{width:18px;height:18px;font-size:11px;top:-8px;left:-12px}
+  .device-bar div[style*="font-size:13px"]{font-size:16px !important}
   .ptab{font-size:13px;padding:10px 8px}
   .pi-title{font-size:16px;font-weight:600;color:var(--text)}
   .pi-meta{font-size:12px;color:var(--text2)}
@@ -109,13 +115,13 @@ a:hover{opacity:.8}
   .lock-strip{font-size:12px}
   .geo-strip{font-size:12px}
   .device-bar{padding:10px 16px}
-  .dev-country{font-size:16px!important}
-  .dev-conf{font-size:14px!important}
-  .global-chip{font-size:13px!important}
+  .dev-country{font-size:20px!important}
+  .dev-conf{font-size:17px!important}
+  .global-chip{font-size:15px!important}
   .ml-title{font-size:12px}
   .ml-row{font-size:14px}
-  .map-hint{font-size:13px}
-  .nav-item{font-size:12px}
+  .map-hint{font-size:15px}
+  .nav-item{font-size:14px}
   .so-title{font-size:16px !important}
   .so-desc{font-size:13px !important;color:var(--text2) !important}
   .so-ico{width:36px;height:36px;font-size:18px}
@@ -136,7 +142,7 @@ a:hover{opacity:.8}
 /* TOPBAR */
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 14px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg);gap:6px}
 .logo{display:flex;align-items:center;gap:7px;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;letter-spacing:-.5px;flex-shrink:0}
-@media(min-width:900px){.logo{font-size:18px}}
+@media(min-width:900px){.logo{font-size:22px}}
 .logo-mark{width:44px;height:44px;border-radius:0;background:transparent;display:flex;align-items:center;justify-content:center}
 .logo-mark svg{width:44px;height:44px;fill:none}
 .topbar-right{display:flex;align-items:center;gap:5px}

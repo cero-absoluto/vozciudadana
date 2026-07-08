@@ -46,7 +46,6 @@
       <!-- Filters + count -->
       <div class="map-topbar">
         <div class="filter-row">
-          <button class="pill" :class="{active: protests.filter==='all'}"      @click="setFilter('all')">{{ $t('home.filterAll') }}</button>
           <button class="pill" :class="{active: protests.filter==='global'}"   @click="setFilter('global')">{{ $t('home.filterGlobal') }}</button>
           <button class="pill" :class="{active: protests.filter==='national'}" @click="setFilter('national')">{{ $t('home.filterNational') }}</button>
           <button class="pill" :class="{active: protests.filter==='regional'}" @click="setFilter('regional')">{{ $t('home.filterRegional') }}</button>
@@ -176,7 +175,8 @@ const confColor = computed(() => {
 });
 
 function setFilter(f) {
-  protests.filter = f;
+  // toggle: tapping the active scope again returns to the no-filter (gateway) view
+  protests.filter = (protests.filter === f) ? 'all' : f;
   protests.countryFilter = null;
   countryFilterName.value = null;
 }

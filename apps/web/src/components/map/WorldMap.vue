@@ -66,6 +66,7 @@ function buildProj() {
 
 let autoFramed = null;   // null | 'ip' | 'sim' — which signal we auto-framed with
 let userMoved  = false;  // once the user pans/zooms/taps, stop auto-framing
+let lastFramed = null;   // last country framed on — used to re-centre after a resize
 
 // Return the country's largest landmass as a single-polygon feature. Countries
 // with far-flung overseas territories (France, the Netherlands, the USA, Spain…)
@@ -96,6 +97,7 @@ function frameCountry(a2, fill = 0.6) {
   const feat = topojson.feature(worldData, worldData.objects.countries).features
     .find(f => f.id && String(f.id).padStart(3, '0') === target);
   if (!feat) return;
+  lastFramed = a2;
   const mf = mainlandFeature(feat);
   const base = (W / 640) * 112;
   // Measure the mainland's projected size at zoom 1, centred.
@@ -398,7 +400,11 @@ onMounted(() => {
   const ro = new ResizeObserver(() => {
     W = c.width  = c.parentElement.clientWidth  || window.innerWidth;
     H = c.height = c.parentElement.clientHeight || props.height;
-    buildProj();
+    // Re-centre on the current country: the pixel offsets were computed for the
+    // previous size, so on a resize (e.g. the list appearing) we re-frame to keep
+    // the map centred instead of drifting north.
+    if (lastFramed) frameCountry(lastFramed);
+    else buildProj();
   });
   ro.observe(c.parentElement);
   c._ro = ro;

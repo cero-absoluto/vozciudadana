@@ -22,9 +22,8 @@
       </div>
       <!-- Device status bar -->
       <div class="device-bar">
-        <div class="dev-flag">{{ deviceFlag }}</div>
         <div class="dev-info">
-          <div class="dev-country">{{ displayCountryName }}{{ device.regionLabel ? ' · ' + device.regionLabel : '' }}</div>
+          <div class="dev-country"><span class="dev-flag">{{ deviceFlag }}</span> {{ displayCountryName }}{{ device.regionLabel ? ' · ' + device.regionLabel : '' }}</div>
           <div class="dev-conf">
             {{ $t('home.geoConfidence') }} <span :style="{color: confColor}">{{ device.confidence }}%</span>
           </div>
@@ -40,21 +39,6 @@
           <div class="dev-dot" :style="{background:'var(--accent2)'}" title="SIM"></div>
           <div class="dev-dot" :style="{background:'var(--accent2)'}" title="IP"></div>
           <div class="dev-dot" :style="{background: device.docCountry ? 'var(--accent2)' : 'var(--accent4)'}" :title="$t('home.dotDocument')"></div>
-        </div>
-      </div>
-
-      <!-- Filters + count -->
-      <div class="map-topbar">
-        <div class="filter-row">
-          <button class="pill" :class="{active: protests.filter==='global'}"   @click="setFilter('global')">{{ $t('home.filterGlobal') }}</button>
-          <button class="pill" :class="{active: protests.filter==='national'}" @click="setFilter('national')">{{ $t('home.filterNational') }}</button>
-          <button class="pill" :class="{active: protests.filter==='regional'}" @click="setFilter('regional')">{{ $t('home.filterRegional') }}</button>
-          <button class="pill" :class="{active: protests.filter==='local'}"    @click="setFilter('local')">{{ $t('home.filterLocal') }}</button>
-          <button class="pill" :class="{active: protests.filter==='institutional'}" @click="setFilter('institutional')">{{ $t('home.filterInstitutional') }}</button>
-        </div>
-        <div class="global-chip">
-          <div class="red-dot"></div>
-          <span>{{ fmt(protests.globalCount) }}</span>
         </div>
       </div>
 
@@ -90,6 +74,21 @@
         @country-click="onCountryClick"
         @clear-country="clearCountryFilter"
       />
+
+      <!-- Filters + count -->
+      <div class="map-topbar">
+        <div class="filter-row">
+          <button class="pill" :class="{active: protests.filter==='global'}"   @click="setFilter('global')">{{ $t('home.filterGlobal') }}</button>
+          <button class="pill" :class="{active: protests.filter==='national'}" @click="setFilter('national')">{{ $t('home.filterNational') }}</button>
+          <button class="pill" :class="{active: protests.filter==='regional'}" @click="setFilter('regional')">{{ $t('home.filterRegional') }}</button>
+          <button class="pill" :class="{active: protests.filter==='local'}"    @click="setFilter('local')">{{ $t('home.filterLocal') }}</button>
+          <button class="pill" :class="{active: protests.filter==='institutional'}" @click="setFilter('institutional')">{{ $t('home.filterInstitutional') }}</button>
+        </div>
+        <div class="global-chip">
+          <div class="red-dot"></div>
+          <span>{{ fmt(protests.globalCount) }}</span>
+        </div>
+      </div>
     </div>
 
     <!-- Right column: panels (shown once a country or scope is selected) -->

@@ -98,12 +98,12 @@ a:hover{opacity:.8}
   /* HOME pantalla principal */
   .dev-country{font-size:20px}
   .dev-conf{font-size:17px}
-  .pill{font-size:15px;padding:7px 14px}
+  .pill{font-size:17px;padding:9px 18px}
   /* home: textos más grandes en PC (franja 3 pasos + drop your pin) */
-  .steps-strip .ss-tx b{font-size:15px}
-  .steps-strip .ss-tx span{font-size:13px}
-  .steps-strip .ss-ic svg{width:27px;height:27px}
-  .steps-strip .ss-num{width:18px;height:18px;font-size:11px;top:-8px;left:-12px}
+  .steps-strip .ss-tx b{font-size:18px}
+  .steps-strip .ss-tx span{font-size:15px}
+  .steps-strip .ss-ic svg{width:31px;height:31px}
+  .steps-strip .ss-num{width:20px;height:20px;font-size:12px;top:-9px;left:-13px}
   .device-bar div[style*="font-size:13px"]{font-size:16px !important}
   .ptab{font-size:13px;padding:10px 8px}
   .pi-title{font-size:16px;font-weight:600;color:var(--text)}

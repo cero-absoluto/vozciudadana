@@ -40,7 +40,7 @@ a:hover{opacity:.8}
     flex-direction:column;
     overflow:hidden;
   }
-  .map-wrap{height:calc(100vh - 48px - 44px) !important}
+  .map-wrap{height:clamp(340px, 55vh, 620px) !important}
   .map-topbar{padding:8px 16px}
   .panel-body{flex:1;overflow-y:auto}
   /* Detail screen wider */

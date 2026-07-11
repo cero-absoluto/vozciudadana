@@ -689,7 +689,9 @@
     "badgeRegional": "Regional",
     "badgeGlobal": "Global",
     "metaAdheridos": "participantes",
-    "metaCiudades": "ciudades"
+    "metaCiudades": "ciudades",
+    "filterLocal": "Local",
+    "filterInstitutional": "Institucional"
   },
   "api": {
     "openData": "Datos Abiertos",

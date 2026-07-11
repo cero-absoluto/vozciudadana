@@ -573,7 +573,7 @@ import { jsPDF } from 'jspdf';
 import { localizedCountry } from '@/constants.js';
 
 const route = useRoute();
-const { t } = useI18n();
+const { t, locale } = useI18n({ useScope: 'global' });
 
 // Mapa completo de los 16 tipos de abuso
 const ABUSE_MAP = {

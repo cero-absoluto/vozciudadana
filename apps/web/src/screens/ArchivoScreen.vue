@@ -28,29 +28,41 @@
     <!-- Lista -->
     <div class="arch-list" v-if="!loading">
       <div v-if="protestasFiltered.length === 0" class="arch-empty">
-        <div style="font-size:32px;margin-bottom:10px">📭</div>
-        <div style="font-size:13px;color:var(--text2)">{{ $t('archivo.empty') }}</div>
+        <div style="font-size:36px;margin-bottom:12px">📭</div>
+        <div style="font-size:16px;color:var(--text2)">{{ $t('archivo.empty') }}</div>
       </div>
-      <div v-for="p in protestasFiltered" :key="p.id" class="arch-item" @click="$router.push(`/informe/${p.id}`)">
+
+      <div v-for="p in protestasFiltered" :key="p.id"
+           class="arch-item" @click="$router.push(`/informe/${p.id}`)">
+
+        <!-- Cabecera: badge + fecha -->
         <div class="arch-item-hdr">
-          <span class="scope-badge" :class="scopeBadge(p).cls">{{ scopeBadge(p).icon }} {{ scopeBadge(p).label }}</span>
+          <span :class="scopeBadge(p).cls">
+            {{ scopeBadge(p).icon }} {{ scopeBadge(p).label }}
+          </span>
           <span class="arch-fecha">{{ fmtFecha(p.ends_at) }}</span>
         </div>
+
+        <!-- Título -->
         <div class="arch-item-title">{{ p.title }}</div>
+
+        <!-- Meta -->
         <div class="arch-item-meta">
           <span>📍 {{ p.country_name }}</span>
           <span>👤 {{ fmt(p.count ?? 0) }} {{ $t('archivo.metaAdheridos') }}</span>
           <span v-if="p.cities_count > 0">🏙️ {{ p.cities_count }} {{ $t('archivo.metaCiudades') }}</span>
         </div>
+
+        <!-- Footer -->
         <div class="arch-item-footer">
-          <span style="font-size:10px;color:var(--text2)">{{ $t('archivo.seeReport') }}</span>
+          {{ $t('archivo.seeReport') }}
         </div>
       </div>
     </div>
 
     <div v-if="loading" class="arch-loading">
       <div class="spin-ring"></div>
-      <div style="font-size:12px;color:var(--text2);margin-top:10px">{{ $t('archivo.loading') }}</div>
+      <div style="font-size:15px;color:var(--text2);margin-top:12px">{{ $t('archivo.loading') }}</div>
     </div>
   </div>
 </template>
@@ -69,13 +81,13 @@ const filtroOrden = ref('fecha');
 
 const scopeBadge = p => {
   const badges = {
-    national:     { cls: 'badge-nat',  icon: '🏛️', label: t('archivo.badgeNational') },
-    regional:     { cls: 'badge-reg',  icon: '📍', label: t('archivo.badgeRegional') },
-    global:       { cls: 'badge-glob', icon: '🌍', label: t('archivo.badgeGlobal') },
-    local:        { cls: 'badge-reg',  icon: '📍', label: t('home.filterLocal') },
-    institutional:{ cls: 'badge-nat',  icon: '🏢', label: t('home.filterInstitutional') },
+    national:      { cls: 'arch-badge badge-nat',  icon: '🏛️', label: t('archivo.filterNational') },
+    regional:      { cls: 'arch-badge badge-reg',  icon: '🌐', label: t('archivo.filterRegional') },
+    global:        { cls: 'arch-badge badge-glob', icon: '🌍', label: t('archivo.filterGlobal') },
+    local:         { cls: 'arch-badge badge-reg',  icon: '📍', label: t('archivo.filterLocal') },
+    institutional: { cls: 'arch-badge badge-inst', icon: '🏢', label: t('archivo.filterInstitutional') },
   };
-  return badges[p.scope] ?? { cls: '', icon: '📢', label: p.scope };
+  return badges[p.scope] ?? { cls: 'arch-badge', icon: '📢', label: p.scope };
 };
 
 function fmt(n) {

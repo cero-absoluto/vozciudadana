@@ -17,7 +17,7 @@
       </select>
       <select v-model="filtroPais" class="arch-sel">
         <option value="">{{ $t('archivo.filterAllCountries') }}</option>
-        <option v-for="p in paisesDisponibles" :key="p" :value="p">{{ p }}</option>
+        <option v-for="code in paisesDisponibles" :key="code" :value="code">{{ localizedCountry(code, locale) || code }}</option>
       </select>
       <select v-model="filtroOrden" class="arch-sel">
         <option value="fecha">{{ $t('archivo.sortDate') }}</option>
@@ -48,7 +48,7 @@
 
         <!-- Meta -->
         <div class="arch-item-meta">
-          <span>📍 {{ p.country_name }}</span>
+          <span>📍 {{ localizedCountry(p.country, locale) || p.country_name }}</span>
           <span>👤 {{ fmt(p.count ?? 0) }} {{ $t('archivo.metaAdheridos') }}</span>
           <span v-if="p.cities_count > 0">🏙️ {{ p.cities_count }} {{ $t('archivo.metaCiudades') }}</span>
         </div>
@@ -70,6 +70,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { localizedCountry } from '@/constants.js';
 
 const { t, locale } = useI18n({ useScope: 'global' });
 
@@ -103,14 +104,14 @@ function fmtFecha(iso) {
 }
 
 const paisesDisponibles = computed(() => {
-  const set = new Set(protestas.value.map(p => p.country_name).filter(Boolean));
+  const set = new Set(protestas.value.map(p => p.country).filter(Boolean));
   return [...set].sort();
 });
 
 const protestasFiltered = computed(() => {
   let list = [...protestas.value];
   if (filtroTipo.value)  list = list.filter(p => p.scope === filtroTipo.value);
-  if (filtroPais.value)  list = list.filter(p => p.country_name === filtroPais.value);
+  if (filtroPais.value)  list = list.filter(p => p.country === filtroPais.value);
   if (filtroOrden.value === 'adheridos') {
     list.sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
   } else {

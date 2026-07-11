@@ -294,28 +294,28 @@
               <div class="inf-chain-num">1</div>
               <div>
                 <div class="inf-chain-title">reCAPTCHA v3</div>
-                <div class="inf-note">Señal de humanidad — detección de bots antes de iniciar la verificación</div>
+                <div class="inf-note">{{ $t('informe.chain1') }}</div>
               </div>
             </div>
             <div class="inf-chain-step">
               <div class="inf-chain-num">2</div>
               <div>
                 <div class="inf-chain-title">SMS / Email OTP</div>
-                <div class="inf-note">Número de teléfono o email institucional real — una adhesión por número, por convocatoria</div>
+                <div class="inf-note">{{ $t('informe.chain2') }}</div>
               </div>
             </div>
             <div class="inf-chain-step">
               <div class="inf-chain-num">3</div>
               <div>
                 <div class="inf-chain-title">HMAC-SHA256</div>
-                <div class="inf-note">El número se transforma en un identificador pseudónimo irreversible. El original no se almacena</div>
+                <div class="inf-note">{{ $t('informe.chain3') }}</div>
               </div>
             </div>
             <div class="inf-chain-step">
               <div class="inf-chain-num">4</div>
               <div>
-                <div class="inf-chain-title">Unicidad de dispositivo</div>
-                <div class="inf-note">Un dispositivo por ámbito de protesta — previene la participación múltiple</div>
+                <div class="inf-chain-title">{{ $t('informe.chain4Title') }}</div>
+                <div class="inf-note">{{ $t('informe.chain4') }}</div>
               </div>
             </div>
           </div>
@@ -347,14 +347,13 @@
 
           <!-- Registro público v2 -->
           <div class="inf-ledger-box">
-            <div class="inf-ledger-title">🔗 Registro público de integridad</div>
+            <div class="inf-ledger-title">🔗 {{ $t('informe.ledgerTitle') }}</div>
             <div class="inf-note" style="line-height:1.7">
-              El sello actual (v1) es una prueba criptográfica interna: cualquier modificación posterior al cierre produce un hash diferente.
-              <strong style="color:var(--text2)"> La verificación es confiable pero no completamente independiente</strong> —
-              requiere confiar en que tanto el hash como los datos no han sido modificados simultáneamente en nuestra base de datos.<br><br>
-              El <strong style="color:var(--accent)">registro público v2</strong> publicará el hash en un registro externo e independiente
-              (timestamp certificado o ledger distribuido) en el momento del cierre, de forma que cualquier persona pueda verificarlo
-              sin depender de Voice Protest. <em>Planificado — aún no implementado.</em>
+              {{ $t('informe.ledgerV1') }}
+              <strong style="color:var(--text2)"> {{ $t('informe.ledgerV1Caveat') }}</strong> —
+              {{ $t('informe.ledgerV1Detail') }}<br><br>
+              {{ $t('informe.ledgerV2Pre') }} <strong style="color:var(--accent)">{{ $t('informe.ledgerV2Name') }}</strong> {{ $t('informe.ledgerV2Post') }}
+              <em>{{ $t('informe.ledgerV2Planned') }}</em>
             </div>
           </div>
 
@@ -738,11 +737,11 @@ function downloadPDF() {
   if (d.distribucion_ciudades?.length) body('Ciudades: ' + d.distribucion_ciudades.slice(0,15).join(' · '));
   nl(2); line();
 
-  h2('5. CADENA DE VERIFICACIÓN');
-  body('1. reCAPTCHA v3 — señal de humanidad');
-  body('2. SMS/Email OTP — número real o email institucional, una adhesión por número');
-  body('3. HMAC-SHA256 — el número se transforma en pseudónimo irreversible');
-  body('4. Unicidad de dispositivo — un dispositivo por ámbito de protesta');
+  h2('5. ' + t('informe.chainTitle').toUpperCase());
+  body('1. reCAPTCHA v3 — ' + t('informe.chain1'));
+  body('2. SMS/Email OTP — ' + t('informe.chain2'));
+  body('3. HMAC-SHA256 — ' + t('informe.chain3'));
+  body('4. ' + t('informe.chain4Title') + ' — ' + t('informe.chain4'));
   nl(2); line();
 
   h2('6. SELLO DE INTEGRIDAD');

@@ -263,7 +263,7 @@
             <div>
               <div class="inf-evidence-label">{{ $t('evidence.demonstratesTitle') }}</div>
               <div v-for="(it,i) in data.evidential_scope.demonstrates" :key="'d'+i" class="inf-evidence-item">
-                {{ $t('evidence.demonstrates.'+it.key, it.params || {}) }}
+                {{ $t('evidence.'+it.key, it.params || {}) }}
               </div>
               <div v-if="data.evidential_scope.participation_rate" class="inf-evidence-item">
                 {{ $t('evidence.participationRate', {
@@ -280,7 +280,7 @@
             <div>
               <div class="inf-evidence-label">{{ $t('evidence.outsideScopeTitle') }}</div>
               <div v-for="(it,i) in data.evidential_scope.outside_scope" :key="'o'+i" class="inf-evidence-item">
-                {{ $t('evidence.not.'+it.key, it.params || {}) }}
+                {{ $t('evidence.'+it.key, it.params || {}) }}
               </div>
             </div>
           </div>

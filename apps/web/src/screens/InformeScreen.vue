@@ -1,112 +1,114 @@
 <template>
   <div class="screen active" id="s-informe">
-    <div class="scroll" style="padding:16px">
+    <div class="scroll" style="padding:24px 20px;max-width:900px;margin:0 auto">
 
       <!-- Cargando -->
-      <div v-if="loading" style="text-align:center;padding:40px">
-        <div class="spin-ring" style="margin:0 auto 12px"></div>
-        <div style="font-size:12px;color:var(--text3)">{{ $t('informe.loading') }}</div>
+      <div v-if="loading" style="text-align:center;padding:60px">
+        <div class="spin-ring" style="margin:0 auto 16px"></div>
+        <div style="font-size:14px;color:var(--text3)">{{ $t('informe.loading') }}</div>
       </div>
 
       <!-- Error -->
-      <div v-else-if="error" style="text-align:center;padding:40px;color:var(--accent3)">
+      <div v-else-if="error" style="text-align:center;padding:60px;color:var(--accent3);font-size:16px">
         {{ $t('informe.notFound') }}
       </div>
 
       <!-- Informe -->
       <div v-else-if="data" class="informe-layout">
 
-        <!-- COLUMNA IZQUIERDA -->
+        <!-- ═══════════════════════════════════════════════
+             COLUMNA IZQUIERDA
+        ════════════════════════════════════════════════ -->
         <div class="informe-left">
 
           <!-- Cabecera -->
-          <div style="margin-bottom:20px">
-            <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">
+          <div style="margin-bottom:28px">
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">
               {{ $t('informe.headerLabel') }}
             </div>
-           <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.4px;margin-bottom:8px">
+            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:26px;letter-spacing:-.5px;line-height:1.25;margin-bottom:14px;color:var(--text)">
               {{ data.protest.title }}
             </div>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">
+            <div style="font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:12px">
               {{ data.protest.demands }}
             </div>
-            <div v-if="data.protest.fuente_url" style="font-size:12px;color:var(--text3);margin-top:6px">
-              {{ $t('informe.fuente') }}
+            <div v-if="data.protest.fuente_url" style="font-size:13px;color:var(--text3);margin-top:8px;display:flex;gap:6px;align-items:flex-start">
+              <span>{{ $t('informe.fuente') }}</span>
               <a :href="data.protest.fuente_url" target="_blank"
-                style="color:var(--accent);text-decoration:underline;word-break:break-all">
+                style="color:var(--accent);text-decoration:underline;word-break:break-all;line-height:1.5">
                 {{ data.protest.fuente_url }}
               </a>
             </div>
-            <div v-if="data.protest.tipo_abuso" style="font-size:12px;color:var(--text3);margin-top:4px">
+            <div v-if="data.protest.tipo_abuso" style="font-size:13px;color:var(--text3);margin-top:6px">
               {{ $t('informe.tipoAbuso') }}
-              <span style="color:var(--accent4);font-weight:500">{{ tipoAbusoLabel }}</span>
+              <span style="color:var(--accent4);font-weight:600">{{ tipoAbusoLabel }}</span>
             </div>
-            <div style="font-size:12px;color:var(--text3)">
+            <div style="font-size:13px;color:var(--text3);margin-top:6px">
               {{ formatDate(data.protest.starts_at) }} → {{ formatDate(data.protest.ends_at) }}
             </div>
           </div>
 
-          <!-- BLOQUE 1 — Titular -->
-          <div class="block" style="margin-bottom:14px">
-            <div class="block-title">{{ $t('informe.headlineBlock') }}</div>
-            <div style="font-size:14px;font-weight:600;line-height:1.5;color:var(--text)">
+          <!-- BLOQUE — Titular político -->
+          <div class="inf-block" style="margin-bottom:20px">
+            <div class="inf-block-title">{{ $t('informe.headlineBlock') }}</div>
+            <div style="font-size:15px;font-weight:600;line-height:1.65;color:var(--text)">
               {{ $t('informe.headline', { count: data.total_adhesiones, country: data.protest.country_name, focal: data.protest.focal_point, demands: data.protest.demands }) }}
             </div>
           </div>
 
-          <!-- BLOQUE — Alcance de la evidencia (autogenerado, determinista; sin iconos ni jerarquía visual) -->
-          <div v-if="data.evidential_scope" class="block" style="margin-bottom:14px">
-            <div class="block-title">{{ $t('evidence.title') }}</div>
+          <!-- BLOQUE — Alcance de la evidencia -->
+          <div v-if="data.evidential_scope" class="inf-block" style="margin-bottom:20px">
+            <div class="inf-block-title">{{ $t('evidence.title') }}</div>
 
-            <div style="margin-top:8px">
-              <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px">{{ $t('evidence.demonstratesTitle') }}</div>
-              <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.55;color:var(--text)">
+            <div style="margin-top:10px">
+              <div class="inf-section-label">{{ $t('evidence.demonstratesTitle') }}</div>
+              <ul class="inf-list inf-list-green">
                 <li v-for="(it,i) in data.evidential_scope.demonstrates" :key="'ev-d-'+i">{{ $t('evidence.'+it.key, it.params || {}) }}</li>
               </ul>
             </div>
 
-            <div v-if="data.evidential_scope.participation_rate" style="margin-top:8px;font-size:13px;color:var(--text)">
+            <div v-if="data.evidential_scope.participation_rate" style="margin-top:10px;font-size:14px;color:var(--text)">
               {{ $t('evidence.participationRate', {
                    count: data.evidential_scope.participation_rate.count,
                    eligible: data.evidential_scope.participation_rate.eligible,
                    rate: data.evidential_scope.participation_rate.rate }) }}
             </div>
 
-            <div style="margin-top:10px">
-              <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px">{{ $t('evidence.outsideScopeTitle') }}</div>
-              <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.55;color:var(--text3)">
+            <div style="margin-top:14px">
+              <div class="inf-section-label">{{ $t('evidence.outsideScopeTitle') }}</div>
+              <ul class="inf-list inf-list-muted">
                 <li v-for="(it,i) in data.evidential_scope.outside_scope" :key="'ev-o-'+i">{{ $t('evidence.'+it.key, it.params || {}) }}</li>
               </ul>
             </div>
 
-            <div style="margin-top:10px">
-              <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px">{{ $t('evidence.methodsTitle') }}</div>
-              <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.55;color:var(--text2)">
+            <div style="margin-top:14px">
+              <div class="inf-section-label">{{ $t('evidence.methodsTitle') }}</div>
+              <ul class="inf-list inf-list-muted">
                 <li v-for="(it,i) in data.evidential_scope.methods" :key="'ev-m-'+i">{{ $t('evidence.'+it.key, it.params || {}) }}</li>
               </ul>
             </div>
 
-            <div v-if="data.evidential_scope.admission_rules && data.evidential_scope.admission_rules.length" style="margin-top:10px">
-              <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px">{{ $t('evidence.admissionTitle') }}</div>
-              <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.55;color:var(--text2)">
+            <div v-if="data.evidential_scope.admission_rules && data.evidential_scope.admission_rules.length" style="margin-top:14px">
+              <div class="inf-section-label">{{ $t('evidence.admissionTitle') }}</div>
+              <ul class="inf-list inf-list-muted">
                 <li v-for="(it,i) in data.evidential_scope.admission_rules" :key="'ev-a-'+i">{{ $t('evidence.'+it.key, it.params || {}) }}</li>
               </ul>
             </div>
           </div>
 
-          <!-- BLOQUE 5 — Distribución geográfica -->
-          <div class="block" style="margin-bottom:12px">
-            <div class="block-title">{{ $t('informe.geoTitle') }}</div>
-            <div style="font-size:14px;color:var(--text2);line-height:1.8;margin-bottom:8px">
-              <strong>{{ $t('informe.geoByRegion') }}</strong><br>
+          <!-- BLOQUE — Distribución geográfica -->
+          <div class="inf-block" style="margin-bottom:20px">
+            <div class="inf-block-title">{{ $t('informe.geoTitle') }}</div>
+            <div style="font-size:14px;color:var(--text2);line-height:2;margin-bottom:10px">
+              <strong style="color:var(--text)">{{ $t('informe.geoByRegion') }}</strong><br>
               <span v-for="(count, region) in data.distribucion_regiones" :key="region">
-                {{ region }}: {{ count }} {{ count > 1 ? $t('informe.adhesiones') : $t('informe.adhesion') }} · 
+                {{ region }}: {{ count }} {{ count > 1 ? $t('informe.adhesiones') : $t('informe.adhesion') }} ·
               </span>
             </div>
-            <div style="font-size:14px;color:var(--text2);line-height:1.8">
-              <strong>{{ $t('informe.geoByCity') }}</strong><br>
+            <div style="font-size:14px;color:var(--text2);line-height:2">
+              <strong style="color:var(--text)">{{ $t('informe.geoByCity') }}</strong><br>
               <span v-for="ciudad in data.distribucion_ciudades.slice(0,10)" :key="ciudad">
-                {{ ciudad }} · 
+                {{ ciudad }} ·
               </span>
               <span v-if="data.distribucion_ciudades.length > 10">
                 {{ $t('informe.moreCities', { n: data.distribucion_ciudades.length - 10 }) }}
@@ -116,172 +118,162 @@
 
         </div><!-- fin columna izquierda -->
 
-        <!-- COLUMNA DERECHA -->
+        <!-- ═══════════════════════════════════════════════
+             COLUMNA DERECHA
+        ════════════════════════════════════════════════ -->
         <div class="informe-right">
 
-          <!-- BLOQUE FIABILIDAD — Calidad de la verificación -->
-          <div class="block" style="margin-bottom:12px">
-            <div class="block-title">{{ $t('informe.fiabilidadTitle') }}</div>
-            <div v-if="data.desglose_fiabilidad" style="display:flex;flex-direction:column;gap:8px">
-              
-              <!-- Alta -->
+          <!-- BLOQUE — Los tres números -->
+          <div class="inf-block" style="margin-bottom:20px">
+            <div class="inf-block-title">{{ $t('informe.numbersTitle') }}</div>
+            <div class="inf-stats-row">
+              <div class="inf-sc">
+                <div class="inf-sc-n" style="color:var(--accent)">{{ data.total_adhesiones }}</div>
+                <div class="inf-sc-l">{{ $t('informe.statAdhesiones') }}</div>
+              </div>
+              <div class="inf-sc">
+                <div class="inf-sc-n" style="color:var(--accent2)">{{ data.ciudades_distintas }}</div>
+                <div class="inf-sc-l">{{ $t('informe.statCiudades') }}</div>
+              </div>
+              <div class="inf-sc">
+                <div class="inf-sc-n" style="color:var(--accent4)">100%</div>
+                <div class="inf-sc-l">{{ $t('informe.statVerificadas') }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BLOQUE — Calidad de la verificación -->
+          <div class="inf-block" style="margin-bottom:20px">
+            <div class="inf-block-title">{{ $t('informe.fiabilidadTitle') }}</div>
+            <div v-if="data.desglose_fiabilidad" style="display:flex;flex-direction:column;gap:14px">
+
               <div v-if="data.desglose_fiabilidad.alta.count > 0">
-                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-                  <span style="color:var(--accent2);font-weight:500">{{ $t('informe.fiabilidadAlta') }}</span>
+                <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+                  <span style="color:var(--accent2);font-weight:600">{{ $t('informe.fiabilidadAlta') }}</span>
                   <span style="color:var(--text2)">{{ data.desglose_fiabilidad.alta.count }} {{ $t('informe.ciudadanos') }}</span>
                 </div>
-                <div style="background:var(--bg4);border-radius:4px;height:8px;overflow:hidden">
-                  <div :style="{width: pct(data.desglose_fiabilidad.alta.count) + '%', background:'var(--accent2)', height:'100%', borderRadius:'4px', transition:'width .5s'}"></div>
+                <div style="background:var(--bg4);border-radius:6px;height:10px;overflow:hidden">
+                  <div :style="{width: pct(data.desglose_fiabilidad.alta.count) + '%', background:'var(--accent2)', height:'100%', borderRadius:'6px', transition:'width .5s'}"></div>
                 </div>
-                <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ data.desglose_fiabilidad.alta.descripcion }}</div>
+                <div style="font-size:12px;color:var(--text3);margin-top:4px;line-height:1.5">{{ data.desglose_fiabilidad.alta.descripcion }}</div>
               </div>
 
-              <!-- Media -->
               <div v-if="data.desglose_fiabilidad.media.count > 0">
-                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-                  <span style="color:var(--accent4);font-weight:500">{{ $t('informe.fiabilidadMedia') }}</span>
+                <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+                  <span style="color:var(--accent4);font-weight:600">{{ $t('informe.fiabilidadMedia') }}</span>
                   <span style="color:var(--text2)">{{ data.desglose_fiabilidad.media.count }} {{ $t('informe.ciudadanos') }}</span>
                 </div>
-                <div style="background:var(--bg4);border-radius:4px;height:8px;overflow:hidden">
-                  <div :style="{width: pct(data.desglose_fiabilidad.media.count) + '%', background:'var(--accent4)', height:'100%', borderRadius:'4px', transition:'width .5s'}"></div>
+                <div style="background:var(--bg4);border-radius:6px;height:10px;overflow:hidden">
+                  <div :style="{width: pct(data.desglose_fiabilidad.media.count) + '%', background:'var(--accent4)', height:'100%', borderRadius:'6px', transition:'width .5s'}"></div>
                 </div>
-                <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ data.desglose_fiabilidad.media.descripcion }}</div>
+                <div style="font-size:12px;color:var(--text3);margin-top:4px;line-height:1.5">{{ data.desglose_fiabilidad.media.descripcion }}</div>
               </div>
 
-              <!-- Base -->
               <div v-if="data.desglose_fiabilidad.base.count > 0">
-                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-                  <span style="color:var(--accent);font-weight:500">{{ $t('informe.fiabilidadBase') }}</span>
+                <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+                  <span style="color:var(--accent);font-weight:600">{{ $t('informe.fiabilidadBase') }}</span>
                   <span style="color:var(--text2)">{{ data.desglose_fiabilidad.base.count }} {{ $t('informe.ciudadanos') }}</span>
                 </div>
-                <div style="background:var(--bg4);border-radius:4px;height:8px;overflow:hidden">
-                  <div :style="{width: pct(data.desglose_fiabilidad.base.count) + '%', background:'var(--accent)', height:'100%', borderRadius:'4px', transition:'width .5s'}"></div>
+                <div style="background:var(--bg4);border-radius:6px;height:10px;overflow:hidden">
+                  <div :style="{width: pct(data.desglose_fiabilidad.base.count) + '%', background:'var(--accent)', height:'100%', borderRadius:'6px', transition:'width .5s'}"></div>
                 </div>
-                <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ data.desglose_fiabilidad.base.descripcion }}</div>
+                <div style="font-size:12px;color:var(--text3);margin-top:4px;line-height:1.5">{{ data.desglose_fiabilidad.base.descripcion }}</div>
               </div>
 
-              <!-- Sin dato -->
               <div v-if="data.desglose_fiabilidad.sin_dato.count > 0">
-                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-                  <span style="color:var(--text3);font-weight:500">{{ $t('informe.fiabilidadSin') }}</span>
+                <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+                  <span style="color:var(--text3);font-weight:600">{{ $t('informe.fiabilidadSin') }}</span>
                   <span style="color:var(--text2)">{{ data.desglose_fiabilidad.sin_dato.count }} {{ $t('informe.ciudadanos') }}</span>
                 </div>
-                <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ $t('informe.fiabilidadSinDesc') }}</div>
+                <div style="font-size:12px;color:var(--text3);line-height:1.5">{{ $t('informe.fiabilidadSinDesc') }}</div>
               </div>
 
             </div>
-            <div v-else style="font-size:12px;color:var(--text3)">{{ $t('informe.fiabilidadNoData') }}</div>
+            <div v-else style="font-size:14px;color:var(--text3)">{{ $t('informe.fiabilidadNoData') }}</div>
           </div>
 
-          <!-- BLOQUE LOCAL — Desglose geográfico (solo para convocatorias locales) -->
-          <div v-if="data.desglose_geografico_local" class="block" style="margin-bottom:12px">
-            <div class="block-title">📍 {{ $t('informe.geoLocalTitle') }}</div>
-            <div style="font-size:12px;color:var(--text3);margin-bottom:12px">
+          <!-- BLOQUE LOCAL — Desglose geográfico -->
+          <div v-if="data.desglose_geografico_local" class="inf-block" style="margin-bottom:20px">
+            <div class="inf-block-title">📍 {{ $t('informe.geoLocalTitle') }}</div>
+            <div style="font-size:13px;color:var(--text3);margin-bottom:16px;line-height:1.6">
               {{ data.desglose_geografico_local.scope === 'regional'
                 ? $t('informe.geoRegionalSubtitle', { region: data.desglose_geografico_local.municipio })
                 : $t('informe.geoLocalSubtitle', { municipio: data.desglose_geografico_local.municipio }) }}
             </div>
-
-            <!-- GPS local -->
-            <div style="margin-bottom:10px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                <span style="font-size:13px;font-weight:600;color:var(--accent2)">📍 {{ $t('informe.geoLocalVerified') }}</span>
-                <span style="font-size:13px;color:var(--text)">{{ data.desglose_geografico_local.gps_local }}</span>
+            <div style="margin-bottom:14px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <span style="font-size:14px;font-weight:600;color:var(--accent2)">📍 {{ $t('informe.geoLocalVerified') }}</span>
+                <span style="font-size:14px;color:var(--text)">{{ data.desglose_geografico_local.gps_local }}</span>
               </div>
-              <div style="height:6px;background:var(--bg3);border-radius:4px;overflow:hidden">
+              <div style="height:8px;background:var(--bg3);border-radius:6px;overflow:hidden">
                 <div :style="barStyleLocal(data.desglose_geografico_local.gps_local, 'var(--accent2)')"></div>
               </div>
-              <div style="font-size:11px;color:var(--text3);margin-top:2px">{{ $t('informe.geoLocalVerifiedDesc', { municipio: data.desglose_geografico_local.municipio }) }}</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:4px;line-height:1.5">{{ $t('informe.geoLocalVerifiedDesc', { municipio: data.desglose_geografico_local.municipio }) }}</div>
             </div>
-
-            <!-- Nacionales sin GPS local -->
-            <div style="margin-bottom:10px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                <span style="font-size:13px;font-weight:600;color:var(--accent4)">🇪🇸 {{ $t('informe.geoNational') }}</span>
-                <span style="font-size:13px;color:var(--text)">{{ data.desglose_geografico_local.nacionales_sin_gps }}</span>
+            <div style="margin-bottom:14px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <span style="font-size:14px;font-weight:600;color:var(--accent4)">🌐 {{ $t('informe.geoNational') }}</span>
+                <span style="font-size:14px;color:var(--text)">{{ data.desglose_geografico_local.nacionales_sin_gps }}</span>
               </div>
-              <div style="height:6px;background:var(--bg3);border-radius:4px;overflow:hidden">
+              <div style="height:8px;background:var(--bg3);border-radius:6px;overflow:hidden">
                 <div :style="barStyleLocal(data.desglose_geografico_local.nacionales_sin_gps, 'var(--accent4)')"></div>
               </div>
-              <div style="font-size:11px;color:var(--text3);margin-top:2px">{{ $t('informe.geoNationalDesc') }}</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:4px;line-height:1.5">{{ $t('informe.geoNationalDesc') }}</div>
             </div>
-
-            <!-- Internacionales -->
             <div v-if="data.desglose_geografico_local.internacionales > 0" style="margin-bottom:10px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                <span style="font-size:13px;font-weight:600;color:var(--accent)">🌍 {{ $t('informe.geoInternational') }}</span>
-                <span style="font-size:13px;color:var(--text)">{{ data.desglose_geografico_local.internacionales }}</span>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <span style="font-size:14px;font-weight:600;color:var(--accent)">🌍 {{ $t('informe.geoInternational') }}</span>
+                <span style="font-size:14px;color:var(--text)">{{ data.desglose_geografico_local.internacionales }}</span>
               </div>
-              <div style="height:6px;background:var(--bg3);border-radius:4px;overflow:hidden">
+              <div style="height:8px;background:var(--bg3);border-radius:6px;overflow:hidden">
                 <div :style="barStyleLocal(data.desglose_geografico_local.internacionales, 'var(--accent)')"></div>
               </div>
-              <div style="font-size:11px;color:var(--text3);margin-top:2px">{{ $t('informe.geoInternationalDesc') }}</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:4px;line-height:1.5">{{ $t('informe.geoInternationalDesc') }}</div>
             </div>
           </div>
 
-          <!-- BLOQUE 2 — Los tres números -->
-          <div class="block" style="margin-bottom:12px">
-            <div class="block-title">{{ $t('informe.numbersTitle') }}</div>
-            <div class="stats-row">
-              <div class="sc">
-                <div class="sc-n" style="color:var(--accent)">{{ data.total_adhesiones }}</div>
-                <div class="sc-l">{{ $t('informe.statAdhesiones') }}</div>
+          <!-- BLOQUE — GPS -->
+          <div class="inf-block" style="margin-bottom:20px">
+            <div class="inf-block-title">{{ $t('informe.gpsTitle') }}</div>
+            <div style="display:flex;gap:10px;margin-bottom:12px">
+              <div style="flex:1;background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.2);border-radius:var(--r);padding:14px;text-align:center">
+                <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--accent2)">{{ data.adhesiones_con_gps }}</div>
+                <div style="font-size:13px;color:var(--text3);margin-top:4px">{{ $t('informe.gpsVerified') }}</div>
               </div>
-              <div class="sc">
-                <div class="sc-n" style="color:var(--accent2)">{{ data.ciudades_distintas }}</div>
-                <div class="sc-l">{{ $t('informe.statCiudades') }}</div>
+              <div style="flex:1;background:rgba(124,111,255,.06);border:.5px solid var(--border);border-radius:var(--r);padding:14px;text-align:center">
+                <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--accent)">{{ data.adhesiones_sin_gps }}</div>
+                <div style="font-size:13px;color:var(--text3);margin-top:4px">{{ $t('informe.gpsSim') }}</div>
               </div>
-              <div class="sc">
-                <div class="sc-n" style="color:var(--accent4)">100%</div>
-                <div class="sc-l">{{ $t('informe.statVerificadas') }}</div>
-              </div>
+            </div>
+            <div style="font-size:13px;color:var(--text3);line-height:1.7">{{ $t('informe.gpsNote') }}</div>
+          </div>
+
+          <!-- BLOQUE — Señal de humanidad -->
+          <div class="inf-block" style="margin-bottom:20px">
+            <div class="inf-block-title">{{ $t('informe.humanidadTitle') }}</div>
+            <div style="font-size:14px;color:var(--text2);line-height:2">
+              · {{ data.paises_distintos }} {{ data.paises_distintos === 1 ? $t('informe.pais') : $t('informe.paises') }}<br>
+              · {{ data.idiomas_distintos }} {{ data.idiomas_distintos === 1 ? $t('informe.idioma') : $t('informe.idiomas') }}<br>
+              · {{ $t('informe.firstAdhesion') }} {{ formatDateTime(data.primera_adhesion) }}<br>
+              · {{ $t('informe.lastAdhesion') }} {{ formatDateTime(data.ultima_adhesion) }}
             </div>
           </div>
 
-          <!-- BLOQUE GPS — Nivel de verificación -->
-          <div class="block" style="margin-bottom:12px">
-            <div class="block-title">{{ $t('informe.gpsTitle') }}</div>
-            <div style="display:flex;gap:8px;margin-bottom:8px">
-              <div style="flex:1;background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.2);border-radius:var(--r);padding:10px;text-align:center">
-                <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--accent2)">{{ data.adhesiones_con_gps }}</div>
-                <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ $t('informe.gpsVerified') }}</div>
-              </div>
-              <div style="flex:1;background:rgba(124,111,255,.06);border:.5px solid var(--border);border-radius:var(--r);padding:10px;text-align:center">
-                <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--accent)">{{ data.adhesiones_sin_gps }}</div>
-                <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ $t('informe.gpsSim') }}</div>
-              </div>
-            </div>
-            <div style="font-size:12px;color:var(--text3);line-height:1.6">
-              {{ $t('informe.gpsNote') }}
-            </div>
-          </div>
-
-          <!-- BLOQUE 3 — Prueba de humanidad -->
-          <div class="block" style="margin-bottom:12px">
-            <div class="block-title">{{ $t('informe.humanidadTitle') }}</div>
-            <div style="font-size:14px;color:var(--text2);line-height:1.8">
-              - {{ data.paises_distintos }} {{ data.paises_distintos === 1 ? $t('informe.pais') : $t('informe.paises') }}<br>
-              - {{ data.idiomas_distintos }} {{ data.idiomas_distintos === 1 ? $t('informe.idioma') : $t('informe.idiomas') }}<br>
-              • {{ $t('informe.firstAdhesion') }} {{ formatDateTime(data.primera_adhesion) }}<br>
-              • {{ $t('informe.lastAdhesion') }} {{ formatDateTime(data.ultima_adhesion) }}
-            </div>
-          </div>
-
-          <!-- BLOQUE 4 — Velocidad de crecimiento -->
-          <div class="block" style="margin-bottom:12px">
-            <div class="block-title">{{ $t('informe.velocidadTitle') }}</div>
-            <div v-if="data.velocidad" style="margin-bottom:12px">
-              <div style="display:flex;gap:8px;margin-bottom:12px">
-                <div style="flex:1;background:var(--bg3);border-radius:var(--r);padding:10px;text-align:center">
-                  <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent2)">{{ data.velocidad.media_diaria }}</div>
-                  <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ $t('informe.velocidadMediaDiaria') }}</div>
+          <!-- BLOQUE — Velocidad de crecimiento -->
+          <div class="inf-block" style="margin-bottom:20px">
+            <div class="inf-block-title">{{ $t('informe.velocidadTitle') }}</div>
+            <div v-if="data.velocidad">
+              <div style="display:flex;gap:10px;margin-bottom:14px">
+                <div style="flex:1;background:var(--bg3);border-radius:var(--r);padding:14px;text-align:center">
+                  <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--accent2)">{{ data.velocidad.media_diaria }}</div>
+                  <div style="font-size:13px;color:var(--text3);margin-top:4px">{{ $t('informe.velocidadMediaDiaria') }}</div>
                 </div>
-                <div v-if="data.velocidad.dia_pico" style="flex:1;background:var(--bg3);border-radius:var(--r);padding:10px;text-align:center">
-                  <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent)">{{ data.velocidad.dia_pico.count }}</div>
-                  <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ $t('informe.velocidadPico') }} {{ formatDate(data.velocidad.dia_pico.fecha) }}</div>
+                <div v-if="data.velocidad.dia_pico" style="flex:1;background:var(--bg3);border-radius:var(--r);padding:14px;text-align:center">
+                  <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--accent)">{{ data.velocidad.dia_pico.count }}</div>
+                  <div style="font-size:13px;color:var(--text3);margin-top:4px">{{ $t('informe.velocidadPico') }} {{ formatDate(data.velocidad.dia_pico.fecha) }}</div>
                 </div>
               </div>
-              <div style="font-size:12px;color:var(--text3);margin-bottom:6px">{{ $t('informe.velocidadPorDia') }}</div>
+              <div style="font-size:13px;color:var(--text3);margin-bottom:8px">{{ $t('informe.velocidadPorDia') }}</div>
               <div style="display:flex;align-items:flex-end;gap:3px;height:80px">
                 <div v-for="d in data.velocidad.adhesiones_por_dia" :key="d.fecha"
                   :style="{
@@ -295,80 +287,76 @@
                 </div>
               </div>
             </div>
-            <div v-else style="font-size:12px;color:var(--text3)">{{ $t('informe.velocidadNoData') }}</div>
+            <div v-else style="font-size:14px;color:var(--text3)">{{ $t('informe.velocidadNoData') }}</div>
           </div>
 
-          <!-- BLOQUE 6 — Cadena de verificación -->
-          <div class="block" style="margin-bottom:12px">
-            <div class="block-title">{{ $t('informe.chainTitle') }}</div>
+          <!-- BLOQUE — Cadena de verificación -->
+          <div class="inf-block" style="margin-bottom:20px">
+            <div class="inf-block-title">{{ $t('informe.chainTitle') }}</div>
             <div style="font-size:14px;color:var(--text2);line-height:1.8">
               {{ $t('informe.chainBody') }}
             </div>
           </div>
 
-          <!-- BLOQUE 7 — Sello de transparencia -->
-          <div class="block" style="margin-bottom:20px">
-            <div class="block-title">{{ $t('informe.selloTitle') }}</div>
-            <div v-if="data.protest.hash_integridad" style="margin-bottom:12px;padding:12px 14px;background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.25);border-radius:var(--r)">
-              <div style="font-size:12px;color:var(--text3);margin-bottom:6px">{{ $t('informe.selloHashLabel') }}</div>
-              <div style="font-family:monospace;font-size:12px;color:var(--accent2);word-break:break-all;margin-bottom:8px">{{ data.protest.hash_integridad }}</div>
-              <div style="font-size:12px;color:var(--text3);line-height:1.5">{{ $t('informe.selloDesc') }}</div>
-              <div style="font-size:12px;color:var(--text3);margin-top:6px;padding-top:6px;border-top:.5px solid var(--border);font-family:monospace;opacity:.7">{{ $t('informe.selloVerify') }}</div>
+          <!-- BLOQUE — Sello de integridad -->
+          <div class="inf-block" style="margin-bottom:28px">
+            <div class="inf-block-title">{{ $t('informe.selloTitle') }}</div>
+
+            <div v-if="data.protest.hash_integridad" style="margin-bottom:14px;padding:14px 16px;background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.25);border-radius:var(--r)">
+              <div style="font-size:12px;color:var(--text3);margin-bottom:8px">{{ $t('informe.selloHashLabel') }}</div>
+              <div style="font-family:monospace;font-size:12px;color:var(--accent2);word-break:break-all;margin-bottom:10px;line-height:1.6">{{ data.protest.hash_integridad }}</div>
+              <div style="font-size:13px;color:var(--text3);line-height:1.6">{{ $t('informe.selloDesc') }}</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:8px;padding-top:8px;border-top:.5px solid var(--border);font-family:monospace;opacity:.7;line-height:1.5">{{ $t('informe.selloVerify') }}</div>
             </div>
-            <div v-else style="margin-bottom:12px;padding:10px 12px;background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r);font-size:12px;color:var(--text3)">
+            <div v-else style="margin-bottom:14px;padding:12px 14px;background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r);font-size:14px;color:var(--text3);line-height:1.6">
               ⏳ {{ $t('informe.selloHashPending') }}
             </div>
 
-            <!-- In-app integrity verifier -->
-            <div v-if="data.protest.hash_integridad" style="margin-top:10px">
+            <div v-if="data.protest.hash_integridad" style="margin-top:10px;margin-bottom:14px">
               <button @click="verifyIntegrity"
-                style="width:100%;padding:8px;background:rgba(76,255,164,.08);border:.5px solid rgba(76,255,164,.3);border-radius:var(--r);color:var(--accent2);font-size:12px;font-weight:600;cursor:pointer">
+                style="width:100%;padding:10px;background:rgba(76,255,164,.08);border:.5px solid rgba(76,255,164,.3);border-radius:var(--r);color:var(--accent2);font-size:13px;font-weight:600;cursor:pointer">
                 🔍 {{ verifyState === 'running' ? $t('informe.verifyRunning') : $t('informe.verifyBtn') }}
               </button>
-              <div v-if="verifyResult" style="margin-top:8px;padding:8px 10px;border-radius:var(--r);font-size:12px;line-height:1.5"
+              <div v-if="verifyResult" style="margin-top:10px;padding:10px 12px;border-radius:var(--r);font-size:13px;line-height:1.6"
                 :style="verifyResult === 'ok' ? 'background:rgba(76,255,164,.08);border:.5px solid rgba(76,255,164,.3)' : verifyResult === 'v1' ? 'background:rgba(124,111,255,.08);border:.5px solid rgba(124,111,255,.3)' : 'background:rgba(255,80,80,.08);border:.5px solid rgba(255,80,80,.3)'">
                 {{ verifyResult === 'ok' ? $t('informe.verifyOk') : verifyResult === 'v1' ? $t('informe.verifyV1') : $t('informe.verifyFail') }}
               </div>
             </div>
-            <div style="font-size:14px;color:var(--text2);line-height:1.8">
+
+            <div style="font-size:13px;color:var(--text2);line-height:1.9">
               {{ $t('informe.selloSourceDesc') }}<br>
               <button
                 onclick="window.open('https://github.com/cero-absoluto/vozciudadana','_blank')"
-                style="background:transparent;border:.5px solid var(--accent);border-radius:var(--r);padding:4px 10px;color:var(--accent);cursor:pointer;font-size:12px;margin-top:4px">
+                style="background:transparent;border:.5px solid var(--accent);border-radius:var(--r);padding:6px 14px;color:var(--accent);cursor:pointer;font-size:13px;margin-top:6px;margin-bottom:4px">
                 {{ $t('informe.selloSourceBtn') }}
-              </button><br><br>
+              </button><br>
               {{ $t('informe.selloGenerated') }} {{ formatDateTime(new Date().toISOString()) }}<br>
               {{ $t('informe.selloId') }} <span style="font-family:monospace;font-size:12px;color:var(--accent2)">{{ $route.params.id }}</span><br>
-              {{ $t('informe.selloBlockchain') }}
+              <span style="color:var(--text3);font-size:12px">{{ $t('informe.selloBlockchain') }}</span>
             </div>
           </div>
 
         </div><!-- fin columna derecha -->
 
-        <!-- Botón volver + PDF + Embed -->
-        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-          <button class="btn-primary" style="flex:1" @click="$router.back()">{{ $t('informe.back') }}</button>
-          <button class="btn-primary" style="flex:1;background:var(--accent2);color:#000" @click="downloadPDF">{{ $t('informe.downloadPdf') }}</button>
-          <button class="btn-primary" style="flex:1;background:rgba(76,111,255,.2);border:.5px solid #4C6FFF;color:#4C6FFF" @click="showEmbed=true">{{ $t('informe.embedBtn') }}</button>
+        <!-- Botones -->
+        <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
+          <button class="btn-primary" style="flex:1;padding:12px" @click="$router.back()">{{ $t('informe.back') }}</button>
+          <button class="btn-primary" style="flex:1;padding:12px;background:var(--accent2);color:#000" @click="downloadPDF">{{ $t('informe.downloadPdf') }}</button>
+          <button class="btn-primary" style="flex:1;padding:12px;background:rgba(76,111,255,.2);border:.5px solid #4C6FFF;color:#4C6FFF" @click="showEmbed=true">{{ $t('informe.embedBtn') }}</button>
         </div>
 
         <!-- Embed modal -->
-        <div v-if="showEmbed" style="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px" @click.self="showEmbed=false">
-          <div style="background:#13111F;border:.5px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;max-width:480px;width:100%">
-            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">{{ $t('informe.embedTitle') }}</div>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">
-              {{ $t('informe.embedDesc') }}
-            </div>
-            <div style="background:#0C0B14;border:.5px solid rgba(255,255,255,.08);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;color:#4CFFA4;word-break:break-all;margin-bottom:12px;line-height:1.7">
-              {{ embedCode }}
-            </div>
-            <div style="display:flex;gap:8px">
+        <div v-if="showEmbed" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;display:flex;align-items:center;justify-content:center;padding:24px" @click.self="showEmbed=false">
+          <div style="background:#13111F;border:.5px solid rgba(255,255,255,.1);border-radius:16px;padding:24px;max-width:500px;width:100%">
+            <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">{{ $t('informe.embedTitle') }}</div>
+            <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7">{{ $t('informe.embedDesc') }}</div>
+            <div style="background:#0C0B14;border:.5px solid rgba(255,255,255,.08);border-radius:10px;padding:14px;font-family:monospace;font-size:12px;color:#4CFFA4;word-break:break-all;margin-bottom:14px;line-height:1.7">{{ embedCode }}</div>
+            <div style="display:flex;gap:10px">
               <button class="btn-primary" style="flex:1;background:#4C6FFF" @click="copyEmbed">{{ copied ? $t('informe.embedCopied') : $t('informe.embedCopy') }}</button>
               <button class="btn-primary" style="flex:1;background:transparent;border:.5px solid var(--border2);color:var(--text2)" @click="showEmbed=false">{{ $t('informe.embedClose') }}</button>
             </div>
-            <!-- Preview -->
-            <div style="margin-top:16px;padding-top:14px;border-top:.5px solid var(--border)">
-              <div style="font-size:12px;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">{{ $t('informe.embedPreview') }}</div>
+            <div style="margin-top:18px;padding-top:16px;border-top:.5px solid var(--border)">
+              <div style="font-size:12px;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">{{ $t('informe.embedPreview') }}</div>
               <div style="background:#0C0B14;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px 20px;max-width:320px">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
                   <span style="font-size:12px;font-weight:700;color:#4CFFA4;text-transform:uppercase">🗳 Voice Protest</span>
@@ -387,6 +375,70 @@
     </div>
   </div>
 </template>
+
+<style scoped>
+.inf-block {
+  background: var(--bg2);
+  border: .5px solid var(--border);
+  border-radius: var(--r2);
+  padding: 18px 20px;
+  margin-bottom: 8px;
+}
+.inf-block-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text3);
+  margin-bottom: 12px;
+}
+.inf-section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 8px;
+}
+.inf-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.75;
+}
+.inf-list li {
+  margin-bottom: 4px;
+}
+.inf-list-green {
+  color: var(--text);
+}
+.inf-list-muted {
+  color: var(--text3);
+}
+.inf-stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+.inf-sc {
+  background: var(--bg3);
+  border: .5px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 8px;
+  text-align: center;
+}
+.inf-sc-n {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+}
+.inf-sc-l {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--text3);
+  margin-top: 6px;
+}
+</style>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
@@ -411,30 +463,26 @@ const tipoAbusoLabel = computed(() => {
   };
   return map[tipo] || tipo || '—';
 });
+
 const data = ref(null);
-const verifyState  = ref('idle'); // idle | running
-const verifyResult = ref(null);   // null | ok | fail | v1
+const verifyState  = ref('idle');
+const verifyResult = ref(null);
 
 async function verifyIntegrity() {
   if (verifyState.value === 'running') return;
   verifyState.value  = 'running';
   verifyResult.value = null;
-
   try {
     const version = data.value?.protest?.integrity_version || 1;
-
     if (version < 2) {
       verifyResult.value = 'v1';
       verifyState.value  = 'idle';
       return;
     }
-
     const apiUrl = import.meta.env.VITE_API_URL;
     const res = await fetch(`${apiUrl}/api/public/protests/${route.params.id}/integrity-data`);
     if (!res.ok) throw new Error('Failed to fetch integrity data');
     const d = await res.json();
-
-    // Recalculate hash in browser using SubtleCrypto
     const sorted = [...d.public_commitments].sort();
     const cities = Object.entries(d.city_distribution || {})
       .sort((a,b) => a[0].localeCompare(b[0]))
@@ -442,7 +490,6 @@ async function verifyIntegrity() {
     const rel = Object.entries(d.reliability_breakdown || {})
       .sort((a,b) => a[0] - b[0])
       .map(([k,v]) => `${k}:${v}`).join(',');
-
     const input = [
       d.protest_id, d.title, d.demands, d.scope, d.country,
       d.total_adhesions, d.cities_count,
@@ -451,12 +498,10 @@ async function verifyIntegrity() {
       d.last_adhesion  || '',
       sorted.join('|')
     ].join('|');
-
     const msgBuffer  = new TextEncoder().encode(input);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
     const hashArray  = Array.from(new Uint8Array(hashBuffer));
     const hashHex    = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
     verifyResult.value = hashHex === d.integrity_hash ? 'ok' : 'fail';
   } catch {
     verifyResult.value = 'fail';
@@ -464,6 +509,7 @@ async function verifyIntegrity() {
     verifyState.value = 'idle';
   }
 }
+
 const loading = ref(true);
 const error = ref(false);
 const showEmbed = ref(false);
@@ -524,11 +570,12 @@ function barStyleLocal(count, color) {
     width: pctLocal(count) + '%',
     background: color,
     height: '100%',
-    borderRadius: '4px',
+    borderRadius: '6px',
     transition: 'width .5s',
   };
 }
-  function maxPct(count) {
+
+function maxPct(count) {
   if (!data.value?.velocidad?.adhesiones_por_dia?.length) return 0;
   const max = Math.max(...data.value.velocidad.adhesiones_por_dia.map(d => d.count));
   return max > 0 ? Math.round((count / max) * 100) : 0;
@@ -543,7 +590,6 @@ function downloadPDF() {
 
   function nl(h = 7) { y += h; }
   function line() { doc.setDrawColor(76,255,164); doc.setLineWidth(0.3); doc.line(M, y, W - M, y); nl(6); }
-  function h1(txt) { doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(255,255,255); doc.text(txt, M, y); nl(12); }
   function h2(txt) { doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(76,255,164); doc.text(txt.toUpperCase(), M, y); nl(8); }
   function body(txt, opts={}) {
     doc.setFont('helvetica', opts.bold ? 'bold' : 'normal');
@@ -561,11 +607,9 @@ function downloadPDF() {
   }
   function setPageBg() { doc.setFillColor(12,11,20); doc.rect(0,0,210,297,'F'); }
 
-  // PAGE 1
   setPageBg();
   y = 20;
 
-  // Header band
   doc.setFillColor(30,27,50); doc.rect(0, 10, 210, 30, 'F');
   doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(76,255,164);
   doc.text('VOICE PROTEST — VERIFIED PUBLIC REPORT', M, 18);
@@ -575,13 +619,11 @@ function downloadPDF() {
   doc.text('Generated: ' + new Date().toISOString(), M, 30);
   y = 46;
 
-  // Title
   doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(255,255,255);
   const titleLines = doc.splitTextToSize(d.protest.title, CW);
   titleLines.forEach(l => { doc.text(l, M, y); nl(8); });
   nl(2);
 
-  // Political headline
   if (d.protest.demands && d.protest.focal_point) {
     doc.setFillColor(20,18,35); doc.rect(M-2, y-4, CW+4, 14, 'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255,179,71);
@@ -592,8 +634,6 @@ function downloadPDF() {
   }
 
   line();
-
-  // Section 1 — Convocation details
   h2('1. CONVOCATION DETAILS');
   kv('Country', d.protest.country_name || '—');
   kv('Scope', d.protest.scope || '—');
@@ -605,30 +645,26 @@ function downloadPDF() {
   if (d.protest.demands) { nl(1); body('Demands: ' + d.protest.demands); }
   nl(2); line();
 
-  // Section 2 — Key figures
   h2('2. KEY FIGURES');
   kv('Total verified adhesions', d.total_adhesiones);
   kv('Distinct cities', d.ciudades_distintas);
   kv('Distinct countries', d.paises_distintos);
   kv('Distinct languages', d.idiomas_distintos);
   kv('Adhesions with GPS', d.adhesiones_con_gps + ' (' + Math.round(d.adhesiones_con_gps/Math.max(d.total_adhesiones,1)*100) + '%)');
-  kv('Adhesions SIM/IP only', d.adhesiones_sin_gps);
   kv('First adhesion', d.primera_adhesion ? new Date(d.primera_adhesion).toLocaleString('en-GB') : '—');
   kv('Last adhesion', d.ultima_adhesion ? new Date(d.ultima_adhesion).toLocaleString('en-GB') : '—');
   nl(2); line();
 
-  // Section 3 — Verification quality
   h2('3. VERIFICATION QUALITY');
   if (d.desglose_fiabilidad) {
     const fi = d.desglose_fiabilidad;
-    if (fi.alta?.count > 0) kv('High reliability (85-95%)', fi.alta.count + ' citizens — ' + (fi.alta.descripcion || ''));
-    if (fi.media?.count > 0) kv('Medium reliability (75-84%)', fi.media.count + ' citizens — ' + (fi.media.descripcion || ''));
-    if (fi.base?.count > 0) kv('Base reliability (60-74%)', fi.base.count + ' citizens — ' + (fi.base.descripcion || ''));
-    if (fi.sin_dato?.count > 0) kv('Unclassified', fi.sin_dato.count + ' citizens (prior to reliability system)');
+    if (fi.alta?.count > 0) kv('High reliability (85-95%)', fi.alta.count + ' citizens');
+    if (fi.media?.count > 0) kv('Medium reliability (75-84%)', fi.media.count + ' citizens');
+    if (fi.base?.count > 0) kv('Base reliability (60-74%)', fi.base.count + ' citizens');
+    if (fi.sin_dato?.count > 0) kv('Unclassified', fi.sin_dato.count + ' citizens');
   }
   nl(2); line();
 
-  // Section 4 — Geographic distribution
   h2('4. GEOGRAPHIC DISTRIBUTION');
   if (d.distribucion_regiones && Object.keys(d.distribucion_regiones).length > 0) {
     body('By region:', {bold:true});
@@ -637,38 +673,16 @@ function downloadPDF() {
   }
   if (d.distribucion_ciudades?.length > 0) {
     body('Top cities: ' + d.distribucion_ciudades.slice(0,15).join(' · '));
-    if (d.distribucion_ciudades.length > 15) body('...and ' + (d.distribucion_ciudades.length-15) + ' more cities.');
   }
   nl(2); line();
 
-  // Section 5 — Growth velocity
-  h2('5. GROWTH VELOCITY');
-  if (d.velocidad) {
-    kv('Daily average', d.velocidad.media_diaria + ' adhesions/day');
-    if (d.velocidad.dia_pico) kv('Peak day', d.velocidad.dia_pico.count + ' adhesions on ' + new Date(d.velocidad.dia_pico.fecha).toLocaleDateString('en-GB'));
-    if (d.velocidad.adhesiones_por_dia?.length > 0) {
-      nl(1);
-      body('Daily breakdown:', {bold:true});
-      d.velocidad.adhesiones_por_dia.forEach(dd => body('  ' + new Date(dd.fecha).toLocaleDateString('en-GB') + ': ' + dd.count + ' adhesions'));
-    }
-  }
+  h2('5. VERIFICATION CHAIN');
+  body('Each adhesion was verified through: reCAPTCHA v3 + SMS OTP + HMAC-SHA256 pseudonymisation + device uniqueness.');
   nl(2); line();
 
-  // Section 6 — Verification chain
-  h2('6. VERIFICATION CHAIN');
-  body('Each adhesion was verified through a multi-layer process:');
-  body('  1. reCAPTCHA v3 — proof of humanity (bot detection)');
-  body('  2. SMS OTP — real phone number verification (one adhesion per number)');
-  body('  3. HMAC-SHA256 pseudonymous identifier — phone number not stored after verification. Direct personal identifiers are not stored after verification.');
-  body('  4. Device uniqueness — one device per protest scope');
-  body('  5. Geographic verification — SIM prefix, IP geolocation, GPS (optional)');
-  nl(2); line();
-
-  // Section 7 — Transparency seal
-  h2('7. TRANSPARENCY SEAL');
+  h2('6. TRANSPARENCY SEAL');
   kv('Convocation ID', route.params.id);
-  kv('Open source', 'github.com/cero-absoluto/vozciudadana');
-  kv('License', 'AGPL 3.0 — publicly auditable');
+  kv('Open source', 'github.com/cero-absoluto/vozciudadana (AGPL 3.0)');
   kv('Report generated', new Date().toISOString());
   if (d.protest.hash_integridad) {
     nl(1);
@@ -678,7 +692,6 @@ function downloadPDF() {
     hashLines.forEach(l => { doc.text(l, M, y); nl(4); });
   }
 
-  // Footer on all pages
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);

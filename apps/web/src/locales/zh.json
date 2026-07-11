@@ -689,7 +689,9 @@
     "badgeRegional": "地区",
     "badgeGlobal": "全球",
     "metaAdheridos": "支持者",
-    "metaCiudades": "城市"
+    "metaCiudades": "城市",
+    "filterLocal": "本地",
+    "filterInstitutional": "机构"
   },
   "api": {
     "openData": "开放数据",

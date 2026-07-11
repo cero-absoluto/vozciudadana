@@ -504,7 +504,20 @@
     "geoNationalDesc": "Participants without local GPS confirmation. May include participants temporarily outside the municipality.",
     "geoInternational": "International participants",
     "geoInternationalDesc": "Participants with a SIM from a different country.",
-    "geoRegionalSubtitle": "Regional event — {region}. Participants are classified by their geographic proximity at the time of adhesion."
+    "geoRegionalSubtitle": "Regional event — {region}. Participants are classified by their geographic proximity at the time of adhesion.",
+    "chain1": "Humanity signal — bot detection before verification begins",
+    "chain2": "Real phone number or institutional email — one adhesion per number, per convocation",
+    "chain3": "The number is transformed into an irreversible pseudonymous identifier. The original is not stored",
+    "chain4Title": "Device uniqueness",
+    "chain4": "One device per protest scope — prevents multiple participation",
+    "ledgerTitle": "Public integrity ledger",
+    "ledgerV1": "The current seal (v1) is an internal cryptographic proof: any modification after closure produces a different hash.",
+    "ledgerV1Caveat": "Verification is reliable but not fully independent",
+    "ledgerV1Detail": "it requires trusting that both the hash and the data have not been modified simultaneously in our database.",
+    "ledgerV2Pre": "The",
+    "ledgerV2Name": "public ledger v2",
+    "ledgerV2Post": "will publish the hash to an external, independent registry (certified timestamp or distributed ledger) at the moment of closure, so anyone can verify it without relying on Voice Protest.",
+    "ledgerV2Planned": "Planned — not yet implemented."
   },
   "invite": {
     "loading": "Validating invitation...",

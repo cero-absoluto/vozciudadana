@@ -25,7 +25,7 @@
         <div class="inf-block inf-block-highlight">
           <div class="inf-block-title">{{ $t('detail.directedAt') }}</div>
           <div class="inf-focal">{{ data.protest.focal_point || '—' }}</div>
-          <div v-if="data.protest.country_name" class="inf-focal-sub">{{ data.protest.country_name }}</div>
+          <div v-if="data.protest.country" class="inf-focal-sub">{{ localizedCountryName }}</div>
         </div>
 
         <!-- ② CONVOCATORIA COMPLETA -->
@@ -73,7 +73,7 @@
           <div class="inf-headline-text">
             {{ $t('informe.headline', {
               count: data.total_adhesiones,
-              country: data.protest.country_name,
+              country: localizedCountryName,
               focal: data.protest.focal_point,
               demands: data.protest.demands
             }) }}
@@ -570,6 +570,7 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import * as api from '@/services/api.js';
 import { jsPDF } from 'jspdf';
+import { localizedCountry } from '@/constants.js';
 
 const route = useRoute();
 const { t } = useI18n();
@@ -599,6 +600,10 @@ const tipoAbusoLabel = computed(() => {
   if (!tipo) return '—';
   return ABUSE_MAP[tipo]?.() || tipo;
 });
+
+const localizedCountryName = computed(() =>
+  localizedCountry(data.value?.protest?.country, locale.value) || data.value?.protest?.country_name || '—'
+);
 
 const hasGeoData = computed(() => {
   if (!data.value) return false;

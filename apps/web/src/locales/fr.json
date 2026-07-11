@@ -504,7 +504,20 @@
     "geoNationalDesc": "Participants sans confirmation GPS locale.",
     "geoInternational": "Participants internationaux",
     "geoInternationalDesc": "Participants avec une SIM d'un autre pays.",
-    "geoRegionalSubtitle": "Événement régional — {region}. Les participants sont classés par proximité géographique au moment de l'adhésion."
+    "geoRegionalSubtitle": "Événement régional — {region}. Les participants sont classés par proximité géographique au moment de l'adhésion.",
+    "chain1": "Signal d'humanité — détection de bots avant le début de la vérification",
+    "chain2": "Numéro de téléphone réel ou e-mail institutionnel — une adhésion par numéro, par convocation",
+    "chain3": "Le numéro est transformé en identifiant pseudonyme irréversible. L'original n'est pas conservé",
+    "chain4Title": "Unicité de l'appareil",
+    "chain4": "Un appareil par périmètre de protestation — prévient la participation multiple",
+    "ledgerTitle": "Registre public d'intégrité",
+    "ledgerV1": "Le sceau actuel (v1) est une preuve cryptographique interne : toute modification après la clôture produit un hash différent.",
+    "ledgerV1Caveat": "La vérification est fiable mais pas totalement indépendante",
+    "ledgerV1Detail": "elle nécessite de faire confiance au fait que le hash et les données n'ont pas été modifiés simultanément dans notre base de données.",
+    "ledgerV2Pre": "Le",
+    "ledgerV2Name": "registre public v2",
+    "ledgerV2Post": "publiera le hash dans un registre externe et indépendant (horodatage certifié ou registre distribué) au moment de la clôture, afin que chacun puisse le vérifier sans dépendre de Voice Protest.",
+    "ledgerV2Planned": "Prévu — pas encore implémenté."
   },
   "invite": {
     "loading": "Validation de l'invitation...",

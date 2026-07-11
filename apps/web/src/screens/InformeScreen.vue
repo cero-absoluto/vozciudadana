@@ -418,10 +418,10 @@
 </template>
 
 <style scoped>
-.inf-scroll { padding: 24px 20px; max-width: 720px; margin: 0 auto; }
+.inf-scroll { padding: 20px 16px; max-width: 720px; margin: 0 auto; width: 100%; overflow-x: hidden; }
 .inf-label { font-size: 13px; color: var(--text2); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
 
-.inf-block { background: var(--bg2); border: .5px solid var(--border); border-radius: var(--r2); padding: 20px; margin-bottom: 16px; }
+.inf-block { background: var(--bg2); border: .5px solid var(--border); border-radius: var(--r2); padding: 16px; margin-bottom: 14px; }
 .inf-block-highlight { border-color: rgba(76,255,164,.3); background: rgba(76,255,164,.04); }
 .inf-block-headline { border-color: rgba(255,179,71,.25); background: rgba(255,179,71,.04); }
 .inf-block-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.8px; color: var(--text2); margin-bottom: 14px; }
@@ -435,15 +435,15 @@
 .inf-field-label { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); }
 .inf-field-val { font-size: 17px; color: var(--text); line-height: 1.65; }
 .inf-demands { color: var(--text); font-style: italic; }
-.inf-link { font-size: 17px; color: var(--accent); text-decoration: underline; word-break: break-all; line-height: 1.6; }
+.inf-link { font-size: 16px; color: var(--accent); text-decoration: underline; word-break: break-all; overflow-wrap: anywhere; line-height: 1.6; max-width: 100%; display: inline-block; }
 
 .inf-dates { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
 .inf-date-item { display: flex; flex-direction: column; gap: 3px; }
 .inf-date-sep { font-size: 18px; color: var(--text2); }
 
-.inf-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.inf-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 14px; }
 .inf-sc { background: var(--bg3); border: .5px solid var(--border); border-radius: var(--r); padding: 14px 8px; text-align: center; }
-.inf-sc-n { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; line-height: 1; }
+.inf-sc-n { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; line-height: 1; }
 .inf-sc-l { font-size: 14px; text-transform: uppercase; letter-spacing: .6px; color: var(--text2); margin-top: 6px; }
 .inf-time-row { display: flex; flex-direction: column; gap: 4px; font-size: 17px; color: var(--text2); }
 
@@ -457,8 +457,8 @@
 .inf-bar-track { background: var(--bg4); border-radius: 6px; height: 10px; overflow: hidden; }
 .inf-bar-fill { height: 100%; border-radius: 6px; transition: width .5s; }
 
-.inf-gps-row { display: flex; gap: 10px; margin-bottom: 12px; }
-.inf-gps-cell { flex: 1; border: .5px solid var(--border); border-radius: var(--r); padding: 14px; text-align: center; }
+.inf-gps-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.inf-gps-cell { flex: 1; min-width: 100px; border: .5px solid var(--border); border-radius: var(--r); padding: 12px 8px; text-align: center; }
 .inf-gps-n { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; }
 .inf-gps-l { font-size: 16px; color: var(--text2); margin-top: 4px; }
 
@@ -475,8 +475,8 @@
 .inf-chain-num { min-width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #000; font-weight: 800; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
 .inf-chain-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
 
-.inf-hash-box { background: rgba(76,255,164,.05); border: .5px solid rgba(76,255,164,.25); border-radius: var(--r); padding: 16px; margin-bottom: 12px; }
-.inf-hash { font-family: monospace; font-size: 14px; color: var(--accent2); word-break: break-all; line-height: 1.7; margin: 8px 0; }
+.inf-hash-box { background: rgba(76,255,164,.05); border: .5px solid rgba(76,255,164,.25); border-radius: var(--r); padding: 14px; margin-bottom: 12px; overflow: hidden; max-width: 100%; }
+.inf-hash { font-family: monospace; font-size: 13px; color: var(--accent2); word-break: break-all; overflow-wrap: anywhere; line-height: 1.7; margin: 8px 0; max-width: 100%; }
 .inf-pending-box { background: var(--bg3); border: .5px solid var(--border); border-radius: var(--r); padding: 14px; font-size: 16px; color: var(--text2); margin-bottom: 12px; }
 
 .inf-verify-btn { width: 100%; padding: 10px; background: rgba(76,255,164,.08); border: .5px solid rgba(76,255,164,.3); border-radius: var(--r); color: var(--accent2); font-size: 15px; font-weight: 600; cursor: pointer; }
@@ -489,14 +489,30 @@
 .inf-ledger-title { font-size: 17px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
 
 .inf-meta-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: .5px solid var(--border); }
-.inf-meta-row { display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
-.inf-meta-key { font-size: 16px; color: var(--text2); min-width: 120px; flex-shrink: 0; }
+.inf-meta-row { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; word-break: break-word; }
+.inf-meta-key { font-size: 15px; color: var(--text2); min-width: 90px; flex-shrink: 0; }
 .inf-meta-val { font-size: 15px; color: var(--text); }
-.inf-mono { font-family: monospace; font-size: 14px; color: var(--accent2); word-break: break-all; }
+.inf-mono { font-family: monospace; font-size: 13px; color: var(--accent2); word-break: break-all; overflow-wrap: anywhere; max-width: 100%; }
 .inf-github-btn { background: transparent; border: .5px solid var(--accent); border-radius: var(--r); padding: 6px 14px; color: var(--accent); cursor: pointer; font-size: 15px; }
 
 .inf-note { font-size: 16px; color: var(--text2); line-height: 1.7; margin-top: 6px; }
 .inf-empty { font-size: 16px; color: var(--text2); }
+
+@media (max-width: 420px) {
+  .inf-scroll { padding: 14px 12px; }
+  .inf-block { padding: 14px 12px; }
+  .inf-stats-row { grid-template-columns: repeat(2, 1fr); }
+  .inf-sc-n { font-size: 20px; }
+  .inf-field-val { font-size: 15px; }
+  .inf-list { font-size: 15px; }
+  .inf-headline-text { font-size: 15px; }
+  .inf-title { font-size: 19px; }
+  .inf-focal { font-size: 20px; }
+  .inf-gps-n { font-size: 24px; }
+  .inf-chain-step { gap: 10px; }
+  .inf-meta-row { flex-direction: column; gap: 4px; }
+  .inf-meta-key { min-width: unset; }
+}
 </style>
 
 <script setup>

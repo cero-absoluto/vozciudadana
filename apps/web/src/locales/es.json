@@ -504,7 +504,20 @@
     "geoNationalDesc": "Participantes sin confirmación GPS local. Puede incluir participantes temporalmente fuera del municipio.",
     "geoInternational": "Participantes internacionales",
     "geoInternationalDesc": "Participantes con SIM de otro país.",
-    "geoRegionalSubtitle": "Evento regional — {region}. Los participantes se clasifican por su proximidad geográfica en el momento de la adhesión."
+    "geoRegionalSubtitle": "Evento regional — {region}. Los participantes se clasifican por su proximidad geográfica en el momento de la adhesión.",
+    "chain1": "Señal de humanidad — detección de bots antes de iniciar la verificación",
+    "chain2": "Número de teléfono o email institucional real — una adhesión por número, por convocatoria",
+    "chain3": "El número se transforma en un identificador pseudónimo irreversible. El original no se almacena",
+    "chain4Title": "Unicidad de dispositivo",
+    "chain4": "Un dispositivo por ámbito de protesta — previene la participación múltiple",
+    "ledgerTitle": "Registro público de integridad",
+    "ledgerV1": "El sello actual (v1) es una prueba criptográfica interna: cualquier modificación posterior al cierre produce un hash diferente.",
+    "ledgerV1Caveat": "La verificación es confiable pero no completamente independiente",
+    "ledgerV1Detail": "requiere confiar en que tanto el hash como los datos no han sido modificados simultáneamente en nuestra base de datos.",
+    "ledgerV2Pre": "El",
+    "ledgerV2Name": "registro público v2",
+    "ledgerV2Post": "publicará el hash en un registro externo e independiente (timestamp certificado o ledger distribuido) en el momento del cierre, de forma que cualquier persona pueda verificarlo sin depender de Voice Protest.",
+    "ledgerV2Planned": "Planificado — aún no implementado."
   },
   "invite": {
     "loading": "Validando invitación...",

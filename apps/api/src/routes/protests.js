@@ -965,7 +965,7 @@ export default async function protestRoutes(app) {
     const { data, error } = await supabase
       .from('protests')
       .select('id, title, country, country_name, scope, count, cities_count, ends_at, starts_at, saldo_euros, donaciones_total')
-      .gt('ends_at', new Date().toISOString())
+      .lt('ends_at', new Date().toISOString())
       .order('ends_at', { ascending: false })
       .limit(200);
 

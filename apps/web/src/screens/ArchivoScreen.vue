@@ -11,7 +11,9 @@
         <option value="">{{ $t('archivo.filterAll') }}</option>
         <option value="national">{{ $t('archivo.filterNational') }}</option>
         <option value="regional">{{ $t('archivo.filterRegional') }}</option>
+        <option value="local">{{ $t('archivo.filterLocal') }}</option>
         <option value="global">{{ $t('archivo.filterGlobal') }}</option>
+        <option value="institutional">{{ $t('archivo.filterInstitutional') }}</option>
       </select>
       <select v-model="filtroPais" class="arch-sel">
         <option value="">{{ $t('archivo.filterAllCountries') }}</option>
@@ -67,9 +69,11 @@ const filtroOrden = ref('fecha');
 
 const scopeBadge = p => {
   const badges = {
-    national: { cls: 'badge-nat', icon: '🏛️', label: t('archivo.badgeNational') },
-    regional: { cls: 'badge-reg', icon: '📍', label: t('archivo.badgeRegional') },
-    global:   { cls: 'badge-glob', icon: '🌍', label: t('archivo.badgeGlobal') },
+    national:     { cls: 'badge-nat',  icon: '🏛️', label: t('archivo.badgeNational') },
+    regional:     { cls: 'badge-reg',  icon: '📍', label: t('archivo.badgeRegional') },
+    global:       { cls: 'badge-glob', icon: '🌍', label: t('archivo.badgeGlobal') },
+    local:        { cls: 'badge-reg',  icon: '📍', label: t('home.filterLocal') },
+    institutional:{ cls: 'badge-nat',  icon: '🏢', label: t('home.filterInstitutional') },
   };
   return badges[p.scope] ?? { cls: '', icon: '📢', label: p.scope };
 };

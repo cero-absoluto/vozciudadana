@@ -5,7 +5,7 @@
       <!-- Cargando -->
       <div v-if="loading" style="text-align:center;padding:60px">
         <div class="spin-ring" style="margin:0 auto 16px"></div>
-        <div style="font-size:14px;color:var(--text3)">{{ $t('informe.loading') }}</div>
+        <div style="font-size:16px;color:var(--text2)">{{ $t('informe.loading') }}</div>
       </div>
 
       <!-- Error -->
@@ -131,7 +131,7 @@
               <div class="inf-section-label">{{ $t('informe.geoByCity') }}</div>
               <div class="inf-geo-list">
                 <span v-for="ciudad in data.distribucion_ciudades.slice(0,15)" :key="ciudad" class="inf-geo-item">{{ ciudad }}</span>
-                <span v-if="data.distribucion_ciudades.length > 15" class="inf-geo-item" style="color:var(--text3)">
+                <span v-if="data.distribucion_ciudades.length > 15" class="inf-geo-item" style="color:var(--text2)">
                   +{{ data.distribucion_ciudades.length - 15 }} {{ $t('informe.moreCities', { n: '' }).replace('  ','') }}
                 </span>
               </div>
@@ -216,7 +216,7 @@
             </div>
             <div v-if="data.desglose_fiabilidad.sin_dato.count > 0">
               <div class="inf-rel-header">
-                <span style="color:var(--text3);font-weight:600">{{ $t('informe.fiabilidadSin') }}</span>
+                <span style="color:var(--text2);font-weight:600">{{ $t('informe.fiabilidadSin') }}</span>
                 <span class="inf-rel-count">{{ data.desglose_fiabilidad.sin_dato.count }} {{ $t('informe.ciudadanos') }}</span>
               </div>
               <div class="inf-note">{{ $t('informe.fiabilidadSinDesc') }}</div>
@@ -419,40 +419,40 @@
 
 <style scoped>
 .inf-scroll { padding: 24px 20px; max-width: 720px; margin: 0 auto; }
-.inf-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
+.inf-label { font-size: 13px; color: var(--text2); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
 
 .inf-block { background: var(--bg2); border: .5px solid var(--border); border-radius: var(--r2); padding: 20px; margin-bottom: 16px; }
 .inf-block-highlight { border-color: rgba(76,255,164,.3); background: rgba(76,255,164,.04); }
 .inf-block-headline { border-color: rgba(255,179,71,.25); background: rgba(255,179,71,.04); }
-.inf-block-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.8px; color: var(--text3); margin-bottom: 14px; }
+.inf-block-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.8px; color: var(--text2); margin-bottom: 14px; }
 
 .inf-focal { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: var(--accent2); line-height: 1.2; }
-.inf-focal-sub { font-size: 14px; color: var(--text3); margin-top: 4px; }
+.inf-focal-sub { font-size: 16px; color: var(--text2); margin-top: 4px; }
 .inf-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; line-height: 1.3; color: var(--text); margin-bottom: 18px; }
-.inf-headline-text { font-size: 15px; font-weight: 600; line-height: 1.7; color: var(--text); }
+.inf-headline-text { font-size: 16px; font-weight: 600; line-height: 1.7; color: var(--text); }
 
 .inf-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
-.inf-field-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); }
-.inf-field-val { font-size: 14px; color: var(--text); line-height: 1.65; }
-.inf-demands { color: var(--text2); font-style: italic; }
-.inf-link { font-size: 13px; color: var(--accent); text-decoration: underline; word-break: break-all; line-height: 1.6; }
+.inf-field-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); }
+.inf-field-val { font-size: 16px; color: var(--text); line-height: 1.65; }
+.inf-demands { color: var(--text); font-style: italic; }
+.inf-link { font-size: 14px; color: var(--accent); text-decoration: underline; word-break: break-all; line-height: 1.6; }
 
 .inf-dates { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
 .inf-date-item { display: flex; flex-direction: column; gap: 3px; }
-.inf-date-sep { font-size: 18px; color: var(--text3); }
+.inf-date-sep { font-size: 18px; color: var(--text2); }
 
 .inf-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
 .inf-sc { background: var(--bg3); border: .5px solid var(--border); border-radius: var(--r); padding: 14px 8px; text-align: center; }
 .inf-sc-n { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; line-height: 1; }
-.inf-sc-l { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--text3); margin-top: 6px; }
-.inf-time-row { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text3); }
+.inf-sc-l { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--text2); margin-top: 6px; }
+.inf-time-row { display: flex; flex-direction: column; gap: 4px; font-size: 15px; color: var(--text2); }
 
-.inf-section-label { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 8px; }
+.inf-section-label { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
 .inf-geo-list { display: flex; flex-wrap: wrap; gap: 6px; }
-.inf-geo-item { font-size: 13px; color: var(--text2); background: var(--bg3); border: .5px solid var(--border); border-radius: 20px; padding: 3px 10px; }
+.inf-geo-item { font-size: 15px; color: var(--text); background: var(--bg3); border: .5px solid var(--border); border-radius: 20px; padding: 3px 10px; }
 
 .inf-geo-bar-row { margin-bottom: 12px; }
-.inf-geo-bar-label { display: flex; justify-content: space-between; align-items: center; font-size: 14px; margin-bottom: 6px; }
+.inf-geo-bar-label { display: flex; justify-content: space-between; align-items: center; font-size: 15px; margin-bottom: 6px; }
 
 .inf-bar-track { background: var(--bg4); border-radius: 6px; height: 10px; overflow: hidden; }
 .inf-bar-fill { height: 100%; border-radius: 6px; transition: width .5s; }
@@ -460,43 +460,43 @@
 .inf-gps-row { display: flex; gap: 10px; margin-bottom: 12px; }
 .inf-gps-cell { flex: 1; border: .5px solid var(--border); border-radius: var(--r); padding: 14px; text-align: center; }
 .inf-gps-n { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; }
-.inf-gps-l { font-size: 12px; color: var(--text3); margin-top: 4px; }
+.inf-gps-l { font-size: 14px; color: var(--text2); margin-top: 4px; }
 
-.inf-rel-header { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
-.inf-rel-count { color: var(--text2); }
+.inf-rel-header { display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 6px; }
+.inf-rel-count { color: var(--text); }
 
-.inf-list { margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.85; }
+.inf-list { margin: 0; padding-left: 20px; font-size: 15px; line-height: 1.85; }
 .inf-list li { margin-bottom: 4px; }
 .inf-list-green { color: var(--text); }
-.inf-list-muted { color: var(--text3); }
+.inf-list-muted { color: var(--text2); }
 
 .inf-chain-steps { display: flex; flex-direction: column; gap: 14px; }
 .inf-chain-step { display: flex; gap: 14px; align-items: flex-start; }
-.inf-chain-num { min-width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #000; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
-.inf-chain-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.inf-chain-num { min-width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #000; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+.inf-chain-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
 
 .inf-hash-box { background: rgba(76,255,164,.05); border: .5px solid rgba(76,255,164,.25); border-radius: var(--r); padding: 16px; margin-bottom: 12px; }
 .inf-hash { font-family: monospace; font-size: 12px; color: var(--accent2); word-break: break-all; line-height: 1.7; margin: 8px 0; }
-.inf-pending-box { background: var(--bg3); border: .5px solid var(--border); border-radius: var(--r); padding: 14px; font-size: 14px; color: var(--text3); margin-bottom: 12px; }
+.inf-pending-box { background: var(--bg3); border: .5px solid var(--border); border-radius: var(--r); padding: 14px; font-size: 16px; color: var(--text2); margin-bottom: 12px; }
 
-.inf-verify-btn { width: 100%; padding: 10px; background: rgba(76,255,164,.08); border: .5px solid rgba(76,255,164,.3); border-radius: var(--r); color: var(--accent2); font-size: 13px; font-weight: 600; cursor: pointer; }
-.inf-verify-result { margin-top: 10px; padding: 10px 12px; border-radius: var(--r); font-size: 13px; line-height: 1.6; }
+.inf-verify-btn { width: 100%; padding: 10px; background: rgba(76,255,164,.08); border: .5px solid rgba(76,255,164,.3); border-radius: var(--r); color: var(--accent2); font-size: 15px; font-weight: 600; cursor: pointer; }
+.inf-verify-result { margin-top: 10px; padding: 10px 12px; border-radius: var(--r); font-size: 15px; line-height: 1.6; }
 .inf-verify-ok  { background: rgba(76,255,164,.08); border: .5px solid rgba(76,255,164,.3); }
 .inf-verify-v1  { background: rgba(124,111,255,.08); border: .5px solid rgba(124,111,255,.3); }
 .inf-verify-fail{ background: rgba(255,80,80,.08); border: .5px solid rgba(255,80,80,.3); }
 
 .inf-ledger-box { background: rgba(124,111,255,.06); border: .5px solid rgba(124,111,255,.25); border-radius: var(--r); padding: 16px; margin: 14px 0; }
-.inf-ledger-title { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+.inf-ledger-title { font-size: 15px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
 
 .inf-meta-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: .5px solid var(--border); }
 .inf-meta-row { display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
-.inf-meta-key { font-size: 12px; color: var(--text3); min-width: 120px; flex-shrink: 0; }
-.inf-meta-val { font-size: 13px; color: var(--text2); }
-.inf-mono { font-family: monospace; font-size: 11px; color: var(--accent2); word-break: break-all; }
-.inf-github-btn { background: transparent; border: .5px solid var(--accent); border-radius: var(--r); padding: 4px 12px; color: var(--accent); cursor: pointer; font-size: 12px; }
+.inf-meta-key { font-size: 13px; color: var(--text2); min-width: 120px; flex-shrink: 0; }
+.inf-meta-val { font-size: 15px; color: var(--text); }
+.inf-mono { font-family: monospace; font-size: 12px; color: var(--accent2); word-break: break-all; }
+.inf-github-btn { background: transparent; border: .5px solid var(--accent); border-radius: var(--r); padding: 4px 12px; color: var(--accent); cursor: pointer; font-size: 13px; }
 
-.inf-note { font-size: 12px; color: var(--text3); line-height: 1.6; margin-top: 4px; }
-.inf-empty { font-size: 14px; color: var(--text3); }
+.inf-note { font-size: 14px; color: var(--text2); line-height: 1.6; margin-top: 4px; }
+.inf-empty { font-size: 16px; color: var(--text2); }
 </style>
 
 <script setup>

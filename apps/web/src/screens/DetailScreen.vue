@@ -6,7 +6,7 @@
       <div class="d-title">{{ protest.title }}</div>
       <div class="d-loc">
         <span class="scope-badge" :class="store.scopeBadge(protest).cls">{{ store.scopeBadge(protest).icon }} {{ store.scopeBadge(protest).label }}</span>
-        <span style="font-size:12px;color:var(--text2)">📍 {{ protest.countryName }}</span>
+        <span style="font-size:12px;color:var(--text2)">📍 {{ localizedCountry(protest.country, locale.value) || protest.countryName }}</span>
       </div>
     </div>
 
@@ -176,6 +176,7 @@ import { useProtestsStore } from '@/stores/protests.js';
 import { useDeviceStore }   from '@/stores/device.js';
 import { useUiStore }       from '@/stores/ui.js';
 import { useI18n } from 'vue-i18n';
+import { localizedCountry } from '@/constants.js';
 import DetailMap from '@/components/map/DetailMap.vue';
 import { fmt, fmtTime, inRegion } from '@/constants.js';
 
@@ -188,7 +189,7 @@ function fmtCloseDate(endsAt) {
 }
 import * as api from '@/services/api.js';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const route    = useRoute();
 const router   = useRouter();

@@ -7,8 +7,8 @@ These documents define the current audited reality of Voice Protest. They are au
 **2.-VoiceProtest_v3_5_beta_auditado_final.docx**
 Master design document. Foundational philosophy, design, privacy, participation model, public reporting and technical architecture. Written in English. The most complete reference for the project's foundational thinking.
 
-**3.-VoiceProtest_AuditAlignment_v2_1.docx**
-Audit Alignment, Threat Model and Participation Framework, v2.1. Defines what Voice Protest measures, what it does not measure, privacy limits, threat model, platform admission rules, and the canonical statement of what the platform claims and does not claim. This is the primary public reference document for auditors, journalists and researchers.
+**3.-VoiceProtest_AuditAlignment.docx**
+Audit Alignment, Threat Model and Participation Framework. Defines what Voice Protest measures, what it does not measure, privacy limits, threat model, platform admission rules, and the canonical statement of what the platform claims and does not claim. This is the primary public reference document for auditors, journalists and researchers.
 
 **6.-Participation_Verification_Methodology.md**
 Participation Verification Methodology. Describes how the platform verifies participation and what its results may and may not be taken to mean: the verification model by scope, what constitutes a valid adhesion, the evidentiary strength and limits of each signal (SMS, SIM, email, GPS, IP, reliability), what the system does not demonstrate, integrity and auditability (including the v1/v2 distinction), privacy and retention, and known limitations. Written in English. Maintained alongside the code and updated in the same change as any implementation that affects it.

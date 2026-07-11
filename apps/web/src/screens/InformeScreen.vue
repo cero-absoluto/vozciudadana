@@ -418,101 +418,150 @@
 </template>
 
 <style scoped>
-.inf-scroll { padding: 20px 16px; max-width: 720px; margin: 0 auto; width: 100%; overflow-x: hidden; }
-.inf-label { font-size: 13px; color: var(--text2); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
+/* ── Contenedor principal ─────────────────────────────────────────────── */
+/* La clave: width+box-sizing garantizan que el padding no desborde.      */
+/* overflow-x en el propio scroll corta cualquier hijo que se salga.      */
+.inf-scroll {
+  padding: 20px 16px;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
 
-.inf-block { background: var(--bg2); border: .5px solid var(--border); border-radius: var(--r2); padding: 16px; margin-bottom: 14px; }
+/* Todos los bloques respetan el ancho del padre */
+.inf-block {
+  background: var(--bg2);
+  border: .5px solid var(--border);
+  border-radius: var(--r2);
+  padding: 16px;
+  margin-bottom: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
 .inf-block-highlight { border-color: rgba(76,255,164,.3); background: rgba(76,255,164,.04); }
-.inf-block-headline { border-color: rgba(255,179,71,.25); background: rgba(255,179,71,.04); }
-.inf-block-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.8px; color: var(--text2); margin-bottom: 14px; }
+.inf-block-headline  { border-color: rgba(255,179,71,.25); background: rgba(255,179,71,.04); }
+.inf-block-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text2); margin-bottom: 14px; }
 
-.inf-focal { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: var(--accent2); line-height: 1.2; }
-.inf-focal-sub { font-size: 17px; color: var(--text2); margin-top: 4px; }
-.inf-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; line-height: 1.3; color: var(--text); margin-bottom: 18px; }
-.inf-headline-text { font-size: 17px; font-weight: 600; line-height: 1.7; color: var(--text); }
+/* ── Cabecera convocatoria ─────────────────────────────────────────────── */
+.inf-focal     { font-family: 'Syne',sans-serif; font-size: 22px; font-weight: 800; color: var(--accent2); line-height: 1.25; word-break: break-word; }
+.inf-focal-sub { font-size: 16px; color: var(--text2); margin-top: 4px; }
+.inf-title     { font-family: 'Syne',sans-serif; font-size: 20px; font-weight: 800; line-height: 1.35; color: var(--text); margin-bottom: 16px; word-break: break-word; }
+.inf-headline-text { font-size: 16px; font-weight: 600; line-height: 1.7; color: var(--text); word-break: break-word; }
 
-.inf-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
-.inf-field-label { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); }
-.inf-field-val { font-size: 17px; color: var(--text); line-height: 1.65; }
-.inf-demands { color: var(--text); font-style: italic; }
-.inf-link { font-size: 16px; color: var(--accent); text-decoration: underline; word-break: break-all; overflow-wrap: anywhere; line-height: 1.6; max-width: 100%; display: inline-block; }
+.inf-field       { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; min-width: 0; }
+.inf-field-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); }
+.inf-field-val   { font-size: 16px; color: var(--text); line-height: 1.65; word-break: break-word; }
+.inf-demands     { color: var(--text); font-style: italic; }
+.inf-link {
+  font-size: 15px;
+  color: var(--accent);
+  text-decoration: underline;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+  display: block;
+  max-width: 100%;
+}
 
-.inf-dates { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+.inf-dates     { display: flex; align-items: center; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
 .inf-date-item { display: flex; flex-direction: column; gap: 3px; }
-.inf-date-sep { font-size: 18px; color: var(--text2); }
+.inf-date-sep  { font-size: 16px; color: var(--text2); }
 
+/* ── Estadísticas (grid) ──────────────────────────────────────────────── */
 .inf-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 14px; }
-.inf-sc { background: var(--bg3); border: .5px solid var(--border); border-radius: var(--r); padding: 14px 8px; text-align: center; }
-.inf-sc-n { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; line-height: 1; }
-.inf-sc-l { font-size: 14px; text-transform: uppercase; letter-spacing: .6px; color: var(--text2); margin-top: 6px; }
-.inf-time-row { display: flex; flex-direction: column; gap: 4px; font-size: 17px; color: var(--text2); }
+.inf-sc   { background: var(--bg3); border: .5px solid var(--border); border-radius: var(--r); padding: 12px 6px; text-align: center; min-width: 0; }
+.inf-sc-n { font-family: 'Syne',sans-serif; font-size: 22px; font-weight: 800; line-height: 1; }
+.inf-sc-l { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text2); margin-top: 5px; }
+.inf-time-row { display: flex; flex-direction: column; gap: 4px; font-size: 15px; color: var(--text2); }
 
-.inf-section-label { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+/* ── Geografía ────────────────────────────────────────────────────────── */
+.inf-section-label { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
 .inf-geo-list { display: flex; flex-wrap: wrap; gap: 6px; }
-.inf-geo-item { font-size: 16px; color: var(--text); background: var(--bg3); border: .5px solid var(--border); border-radius: 20px; padding: 3px 10px; }
+.inf-geo-item { font-size: 14px; color: var(--text); background: var(--bg3); border: .5px solid var(--border); border-radius: 20px; padding: 3px 10px; }
 
-.inf-geo-bar-row { margin-bottom: 12px; }
-.inf-geo-bar-label { display: flex; justify-content: space-between; align-items: center; font-size: 17px; margin-bottom: 6px; }
+.inf-geo-bar-row   { margin-bottom: 12px; }
+.inf-geo-bar-label { display: flex; justify-content: space-between; align-items: center; font-size: 15px; margin-bottom: 6px; }
+.inf-bar-track     { background: var(--bg4); border-radius: 6px; height: 10px; overflow: hidden; width: 100%; }
+.inf-bar-fill      { height: 100%; border-radius: 6px; transition: width .5s; }
 
-.inf-bar-track { background: var(--bg4); border-radius: 6px; height: 10px; overflow: hidden; }
-.inf-bar-fill { height: 100%; border-radius: 6px; transition: width .5s; }
+/* ── GPS / Fiabilidad ─────────────────────────────────────────────────── */
+.inf-gps-row  { display: flex; gap: 8px; margin-bottom: 12px; }
+.inf-gps-cell { flex: 1; min-width: 0; border: .5px solid var(--border); border-radius: var(--r); padding: 12px 6px; text-align: center; }
+.inf-gps-n    { font-family: 'Syne',sans-serif; font-size: 26px; font-weight: 800; }
+.inf-gps-l    { font-size: 14px; color: var(--text2); margin-top: 4px; }
 
-.inf-gps-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-.inf-gps-cell { flex: 1; min-width: 100px; border: .5px solid var(--border); border-radius: var(--r); padding: 12px 8px; text-align: center; }
-.inf-gps-n { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; }
-.inf-gps-l { font-size: 16px; color: var(--text2); margin-top: 4px; }
+.inf-rel-header { display: flex; justify-content: space-between; align-items: center; font-size: 15px; margin-bottom: 6px; flex-wrap: wrap; gap: 4px; }
+.inf-rel-count  { color: var(--text); }
 
-.inf-rel-header { display: flex; justify-content: space-between; font-size: 17px; margin-bottom: 6px; }
-.inf-rel-count { color: var(--text); }
+/* ── Listas de evidencia ──────────────────────────────────────────────── */
+.inf-list        { margin: 0; padding-left: 18px; font-size: 16px; line-height: 1.85; }
+.inf-list li     { margin-bottom: 4px; word-break: break-word; }
+.inf-list-green  { color: var(--text); }
+.inf-list-muted  { color: var(--text2); }
 
-.inf-list { margin: 0; padding-left: 20px; font-size: 17px; line-height: 1.85; }
-.inf-list li { margin-bottom: 4px; }
-.inf-list-green { color: var(--text); }
-.inf-list-muted { color: var(--text2); }
-
+/* ── Cadena de verificación ──────────────────────────────────────────── */
 .inf-chain-steps { display: flex; flex-direction: column; gap: 14px; }
-.inf-chain-step { display: flex; gap: 14px; align-items: flex-start; }
-.inf-chain-num { min-width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #000; font-weight: 800; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
-.inf-chain-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.inf-chain-step  { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
+.inf-chain-num   { min-width: 28px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #000; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+.inf-chain-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
 
-.inf-hash-box { background: rgba(76,255,164,.05); border: .5px solid rgba(76,255,164,.25); border-radius: var(--r); padding: 14px; margin-bottom: 12px; overflow: hidden; max-width: 100%; }
-.inf-hash { font-family: monospace; font-size: 13px; color: var(--accent2); word-break: break-all; overflow-wrap: anywhere; line-height: 1.7; margin: 8px 0; max-width: 100%; }
-.inf-pending-box { background: var(--bg3); border: .5px solid var(--border); border-radius: var(--r); padding: 14px; font-size: 16px; color: var(--text2); margin-bottom: 12px; }
+/* ── Sello de integridad ──────────────────────────────────────────────── */
+.inf-hash-box {
+  background: rgba(76,255,164,.05);
+  border: .5px solid rgba(76,255,164,.25);
+  border-radius: var(--r);
+  padding: 14px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
+}
+.inf-hash {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--accent2);
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+  margin: 8px 0;
+  width: 100%;
+  display: block;
+}
+.inf-pending-box { background: var(--bg3); border: .5px solid var(--border); border-radius: var(--r); padding: 14px; font-size: 15px; color: var(--text2); margin-bottom: 12px; }
 
-.inf-verify-btn { width: 100%; padding: 10px; background: rgba(76,255,164,.08); border: .5px solid rgba(76,255,164,.3); border-radius: var(--r); color: var(--accent2); font-size: 15px; font-weight: 600; cursor: pointer; }
+.inf-verify-btn    { width: 100%; padding: 10px; background: rgba(76,255,164,.08); border: .5px solid rgba(76,255,164,.3); border-radius: var(--r); color: var(--accent2); font-size: 15px; font-weight: 600; cursor: pointer; box-sizing: border-box; }
 .inf-verify-result { margin-top: 10px; padding: 10px 12px; border-radius: var(--r); font-size: 15px; line-height: 1.6; }
-.inf-verify-ok  { background: rgba(76,255,164,.08); border: .5px solid rgba(76,255,164,.3); }
-.inf-verify-v1  { background: rgba(124,111,255,.08); border: .5px solid rgba(124,111,255,.3); }
-.inf-verify-fail{ background: rgba(255,80,80,.08); border: .5px solid rgba(255,80,80,.3); }
+.inf-verify-ok     { background: rgba(76,255,164,.08); border: .5px solid rgba(76,255,164,.3); }
+.inf-verify-v1     { background: rgba(124,111,255,.08); border: .5px solid rgba(124,111,255,.3); }
+.inf-verify-fail   { background: rgba(255,80,80,.08); border: .5px solid rgba(255,80,80,.3); }
 
-.inf-ledger-box { background: rgba(124,111,255,.06); border: .5px solid rgba(124,111,255,.25); border-radius: var(--r); padding: 16px; margin: 14px 0; }
-.inf-ledger-title { font-size: 17px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+.inf-ledger-box   { background: rgba(124,111,255,.06); border: .5px solid rgba(124,111,255,.25); border-radius: var(--r); padding: 14px; margin: 14px 0; }
+.inf-ledger-title { font-size: 16px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
 
+/* ── Metadatos finales ────────────────────────────────────────────────── */
 .inf-meta-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: .5px solid var(--border); }
-.inf-meta-row { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; word-break: break-word; }
-.inf-meta-key { font-size: 15px; color: var(--text2); min-width: 90px; flex-shrink: 0; }
-.inf-meta-val { font-size: 15px; color: var(--text); }
-.inf-mono { font-family: monospace; font-size: 13px; color: var(--accent2); word-break: break-all; overflow-wrap: anywhere; max-width: 100%; }
-.inf-github-btn { background: transparent; border: .5px solid var(--accent); border-radius: var(--r); padding: 6px 14px; color: var(--accent); cursor: pointer; font-size: 15px; }
+.inf-meta-row  { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.inf-meta-key  { font-size: 14px; color: var(--text2); min-width: 80px; flex-shrink: 0; }
+.inf-meta-val  { font-size: 15px; color: var(--text); word-break: break-word; min-width: 0; flex: 1; }
+.inf-mono {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--accent2);
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  display: block;
+}
+.inf-github-btn { background: transparent; border: .5px solid var(--accent); border-radius: var(--r); padding: 6px 12px; color: var(--accent); cursor: pointer; font-size: 14px; }
 
-.inf-note { font-size: 16px; color: var(--text2); line-height: 1.7; margin-top: 6px; }
+.inf-note  { font-size: 15px; color: var(--text2); line-height: 1.7; margin-top: 6px; word-break: break-word; }
 .inf-empty { font-size: 16px; color: var(--text2); }
 
-@media (max-width: 420px) {
-  .inf-scroll { padding: 14px 12px; }
-  .inf-block { padding: 14px 12px; }
-  .inf-stats-row { grid-template-columns: repeat(2, 1fr); }
-  .inf-sc-n { font-size: 20px; }
-  .inf-field-val { font-size: 15px; }
-  .inf-list { font-size: 15px; }
-  .inf-headline-text { font-size: 15px; }
-  .inf-title { font-size: 19px; }
-  .inf-focal { font-size: 20px; }
-  .inf-gps-n { font-size: 24px; }
-  .inf-chain-step { gap: 10px; }
-  .inf-meta-row { flex-direction: column; gap: 4px; }
-  .inf-meta-key { min-width: unset; }
-}
+/* ── Label global ─────────────────────────────────────────────────────── */
+.inf-label { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
 </style>
 
 <script setup>

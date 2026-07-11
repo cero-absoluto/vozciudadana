@@ -504,7 +504,20 @@
     "geoNationalDesc": "没有本地GPS确认的参与者。可能包括暂时在该市以外的参与者。",
     "geoInternational": "国际参与者",
     "geoInternationalDesc": "使用其他国家SIM卡的参与者。",
-    "geoRegionalSubtitle": "地区活动 — {region}。参与者按参与时的地理位置进行分类。"
+    "geoRegionalSubtitle": "地区活动 — {region}。参与者按参与时的地理位置进行分类。",
+    "chain1": "人类信号 — 在验证开始前检测机器人",
+    "chain2": "真实电话号码或机构邮箱 — 每个号码每次召集只有一次粘附",
+    "chain3": "号码被转化为不可逆的假名标识符。原始号码不被存储",
+    "chain4Title": "设备唯一性",
+    "chain4": "每个抗议范围一台设备 — 防止多次参与",
+    "ledgerTitle": "公共完整性账本",
+    "ledgerV1": "当前印章（v1）是内部加密证明：关闭后的任何修改都会产生不同的哈希值。",
+    "ledgerV1Caveat": "验证是可靠的，但不完全独立",
+    "ledgerV1Detail": "它需要信任哈希值和数据没有在我们的数据库中同时被修改。",
+    "ledgerV2Pre": "",
+    "ledgerV2Name": "公共账本v2",
+    "ledgerV2Post": "将在关闭时将哈希发布到外部独立注册表（认证时间戳或分布式账本），以便任何人都可以在不依赖Voice Protest的情况下进行验证。",
+    "ledgerV2Planned": "已计划 — 尚未实施。"
   },
   "invite": {
     "loading": "验证邀请中...",

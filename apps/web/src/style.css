@@ -536,6 +536,7 @@ a:hover{opacity:.8}
   /* DETAIL MAP — más compacto en móvil */
   .detail-map{display:none !important}
   /* INFORME */
+#s-informe{overflow-x:hidden}
 #s-informe .block-title{font-size:13px}
 #s-informe .sc-n{font-size:22px}
 #s-informe .sc-l{font-size:11px}

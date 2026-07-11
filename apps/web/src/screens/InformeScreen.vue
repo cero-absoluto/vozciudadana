@@ -253,51 +253,36 @@
           </div>
         </div>
 
-        <!-- ⑨ ÁMBITO DE LA EVIDENCIA -->
+        <!-- ⑨ LO QUE ESTE INFORME DEMUESTRA Y LO QUE NO -->
         <div v-if="data.evidential_scope" class="inf-block">
           <div class="inf-block-title">{{ $t('evidence.title') }}</div>
 
-          <div style="margin-bottom:16px">
-            <div class="inf-section-label">{{ $t('evidence.demonstratesTitle') }}</div>
-            <ul class="inf-list inf-list-green">
-              <li v-for="(it,i) in data.evidential_scope.demonstrates" :key="'d'+i">
+          <!-- Lo que SÍ demuestra — en verde, positivo -->
+          <div class="inf-evidence-section inf-evidence-yes">
+            <div class="inf-evidence-icon">✓</div>
+            <div>
+              <div class="inf-evidence-label">{{ $t('evidence.demonstratesTitle') }}</div>
+              <div v-for="(it,i) in data.evidential_scope.demonstrates" :key="'d'+i" class="inf-evidence-item">
                 {{ $t('evidence.demonstrates.'+it.key, it.params || {}) }}
-              </li>
-            </ul>
+              </div>
+              <div v-if="data.evidential_scope.participation_rate" class="inf-evidence-item">
+                {{ $t('evidence.participationRate', {
+                  count: data.evidential_scope.participation_rate.count,
+                  eligible: data.evidential_scope.participation_rate.eligible,
+                  rate: data.evidential_scope.participation_rate.rate }) }}
+              </div>
+            </div>
           </div>
 
-          <div v-if="data.evidential_scope.participation_rate" style="margin-bottom:16px;font-size:16px;color:var(--text)">
-            {{ $t('evidence.participationRate', {
-              count: data.evidential_scope.participation_rate.count,
-              eligible: data.evidential_scope.participation_rate.eligible,
-              rate: data.evidential_scope.participation_rate.rate }) }}
-          </div>
-
-          <div style="margin-bottom:16px">
-            <div class="inf-section-label">{{ $t('evidence.outsideScopeTitle') }}</div>
-            <ul class="inf-list inf-list-muted">
-              <li v-for="(it,i) in data.evidential_scope.outside_scope" :key="'o'+i">
+          <!-- Lo que NO demuestra — en ámbar, límites -->
+          <div class="inf-evidence-section inf-evidence-no">
+            <div class="inf-evidence-icon">○</div>
+            <div>
+              <div class="inf-evidence-label">{{ $t('evidence.outsideScopeTitle') }}</div>
+              <div v-for="(it,i) in data.evidential_scope.outside_scope" :key="'o'+i" class="inf-evidence-item">
                 {{ $t('evidence.not.'+it.key, it.params || {}) }}
-              </li>
-            </ul>
-          </div>
-
-          <div style="margin-bottom:16px">
-            <div class="inf-section-label">{{ $t('evidence.methodsTitle') }}</div>
-            <ul class="inf-list inf-list-muted">
-              <li v-for="(it,i) in data.evidential_scope.methods" :key="'m'+i">
-                {{ $t('evidence.methods.'+it.key, it.params || {}) }}
-              </li>
-            </ul>
-          </div>
-
-          <div v-if="data.evidential_scope.admission_rules && data.evidential_scope.admission_rules.length">
-            <div class="inf-section-label">{{ $t('evidence.admissionTitle') }}</div>
-            <ul class="inf-list inf-list-muted">
-              <li v-for="(it,i) in data.evidential_scope.admission_rules" :key="'a'+i">
-                {{ $t('evidence.admission.'+it.key, it.params || {}) }}
-              </li>
-            </ul>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -562,6 +547,17 @@
 
 /* ── Label global ─────────────────────────────────────────────────────── */
 .inf-label { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
+
+.inf-evidence-section { display: flex; gap: 14px; padding: 14px 0; border-bottom: .5px solid var(--border); }
+.inf-evidence-section:last-child { border-bottom: none; padding-bottom: 0; }
+.inf-evidence-section:first-of-type { padding-top: 0; }
+.inf-evidence-icon { font-size: 20px; font-weight: 800; flex-shrink: 0; margin-top: 1px; }
+.inf-evidence-yes .inf-evidence-icon { color: var(--accent2); }
+.inf-evidence-no  .inf-evidence-icon { color: var(--accent4); }
+.inf-evidence-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); margin-bottom: 8px; }
+.inf-evidence-item { font-size: 15px; color: var(--text); line-height: 1.7; margin-bottom: 4px; }
+.inf-evidence-yes .inf-evidence-item { color: var(--text); }
+.inf-evidence-no  .inf-evidence-item { color: var(--text2); }
 </style>
 
 <script setup>

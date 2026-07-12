@@ -545,6 +545,7 @@ export default async function protestRoutes(app) {
     let ciudad = null;
     let region = null;
     let pais   = null;
+    let pais_code = null;
     let adhesion_osm_id = null;
 
     // Si hay GPS, usar geocodificación GPS (más precisa) ignorando IP
@@ -562,6 +563,7 @@ export default async function protestRoutes(app) {
                  geoData.address?.locality || geoData.address?.municipality || null;
         region = geoData.address?.state || geoData.address?.county || null;
         pais   = geoData.address?.country || null;
+        pais_code = geoData.address?.country_code?.toUpperCase() || null;
 
         // Extract osm_id for local and regional scope municipality/region matching.
         // zoom=10 targets municipality level; zoom=6 targets region level.
@@ -584,6 +586,11 @@ export default async function protestRoutes(app) {
         ciudad = geo.city         || null;
         region = geo.region       || null;
         pais   = geo.country_name || null;
+        // ipapi returns names in ENGLISH ("Spain") while the convocatoria's
+        // country_name is stored in Spanish ("España"). Never compare names —
+        // capture the ISO code for language-independent classification.
+        pais_code = (geo.country_code || geo.country || '').toUpperCase() || null;
+        if (pais_code && !/^[A-Z]{2}$/.test(pais_code)) pais_code = null;
       } catch { /* silencioso */ }
     }
 
@@ -630,7 +637,7 @@ export default async function protestRoutes(app) {
     const { data, error } = await supabase
       .from('adhesions')
       .insert({ protest_id: req.params.id, phone_hash, doc_hash: doc_hash ?? null,
-                device_id, ciudad, region, pais, idioma, nullifier, created_at,
+                device_id, ciudad, region, pais, pais_code, idioma, nullifier, created_at,
                 gps_confirmed,
                 adhesion_osm_id,
                 fiabilidad, senales: senales.join(',') })
@@ -1007,7 +1014,7 @@ export default async function protestRoutes(app) {
 
     const { data: adhesions } = await supabase
       .from('adhesions')
-      .select('ciudad, region, pais, idioma, created_at, gps_confirmed, fiabilidad, senales, adhesion_osm_id')
+      .select('ciudad, region, pais, pais_code, idioma, created_at, gps_confirmed, fiabilidad, senales, adhesion_osm_id')
       .eq('protest_id', req.params.id)
       .is('deleted_at', null)
       .order('created_at', { ascending: true });
@@ -1036,11 +1043,22 @@ export default async function protestRoutes(app) {
       const gps_nacional = adhesions.filter(a =>
         a.gps_confirmed && a.adhesion_osm_id && a.adhesion_osm_id !== protest.convocatoria_osm_id
       ).length;
+      // Country match by ISO code, never by localized name.
+      // (Bug fixed July 2026: adhesion `pais` arrives in English from ipapi
+      // ("Spain") or Spanish from Nominatim ("España"), while
+      // protest.country_name is Spanish — name comparison misclassified every
+      // no-GPS domestic participant as international. protest.country holds
+      // the ISO code selected at creation.)
+      const sameCountry = (a) => {
+        if (a.pais_code && protest.country) return a.pais_code === protest.country;
+        // Legacy rows without pais_code: best-effort name comparison
+        return a.pais === protest.country_name;
+      };
       const nacionales_sin_gps = adhesions.filter(a =>
-        !a.gps_confirmed && (a.pais === protest.country_name || !a.pais)
+        !a.gps_confirmed && (sameCountry(a) || (!a.pais && !a.pais_code))
       ).length;
       const internacionales = adhesions.filter(a =>
-        a.pais && a.pais !== protest.country_name && !a.gps_confirmed
+        (a.pais || a.pais_code) && !sameCountry(a) && !a.gps_confirmed
       ).length;
 
       desglose_geografico_local = {

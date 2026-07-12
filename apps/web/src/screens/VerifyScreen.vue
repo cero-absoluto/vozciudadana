@@ -84,12 +84,22 @@ async function reforzarGpsLocal() {
   reforzandoGps.value = true;
   try {
     await device.requestGps();
-    // Send GPS coordinates to backend using the single-use update token
-    const token    = sessionStorage.getItem('vc_gps_update_token');
-    const protestId = sessionStorage.getItem('vc_last_joined');
+    // Send GPS coordinates to backend using the single-use update token.
+    // Read from sessionStorage or the persistent 24h record (Decision July 2026).
+    let token    = sessionStorage.getItem('vc_gps_update_token');
+    let protestId = sessionStorage.getItem('vc_last_joined');
+    if (!token) {
+      try {
+        const rec = JSON.parse(localStorage.getItem('vc_gps_reinforce') || 'null');
+        if (rec?.token && (!rec.expiresAt || Date.now() <= rec.expiresAt)) {
+          token = rec.token;
+          protestId = protestId || rec.protestId;
+        }
+      } catch { /* ignore */ }
+    }
     if (token && protestId && device.gpsLat && device.gpsLng) {
       const API_BASE = import.meta.env.VITE_API_URL || 'https://api.voiceprotest.org';
-      await fetch(`${API_BASE}/api/protests/${protestId}/adhesion`, {
+      const res = await fetch(`${API_BASE}/api/protests/${protestId}/adhesion`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -99,11 +109,20 @@ async function reforzarGpsLocal() {
           gps_accuracy:     device.gpsAccuracy ?? null,
         }),
       });
-      // Token is single-use — remove from sessionStorage after sending
+      // Honest feedback: only confirm on server OK. Previously the block
+      // simply disappeared when GPS permission was granted, telling the user
+      // "done" even when no PATCH had been sent (false positive).
+      if (res.ok) ui.showToast(t('detail.reforzarToast'));
+      else        ui.showToast(t('verify.gpsError'));
+      // Token is single-use — remove from both storages after the attempt
       sessionStorage.removeItem('vc_gps_update_token');
       localStorage.removeItem('vc_gps_reinforce');
+    } else if (!token) {
+      // No token available (e.g. adhesion predates token issuance): never
+      // pretend success.
+      ui.showToast(t('verify.gpsError'));
     }
-  } catch { /* silencioso */ } finally {
+  } catch { /* usuario denegó GPS — sin toast, decisión suya */ } finally {
     reforzandoGps.value = false;
   }
 }

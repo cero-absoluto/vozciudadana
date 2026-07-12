@@ -367,6 +367,7 @@
     "notiInfo": "If you enable notifications, your browser will be linked to this protest to send you the result. This slightly reduces your pseudonymity. If you prefer maximum privacy, do not enable notifications.",
     "gpsLocalInfo": "This is a local event in {ciudad}. If you are in the municipality right now, strengthen your participation with your location — you will appear with local geographic verification evidence in the public report.",
     "gpsRegionalInfo": "This is a regional call in {region}. If you are in the region right now, strengthen your participation with your location — you will appear with geographic verification evidence in the public report.",
+    "gpsError": "Your location could not be registered. Open the convocatoria and try again from there.",
     "gpsLocalBtn": "Strengthen my participation"
   },
   "about": {

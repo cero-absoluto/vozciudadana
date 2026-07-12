@@ -360,6 +360,7 @@
     "toastSinSaldo": "Cette protestation n'a pas de fonds. Soutenez-la pour activer les adhésions.",
     "notiInfo": "Si vous activez les notifications, votre navigateur sera lié à cette protestation pour vous envoyer le résultat. Cela réduit légèrement votre pseudonymat.",
     "gpsLocalInfo": "Il s'agit d'un événement local à {ciudad}. Si vous êtes dans la municipalité maintenant, renforcez votre participation avec votre localisation.",
+    "gpsRegionalInfo": "Il s'agit d'une convocation régionale en {region}. Si vous êtes dans la région maintenant, renforcez votre participation avec votre localisation — vous apparaîtrez avec une preuve de vérification géographique dans le rapport public.",
     "gpsLocalBtn": "Renforcer ma participation"
   },
   "about": {
@@ -666,6 +667,7 @@
     "copyDesc": "Pour TikTok, Instagram, X, Facebook ou où vous voulez",
     "close": "Fermer",
     "viralMsg": "Bonjour, je viens de rejoindre cette protestation vérifiée. Je vous encourage à participer : {url}",
+    "viralMsgEvent": "Je viens de rejoindre cette convocation vérifiée : « {title} ». Lisez-la et, si vous êtes d'accord, rejoignez-la ici : {url}",
     "toastWA": "🔥 Partagé via WhatsApp",
     "toastTG": "🔥 Partagé via Telegram",
     "toastCopy": "📋 Copié ! Collez-le sur TikTok, Instagram ou où vous voulez"

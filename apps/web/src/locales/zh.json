@@ -360,6 +360,7 @@
     "toastSinSaldo": "此抗议活动没有资金。支持它以启用参与。",
     "notiInfo": "如果您启用通知，您的浏览器将与此抗议关联以向您发送结果。这会略微降低您的假名性。如果您希望最大程度保护隐私，请不要启用通知。",
     "gpsLocalInfo": "这是{ciudad}的本地活动。如果您现在在市辖区内，请用您的位置加强参与——您将在公开报告中显示带有本地地理验证证据。",
+    "gpsRegionalInfo": "这是{region}的地区性倡议。如果您现在在该地区，请用您的位置加强参与——您将在公开报告中显示地理验证证据。",
     "gpsLocalBtn": "加强我的参与"
   },
   "about": {
@@ -666,6 +667,7 @@
     "copyDesc": "用于TikTok、Instagram、微博、微信或任何您想要的地方",
     "close": "关闭",
     "viralMsg": "你好，我刚刚加入了这个经过验证的抗议活动。我鼓励你参与：{url}",
+    "viralMsgEvent": "我刚刚加入了这个经过验证的倡议：《{title}》。请阅读，如果您同意，请在此加入：{url}",
     "toastWA": "🔥 通过WhatsApp分享",
     "toastTG": "🔥 通过Telegram分享",
     "toastCopy": "📋 已复制！粘贴到TikTok、Instagram或任何地方"

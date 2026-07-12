@@ -367,6 +367,7 @@
     "notiInfo": "Si vous activez les notifications, votre navigateur sera lié à cette protestation pour vous envoyer le résultat. Cela réduit légèrement votre pseudonymat.",
     "gpsLocalInfo": "Il s'agit d'un événement local à {ciudad}. Si vous êtes dans la municipalité maintenant, renforcez votre participation avec votre localisation.",
     "gpsRegionalInfo": "Il s'agit d'une convocation régionale en {region}. Si vous êtes dans la région maintenant, renforcez votre participation avec votre localisation — vous apparaîtrez avec une preuve de vérification géographique dans le rapport public.",
+    "gpsError": "Votre localisation n'a pas pu être enregistrée. Ouvrez la convocation et réessayez depuis cette page.",
     "gpsLocalBtn": "Renforcer ma participation"
   },
   "about": {

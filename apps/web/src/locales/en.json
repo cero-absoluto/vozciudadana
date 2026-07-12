@@ -344,7 +344,11 @@
     "reforzarBtn": "📍 Strengthen my participation",
     "reforzarPrivacy": "Your coordinates are never stored — only the derived administrative area.",
     "reforzarDone": "Participation strengthened — you appear as territorial verification in the report.",
-    "reforzarToast": "📍 Location verified. Thank you for strengthening the report."
+    "reforzarToast": "📍 Location verified. Thank you for strengthening the report.",
+    "gpsPromptTitle": "Territorial convocatoria: {territorio}",
+    "gpsPromptBody": "Your location is what turns your adhesion into verified territorial evidence in the public report. It is optional: your coordinates are never stored, only the derived administrative area.",
+    "gpsPromptYes": "📍 Enable location",
+    "gpsPromptSkip": "Continue without location"
   },
   "verify": {
     "spinVerifying": "Verifying your participation...",

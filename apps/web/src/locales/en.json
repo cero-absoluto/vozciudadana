@@ -338,7 +338,13 @@
     "closesOn": "Closes on",
     "directedAt": "Directed at",
     "typeOfAbuse": "Type of abuse",
-    "source": "Source"
+    "source": "Source",
+    "reforzarTitle": "Strengthen your participation with your location",
+    "reforzarBody": "Your adhesion already counts. If you are in {territorio} right now, your location turns it into the strongest evidence in the public report: “GPS confirmed inside the territory”. Available for 24h after joining.",
+    "reforzarBtn": "📍 Strengthen my participation",
+    "reforzarPrivacy": "Your coordinates are never stored — only the derived administrative area.",
+    "reforzarDone": "Participation strengthened — you appear as territorial verification in the report.",
+    "reforzarToast": "📍 Location verified. Thank you for strengthening the report."
   },
   "verify": {
     "spinVerifying": "Verifying your participation...",

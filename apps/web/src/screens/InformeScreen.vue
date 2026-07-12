@@ -730,8 +730,18 @@ function downloadPDF() {
   nl(2); line();
 
   h2('4. DISTRIBUCIÓN GEOGRÁFICA');
+  if (d.desglose_geografico_local) {
+    const dg = d.desglose_geografico_local;
+    const territorio = dg.scope === 'regional' ? 'región declarada' : 'municipio declarado';
+    body('Verificación territorial (' + (dg.municipio || territorio) + '):');
+    body('  GPS confirmado dentro del territorio: ' + dg.gps_local);
+    body('  GPS confirmado fuera del territorio: ' + dg.gps_nacional);
+    body('  Sin GPS, mismo país: ' + dg.nacionales_sin_gps);
+    body('  Internacionales: ' + dg.internacionales);
+    nl(1);
+  }
   if (d.distribucion_regiones && Object.keys(d.distribucion_regiones).length) {
-    body('Por región:');
+    body('Por región (estimación por señal disponible — solo el bloque GPS constituye verificación territorial):');
     Object.entries(d.distribucion_regiones).forEach(([r,c]) => body('  ' + r + ': ' + c));
   }
   if (d.distribucion_ciudades?.length) body('Ciudades: ' + d.distribucion_ciudades.slice(0,15).join(' · '));

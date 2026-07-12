@@ -761,12 +761,26 @@ export default async function protestRoutes(app) {
     if (new Date(tokenRow.expires_at) < new Date()) return reply.status(410).send({ error: 'Token expired' });
     if (tokenRow.protest_id !== req.params.id) return reply.status(403).send({ error: 'Token mismatch' });
 
+    // Fetch the protest scope — needed to reverse-geocode at the correct OSM
+    // admin level. Must mirror the adhesion-creation logic exactly: zoom=6 for
+    // regional (region entity), zoom=10 for local (municipality entity).
+    // (Bug fixed July 2026: this endpoint previously hardcoded zoom=10, so GPS
+    // reinforcement on REGIONAL convocatorias derived a municipality osm_id
+    // that could never match the region's convocatoria_osm_id — participants
+    // physically inside the region were misclassified as gps_nacional.)
+    const { data: patchProtest } = await supabase
+      .from('protests')
+      .select('scope')
+      .eq('id', tokenRow.protest_id)
+      .maybeSingle();
+
     // Reverse geocode GPS coordinates via Nominatim (backend proxy — user IP not exposed)
+    const zoomLevel = patchProtest?.scope === 'regional' ? 6 : 10;
     let adhesion_osm_id = null;
     let ciudad = null, region = null, pais = null;
     try {
       const geoRes = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${gps_lat}&lon=${gps_lng}&format=json&zoom=10`,
+        `https://nominatim.openstreetmap.org/reverse?lat=${gps_lat}&lon=${gps_lng}&format=json&zoom=${zoomLevel}`,
         { headers: { 'Accept-Language': 'es', 'User-Agent': 'VoiceProtest/1.0' }, signal: AbortSignal.timeout(6000) }
       );
       const geoData = await geoRes.json();

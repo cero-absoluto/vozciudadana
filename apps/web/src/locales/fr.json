@@ -338,7 +338,13 @@
     "closesOn": "Ferme le",
     "directedAt": "Adressé à",
     "typeOfAbuse": "Type d'abus",
-    "source": "Source"
+    "source": "Source",
+    "reforzarTitle": "Renforcez votre participation avec votre localisation",
+    "reforzarBody": "Votre adhésion compte déjà. Si vous êtes en ce moment dans {territorio}, votre localisation en fait la preuve la plus solide du rapport public : « GPS confirmé dans le territoire ». Disponible pendant 24 h après l'adhésion.",
+    "reforzarBtn": "📍 Renforcer ma participation",
+    "reforzarPrivacy": "Vos coordonnées ne sont jamais stockées — uniquement la zone administrative dérivée.",
+    "reforzarDone": "Participation renforcée — vous apparaissez comme vérification territoriale dans le rapport.",
+    "reforzarToast": "📍 Localisation vérifiée. Merci de renforcer le rapport."
   },
   "verify": {
     "spinVerifying": "Vérification de votre participation...",

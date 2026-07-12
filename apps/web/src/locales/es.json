@@ -344,7 +344,11 @@
     "reforzarBtn": "📍 Reforzar mi participación",
     "reforzarPrivacy": "Tus coordenadas no se almacenan — solo la zona administrativa derivada.",
     "reforzarDone": "Participación reforzada — apareces como verificación territorial en el informe.",
-    "reforzarToast": "📍 Ubicación verificada. Gracias por dar peso al informe."
+    "reforzarToast": "📍 Ubicación verificada. Gracias por dar peso al informe.",
+    "gpsPromptTitle": "Convocatoria territorial: {territorio}",
+    "gpsPromptBody": "Tu ubicación es lo que convierte tu adhesión en evidencia territorial verificada en el informe público. Es opcional: tus coordenadas nunca se almacenan, solo la zona administrativa derivada.",
+    "gpsPromptYes": "📍 Activar ubicación",
+    "gpsPromptSkip": "Continuar sin ubicación"
   },
   "verify": {
     "spinVerifying": "Verificando tu participación...",

@@ -5,6 +5,18 @@
       <div class="auth-h">{{ $t('auth.title') }}</div>
       <div class="auth-p">{{ $t('auth.subtitle') }}</div>
 
+      <!-- Contexto de la convocatoria: qué está firmando exactamente el usuario -->
+      <div v-if="joiningProtest" style="width:100%;margin-bottom:12px;padding:12px 14px;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r2);text-align:left">
+        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--text);line-height:1.5;margin-bottom:6px">{{ joiningProtest.title }}</div>
+        <div v-if="joiningProtest.focal_point" style="font-size:11px;color:var(--text2);margin-bottom:6px">
+          <strong>{{ $t('detail.directedAt') }}</strong> {{ joiningProtest.focal_point }}
+        </div>
+        <div v-if="joiningProtest.desc" style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:6px">{{ joiningProtest.desc }}</div>
+        <div v-if="joiningProtest.demands" style="font-size:11px;color:var(--text);line-height:1.6">
+          <span style="color:var(--accent3);font-weight:700">⚡ {{ $t('detail.whatWeDemand') }}</span><br>{{ joiningProtest.demands }}
+        </div>
+      </div>
+
       <!-- reCAPTCHA status -->
       <div class="verif-strip" :class="captchaStatusClass" style="width:100%;margin-bottom:10px">
         <span>{{ captchaIco }}</span>
@@ -84,6 +96,15 @@ const { t } = useI18n();
 
 const router = useRouter();
 const ui     = useUiStore();
+
+// The convocatoria the user is about to join — shown as a context card so the
+// person verifying their phone knows exactly WHAT they are adhering to
+// (title alone is not informed participation; description and demands matter).
+const protestsStoreRef = useProtestsStore();
+const joiningProtest = computed(() => {
+  const id = sessionStorage.getItem('vc_last_joined');
+  return id ? protestsStoreRef.protests.find(p => String(p.id) === String(id)) : null;
+});
 
 const countryCode  = ref('ES');
 const countryCodes = ref([]);

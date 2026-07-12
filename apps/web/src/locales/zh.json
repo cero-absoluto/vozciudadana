@@ -344,7 +344,11 @@
     "reforzarBtn": "📍 加强我的参与",
     "reforzarPrivacy": "您的坐标不会被存储——仅保留派生的行政区域。",
     "reforzarDone": "参与已加强——您将在报告中显示为区域验证。",
-    "reforzarToast": "📍 位置已验证。感谢您为报告增加分量。"
+    "reforzarToast": "📍 位置已验证。感谢您为报告增加分量。",
+    "gpsPromptTitle": "区域性倡议：{territorio}",
+    "gpsPromptBody": "您的位置能使您的加入成为公开报告中经过验证的区域性证据。这是可选的：您的坐标不会被存储，仅保留派生的行政区域。",
+    "gpsPromptYes": "📍 启用位置",
+    "gpsPromptSkip": "不使用位置继续"
   },
   "verify": {
     "spinVerifying": "正在验证您的参与...",

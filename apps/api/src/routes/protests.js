@@ -710,11 +710,19 @@ export default async function protestRoutes(app) {
     if (protest.scope === 'local' || protest.scope === 'regional') {
       const { randomUUID } = await import('crypto');
       gps_update_token = randomUUID();
-      await supabase.from('gps_update_tokens').insert({
+      const { error: tokErr } = await supabase.from('gps_update_tokens').insert({
         token:       gps_update_token,
         adhesion_id: data.id,
         protest_id:  req.params.id,
       });
+      if (tokErr) {
+        // Never hand the client a token that does not exist in the database —
+        // the later PATCH would 404 and the failure would be undiagnosable.
+        req.log.error({ tokErr }, 'gps_update_token insert failed — reinforcement disabled for this adhesion');
+        gps_update_token = null;
+      } else {
+        req.log.info({ adhesion_id: data.id, scope: protest.scope }, 'gps_update_token issued');
+      }
     }
 
     // ── Territorial match (separate axis from geographic confidence) ────────
@@ -802,6 +810,7 @@ export default async function protestRoutes(app) {
       region = geoData.address?.state || geoData.address?.county || null;
       pais   = geoData.address?.country || null;
       if (geoData.osm_id) adhesion_osm_id = parseInt(geoData.osm_id);
+      req.log.info({ zoomLevel, adhesion_osm_id, osm_name: geoData.display_name?.slice(0, 60) }, 'GPS reinforcement: reverse geocode result');
     } catch { /* silencioso — GPS update proceeds without osm_id */ }
 
     // Recalculate fiabilidad with GPS signal
@@ -843,6 +852,7 @@ export default async function protestRoutes(app) {
     // Invalidate token — one-time use
     await supabase.from('gps_update_tokens').update({ used: true }).eq('token', gps_update_token);
 
+    req.log.info({ adhesion_id: tokenRow.adhesion_id, fiabilidad: nuevaFiabilidad, adhesion_osm_id }, 'GPS reinforcement completed');
     return { ok: true, fiabilidad: nuevaFiabilidad, adhesion_osm_id };
   });
 

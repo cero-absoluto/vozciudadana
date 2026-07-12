@@ -367,6 +367,7 @@
     "notiInfo": "Si activas las notificaciones, tu navegador quedará vinculado a esta protesta para enviarte el resultado. Esto reduce ligeramente tu pseudonimato. Si prefieres máxima privacidad, no actives las notificaciones.",
     "gpsLocalInfo": "Este es un evento local en {ciudad}. Si estás en el municipio ahora mismo, refuerza tu participación con tu ubicación — aparecerás con evidencia de verificación geográfica local en el informe público.",
     "gpsRegionalInfo": "Esta es una convocatoria regional en {region}. Si estás en la región ahora mismo, refuerza tu participación con tu ubicación — aparecerás con evidencia de verificación geográfica en el informe público.",
+    "gpsError": "No se pudo registrar tu ubicación. Abre la convocatoria y vuelve a intentarlo desde ahí.",
     "gpsLocalBtn": "Reforzar mi participación"
   },
   "about": {

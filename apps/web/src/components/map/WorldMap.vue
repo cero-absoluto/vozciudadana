@@ -188,8 +188,15 @@ function drawFrame() {
       const numIso = Object.entries(ISO_NUM_TO_A2).find(([, v]) => v === p.country)?.[0];
       co = numIso ? COORDS[numIso] : null;
     } else if (p.scope === 'regional') {
-      const numIso = Object.entries(ISO_NUM_TO_A2).find(([, v]) => v === p.convocatoria_pais)?.[0];
-  co = numIso ? COORDS[numIso] : (REGION_COORDS[p.region] || null);
+      // Use the exact coordinates of the region selected at creation time
+      // (Bug fixed July 2026: regional markers always fell to the country
+      // center — e.g. a Cantabria convocatoria rendered over Madrid.)
+      if (p.convocatoria_lat && p.convocatoria_lon) {
+        co = [p.convocatoria_lon, p.convocatoria_lat];
+      } else {
+        const numIso = Object.entries(ISO_NUM_TO_A2).find(([, v]) => v === p.convocatoria_pais)?.[0];
+        co = numIso ? COORDS[numIso] : (REGION_COORDS[p.region] || null);
+      }
     } else if (p.scope === 'local') {
       // Use exact municipality coordinates if available (stored at creation time)
       // Falls back to country center if coordinates not yet stored

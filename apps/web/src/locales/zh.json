@@ -338,7 +338,13 @@
     "closesOn": "结束于",
     "directedAt": "针对",
     "typeOfAbuse": "滥用类型",
-    "source": "来源"
+    "source": "来源",
+    "reforzarTitle": "用您的位置加强参与",
+    "reforzarBody": "您的加入已被计入。如果您现在位于{territorio}，您的位置将使其成为公开报告中最有力的证据：「GPS确认在区域内」。加入后24小时内有效。",
+    "reforzarBtn": "📍 加强我的参与",
+    "reforzarPrivacy": "您的坐标不会被存储——仅保留派生的行政区域。",
+    "reforzarDone": "参与已加强——您将在报告中显示为区域验证。",
+    "reforzarToast": "📍 位置已验证。感谢您为报告增加分量。"
   },
   "verify": {
     "spinVerifying": "正在验证您的参与...",

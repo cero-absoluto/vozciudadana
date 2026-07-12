@@ -56,16 +56,24 @@ const route    = useRoute();
 const BASE_URL = 'https://www.voiceprotest.org';
 
 const currentProtest = computed(() => {
-  const id = route.params.id;
+  // route.params.id exists on DetailScreen; after joining (VerifyScreen) the
+  // route is /verify with no id — fall back to the protest just joined.
+  // (Bug fixed July 2026: sharing right after joining — the highest-intent
+  // moment — produced the generic voiceprotest.org message with no title and
+  // no direct link, leaving recipients without context or a clear action.)
+  const id = route.params.id || sessionStorage.getItem('vc_last_joined');
   return id ? protests.protests.find(p => String(p.id) === String(id)) : null;
 });
 
 const eventUrl = computed(() => {
-  const id = route.params.id;
+  const id = route.params.id || sessionStorage.getItem('vc_last_joined');
   return id ? `${BASE_URL}/#/detail/${id}` : BASE_URL;
 });
 
 const fullMsg = computed(() => {
+  if (currentProtest.value?.title) {
+    return t('share.viralMsgEvent', { title: currentProtest.value.title, url: eventUrl.value });
+  }
   return t('share.viralMsg', { url: eventUrl.value });
 });
 
@@ -74,7 +82,7 @@ const previewMsg = computed(() =>
 );
 
 function incrementViral() {
-  const id = Number(route.params.id);
+  const id = Number(route.params.id || sessionStorage.getItem('vc_last_joined'));
   if (id) protests.incrementViral(id);
 }
 
@@ -84,7 +92,7 @@ function shareWA() {
   ui.showToast(t('share.toastWA'));
 }
 function shareTG() {
-  const url = encodeURIComponent(BASE_URL);
+  const url = encodeURIComponent(eventUrl.value);
   const msg = encodeURIComponent(fullMsg.value);
   window.open(`https://t.me/share/url?url=${url}&text=${msg}`, '_blank');
   incrementViral(); ui.showShareModal = false;

@@ -344,7 +344,11 @@
     "reforzarBtn": "📍 Renforcer ma participation",
     "reforzarPrivacy": "Vos coordonnées ne sont jamais stockées — uniquement la zone administrative dérivée.",
     "reforzarDone": "Participation renforcée — vous apparaissez comme vérification territoriale dans le rapport.",
-    "reforzarToast": "📍 Localisation vérifiée. Merci de renforcer le rapport."
+    "reforzarToast": "📍 Localisation vérifiée. Merci de renforcer le rapport.",
+    "gpsPromptTitle": "Convocation territoriale : {territorio}",
+    "gpsPromptBody": "Votre localisation est ce qui transforme votre adhésion en preuve territoriale vérifiée dans le rapport public. C'est facultatif : vos coordonnées ne sont jamais stockées, uniquement la zone administrative dérivée.",
+    "gpsPromptYes": "📍 Activer la localisation",
+    "gpsPromptSkip": "Continuer sans localisation"
   },
   "verify": {
     "spinVerifying": "Vérification de votre participation...",

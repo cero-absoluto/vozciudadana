@@ -17,10 +17,10 @@
             <!-- Escalera de acción -->
       <div style="width:100%;margin-top:8px">
 
-        <!-- Peldaño 0 — GPS local (solo para convocatorias locales, si no tiene GPS aún) -->
+        <!-- Peldaño 0 — GPS territorial (convocatorias locales y regionales, si no tiene GPS aún) -->
         <div v-if="isLocalProtest && !device.gpsReady" style="margin-bottom:10px">
           <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:6px;padding:8px 10px;background:rgba(76,200,255,.06);border-radius:var(--r);border:.5px solid rgba(76,200,255,.25)">
-            {{ $t('verify.gpsLocalInfo', { ciudad: localCiudad }) }}
+            {{ joinedScope === 'regional' ? $t('verify.gpsRegionalInfo', { region: localCiudad }) : $t('verify.gpsLocalInfo', { ciudad: localCiudad }) }}
           </div>
           <button @click="reforzarGpsLocal"
             style="width:100%;margin-bottom:10px;padding:12px;background:rgba(76,200,255,.12);border:.5px solid #4CC8FF;border-radius:var(--r);color:#4CC8FF;font-size:13px;font-weight:700;cursor:pointer">
@@ -75,6 +75,7 @@ const notiActivada = ref(false);
 
 // Local scope GPS reinforce
 const isLocalProtest = ref(false);
+const joinedScope = ref(null); // 'local' | 'regional' — picks the right reinforce copy
 const localCiudad    = ref('');
 const reforzandoGps  = ref(false);
 
@@ -229,11 +230,17 @@ const target = lastId
   receiptHash.value = h;
   success.value = true;
 
-  // Check if this is a local protest to show GPS reinforce button
+  // Check if this is a local or regional protest to show GPS reinforce button
+  // (Bug fixed July 2026: only scope==='local' showed the button — on regional
+  // convocatorias, where territorial evidence matters just as much for the
+  // public report, users had no way to reinforce with GPS.)
   const joinedProtest = protests.protests.find(p => String(p.id) === sessionStorage.getItem('vc_last_joined'));
-  if (joinedProtest?.scope === 'local') {
+  if (joinedProtest?.scope === 'local' || joinedProtest?.scope === 'regional') {
     isLocalProtest.value = true;
-    localCiudad.value = joinedProtest.convocatoria_ciudad_nombre || 'el municipio';
+    joinedScope.value = joinedProtest.scope;
+    localCiudad.value = joinedProtest.convocatoria_ciudad_nombre
+      || joinedProtest.convocatoria_region
+      || (joinedProtest.scope === 'regional' ? 'la región' : 'el municipio');
   }
 
   ui.showToast(t('verify.toast'));

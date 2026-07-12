@@ -6,14 +6,14 @@
       <div class="auth-p">{{ $t('auth.subtitle') }}</div>
 
       <!-- Contexto de la convocatoria: qué está firmando exactamente el usuario -->
-      <div v-if="joiningProtest" style="width:100%;margin-bottom:12px;padding:12px 14px;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r2);text-align:left">
-        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--text);line-height:1.5;margin-bottom:6px">{{ joiningProtest.title }}</div>
-        <div v-if="joiningProtest.focal_point" style="font-size:11px;color:var(--text2);margin-bottom:6px">
+      <div v-if="joiningProtest" style="width:100%;margin-bottom:12px;padding:14px 16px;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r2);text-align:left">
+        <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--text);line-height:1.4;margin-bottom:8px">{{ joiningProtest.title }}</div>
+        <div v-if="joiningProtest.focal_point" style="font-size:13.5px;color:var(--text2);margin-bottom:8px">
           <strong>{{ $t('detail.directedAt') }}</strong> {{ joiningProtest.focal_point }}
         </div>
-        <div v-if="joiningProtest.desc" style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:6px">{{ joiningProtest.desc }}</div>
-        <div v-if="joiningProtest.demands" style="font-size:11px;color:var(--text);line-height:1.6">
-          <span style="color:var(--accent3);font-weight:700">⚡ {{ $t('detail.whatWeDemand') }}</span><br>{{ joiningProtest.demands }}
+        <div v-if="joiningProtest.desc" style="font-size:13.5px;color:var(--text2);line-height:1.65;margin-bottom:8px">{{ joiningProtest.desc }}</div>
+        <div v-if="joiningProtest.demands" style="font-size:13.5px;color:var(--text);line-height:1.65">
+          <span style="color:var(--accent3);font-weight:700">{{ $t('detail.whatWeDemand') }}</span><br>{{ joiningProtest.demands }}
         </div>
       </div>
 

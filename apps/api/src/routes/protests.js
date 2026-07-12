@@ -699,8 +699,15 @@ export default async function protestRoutes(app) {
 
     // Generate a single-use GPS update token — auditor requirement:
     // nullifier must never travel to the client; use a separate token instead.
+    // Issued for BOTH local and regional scopes: territorial verification
+    // applies to any convocatoria with a declared OSM territory.
+    // (Bug fixed July 2026: token was local-only, which made the entire
+    // regional reinforcement flow unreachable — the button appeared, GPS was
+    // requested, but no PATCH could ever be sent. Third bug of the same
+    // 'local-only' family, after the button visibility and the reverse-geocode
+    // zoom; full chain now audited end to end.)
     let gps_update_token = null;
-    if (protest.scope === 'local') {
+    if (protest.scope === 'local' || protest.scope === 'regional') {
       const { randomUUID } = await import('crypto');
       gps_update_token = randomUUID();
       await supabase.from('gps_update_tokens').insert({

@@ -101,6 +101,7 @@ async function reforzarGpsLocal() {
       });
       // Token is single-use — remove from sessionStorage after sending
       sessionStorage.removeItem('vc_gps_update_token');
+      localStorage.removeItem('vc_gps_reinforce');
     }
   } catch { /* silencioso */ } finally {
     reforzandoGps.value = false;
@@ -195,9 +196,20 @@ const target = lastId
    ip_pais:    localStorage.getItem('vc_geo_pais') || device.ipCountryName || null,
    ip_region:  localStorage.getItem('vc_geo_region') || device.ipRegion || null,
   });
-  // Store GPS update token for post-adhesion GPS reinforcement (local scope only)
+  // Store GPS update token for post-adhesion GPS reinforcement.
+  // sessionStorage kept for the button on this screen; localStorage record
+  // (Decision July 2026) honors the token's real 24h TTL so the user can
+  // reinforce later from DetailScreen — e.g. join from home, reinforce from
+  // the neighborhood. Random single-use UUID, no personal data; removed on
+  // use or expiry.
   if (joinRes?.gps_update_token) {
     sessionStorage.setItem('vc_gps_update_token', joinRes.gps_update_token);
+    localStorage.setItem('vc_gps_reinforce', JSON.stringify({
+      token:     joinRes.gps_update_token,
+      protestId: String(target.id),
+      scope:     target.scope,
+      expiresAt: Date.now() + 24 * 3600 * 1000,
+    }));
   }
 });
     } catch (e) {

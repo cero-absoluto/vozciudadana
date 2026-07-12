@@ -159,6 +159,31 @@
       <!-- Refuerzo territorial: re-entrada mientras el token de 24h siga vivo.
            Una sola tarjeta, sin repetición: desaparece al usarse o caducar.
            Copy de impacto (qué gana el informe), nunca de culpa. -->
+
+      <!-- Interstitial GPS pre-adhesión (convocatorias territoriales) -->
+      <teleport to="body">
+        <div v-if="showGpsOverlay"
+          style="position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:1000;display:flex;align-items:center;justify-content:center;padding:22px"
+          @click.self="gpsOverlaySkip">
+          <div style="max-width:400px;width:100%;background:var(--bg2);border:.5px solid rgba(76,200,255,.35);border-radius:var(--r2);padding:22px 20px">
+            <div style="font-size:28px;text-align:center;margin-bottom:10px">📍</div>
+            <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--text);text-align:center;line-height:1.4;margin-bottom:10px">
+              {{ $t('detail.gpsPromptTitle', { territorio: reinforceTerritorio }) }}
+            </div>
+            <div style="font-size:13.5px;color:var(--text2);line-height:1.65;text-align:center;margin-bottom:16px">
+              {{ $t('detail.gpsPromptBody') }}
+            </div>
+            <button @click="gpsOverlayActivate" :disabled="gpsOverlayBusy"
+              style="width:100%;padding:13px;background:rgba(76,200,255,.14);border:.5px solid #4CC8FF;border-radius:var(--r);color:#4CC8FF;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">
+              {{ gpsOverlayBusy ? '...' : $t('detail.gpsPromptYes') }}
+            </button>
+            <button @click="gpsOverlaySkip"
+              style="width:100%;padding:12px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:13px;cursor:pointer">
+              {{ $t('detail.gpsPromptSkip') }}
+            </button>
+          </div>
+        </div>
+      </teleport>
       <div v-if="reinforceAvailable && !reinforceDone"
         style="width:100%;margin-top:8px;padding:12px;background:rgba(76,200,255,.06);border:.5px solid rgba(76,200,255,.3);border-radius:var(--r2)">
         <div style="font-size:13px;font-weight:700;color:#4CC8FF;margin-bottom:5px">📍 {{ $t('detail.reforzarTitle') }}</div>
@@ -357,6 +382,43 @@ const joinLabel = computed(() => {
 
 function onJoin() {
   if (!cj.value.ok) return;
+  // GPS interstitial for territorial convocatorias (Decision July 2026):
+  // ask ONCE at the moment of joining — motivation peak, user gesture
+  // available for the browser prompt — instead of relying only on the
+  // fragile post-adhesion token path. Optionality is explicit: both
+  // buttons proceed to join; "skip" is remembered per-protest so the
+  // overlay never nags. If granted, coordinates travel with the adhesion
+  // itself (VerifyScreen payload falls back to the device store).
+  const territorial = protest.value.scope === 'local'
+    || (protest.value.scope === 'regional' && !protest.value.dominio_email);
+  if (territorial && !device.gpsReady
+      && !sessionStorage.getItem('vc_gps_prompted_' + protest.value.id)) {
+    showGpsOverlay.value = true;
+    return;
+  }
+  proceedJoin();
+}
+
+const showGpsOverlay = ref(false);
+const gpsOverlayBusy = ref(false);
+
+async function gpsOverlayActivate() {
+  if (gpsOverlayBusy.value) return;
+  gpsOverlayBusy.value = true;
+  try { await device.requestGps(); } catch { /* denegado — seguimos igual */ }
+  gpsOverlayBusy.value = false;
+  sessionStorage.setItem('vc_gps_prompted_' + protest.value.id, '1');
+  showGpsOverlay.value = false;
+  proceedJoin();
+}
+
+function gpsOverlaySkip() {
+  sessionStorage.setItem('vc_gps_prompted_' + protest.value.id, '1');
+  showGpsOverlay.value = false;
+  proceedJoin();
+}
+
+function proceedJoin() {
   if (protest.value.scope === 'regional' && protest.value.dominio_email) {
     if (protest.value.requiere_censo) {
       sessionStorage.setItem('vc_group_id', sessionStorage.getItem('vc_group_id') || '');

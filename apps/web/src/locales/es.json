@@ -338,7 +338,13 @@
     "closesOn": "Cierra el",
     "directedAt": "Dirigido a",
     "typeOfAbuse": "Tipo de abuso",
-    "source": "Fuente"
+    "source": "Fuente",
+    "reforzarTitle": "Refuerza tu participación con tu ubicación",
+    "reforzarBody": "Tu adhesión ya cuenta. Si estás en {territorio} ahora mismo, tu ubicación la convierte en la evidencia de más peso del informe público: «GPS confirmado dentro del territorio». Disponible durante 24 h desde tu adhesión.",
+    "reforzarBtn": "📍 Reforzar mi participación",
+    "reforzarPrivacy": "Tus coordenadas no se almacenan — solo la zona administrativa derivada.",
+    "reforzarDone": "Participación reforzada — apareces como verificación territorial en el informe.",
+    "reforzarToast": "📍 Ubicación verificada. Gracias por dar peso al informe."
   },
   "verify": {
     "spinVerifying": "Verificando tu participación...",

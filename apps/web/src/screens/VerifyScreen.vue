@@ -172,6 +172,20 @@ function urlBase64ToUint8Array(base64String) {
 
 onMounted(async () => {
   await protests.loadProtests();
+
+  // Recuperar token GPS del localStorage si la página se recargó
+  // (sessionStorage se borra al recargar, pero localStorage persiste 24h)
+  try {
+    const rec = JSON.parse(localStorage.getItem('vc_gps_reinforce') || 'null');
+    if (rec?.token && (!rec.expiresAt || Date.now() <= rec.expiresAt)) {
+      gpsUpdateToken.value = true;
+      // Restaurar también en sessionStorage para que reforzarGpsLocal lo encuentre
+      sessionStorage.setItem('vc_gps_update_token', rec.token);
+      sessionStorage.setItem('vc_last_joined', rec.protestId);
+      isLocalProtest.value = rec.scope === 'local' || rec.scope === 'regional';
+    }
+  } catch { /* silencioso */ }
+
   // Limpiar GPS después de usarlo
   setTimeout(() => {
     localStorage.removeItem('vc_gps_lat');

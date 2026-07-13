@@ -186,17 +186,6 @@ const target = lastId
   receiptHash.value = h;
   success.value = true;
 
-  // Check if this is a local or regional protest to show GPS reinforce button
-  // (Bug fixed July 2026: only scope==='local' showed the button — on regional
-  // convocatorias, where territorial evidence matters just as much for the
-  // public report, users had no way to reinforce with GPS.)
-  const joinedProtest = protests.protests.find(p => String(p.id) === sessionStorage.getItem('vc_last_joined'));
-  if (joinedProtest?.scope === 'local' || joinedProtest?.scope === 'regional') {
-
-      || joinedProtest.convocatoria_region
-      || (joinedProtest.scope === 'regional' ? 'la región' : 'el municipio');
-  }
-
   ui.showToast(t('verify.toast'));
   setTimeout(() => ui.revealInstallBanner(), 1500);
 });

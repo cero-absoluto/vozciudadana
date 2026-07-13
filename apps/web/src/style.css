@@ -46,25 +46,31 @@ a:hover{opacity:.8}
   /* Detail screen wider */
   #s-detail{max-width:1100px;margin:0 auto;border-left:1px solid var(--border);border-right:1px solid var(--border)}
   #s-detail .detail-map{display:none}
-  #s-detail .d-scroll{overflow-y:visible;flex:none}
+  #s-detail .d-scroll{overflow-y:visible;flex:none;padding:20px 28px}
   #s-detail .join-footer{flex-shrink:1;position:static;border-top:none;padding-top:0}
   #s-detail{overflow-y:auto}
-  #s-detail .d-title{font-size:26px}
-  #s-detail .sc-n{font-size:32px}
-  #s-detail .sc-l{font-size:13px;color:var(--text2);letter-spacing:.5px}
-  #s-detail .sec-lbl{font-size:15px}
-  #s-detail .sec-sub{font-size:13px}
-  #s-detail .d-desc{font-size:15px;line-height:1.7;color:var(--text)}
-  #s-detail .block-title{font-size:13px;color:var(--text2)}
-  #s-detail .gv-label{font-size:13px}
-  #s-detail .gv-val{font-size:13px}
-  #s-detail .btn-primary{font-size:16px;padding:16px}
-  #s-detail .sec-ico{width:32px;height:32px;font-size:16px}
-  #s-detail .risk-info{font-size:13px!important}
-  #s-detail [style*="font-size:9px"]{font-size:12px!important;color:var(--text2)!important}
-  #s-detail [style*="font-size:11px"]{font-size:13px!important}
-  #s-detail [style*="font-size:12px"]{font-size:14px!important}
-  #s-detail [style*="font-size:10px"]{font-size:12px!important}
+  #s-detail .d-title{font-size:30px;line-height:1.25}
+  #s-detail .d-loc{font-size:14px!important}
+  #s-detail .sc-n{font-size:36px}
+  #s-detail .sc-l{font-size:15px;color:var(--text2);letter-spacing:.5px}
+  #s-detail .sec-lbl{font-size:17px}
+  #s-detail .sec-sub{font-size:15px}
+  #s-detail .d-desc{font-size:17px;line-height:1.8;color:var(--text)}
+  #s-detail .block-title{font-size:15px;color:var(--text2);letter-spacing:.5px}
+  #s-detail .block{padding:14px 16px;margin-bottom:12px}
+  #s-detail .gv-label{font-size:15px}
+  #s-detail .gv-val{font-size:15px}
+  #s-detail .btn-primary{font-size:18px;padding:18px}
+  #s-detail .sec-ico{width:36px;height:36px;font-size:18px}
+  #s-detail .risk-info{font-size:15px!important}
+  #s-detail [style*="font-size:9px"]{font-size:15px!important;color:var(--text2)!important}
+  #s-detail [style*="font-size:10px"]{font-size:15px!important}
+  #s-detail [style*="font-size:11px"]{font-size:15px!important}
+  #s-detail [style*="font-size:12px"]{font-size:16px!important}
+  #s-detail [style*="font-size:13px"]{font-size:17px!important}
+  #s-detail [style*="font-size:14px"]{font-size:17px!important}
+  #s-detail [style*="font-size:15px"]{font-size:17px!important}
+  #s-detail a[style*="font-size"]{font-size:15px!important;word-break:break-all}
   #s-informe .block-title{font-size:14px;letter-spacing:1.5px}
   #s-informe .sc-n{font-size:32px}
   #s-informe .sc-l{font-size:13px}

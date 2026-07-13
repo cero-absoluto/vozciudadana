@@ -168,6 +168,36 @@ onMounted(async () => {
   } catch {
     // Fallback
   }
+
+  // Para convocatorias local/regional: pedir GPS al entrar en la pantalla,
+  // antes de que el usuario introduzca su número — máximo contexto, mínima fricción.
+  const riskLevel = sessionStorage.getItem('vc_risk_level') || 'low';
+  const scope = sessionStorage.getItem('vc_protest_scope') || 'national';
+  if ((scope === 'regional' || scope === 'local') &&
+      (riskLevel === 'low' || riskLevel === 'med') &&
+      !device.gpsReady) {
+    // Pequeño delay para que la pantalla se renderice primero
+    await new Promise(r => setTimeout(r, 400));
+    const accepted = await new Promise(resolve => {
+      gpsResolve = resolve;
+      showGpsModal.value = true;
+    });
+    if (accepted) {
+      try {
+        const pos = await new Promise((resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject,
+            { enableHighAccuracy: true, timeout: 10000 })
+        );
+        ui.setGps(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+        localStorage.setItem('vc_gps_lat', pos.coords.latitude);
+        localStorage.setItem('vc_gps_lng', pos.coords.longitude);
+        localStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
+        localStorage.setItem('vc_gps_ts', Date.now());
+      } catch {
+        // Usuario denegó o sin señal — continúa sin GPS
+      }
+    }
+  }
 });
 
   // The pseudonymous identifier is computed server-side with HMAC after OTP
@@ -195,61 +225,11 @@ async function sendSMS() {
     }
   }
 
-  // GPS: if already obtained from homescreen strengthen button, use it directly
-  const riskLevel = sessionStorage.getItem('vc_risk_level') || 'low';
-  const scope = sessionStorage.getItem('vc_protest_scope') || 'national';
-
-  if (scope === 'national' && (riskLevel === 'low' || riskLevel === 'med')) {
-    if (device.gpsReady) {
-      // GPS already obtained from the Strengthen button on the home screen — use it
-      ui.setGps(device.gpsLat, device.gpsLng, device.gpsAccuracy);
-      localStorage.setItem('vc_gps_lat', device.gpsLat);
-      localStorage.setItem('vc_gps_lng', device.gpsLng);
-      localStorage.setItem('vc_gps_accuracy', device.gpsAccuracy);
-      localStorage.setItem('vc_gps_ts', Date.now());
-      localStorage.setItem('vc_geo_ciudad', device.gpsCity || '');
-      localStorage.setItem('vc_geo_region', device.gpsRegion || '');
-      localStorage.setItem('vc_geo_pais', device.gpsPais || '');
-    } else {
-      // GPS not yet obtained — show modal to ask
-      const accepted = await new Promise(resolve => {
-        gpsResolve = resolve;
-        showGpsModal.value = true;
-      });
-      if (accepted) {
-        try {
-          const pos = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 });
-          });
-          ui.setGps(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
-          localStorage.setItem('vc_gps_lat', pos.coords.latitude);
-          localStorage.setItem('vc_gps_lng', pos.coords.longitude);
-          localStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
-          localStorage.setItem('vc_gps_ts', Date.now());
-          try {
-            // Reverse geocode via backend proxy — never call Nominatim directly
-            // from the browser (would expose user's real IP to OpenStreetMap).
-            const API_BASE = import.meta.env.VITE_API_URL || 'https://api.voiceprotest.org';
-            const geoRes = await fetch(
-              `${API_BASE}/api/geocode?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`
-            );
-            const geoData = await geoRes.json();
-            const gpsCiudad = geoData.city    || null;
-            const gpsRegion = geoData.region  || null;
-            const gpsPais   = geoData.country || null;
-            localStorage.setItem('vc_geo_ciudad', gpsCiudad || '');
-            localStorage.setItem('vc_geo_region', gpsRegion || '');
-            localStorage.setItem('vc_geo_pais', gpsPais || '');
-          } catch { /* silencioso */ }
-        } catch (gpsErr) {
-          console.log('GPS error:', gpsErr);
-          ui.clearGps();
-        }
-      }
-    } // end else (GPS not ready)
-  } // end if national scope
-  // Esperar a que el GPS se guarde completamente
-    await new Promise(r => setTimeout(r, 500));
+  // GPS se solicita en onMounted para local/regional — aquí ya está disponible si el usuario aceptó
+  // Pequeña espera por si el GPS está procesándose todavía
+  if (device.gpsReady) {
+    await new Promise(r => setTimeout(r, 300));
+  }
   
   // Si el dispositivo ya está verificado, saltar OTP
   const existingDevice = await api.fetchDeviceLocks(device.getDeviceId());

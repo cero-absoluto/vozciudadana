@@ -36,10 +36,7 @@
           <label for="phone-in" class="sr-only">{{ $t('auth.phoneLabel') }}</label>
           <input id="phone-in" class="phone-in" type="tel" v-model="phone" :placeholder="$t('auth.phonePlaceholder')" maxlength="12" :aria-label="$t('auth.phoneLabel')">
         </div>
-        <div class="input-hint">{{ $t('auth.hashHint') }}</div>
-        <div class="hash-label">{{ $t('auth.hashLabel') }}</div>
-        <div class="hash-prev">{{ hashDisplay }}</div>
-        <button class="btn-primary" style="width:100%;margin-top:8px;position:sticky;bottom:8px" :disabled="phone.replace(/\D/g,'').length < 6 || sending" @click="sendSMS">
+        <button class="btn-primary" style="width:100%;margin-top:12px;position:sticky;bottom:8px" :disabled="phone.replace(/\D/g,'').length < 6 || sending" @click="sendSMS">
           {{ sending ? $t('auth.sending') : $t('auth.sendCode') }}
         </button>
       </div>
@@ -67,9 +64,8 @@
         <div style="background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r2);padding:24px;max-width:340px;width:100%">
           <div style="font-size:24px;text-align:center;margin-bottom:12px">📍</div>
           <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;margin-bottom:10px;text-align:center">{{ $t('auth.gpsTitle') }}</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:20px;text-align:center">
-            {{ $t('auth.gpsBody') }}<br><br>
-            <strong style="color:var(--accent2)">{{ $t('auth.gpsNote') }}</strong>
+          <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px;text-align:center">
+            {{ $t('auth.gpsNote') }}
           </div>
           <button class="btn-primary" style="width:100%;margin-bottom:8px" @click="aceptarGps">
             📍 {{ $t('auth.gpsAccept') }}
@@ -80,7 +76,7 @@
           </button>
         </div>
       </div>
-      <div class="anon-note" style="margin-top:10px">🛡️ {{ $t('auth.anonNote') }}</div>
+
     </div>
   </div>
 </template>

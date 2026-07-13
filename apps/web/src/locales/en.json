@@ -34,10 +34,10 @@
     "captchaOk": "Verified — you're human. Enter your number.",
     "captchaFail": "Could not verify reCAPTCHA. Continue if you're in development.",
     "captchaError": "Could not verify reCAPTCHA. Continue if you're in development.",
-    "gpsTitle": "Strengthen your participation",
+    "gpsTitle": "Local / regional convocation",
     "gpsBody": "To strengthen the credibility of your participation, we'll ask you to share your location. This adds a geographic signal supporting your country — it is not proof of location and has limits — and makes your participation harder to question.",
-    "gpsNote": "Exact coordinates are not stored. They are used temporarily to determine your city and region.",
-    "gpsAccept": "Strengthen my participation",
+    "gpsNote": "Using your location (GPS) is highly recommended. It increases the credibility of the report and confirms that you are participating from within the convocation territory. Exact coordinates are not stored.",
+    "gpsAccept": "📍 Enable location",
     "gpsSkip": "Continue without location",
     "gpsDecline": "Continue without location",
     "anonNote": "Your identity is not visible to other participants. Only a cryptographic hash of your phone number is retained.",
@@ -372,7 +372,8 @@
     "gpsLocalInfo": "This is a local event in {ciudad}. If you are in the municipality right now, strengthen your participation with your location — you will appear with local geographic verification evidence in the public report.",
     "gpsRegionalInfo": "This is a regional call in {region}. If you are in the region right now, strengthen your participation with your location — you will appear with geographic verification evidence in the public report.",
     "gpsError": "Your location could not be registered. Open the convocatoria and try again from there.",
-    "gpsLocalBtn": "Strengthen my participation"
+    "gpsLocalBtn": "Strengthen my participation",
+    "gpsBlocked": "GPS access is blocked in this browser. To strengthen your participation, open the app in normal browsing mode."
   },
   "about": {
     "heroTitle": "The tool. No tricks.",

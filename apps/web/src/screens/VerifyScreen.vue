@@ -9,11 +9,7 @@
     <div v-if="success" class="success-scr on">
       <div class="suc-ico">✓</div>
       <div class="suc-h">{{ $t('verify.successTitle') }}</div>
-      <div class="suc-p">{{ $t('verify.successBody') }}</div>
-      <div class="suc-hash">
-        <span style="color:var(--text3)">{{ $t('verify.receipt') }}</span><br>
-        <span>{{ receiptHash }}</span>
-      </div>
+
             <!-- Escalera de acción -->
       <div style="width:100%;margin-top:8px">
 
@@ -29,9 +25,7 @@
         </div>
 
         <!-- Peldaño 1 — Notificación -->
-        <div v-if="!notiActivada" style="font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:6px;padding:8px 10px;background:var(--bg2);border-radius:var(--r);border:.5px solid var(--border)">
-          {{ $t('verify.notiInfo') }}
-        </div>
+
         <button @click="activarNotificacion"
           style="width:100%;margin-bottom:10px;padding:12px;background:rgba(76,111,255,.12);border:.5px solid #4C6FFF;border-radius:var(--r);color:#4C6FFF;font-size:13px;font-weight:700;cursor:pointer">
           {{ notiActivada ? $t('verify.notiOn') : $t('verify.notiOff') }}

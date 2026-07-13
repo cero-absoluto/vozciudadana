@@ -731,9 +731,26 @@ export default async function protestRoutes(app) {
     // NOT from the device confidence score (which only measures signal quality).
     // The two must never be conflated by readers of the report.
     const isTerritorial = (protest.scope === 'local' || protest.scope === 'regional') && protest.convocatoria_osm_id != null;
-    const local_verified = isTerritorial
-      ? (adhesion_osm_id != null && adhesion_osm_id === protest.convocatoria_osm_id)
-      : null;
+
+    // local_verified: primary check is OSM ID match (most precise).
+    // Fallback: name match against convocatoria_ciudad_nombre — handles cases
+    // where Nominatim returns a different OSM object ID for the same territory
+    // depending on zoom level or object type (relation vs node vs way).
+    let local_verified = null;
+    if (isTerritorial && adhesion_osm_id != null) {
+      if (adhesion_osm_id === protest.convocatoria_osm_id) {
+        // Primary: exact OSM ID match
+        local_verified = true;
+      } else if (protest.convocatoria_ciudad_nombre && region) {
+        // Fallback: normalize and compare region name
+        const normalize = s => s?.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+        local_verified = normalize(region) === normalize(protest.convocatoria_ciudad_nombre);
+      } else {
+        local_verified = false;
+      }
+    } else if (isTerritorial) {
+      local_verified = false;
+    }
 
     return reply.code(201).send({
       receipt: data.id,
@@ -1054,11 +1071,19 @@ export default async function protestRoutes(app) {
     // 3. International participants (SIM from different country)
     let desglose_geografico_local = null;
     if ((protest.scope === 'local' || protest.scope === 'regional') && protest.convocatoria_osm_id) {
-      const gps_local = adhesions.filter(a =>
-        a.adhesion_osm_id && a.adhesion_osm_id === protest.convocatoria_osm_id
-      ).length;
+      // OSM ID match (primary) OR region name match (fallback for same-territory
+      // different-object cases where Nominatim returns a different ID at zoom=6)
+      const normalize = s => s?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+      const isLocalVerified = (a) => {
+        if (!a.gps_confirmed) return false;
+        if (a.adhesion_osm_id && a.adhesion_osm_id === protest.convocatoria_osm_id) return true;
+        if (protest.convocatoria_ciudad_nombre && a.region)
+          return normalize(a.region) === normalize(protest.convocatoria_ciudad_nombre);
+        return false;
+      };
+      const gps_local = adhesions.filter(isLocalVerified).length;
       const gps_nacional = adhesions.filter(a =>
-        a.gps_confirmed && a.adhesion_osm_id && a.adhesion_osm_id !== protest.convocatoria_osm_id
+        a.gps_confirmed && !isLocalVerified(a)
       ).length;
       // Country match by ISO code, never by localized name.
       // (Bug fixed July 2026: adhesion `pais` arrives in English from ipapi

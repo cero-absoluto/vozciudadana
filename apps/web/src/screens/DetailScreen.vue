@@ -5,7 +5,7 @@
       <button class="back" @click="$router.back()">{{ $t('detail.back') }}</button>
       <div class="d-title">{{ protest.title }}</div>
       <div class="d-loc">
-        <span class="scope-badge" :class="store.scopeBadge(protest).cls">{{ store.scopeBadge(protest).icon }} {{ store.scopeBadge(protest).label }}</span>
+        <span class="scope-badge" :class="store.scopeBadge(protest).cls">{{ store.scopeBadge(protest).icon }} {{ badgeLabel(protest) }}</span>
         <span style="font-size:12px;color:var(--text2)">📍 {{ localizedCountry(protest.country, locale.value) || protest.countryName }}</span>
       </div>
     </div>
@@ -171,8 +171,16 @@ import { useProtestsStore } from '@/stores/protests.js';
 import { useDeviceStore }   from '@/stores/device.js';
 import { useUiStore }       from '@/stores/ui.js';
 import { useI18n } from 'vue-i18n';
-import { localizedCountry } from '@/constants.js';
-import { fmt, fmtTime, inRegion } from '@/constants.js';
+import { localizedCountry, fmt, fmtTime, inRegion } from '@/constants.js';
+
+function badgeLabel(p) {
+  if (p.dominio_email)        return p.convocatoria_institucion || p.dominio_email;
+  if (p.scope === 'national') return localizedCountry(p.country, locale.value) || p.countryName || '';
+  if (p.scope === 'regional') return t('home.filterRegional').replace(/[^\w\s]/g,'').trim();
+  if (p.scope === 'local')    return p.convocatoria_ciudad_nombre || t('home.filterLocal').replace(/[^\w\s]/g,'').trim();
+  if (p.scope === 'global')   return t('home.filterGlobal').replace(/[^\w\s]/g,'').trim();
+  return store.scopeBadge(p).label;
+}
 
 function fmtCloseDate(endsAt) {
   if (!endsAt) return '';

@@ -37,11 +37,8 @@
 
       <!-- Sobre la convocatoria — visible por defecto -->
       <div class="block">
-        <div class="block-title" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center" @click="sobreOpen = !sobreOpen">
-          <span>{{ $t('detail.aboutThisCall') }}</span>
-          <span style="font-size:12px;color:var(--text2)">{{ sobreOpen ? '▲' : '▼' }}</span>
-        </div>
-        <div v-if="sobreOpen">
+        <div class="block-title">{{ $t('detail.aboutThisCall') }}</div>
+        <div>
           <div v-if="protest.focal_point" style="margin-bottom:8px;padding:8px 10px;background:rgba(124,111,255,.06);border:.5px solid var(--border2);border-radius:var(--r)">
             <div style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.3px;margin-bottom:3px">{{ $t('detail.directedAt') }}</div>
             <div style="font-size:15px;color:var(--text);font-weight:700">{{ protest.focal_point }}</div>
@@ -53,7 +50,7 @@
           </div>
           <div v-if="protest.tipo_abuso" style="margin-top:8px">
             <div style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.3px;margin-bottom:3px">{{ $t('detail.typeOfAbuse') }}</div>
-            <div style="font-size:14px;color:var(--text)">{{ protest.tipo_abuso }}</div>
+            <div style="font-size:14px;color:var(--text)">{{ tipoAbusoLabel }}</div>
           </div>
           <div v-if="protest.fuente_url" style="margin-top:8px">
             <div style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.3px;margin-bottom:3px">{{ $t('detail.source') }}</div>
@@ -155,51 +152,6 @@
           </button>
         </div>
       </div>
-
-      <!-- Refuerzo territorial: re-entrada mientras el token de 24h siga vivo.
-           Una sola tarjeta, sin repetición: desaparece al usarse o caducar.
-           Copy de impacto (qué gana el informe), nunca de culpa. -->
-
-      <!-- Interstitial GPS pre-adhesión (convocatorias territoriales) -->
-      <teleport to="body">
-        <div v-if="showGpsOverlay"
-          style="position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:1000;display:flex;align-items:center;justify-content:center;padding:22px"
-          @click.self="gpsOverlaySkip">
-          <div style="max-width:400px;width:100%;background:var(--bg2);border:.5px solid rgba(76,200,255,.35);border-radius:var(--r2);padding:22px 20px">
-            <div style="font-size:28px;text-align:center;margin-bottom:10px">📍</div>
-            <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--text);text-align:center;line-height:1.4;margin-bottom:10px">
-              {{ $t('detail.gpsPromptTitle', { territorio: reinforceTerritorio }) }}
-            </div>
-            <div style="font-size:13.5px;color:var(--text2);line-height:1.65;text-align:center;margin-bottom:16px">
-              {{ $t('detail.gpsPromptBody') }}
-            </div>
-            <button @click="gpsOverlayActivate" :disabled="gpsOverlayBusy"
-              style="width:100%;padding:13px;background:rgba(76,200,255,.14);border:.5px solid #4CC8FF;border-radius:var(--r);color:#4CC8FF;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">
-              {{ gpsOverlayBusy ? '...' : $t('detail.gpsPromptYes') }}
-            </button>
-            <button @click="gpsOverlaySkip"
-              style="width:100%;padding:12px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:13px;cursor:pointer">
-              {{ $t('detail.gpsPromptSkip') }}
-            </button>
-          </div>
-        </div>
-      </teleport>
-      <div v-if="reinforceAvailable && !reinforceDone"
-        style="width:100%;margin-top:8px;padding:12px;background:rgba(76,200,255,.06);border:.5px solid rgba(76,200,255,.3);border-radius:var(--r2)">
-        <div style="font-size:13px;font-weight:700;color:#4CC8FF;margin-bottom:5px">📍 {{ $t('detail.reforzarTitle') }}</div>
-        <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:8px">
-          {{ $t('detail.reforzarBody', { territorio: reinforceTerritorio }) }}
-        </div>
-        <button @click="reforzarDesdeDetalle" :disabled="reforzandoGps"
-          style="width:100%;padding:11px;background:rgba(76,200,255,.12);border:.5px solid #4CC8FF;border-radius:var(--r);color:#4CC8FF;font-size:13px;font-weight:700;cursor:pointer">
-          {{ reforzandoGps ? '...' : $t('detail.reforzarBtn') }}
-        </button>
-        <div style="font-size:10px;color:var(--text3);margin-top:6px;text-align:center">{{ $t('detail.reforzarPrivacy') }}</div>
-      </div>
-      <div v-if="reinforceDone"
-        style="width:100%;margin-top:8px;padding:10px 12px;background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.3);border-radius:var(--r);font-size:12px;color:var(--accent2);text-align:center">
-        ✓ {{ $t('detail.reforzarDone') }}
-      </div>
       <button v-if="protest.scope === 'regional' && protest.dominio_email && protest.requiere_censo && censoExiste"
         @click="router.push(`/grupo/${protest.id}`)"
         style="width:100%;margin-top:8px;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:12px;cursor:pointer">
@@ -243,74 +195,6 @@ const device   = useDeviceStore();
 const ui       = useUiStore();
 
 const protest = computed(() => store.protests.find(p => String(p.id) === route.params.id));
-
-// ── Refuerzo territorial post-adhesión (Decision July 2026) ──────────────────
-// The 24h single-use GPS token now persists in localStorage (see VerifyScreen)
-// so users can reinforce later — e.g. joining from home, reinforcing from the
-// neighborhood. The record is removed on use or expiry. The token is a random
-// UUID with no personal data; coordinates are never stored server-side.
-const reforzandoGps  = ref(false);
-const reinforceDone  = ref(false);
-const reinforceTick  = ref(0); // bump to re-evaluate after use
-
-function readReinforceRecord() {
-  try {
-    const raw = localStorage.getItem('vc_gps_reinforce');
-    if (!raw) return null;
-    const rec = JSON.parse(raw);
-    if (!rec?.token || !rec?.protestId) return null;
-    if (rec.expiresAt && Date.now() > rec.expiresAt) {
-      localStorage.removeItem('vc_gps_reinforce');
-      return null;
-    }
-    return rec;
-  } catch { return null; }
-}
-
-const reinforceAvailable = computed(() => {
-  reinforceTick.value; // dependency
-  if (!protest.value?.joined) return false;
-  if (!(protest.value.scope === 'local' || protest.value.scope === 'regional')) return false;
-  if (device.gpsReady && reinforceDone.value) return false;
-  const rec = readReinforceRecord();
-  return !!rec && String(rec.protestId) === String(protest.value.id);
-});
-
-const reinforceTerritorio = computed(() =>
-  protest.value?.convocatoria_ciudad_nombre
-  || protest.value?.convocatoria_region
-  || (protest.value?.scope === 'regional' ? 'la región' : 'el municipio'));
-
-async function reforzarDesdeDetalle() {
-  if (reforzandoGps.value) return;
-  reforzandoGps.value = true;
-  try {
-    await device.requestGps();
-    const rec = readReinforceRecord();
-    if (rec && device.gpsLat && device.gpsLng) {
-      const API_BASE = import.meta.env.VITE_API_URL || 'https://api.voiceprotest.org';
-      const res = await fetch(`${API_BASE}/api/protests/${rec.protestId}/adhesion`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          gps_update_token: rec.token,
-          gps_lat:          device.gpsLat,
-          gps_lng:          device.gpsLng,
-          gps_accuracy:     device.gpsAccuracy ?? null,
-        }),
-      });
-      if (res.ok) {
-        reinforceDone.value = true;
-        ui.showToast(t('detail.reforzarToast'));
-      }
-      // Single-use either way: remove record and legacy sessionStorage copy
-      localStorage.removeItem('vc_gps_reinforce');
-      sessionStorage.removeItem('vc_gps_update_token');
-      reinforceTick.value++;
-    }
-  } catch { /* usuario denegó GPS o fallo de red — la tarjeta permanece */ }
-  finally { reforzandoGps.value = false; }
-}
 const cj      = computed(() => protest.value ? store.canJoin(protest.value) : { ok: false });
 
 const grupoId = ref(null);
@@ -319,6 +203,31 @@ const velocidadHoy = ref(0);
 const tendenciaHoy = ref(0);
 const geoOpen = ref(false);
 const sobreOpen = ref(true);
+
+// Mapa completo de los 16 tipos de abuso
+const ABUSE_MAP = {
+  corruption:          () => t('create.abusoCorrupcion'),
+  influence_peddling:  () => t('create.abusoInfluencias'),
+  nepotism:            () => t('create.abusoNepotismo'),
+  illicit_enrichment:  () => t('create.abusoEnriquecimiento'),
+  procurement:         () => t('create.abusoContratacion'),
+  opacity:             () => t('create.abusoOpacidad'),
+  info_access:         () => t('create.abusoAccesoInfo'),
+  undue_delay:         () => t('create.abusoRetraso'),
+  discrimination:      () => t('create.abusoDiscriminacion'),
+  negligence:          () => t('create.abusoNegligencia'),
+  legal_breach:        () => t('create.abusoIncumplimiento'),
+  repression:          () => t('create.abusoRepresion'),
+  rights_violation:    () => t('create.abusoDerechos'),
+  excessive_force:     () => t('create.abusoFuerza'),
+  surveillance:        () => t('create.abusoVigilancia'),
+  other_public_abuse:  () => t('create.abusoOtro'),
+};
+const tipoAbusoLabel = computed(() => {
+  const tipo = protest.value?.tipo_abuso;
+  if (!tipo) return '—';
+  return ABUSE_MAP[tipo]?.() || tipo;
+});
 const donacionesInfo = computed(() => {
   if (!protest.value) return null;
   const saldo = protest.value.saldo_euros ?? 0;
@@ -382,43 +291,6 @@ const joinLabel = computed(() => {
 
 function onJoin() {
   if (!cj.value.ok) return;
-  // GPS interstitial for territorial convocatorias (Decision July 2026):
-  // ask ONCE at the moment of joining — motivation peak, user gesture
-  // available for the browser prompt — instead of relying only on the
-  // fragile post-adhesion token path. Optionality is explicit: both
-  // buttons proceed to join; "skip" is remembered per-protest so the
-  // overlay never nags. If granted, coordinates travel with the adhesion
-  // itself (VerifyScreen payload falls back to the device store).
-  const territorial = protest.value.scope === 'local'
-    || (protest.value.scope === 'regional' && !protest.value.dominio_email);
-  if (territorial && !device.gpsReady
-      && !sessionStorage.getItem('vc_gps_prompted_' + protest.value.id)) {
-    showGpsOverlay.value = true;
-    return;
-  }
-  proceedJoin();
-}
-
-const showGpsOverlay = ref(false);
-const gpsOverlayBusy = ref(false);
-
-async function gpsOverlayActivate() {
-  if (gpsOverlayBusy.value) return;
-  gpsOverlayBusy.value = true;
-  try { await device.requestGps(); } catch { /* denegado — seguimos igual */ }
-  gpsOverlayBusy.value = false;
-  sessionStorage.setItem('vc_gps_prompted_' + protest.value.id, '1');
-  showGpsOverlay.value = false;
-  proceedJoin();
-}
-
-function gpsOverlaySkip() {
-  sessionStorage.setItem('vc_gps_prompted_' + protest.value.id, '1');
-  showGpsOverlay.value = false;
-  proceedJoin();
-}
-
-function proceedJoin() {
   if (protest.value.scope === 'regional' && protest.value.dominio_email) {
     if (protest.value.requiere_censo) {
       sessionStorage.setItem('vc_group_id', sessionStorage.getItem('vc_group_id') || '');

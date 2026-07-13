@@ -22,12 +22,14 @@
           </div>
           <div class="pi-bar" :style="{ width: p.heat + '%', background: p.color }"></div>
           <div style="display:flex;align-items:center;gap:10px;margin-top:5px">
-            <div @click.stop="router.push(`/informe/${p.id}`)"
-              style="cursor:pointer;font-size:14px;opacity:.7" title="Ver informe público">📄</div>
             <div v-if="isBlocked(p)" style="font-size:14px">🔒</div>
             <div class="pi-count" style="font-size:13px">{{ fmt(p.count) }}</div>
             <div style="font-size:12px;color:var(--text2);font-weight:600">{{ fmtTime(p.timer) }}</div>
             <div v-if="p.ends_at" style="font-size:11px;color:var(--text3);margin-top:2px">{{ fmtCloseDate(p.ends_at) }}</div>
+          </div>
+          <div @click.stop="router.push(`/informe/${p.id}`)"
+            style="margin-top:8px;display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:var(--accent);cursor:pointer;border:.5px solid var(--accent);border-radius:20px;padding:4px 12px;opacity:.9">
+            📊 {{ $t('informe.headerLabel') }} →
           </div>
         </div>
       </div>

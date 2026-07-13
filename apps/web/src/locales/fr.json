@@ -34,10 +34,10 @@
     "captchaOk": "Vérifié — vous êtes humain. Saisissez votre numéro.",
     "captchaFail": "Impossible de vérifier reCAPTCHA. Continuez si vous êtes en développement.",
     "captchaError": "Impossible de vérifier reCAPTCHA. Continuez si vous êtes en développement.",
-    "gpsTitle": "Renforcez votre participation",
+    "gpsTitle": "Convocation locale / régionale",
     "gpsBody": "Pour renforcer la crédibilité de votre participation, nous vous demanderons de partager votre localisation. Cela ajoute un signal géographique qui corrobore votre pays — ce n'est pas une preuve de localisation et a des limites — et rend votre participation plus difficile à contester.",
-    "gpsNote": "Les coordonnées exactes ne sont pas conservées. Elles sont utilisées temporairement pour déterminer votre ville et région.",
-    "gpsAccept": "Renforcer ma participation",
+    "gpsNote": "L'utilisation de la localisation (GPS) est fortement recommandée. Elle augmente la crédibilité du rapport et confirme que vous participez depuis le territoire de la convocation. Les coordonnées exactes ne sont pas conservées.",
+    "gpsAccept": "📍 Activer la localisation",
     "gpsSkip": "Continuer sans localisation",
     "gpsDecline": "Continuer sans localisation",
     "anonNote": "Votre identité n'est pas visible par les autres participants. Seul un hash cryptographique de votre numéro de téléphone est conservé.",
@@ -372,7 +372,8 @@
     "gpsLocalInfo": "Il s'agit d'un événement local à {ciudad}. Si vous êtes dans la municipalité maintenant, renforcez votre participation avec votre localisation.",
     "gpsRegionalInfo": "Il s'agit d'une convocation régionale en {region}. Si vous êtes dans la région maintenant, renforcez votre participation avec votre localisation — vous apparaîtrez avec une preuve de vérification géographique dans le rapport public.",
     "gpsError": "Votre localisation n'a pas pu être enregistrée. Ouvrez la convocation et réessayez depuis cette page.",
-    "gpsLocalBtn": "Renforcer ma participation"
+    "gpsLocalBtn": "Renforcer ma participation",
+    "gpsBlocked": "Le GPS est bloqué dans ce navigateur. Pour renforcer votre participation, ouvrez l'application en mode normal (non privé)."
   },
   "about": {
     "heroTitle": "L'outil. Sans artifices.",

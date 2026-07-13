@@ -81,12 +81,15 @@ const filtroPais  = ref('');
 const filtroOrden = ref('fecha');
 
 const scopeBadge = p => {
+  // Para institucionales, mostrar el nombre de la institución si está disponible
+  if (p.scope === 'institutional' || p.dominio_email) {
+    return { cls: 'arch-badge badge-inst', icon: '🏢', label: p.convocatoria_institucion || t('archivo.filterInstitutional') };
+  }
   const badges = {
     national:      { cls: 'arch-badge badge-nat',  icon: '🏛️', label: t('archivo.filterNational') },
     regional:      { cls: 'arch-badge badge-reg',  icon: '🌐', label: t('archivo.filterRegional') },
     global:        { cls: 'arch-badge badge-glob', icon: '🌍', label: t('archivo.filterGlobal') },
     local:         { cls: 'arch-badge badge-reg',  icon: '📍', label: t('archivo.filterLocal') },
-    institutional: { cls: 'arch-badge badge-inst', icon: '🏢', label: t('archivo.filterInstitutional') },
   };
   return badges[p.scope] ?? { cls: 'arch-badge', icon: '📢', label: p.scope };
 };

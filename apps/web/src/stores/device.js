@@ -143,33 +143,50 @@ export const useDeviceStore = defineStore('device', () => {
   const gpsReady    = ref(false);
 
   async function requestGps() {
-    return new Promise((resolve) => {
-      if (!('geolocation' in navigator)) return resolve(false);
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          gpsLat.value      = pos.coords.latitude;
-          gpsLng.value      = pos.coords.longitude;
-          gpsAccuracy.value = pos.coords.accuracy;
-          // Reverse geocode via backend proxy — never call Nominatim directly
-          // from the browser (would expose user's real IP to OpenStreetMap).
-          try {
-            const API_BASE = import.meta.env.VITE_API_URL || 'https://api.voiceprotest.org';
-            const res = await fetch(
-              `${API_BASE}/api/geocode?lat=${gpsLat.value}&lon=${gpsLng.value}`
-            );
-            const geo = await res.json();
-            gpsCity.value   = geo.city   || null;
-            gpsRegion.value = geo.region || null;
-            gpsPais.value   = geo.country || null;
-            gpsCountryCode.value = geo.country_code || null;
-          } catch { /* silencioso */ }
-          gpsReady.value = true;
-          resolve(true);
-        },
-        () => resolve(false),
-        { enableHighAccuracy: true, timeout: 10000 }
+    if (!('geolocation' in navigator)) return false;
+
+    // Helper: wrap getCurrentPosition as a Promise
+    function getPos(opts) {
+      return new Promise((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, opts)
       );
-    });
+    }
+
+    let pos = null;
+
+    // Intento 1: alta precisión (GPS real) — hasta 10s
+    try {
+      pos = await getPos({ enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+    } catch {
+      // Intento 2: baja precisión (WiFi/red) — hasta 8s
+      // Útil cuando el GPS del dispositivo no está disponible (interior, WiFi only)
+      try {
+        pos = await getPos({ enableHighAccuracy: false, timeout: 8000, maximumAge: 30000 });
+      } catch {
+        return false; // Usuario denegó o sin señal — sin feedback, decisión suya
+      }
+    }
+
+    gpsLat.value      = pos.coords.latitude;
+    gpsLng.value      = pos.coords.longitude;
+    gpsAccuracy.value = pos.coords.accuracy;
+
+    // Reverse geocode via backend proxy — never call Nominatim directly
+    // from the browser (would expose user's real IP to OpenStreetMap).
+    try {
+      const API_BASE = import.meta.env.VITE_API_URL || 'https://api.voiceprotest.org';
+      const res = await fetch(
+        `${API_BASE}/api/geocode?lat=${gpsLat.value}&lon=${gpsLng.value}`
+      );
+      const geo = await res.json();
+      gpsCity.value        = geo.city         || null;
+      gpsRegion.value      = geo.region       || null;
+      gpsPais.value        = geo.country      || null;
+      gpsCountryCode.value = geo.country_code || null;
+    } catch { /* silencioso — las coordenadas ya están disponibles */ }
+
+    gpsReady.value = true;
+    return true;
   }
 
   return {

@@ -741,10 +741,11 @@ export default async function protestRoutes(app) {
       if (adhesion_osm_id === protest.convocatoria_osm_id) {
         // Primary: exact OSM ID match
         local_verified = true;
-      } else if (protest.convocatoria_ciudad_nombre && region) {
+      } else if (protest.convocatoria_ciudad_nombre && (region || ciudad)) {
         // Fallback: normalize and compare region name
         const normalize = s => s?.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-        local_verified = normalize(region) === normalize(protest.convocatoria_ciudad_nombre);
+        const territoryName = protest.scope === 'local' ? (ciudad || region) : region;
+        local_verified = normalize(territoryName) === normalize(protest.convocatoria_ciudad_nombre);
       } else {
         local_verified = false;
       }
@@ -1077,8 +1078,11 @@ export default async function protestRoutes(app) {
       const isLocalVerified = (a) => {
         if (!a.gps_confirmed) return false;
         if (a.adhesion_osm_id && a.adhesion_osm_id === protest.convocatoria_osm_id) return true;
-        if (protest.convocatoria_ciudad_nombre && a.region)
-          return normalize(a.region) === normalize(protest.convocatoria_ciudad_nombre);
+        if (protest.convocatoria_ciudad_nombre) {
+          // For local scope: compare city name; for regional: compare region name
+          const territoryName = protest.scope === 'local' ? (a.ciudad || a.region) : a.region;
+          if (territoryName) return normalize(territoryName) === normalize(protest.convocatoria_ciudad_nombre);
+        }
         return false;
       };
       const gps_local = adhesions.filter(isLocalVerified).length;

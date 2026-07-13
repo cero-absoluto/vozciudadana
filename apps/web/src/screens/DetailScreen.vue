@@ -35,7 +35,6 @@
 
       <!-- Sobre la convocatoria — visible por defecto -->
       <div class="block">
-        <div class="block-title">{{ $t('detail.aboutThisCall') }}</div>
         <div>
           <div v-if="protest.focal_point" style="margin-bottom:8px;padding:8px 10px;background:rgba(124,111,255,.06);border:.5px solid var(--border2);border-radius:var(--r)">
             <div style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.3px;margin-bottom:3px">{{ $t('detail.directedAt') }}</div>
@@ -46,10 +45,7 @@
             <div class="block-title" style="color:var(--accent3)">⚡ {{ $t('detail.whatWeDemand') }}</div>
             <div class="d-desc" style="color:var(--text);font-weight:500;line-height:1.9">{{ protest.demands }}</div>
           </div>
-          <div v-if="protest.tipo_abuso" style="margin-top:8px">
-            <div style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.3px;margin-bottom:3px">{{ $t('detail.typeOfAbuse') }}</div>
-            <div style="font-size:14px;color:var(--text)">{{ tipoAbusoLabel }}</div>
-          </div>
+
           <div v-if="protest.fuente_url" style="margin-top:8px">
             <div style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.3px;margin-bottom:3px">{{ $t('detail.source') }}</div>
             <a :href="protest.fuente_url" target="_blank" rel="noopener"
@@ -57,35 +53,7 @@
           </div>
         </div>
       </div>
-      <!-- Geo validation — colapsable. Hidden for institutional convocatorias,
-           which are verified by institutional email, not by SIM/GPS geography. -->
-      <div v-if="protest.scope !== 'global' && !protest.dominio_email" class="geo-validation">
-        <div class="gv-title" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center" @click="geoOpen = !geoOpen">
-          <span>{{ $t('detail.geoValidation') }}</span>
-          <span style="font-size:12px;color:var(--text2)">{{ geoOpen ? '▲' : '▼' }}</span>
-        </div>
-        <div v-if="geoOpen">
-          <div class="gv-row">
-            <div class="gv-dot" :style="{background: simOk ? 'var(--accent2)' : 'var(--accent3)'}"></div>
-            <div class="gv-label">{{ $t('detail.geoSim') }}</div>
-            <div class="gv-val" :class="simOk ? 'gv-ok' : 'gv-no'">
-              {{ simOk ? '✓ ' + device.simPrefix + ' (' + device.simName + ')' : $t('detail.geoDiff') }}
-            </div>
-          </div>
-          <div class="gv-row">
-            <div class="gv-dot" :style="{background: simOk ? 'var(--accent2)' : 'var(--accent3)'}"></div>
-            <div class="gv-label">{{ $t('detail.geoIp') }}</div>
-            <div class="gv-val" :class="simOk ? 'gv-ok' : 'gv-no'">
-              {{ simOk ? '✓ ' + (device.gpsReady && device.gpsCity ? device.gpsCity : device.ipCity) : $t('detail.geoDiff') }}
-            </div>
-          </div>
-          <div class="conf-bar"><div class="conf-fill" :style="{ width: device.confidence + '%', background: confFillColor }"></div></div>
-          <div style="display:flex;justify-content:space-between;margin-top:3px">
-            <div style="font-size:12px;color:var(--text2)">{{ $t('detail.geoConfidence') }}</div>
-            <div style="font-size:12px;font-weight:600" :style="{color: confFillColor}">{{ device.confidence }}%</div>
-          </div>
-        </div>
-      </div>
+
 
       <!-- Lock / geo message -->
       <div v-if="!cj.ok && !cj.joined">
@@ -97,18 +65,10 @@
 
     <!-- Join footer -->
     <div class="join-footer">
-      <!-- Risk info -->
-      <div v-if="!protest.joined && cj.ok" class="risk-info" style="margin-bottom:8px;padding:10px 12px;border-radius:var(--r);font-size:13px;line-height:1.6"
-        :style="{
-          background: protest.risk_level === 'high' || protest.risk_level === 'critical' ? 'rgba(255,107,107,.06)' : protest.scope === 'global' ? 'rgba(124,111,255,.06)' : 'rgba(76,255,164,.06)',
-          border: protest.risk_level === 'high' || protest.risk_level === 'critical' ? '.5px solid rgba(255,107,107,.2)' : protest.scope === 'global' ? '.5px solid var(--border2)' : '.5px solid rgba(76,255,164,.2)',
-          color: protest.risk_level === 'high' || protest.risk_level === 'critical' ? 'var(--accent3)' : protest.scope === 'global' ? 'var(--text2)' : 'var(--accent2)'
-        }">
-        <span v-if="protest.risk_level === 'high' || protest.risk_level === 'critical'">{{ $t('detail.riskHigh') }}</span>
-        <span v-else-if="protest.scope === 'global'">{{ $t('detail.riskGlobal') }}</span>
-        <span v-else-if="protest.scope === 'regional' && protest.dominio_email && protest.requiere_censo">{{ $t('detail.riskCensus') }}</span>
-        <span v-else-if="protest.scope === 'regional' && protest.dominio_email">{{ $t('detail.riskEmail') }}</span>
-        <span v-else>{{ $t('detail.riskNormal') }}</span>
+      <!-- Risk info — solo para alto riesgo -->
+      <div v-if="!protest.joined && cj.ok && (protest.risk_level === 'high' || protest.risk_level === 'critical')"
+        class="risk-info" style="margin-bottom:8px;padding:10px 12px;border-radius:var(--r);font-size:13px;line-height:1.6;background:rgba(255,107,107,.06);border:.5px solid rgba(255,107,107,.2);color:var(--accent3)">
+        {{ $t('detail.riskHigh') }}
       </div>
       <!-- Financiacion ciudadana -->
       <div v-if="donacionesInfo" style="width:100%;margin-bottom:10px;padding:12px;background:rgba(255,255,255,.04);border:.5px solid var(--border2);border-radius:var(--r2)">

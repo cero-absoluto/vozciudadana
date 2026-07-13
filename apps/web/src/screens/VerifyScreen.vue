@@ -13,17 +13,6 @@
             <!-- Escalera de acción -->
       <div style="width:100%;margin-top:8px">
 
-        <!-- Peldaño 0 — GPS territorial (convocatorias locales y regionales, si no tiene GPS aún) -->
-        <div v-if="isLocalProtest && gpsUpdateToken" style="margin-bottom:10px">
-          <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:6px;padding:8px 10px;background:rgba(76,200,255,.06);border-radius:var(--r);border:.5px solid rgba(76,200,255,.25)">
-            {{ joinedScope === 'regional' ? $t('verify.gpsRegionalInfo', { region: localCiudad }) : $t('verify.gpsLocalInfo', { ciudad: localCiudad }) }}
-          </div>
-          <button @click="reforzarGpsLocal"
-            style="width:100%;margin-bottom:10px;padding:12px;background:rgba(76,200,255,.12);border:.5px solid #4CC8FF;border-radius:var(--r);color:#4CC8FF;font-size:13px;font-weight:700;cursor:pointer">
-            📍 {{ reforzandoGps ? '...' : $t('verify.gpsLocalBtn') }}
-          </button>
-        </div>
-
         <!-- Peldaño 1 — Notificación -->
 
         <button @click="activarNotificacion"
@@ -68,60 +57,7 @@ const receiptHash = ref('');
 const notiActivada = ref(false);
 
 // Local scope GPS reinforce
-const isLocalProtest = ref(false);
-const gpsUpdateToken = ref(false);
-const joinedScope = ref(null); // 'local' | 'regional' — picks the right reinforce copy
-const localCiudad    = ref('');
-const reforzandoGps  = ref(false);
 
-async function reforzarGpsLocal() {
-  if (reforzandoGps.value) return;
-  reforzandoGps.value = true;
-  try {
-    await device.requestGps();
-    // Send GPS coordinates to backend using the single-use update token.
-    // Read from sessionStorage or the persistent 24h record (Decision July 2026).
-    let token    = sessionStorage.getItem('vc_gps_update_token');
-    let protestId = sessionStorage.getItem('vc_last_joined');
-    if (!token) {
-      try {
-        const rec = JSON.parse(localStorage.getItem('vc_gps_reinforce') || 'null');
-        if (rec?.token && (!rec.expiresAt || Date.now() <= rec.expiresAt)) {
-          token = rec.token;
-          protestId = protestId || rec.protestId;
-        }
-      } catch { /* ignore */ }
-    }
-    if (token && protestId && device.gpsLat && device.gpsLng) {
-      const API_BASE = import.meta.env.VITE_API_URL || 'https://api.voiceprotest.org';
-      const res = await fetch(`${API_BASE}/api/protests/${protestId}/adhesion`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          gps_update_token: token,
-          gps_lat:          device.gpsLat,
-          gps_lng:          device.gpsLng,
-          gps_accuracy:     device.gpsAccuracy ?? null,
-        }),
-      });
-      // Honest feedback: only confirm on server OK. Previously the block
-      // simply disappeared when GPS permission was granted, telling the user
-      // "done" even when no PATCH had been sent (false positive).
-      if (res.ok) ui.showToast(t('detail.reforzarToast'));
-      else        ui.showToast(t('verify.gpsError'));
-      // Token is single-use — remove from both storages after the attempt
-      sessionStorage.removeItem('vc_gps_update_token');
-      localStorage.removeItem('vc_gps_reinforce');
-      gpsUpdateToken.value = false;
-    } else if (!token) {
-      // No token available (e.g. adhesion predates token issuance): never
-      // pretend success.
-      ui.showToast(t('verify.gpsError'));
-    }
-  } catch { /* usuario denegó GPS — sin toast, decisión suya */ } finally {
-    reforzandoGps.value = false;
-  }
-}
 
 async function activarNotificacion() {
   if (notiActivada.value) return;
@@ -173,19 +109,6 @@ function urlBase64ToUint8Array(base64String) {
 onMounted(async () => {
   await protests.loadProtests();
 
-  // Recuperar token GPS del localStorage si la página se recargó
-  // (sessionStorage se borra al recargar, pero localStorage persiste 24h)
-  try {
-    const rec = JSON.parse(localStorage.getItem('vc_gps_reinforce') || 'null');
-    if (rec?.token && (!rec.expiresAt || Date.now() <= rec.expiresAt)) {
-      gpsUpdateToken.value = true;
-      // Restaurar también en sessionStorage para que reforzarGpsLocal lo encuentre
-      sessionStorage.setItem('vc_gps_update_token', rec.token);
-      sessionStorage.setItem('vc_last_joined', rec.protestId);
-      isLocalProtest.value = rec.scope === 'local' || rec.scope === 'regional';
-    }
-  } catch { /* silencioso */ }
-
   // Limpiar GPS después de usarlo
   setTimeout(() => {
     localStorage.removeItem('vc_gps_lat');
@@ -231,16 +154,7 @@ const target = lastId
   // reinforce later from DetailScreen — e.g. join from home, reinforce from
   // the neighborhood. Random single-use UUID, no personal data; removed on
   // use or expiry.
-  if (joinRes?.gps_update_token) {
-    gpsUpdateToken.value = true;
-    sessionStorage.setItem('vc_gps_update_token', joinRes.gps_update_token);
-    localStorage.setItem('vc_gps_reinforce', JSON.stringify({
-      token:     joinRes.gps_update_token,
-      protestId: String(target.id),
-      scope:     target.scope,
-      expiresAt: Date.now() + 24 * 3600 * 1000,
-    }));
-  }
+
 });
     } catch (e) {
       if (e.code === 'NATIONAL_ONLY') {
@@ -278,9 +192,7 @@ const target = lastId
   // public report, users had no way to reinforce with GPS.)
   const joinedProtest = protests.protests.find(p => String(p.id) === sessionStorage.getItem('vc_last_joined'));
   if (joinedProtest?.scope === 'local' || joinedProtest?.scope === 'regional') {
-    isLocalProtest.value = true;
-    joinedScope.value = joinedProtest.scope;
-    localCiudad.value = joinedProtest.convocatoria_ciudad_nombre
+
       || joinedProtest.convocatoria_region
       || (joinedProtest.scope === 'regional' ? 'la región' : 'el municipio');
   }

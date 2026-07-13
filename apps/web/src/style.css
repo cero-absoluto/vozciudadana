@@ -34,7 +34,7 @@ a:hover{opacity:.8}
   }
   /* Right column: panel */
   #home-right{
-    width:400px;
+    width:320px;
     flex-shrink:0;
     display:flex;
     flex-direction:column;
@@ -98,19 +98,19 @@ a:hover{opacity:.8}
   /* HOME pantalla principal */
   .dev-country{font-size:20px}
   .dev-conf{font-size:17px}
-  .pill{font-size:17px !important;padding:9px 18px !important}
+  .pill{font-size:13px !important;padding:6px 12px !important}
   /* home: textos más grandes en PC (franja 3 pasos + drop your pin) */
-  .steps-strip .ss-tx b{font-size:18px !important}
-  .steps-strip .ss-tx span{font-size:15px !important}
-  .steps-strip .ss-ic svg{width:31px !important;height:31px !important}
+  .steps-strip .ss-tx b{font-size:15px !important}
+  .steps-strip .ss-tx span{font-size:12px !important}
+  .steps-strip .ss-ic svg{width:26px !important;height:26px !important}
   .steps-strip .ss-num{width:20px !important;height:20px !important;font-size:12px !important;top:-9px;left:-13px}
-  .steps-strip{align-items:center !important;padding:8px 8px !important}
-  .steps-strip .ss-item{flex:0 1 auto !important;flex-direction:row !important;align-items:center !important;text-align:left !important;gap:11px !important}
+  .steps-strip{align-items:center !important;padding:6px 12px !important}
+  .steps-strip .ss-item{flex:0 1 auto !important;flex-direction:row !important;align-items:center !important;text-align:left !important;gap:8px !important}
   .steps-strip .ss-arr{margin-top:0 !important;align-self:center !important}
-  .steps-strip .ss-tx b,.steps-strip .ss-tx span{white-space:nowrap}
+  .steps-strip .ss-tx b,.steps-strip .ss-tx span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
   .device-bar div[style*="font-size:13px"]{font-size:16px !important}
   .ptab{font-size:13px;padding:10px 8px}
-  .pi-title{font-size:16px;font-weight:600;color:var(--text)}
+  .pi-title{font-size:15px;font-weight:600;color:var(--text)}
   .pi-meta{font-size:12px;color:var(--text2)}
   .panel-info{font-size:13px!important;color:var(--text2)!important;line-height:1.6}
   .pi-count{font-size:18px;font-weight:700}

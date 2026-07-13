@@ -68,7 +68,11 @@ const isBlocked  = p => { const r = cj(p); return !r.ok && !r.joined; };
 // National badge shows the country — localise it to the current UI language
 // instead of the fixed string stored at creation. Other badges keep their label.
 function badgeLabel(p) {
-  if (p.scope === 'national' && !p.dominio_email && p.country) return localizedCountry(p.country, locale.value);
+  if (p.dominio_email)        return p.convocatoria_institucion || p.dominio_email || t('home.filterInstitutional').replace(/[^\w\s]/g,'').trim();
+  if (p.scope === 'national') return localizedCountry(p.country, locale.value) || p.countryName || '';
+  if (p.scope === 'regional') return t('home.filterRegional').replace(/[^\w\s]/g,'').trim();
+  if (p.scope === 'local')    return p.convocatoria_ciudad_nombre || t('home.filterLocal').replace(/[^\w\s]/g,'').trim();
+  if (p.scope === 'global')   return t('home.filterGlobal').replace(/[^\w\s]/g,'').trim();
   return store.scopeBadge(p).label;
 }
 

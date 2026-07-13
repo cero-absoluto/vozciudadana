@@ -51,35 +51,20 @@ export const useDeviceStore = defineStore('device', () => {
         // NOTE: simCountry must NOT be overwritten with IP country.
         // simCountry reflects the phone prefix chosen by the user.
         // IP country is stored separately in ipCountry for confidence calculation.
-        // Actualizar nombre y prefijo según país detectado
-        const countryNames = {
-          'MT': 'Malta', 'ES': 'España', 'NL': 'Países Bajos', 'GB': 'Reino Unido',
-          'FR': 'Francia', 'DE': 'Alemania', 'IT': 'Italia', 'PT': 'Portugal',
-          'BE': 'Bélgica', 'US': 'Estados Unidos', 'MX': 'México', 'AR': 'Argentina',
-          'BR': 'Brasil', 'CO': 'Colombia', 'CL': 'Chile', 'PE': 'Perú',
-          'UY': 'Uruguay', 'VE': 'Venezuela', 'JP': 'Japón', 'CN': 'China',
-          'AU': 'Australia', 'CA': 'Canadá', 'SE': 'Suecia', 'NO': 'Noruega',
-          'DK': 'Dinamarca', 'FI': 'Finlandia', 'PL': 'Polonia', 'UA': 'Ucrania',
-          'RU': 'Rusia', 'TR': 'Turquía', 'ZA': 'Sudáfrica', 'IN': 'India',
-        };
-        const countryPrefixes = {
-          'MT': '+356', 'ES': '+34', 'NL': '+31', 'GB': '+44',
-          'FR': '+33', 'DE': '+49', 'IT': '+39', 'PT': '+351',
-          'BE': '+32', 'US': '+1', 'MX': '+52', 'AR': '+54',
-          'BR': '+55', 'CO': '+57', 'CL': '+56', 'PE': '+51',
-          'UY': '+598', 'VE': '+58', 'JP': '+81', 'CN': '+86',
-          'AU': '+61', 'CA': '+1', 'SE': '+46', 'NO': '+47',
-          'DK': '+45', 'FI': '+358', 'PL': '+48', 'UA': '+380',
-          'RU': '+7', 'TR': '+90', 'ZA': '+27', 'IN': '+91',
-        };
-        // Update simName and simPrefix for UI display (country selector default)
-        // simCountry must NOT be overwritten — it reflects the phone prefix chosen by the user
-        // IP country is stored separately in ipCountry for confidence calculation
         if (!localStorage.getItem('vc_sim_set_by_user')) {
-          // Only update the UI selector if the user hasn't manually chosen a prefix
-          simName.value = countryNames[data.country_code] || data.country_code;
-          simPrefix.value = countryPrefixes[data.country_code] || '';
-          // simCountry stays as default (ES) until user explicitly selects a prefix
+          // Use Intl.DisplayNames for the country name — covers all 249 ISO countries
+          // in the current UI language, no hardcoded list needed.
+          const displayName = new Intl.DisplayNames([navigator.language || 'en'], { type: 'region' });
+          simName.value = displayName.of(data.country_code) || data.country_name || data.country_code;
+
+          // Fetch the dial code from the country-codes endpoint (already cached by the
+          // CreateScreen selector). Falls back silently — prefix just stays empty.
+          try {
+            const codesRes = await fetch(`${API_BASE}/api/country-codes`);
+            const codes = await codesRes.json();
+            const match = codes.find(c => c.iso2 === data.country_code);
+            if (match) simPrefix.value = '+' + match.dial_code;
+          } catch { /* silencioso — el prefijo queda vacío */ }
         }
       }
     } catch { /* silencioso */ }

@@ -10,8 +10,6 @@
       </div>
     </div>
 
-    <!-- Particle map -->
-    <DetailMap :participant-count="protest.count" :joined="protest.joined" />
 
     <div class="d-scroll">
       <!-- Stats -->
@@ -174,7 +172,6 @@ import { useDeviceStore }   from '@/stores/device.js';
 import { useUiStore }       from '@/stores/ui.js';
 import { useI18n } from 'vue-i18n';
 import { localizedCountry } from '@/constants.js';
-import DetailMap from '@/components/map/DetailMap.vue';
 import { fmt, fmtTime, inRegion } from '@/constants.js';
 
 function fmtCloseDate(endsAt) {

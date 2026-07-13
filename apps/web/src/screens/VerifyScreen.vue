@@ -14,7 +14,7 @@
       <div style="width:100%;margin-top:8px">
 
         <!-- Peldaño 0 — GPS territorial (convocatorias locales y regionales, si no tiene GPS aún) -->
-        <div v-if="isLocalProtest && !device.gpsReady" style="margin-bottom:10px">
+        <div v-if="isLocalProtest && gpsUpdateToken" style="margin-bottom:10px">
           <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:6px;padding:8px 10px;background:rgba(76,200,255,.06);border-radius:var(--r);border:.5px solid rgba(76,200,255,.25)">
             {{ joinedScope === 'regional' ? $t('verify.gpsRegionalInfo', { region: localCiudad }) : $t('verify.gpsLocalInfo', { ciudad: localCiudad }) }}
           </div>
@@ -69,12 +69,13 @@ const notiActivada = ref(false);
 
 // Local scope GPS reinforce
 const isLocalProtest = ref(false);
+const gpsUpdateToken = ref(false);
 const joinedScope = ref(null); // 'local' | 'regional' — picks the right reinforce copy
 const localCiudad    = ref('');
 const reforzandoGps  = ref(false);
 
 async function reforzarGpsLocal() {
-  if (reforzandoGps.value || device.gpsReady) return;
+  if (reforzandoGps.value) return;
   reforzandoGps.value = true;
   try {
     await device.requestGps();
@@ -111,6 +112,7 @@ async function reforzarGpsLocal() {
       // Token is single-use — remove from both storages after the attempt
       sessionStorage.removeItem('vc_gps_update_token');
       localStorage.removeItem('vc_gps_reinforce');
+      gpsUpdateToken.value = false;
     } else if (!token) {
       // No token available (e.g. adhesion predates token issuance): never
       // pretend success.
@@ -216,6 +218,7 @@ const target = lastId
   // the neighborhood. Random single-use UUID, no personal data; removed on
   // use or expiry.
   if (joinRes?.gps_update_token) {
+    gpsUpdateToken.value = true;
     sessionStorage.setItem('vc_gps_update_token', joinRes.gps_update_token);
     localStorage.setItem('vc_gps_reinforce', JSON.stringify({
       token:     joinRes.gps_update_token,

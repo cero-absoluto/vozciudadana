@@ -84,7 +84,8 @@
     "createBtn": "+ Créer un événement",
     "joined": "✓ Rejoint · {time} restant",
     "toastLocked": "🔒 Appareil verrouillé jusqu'à la fin de l'événement actif",
-    "toastGeo": "🌍 Vous ne pouvez pas participer : hors du périmètre géographique"
+    "toastGeo": "🌍 Vous ne pouvez pas participer : hors du périmètre géographique",
+    "joinBtn": "Rejoindre la protestation"
   },
   "queue": {
     "info": "Les participants soutiennent les événements en attente. Le plus soutenu monte quand un créneau est libre dans son pays.",

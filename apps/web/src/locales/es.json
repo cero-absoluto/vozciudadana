@@ -531,7 +531,10 @@
     "ledgerV2Pre": "El",
     "ledgerV2Name": "registro público v2",
     "ledgerV2Post": "publicará el hash en un registro externo e independiente (timestamp certificado o ledger distribuido) en el momento del cierre, de forma que cualquier persona pueda verificarlo sin depender de Voice Protest.",
-    "ledgerV2Planned": "Planificado — aún no implementado."
+    "ledgerV2Planned": "Planificado — aún no implementado.",
+    "geoRegionalVerified": "GPS verificado en la región",
+    "geoRegionalVerifiedDesc": "Participantes con GPS confirmado dentro de {region} en el momento de la adhesión.",
+    "geoNationalDescRegional": "Participantes sin confirmación GPS regional. Pueden estar en otro punto del país."
   },
   "invite": {
     "loading": "Validando invitación...",

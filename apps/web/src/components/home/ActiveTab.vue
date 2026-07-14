@@ -31,7 +31,7 @@
             <!-- Botón principal: UNIRSE — protagonista -->
             <div @click.stop="handleClick(p)"
               style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 14px;background:var(--accent2);border-radius:20px;cursor:pointer;font-size:15px;font-weight:700;color:#000;box-sizing:border-box">
-              ✊ {{ p.joined ? $t('active.joined', { time: fmtTime(p.timer) }) : $t('detail.joinAnon') }}
+              ✊ {{ p.joined ? $t('active.joined', { time: fmtTime(p.timer) }) : $t('active.joinBtn') }}
             </div>
             <!-- Botón secundario: informe — texto completo, borde sutil -->
             <div @click.stop="router.push(`/informe/${p.id}`)"

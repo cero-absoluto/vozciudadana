@@ -449,6 +449,8 @@ function selectMunicipio(result) {
   form.convocatoria_ciudad_nombre = result.name;
   form.convocatoria_lat = result.lat ?? null;
   form.convocatoria_lon = result.lon ?? null;
+  // Guardar el país del municipio/región para que aparezca en el mapa y el listado
+  if (result.country_code) form.convocatoria_pais = result.country_code.toUpperCase();
   // For regional scope the OSM entity IS the region: keep convocatoria_region
   // in sync so the group screen and group invites still show the region label.
   if (form.scope === 'regional') form.convocatoria_region = result.name;

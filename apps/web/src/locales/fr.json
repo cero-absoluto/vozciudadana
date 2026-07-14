@@ -531,7 +531,10 @@
     "ledgerV2Pre": "Le",
     "ledgerV2Name": "registre public v2",
     "ledgerV2Post": "publiera le hash dans un registre externe et indépendant (horodatage certifié ou registre distribué) au moment de la clôture, afin que chacun puisse le vérifier sans dépendre de Voice Protest.",
-    "ledgerV2Planned": "Prévu — pas encore implémenté."
+    "ledgerV2Planned": "Prévu — pas encore implémenté.",
+    "geoRegionalVerified": "GPS vérifié dans la région",
+    "geoRegionalVerifiedDesc": "Participants avec GPS confirmé dans {region} au moment de l'adhésion.",
+    "geoNationalDescRegional": "Participants sans confirmation GPS régionale. Peuvent être ailleurs dans le pays."
   },
   "invite": {
     "loading": "Validation de l'invitation...",

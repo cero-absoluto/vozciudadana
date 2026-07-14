@@ -13,7 +13,7 @@ function normalizeProtest(p) {
   return {
     id:          p.id,
     title:       p.title,
-    country:     p.country ?? null,
+    country:     p.country ?? p.convocatoria_pais ?? null,
     countryName: p.country_name,
     scope:       p.scope,
     region:      p.region ?? null,

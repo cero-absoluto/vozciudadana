@@ -531,7 +531,10 @@
     "ledgerV2Pre": "",
     "ledgerV2Name": "公共账本v2",
     "ledgerV2Post": "将在关闭时将哈希发布到外部独立注册表（认证时间戳或分布式账本），以便任何人都可以在不依赖Voice Protest的情况下进行验证。",
-    "ledgerV2Planned": "已计划 — 尚未实施。"
+    "ledgerV2Planned": "已计划 — 尚未实施。",
+    "geoRegionalVerified": "GPS已在该地区验证",
+    "geoRegionalVerifiedDesc": "在粘附时GPS在{region}内确认的参与者。",
+    "geoNationalDescRegional": "没有区域GPS确认的参与者。可能在该国其他地方。"
   },
   "invite": {
     "loading": "验证邀请中...",

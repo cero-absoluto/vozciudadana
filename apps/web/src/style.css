@@ -352,9 +352,9 @@ a:hover{opacity:.8}
 .v-step-l{font-size:8px;color:var(--text3);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px}
 .v-h{font-family:'Syne',sans-serif;font-weight:800;font-size:14px;margin-bottom:4px}
 .v-p{font-size:10px;color:var(--text2);line-height:1.7;margin-bottom:14px}
-.phone-wrap{display:flex;gap:5px;margin-bottom:5px}
-.cc-sel{padding:9px 8px;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);font-size:11px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;width:70px}
-.phone-in{flex:1;padding:9px 10px;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);font-size:12px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s}
+.phone-wrap{display:flex;gap:8px;margin-bottom:8px}
+.cc-sel{padding:14px 10px;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);font-size:15px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;width:90px}
+.phone-in{flex:1;padding:14px 16px;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);font-size:18px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s}
 .phone-in:focus{border-color:var(--accent)}
 .phone-in::placeholder{color:rgba(255,255,255,.45)}
 .input-hint{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px}
@@ -368,7 +368,7 @@ a:hover{opacity:.8}
 .dni-in::placeholder{color:rgba(255,255,255,.45)}
 .dni-hint{font-size:8px;color:var(--text3);line-height:1.5}
 .otp-row{display:flex;gap:5px;margin-bottom:7px;justify-content:center}
-.otp-box{width:36px;height:42px;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);text-align:center;font-size:18px;font-weight:700;color:var(--text);font-family:'Syne',sans-serif;outline:none;transition:border-color .2s}
+.otp-box{width:44px;height:54px;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);text-align:center;font-size:22px;font-weight:700;color:var(--text);font-family:'Syne',sans-serif;outline:none;transition:border-color .2s}
 .otp-box:focus{border-color:var(--accent)}
 .spinner{display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px}
 .spinner.on{display:flex}

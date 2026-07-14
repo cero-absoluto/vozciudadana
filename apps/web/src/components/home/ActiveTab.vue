@@ -27,9 +27,17 @@
             <div style="font-size:12px;color:var(--text2);font-weight:600">{{ fmtTime(p.timer) }}</div>
             <div v-if="p.ends_at" style="font-size:11px;color:var(--text3);margin-top:2px">{{ fmtCloseDate(p.ends_at) }}</div>
           </div>
-          <div @click.stop="router.push(`/informe/${p.id}`)"
-            style="margin-top:8px;display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:var(--accent);cursor:pointer;border:.5px solid var(--accent);border-radius:20px;padding:4px 12px;opacity:.9">
-            📊 {{ $t('informe.headerLabel') }} →
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+            <!-- Botón principal: UNIRSE — protagonista -->
+            <div @click.stop="handleClick(p)"
+              style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 14px;background:var(--accent2);border-radius:20px;cursor:pointer;font-size:15px;font-weight:700;color:#000;box-sizing:border-box">
+              ✊ {{ p.joined ? $t('active.joined', { time: fmtTime(p.timer) }) : $t('detail.joinAnon') }}
+            </div>
+            <!-- Botón secundario: informe — texto completo, borde sutil -->
+            <div @click.stop="router.push(`/informe/${p.id}`)"
+              style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 14px;border:.5px solid var(--border2);border-radius:20px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);box-sizing:border-box">
+              📊 {{ $t('informe.headerLabel') }} →
+            </div>
           </div>
         </div>
       </div>

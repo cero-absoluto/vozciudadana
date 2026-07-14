@@ -150,7 +150,7 @@
           </div>
           <div class="inf-geo-bar-row">
             <div class="inf-geo-bar-label">
-              <span style="color:var(--accent2)">📍 {{ $t('informe.geoLocalVerified') }}</span>
+              <span style="color:var(--accent2)">📍 {{ data.desglose_geografico_local.scope === 'regional' ? $t('informe.geoRegionalVerified') : $t('informe.geoLocalVerified') }}</span>
               <strong>{{ data.desglose_geografico_local.gps_local }}</strong>
             </div>
             <div class="inf-bar-track"><div class="inf-bar-fill" :style="barStyleLocal(data.desglose_geografico_local.gps_local, 'var(--accent2)')"></div></div>

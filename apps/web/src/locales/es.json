@@ -84,7 +84,8 @@
     "createBtn": "+ Crear evento",
     "joined": "✓ Unido · {time} restante",
     "toastLocked": "🔒 Dispositivo bloqueado hasta que termine el evento activo",
-    "toastGeo": "🌍 No puedes participar: fuera del ámbito geográfico"
+    "toastGeo": "🌍 No puedes participar: fuera del ámbito geográfico",
+    "joinBtn": "Unirse a la protesta"
   },
   "queue": {
     "info": "Los participantes impulsan los eventos en cola. El más impulsado sube cuando hay un slot libre en su país.",

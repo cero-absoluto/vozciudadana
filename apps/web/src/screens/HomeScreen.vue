@@ -3,23 +3,6 @@
 
     <!-- Left column: map + filters -->
     <div id="home-left">
-      <!-- Compact 3-step strip (gateway) -->
-      <div class="steps-strip">
-        <div class="ss-item">
-          <span class="ss-ic"><span class="ss-num">1</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11.5v5M9.5 14h5"/></svg></span>
-          <span class="ss-tx"><b>{{ $t('home.stepJoin') }}</b><span>{{ $t('home.stepJoinSub') }}</span></span>
-        </div>
-        <span class="ss-arr">→</span>
-        <div class="ss-item">
-          <span class="ss-ic"><span class="ss-num">2</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
-          <span class="ss-tx"><b>{{ $t('home.stepVerify') }}</b><span>{{ $t('home.stepVerifySub') }}</span></span>
-        </div>
-        <span class="ss-arr">→</span>
-        <div class="ss-item">
-          <span class="ss-ic"><span class="ss-num">3</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V11M12 21V4M19 21v-6"/></svg></span>
-          <span class="ss-tx"><b>{{ $t('home.stepResults') }}</b><span>{{ $t('home.stepResultsSub') }}</span></span>
-        </div>
-      </div>
       <!-- Device status bar -->
       <div class="device-bar">
         <div class="dev-info">

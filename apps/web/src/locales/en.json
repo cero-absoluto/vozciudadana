@@ -84,7 +84,8 @@
     "createBtn": "+ Create event",
     "joined": "✓ Joined · {time} remaining",
     "toastLocked": "🔒 Device locked until the active event ends",
-    "toastGeo": "🌍 You cannot participate: outside the geographic scope"
+    "toastGeo": "🌍 You cannot participate: outside the geographic scope",
+    "joinBtn": "Join the protest"
   },
   "queue": {
     "info": "Participants boost events in queue. The most boosted one moves up when a slot is free in its country.",

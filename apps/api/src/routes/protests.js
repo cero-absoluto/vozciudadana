@@ -1055,7 +1055,15 @@ export default async function protestRoutes(app) {
       .order('created_at', { ascending: true });
 
     const ciudades = [...new Set(adhesions.map(a => a.ciudad).filter(Boolean))];
-    const paises = [...new Set(adhesions.map(a => a.pais).filter(Boolean))];
+    // Use pais_code (ISO) preferentially — more reliable than pais name.
+    // For GPS-confirmed adhesions, the GPS country takes priority over IP country
+    // since IP geolocation can misclassify WiFi connections (e.g. Santander WiFi
+    // appearing as a foreign country). Falls back to pais name for legacy rows.
+    const getPaisCode = (a) => {
+      if (a.gps_confirmed && a.pais_code) return a.pais_code;
+      return a.pais_code || (a.pais ? a.pais.slice(0,2).toUpperCase() : null);
+    };
+    const paises = [...new Set(adhesions.map(getPaisCode).filter(Boolean))];
     const idiomas = [...new Set(adhesions.map(a => a.idioma).filter(Boolean))];
 
     const distribucion_regiones = adhesions.reduce((acc, a) => {

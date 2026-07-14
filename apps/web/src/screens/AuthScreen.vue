@@ -88,20 +88,20 @@
 }
 .auth-protest-title {
   font-family: 'Syne', sans-serif;
-  font-size: 19px;
+  font-size: 22px;
   font-weight: 800;
   color: var(--text);
   line-height: 1.35;
   margin-bottom: 10px;
 }
 .auth-protest-focal {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text2);
   margin-bottom: 8px;
   line-height: 1.5;
 }
 .auth-protest-demands {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text);
   line-height: 1.6;
 }
@@ -118,7 +118,7 @@
 }
 .auth-phone-label {
   width: 100%;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--text2);
   margin-bottom: 10px;
@@ -153,14 +153,14 @@
   font-weight: 700;
 }
 .auth-otp-sent {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text2);
   margin-bottom: 14px;
   line-height: 1.6;
   text-align: center;
 }
 .auth-resend {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--text2);
   margin-bottom: 12px;
   text-align: center;

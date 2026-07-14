@@ -1,5 +1,5 @@
 // Bumped on each strategy change so the activate handler purges the old cache.
-const CACHE_NAME = 'vozciudadana-v2';
+const CACHE_NAME = 'vozciudadana-v4';
 const ASSETS = [
   './',
   './index.html',

@@ -1,77 +1,76 @@
 <template>
   <div class="screen active" id="s-auth">
     <div class="auth-wrap">
-      <div class="auth-ico">📱</div>
-      <div class="auth-h">{{ $t('auth.title') }}</div>
-      <div class="auth-p">{{ $t('auth.subtitle') }}</div>
 
-      <!-- Contexto de la convocatoria: qué está firmando exactamente el usuario -->
-      <div v-if="joiningProtest" style="width:100%;margin-bottom:12px;padding:14px 16px;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r2);text-align:left">
-        <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--text);line-height:1.4;margin-bottom:8px">{{ joiningProtest.title }}</div>
-        <div v-if="joiningProtest.focal_point" style="font-size:13.5px;color:var(--text2);margin-bottom:8px">
-          <strong>{{ $t('detail.directedAt') }}</strong> {{ joiningProtest.focal_point }}
+      <!-- Contexto de la convocatoria — título, destinatario, demandas -->
+      <div v-if="joiningProtest" class="auth-protest-card">
+        <div class="auth-protest-title">{{ joiningProtest.title }}</div>
+        <div v-if="joiningProtest.focal_point" class="auth-protest-focal">
+          <span class="auth-protest-label">{{ $t('detail.directedAt') }}:</span>
+          {{ joiningProtest.focal_point }}
         </div>
-        <div v-if="joiningProtest.desc" style="font-size:13.5px;color:var(--text2);line-height:1.65;margin-bottom:8px">{{ joiningProtest.desc }}</div>
-        <div v-if="joiningProtest.demands" style="font-size:13.5px;color:var(--text);line-height:1.65">
-          <span style="color:var(--accent3);font-weight:700">{{ $t('detail.whatWeDemand') }}</span><br>{{ joiningProtest.demands }}
+        <div v-if="joiningProtest.demands" class="auth-protest-demands">
+          <span class="auth-protest-label">⚡ {{ $t('detail.whatWeDemand') }}:</span>
+          {{ joiningProtest.demands }}
         </div>
       </div>
 
-      <!-- reCAPTCHA status -->
-      <div class="verif-strip" :class="captchaStatusClass" style="width:100%;margin-bottom:10px">
-        <span>{{ captchaIco }}</span>
-        <span>{{ captchaTxt }}</span>
-      </div>
+      <div class="auth-divider"></div>
 
       <!-- Phone input -->
+      <div class="auth-phone-label">{{ $t('auth.title') }}</div>
+
       <div style="width:100%" v-if="!otpVisible">
         <div class="phone-wrap">
           <label for="cc-sel" class="sr-only">{{ $t('auth.prefixLabel') }}</label>
-          <select id="cc-sel" class="cc-sel" v-model="countryCode" :disabled="countryCodes.length === 0">
+          <select id="cc-sel" class="cc-sel cc-sel-visible" v-model="countryCode" :disabled="countryCodes.length === 0">
             <option v-if="countryCodes.length === 0" :value="countryCode">...</option>
             <option v-for="c in countryCodes" :key="c.iso2" :value="c.iso2">
               {{ c.flag }} +{{ c.dial_code }}
             </option>
           </select>
           <label for="phone-in" class="sr-only">{{ $t('auth.phoneLabel') }}</label>
-          <input id="phone-in" class="phone-in" type="tel" v-model="phone" :placeholder="$t('auth.phonePlaceholder')" maxlength="12" :aria-label="$t('auth.phoneLabel')">
+          <input id="phone-in" class="phone-in phone-in-visible" type="tel" v-model="phone"
+            :placeholder="$t('auth.phonePlaceholder')" maxlength="12"
+            :aria-label="$t('auth.phoneLabel')" autofocus>
         </div>
-        <button class="btn-primary" style="width:100%;margin-top:12px;position:sticky;bottom:8px" :disabled="phone.replace(/\D/g,'').length < 6 || sending" @click="sendSMS">
+        <button class="btn-primary auth-submit-btn"
+          :disabled="phone.replace(/\D/g,'').length < 6 || sending"
+          @click="sendSMS">
           {{ sending ? $t('auth.sending') : $t('auth.sendCode') }}
         </button>
       </div>
 
       <!-- OTP input -->
-      <div v-if="otpVisible" style="width:100%;margin-top:12px">
-        <div style="font-size:14px;color:var(--text);margin-bottom:12px;line-height:1.7;text-align:center">
-          {{ $t('auth.otpSent') }}
-        </div>
+      <div v-if="otpVisible" style="width:100%;margin-top:4px">
+        <div class="auth-otp-sent">{{ $t('auth.otpSent') }}</div>
         <div class="otp-row">
-          <input v-for="(_, i) in 6" :key="i" class="otp-box" type="tel" maxlength="1"
+          <input v-for="(_, i) in 6" :key="i" class="otp-box otp-box-visible" type="tel" maxlength="1"
             :ref="el => { if (el) otpRefs[i] = el }"
             v-model="otpDigits[i]"
             @input="onOtpInput(i)"
             :aria-label="$t('auth.otpDigit', { n: i + 1 })">
         </div>
-        <div style="font-size:13px;color:var(--text2);margin-bottom:10px;text-align:center">
-          {{ $t('auth.resendQuestion') }} <span style="color:var(--accent);cursor:pointer" @click="ui.showToast($t('auth.resendToast'))">{{ $t('auth.resend') }}</span>
+        <div class="auth-resend">
+          {{ $t('auth.resendQuestion') }}
+          <span class="auth-resend-link" @click="ui.showToast($t('auth.resendToast'))">{{ $t('auth.resend') }}</span>
         </div>
-        <button class="btn-primary" style="width:100%" @click="verifyOTP">{{ $t('auth.verify') }}</button>
+        <button class="btn-primary auth-submit-btn" @click="verifyOTP">{{ $t('auth.verify') }}</button>
       </div>
 
-<!-- Modal GPS -->
+      <!-- Modal GPS -->
       <div v-if="showGpsModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px">
         <div style="background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r2);padding:24px;max-width:340px;width:100%">
           <div style="font-size:24px;text-align:center;margin-bottom:12px">📍</div>
-          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;margin-bottom:10px;text-align:center">{{ $t('auth.gpsTitle') }}</div>
-          <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px;text-align:center">
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-bottom:10px;text-align:center">{{ $t('auth.gpsTitle') }}</div>
+          <div style="font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:20px;text-align:center">
             {{ $t('auth.gpsNote') }}
           </div>
           <button class="btn-primary" style="width:100%;margin-bottom:8px" @click="aceptarGps">
             📍 {{ $t('auth.gpsAccept') }}
           </button>
           <button @click="rechazarGps"
-            style="width:100%;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:10px;cursor:pointer">
+            style="width:100%;padding:10px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:13px;cursor:pointer">
             {{ $t('auth.gpsDecline') }}
           </button>
         </div>
@@ -81,6 +80,99 @@
   </div>
 </template>
 
+<style scoped>
+.auth-protest-card {
+  width: 100%;
+  margin-bottom: 4px;
+  text-align: left;
+}
+.auth-protest-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.35;
+  margin-bottom: 10px;
+}
+.auth-protest-focal {
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+.auth-protest-demands {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.6;
+}
+.auth-protest-label {
+  font-weight: 700;
+  color: var(--accent2);
+  margin-right: 4px;
+}
+.auth-divider {
+  width: 100%;
+  height: .5px;
+  background: var(--border);
+  margin: 16px 0;
+}
+.auth-phone-label {
+  width: 100%;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 10px;
+  text-align: left;
+}
+/* Inputs con borde blanco visible */
+.cc-sel-visible {
+  border: 1.5px solid rgba(255,255,255,0.5) !important;
+  color: var(--text) !important;
+}
+.phone-in-visible {
+  border: 1.5px solid rgba(255,255,255,0.5) !important;
+  color: var(--text) !important;
+}
+.phone-in-visible::placeholder {
+  color: var(--text3);
+}
+.otp-box-visible {
+  border: 1.5px solid rgba(255,255,255,0.5) !important;
+  color: var(--text) !important;
+  font-size: 20px !important;
+}
+.otp-box-visible:focus {
+  border-color: var(--accent2) !important;
+  outline: none;
+}
+.auth-submit-btn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.auth-otp-sent {
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 14px;
+  line-height: 1.6;
+  text-align: center;
+}
+.auth-resend {
+  font-size: 13px;
+  color: var(--text2);
+  margin-bottom: 12px;
+  text-align: center;
+  margin-top: 10px;
+}
+.auth-resend-link {
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+</style>
+
 <script setup>
 import { useProtestsStore } from '@/stores/protests.js';
 import { ref, computed, watch, onMounted } from 'vue';
@@ -89,13 +181,9 @@ import { useUiStore } from '@/stores/ui.js';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
-
 const router = useRouter();
 const ui     = useUiStore();
 
-// The convocatoria the user is about to join — shown as a context card so the
-// person verifying their phone knows exactly WHAT they are adhering to
-// (title alone is not informed participation; description and demands matter).
 const protestsStoreRef = useProtestsStore();
 const joiningProtest = computed(() => {
   const id = sessionStorage.getItem('vc_last_joined');
@@ -111,9 +199,9 @@ const dialCode     = computed(() => {
 const phone        = ref('');
 const sending      = ref(false);
 const otpVisible   = ref(false);
-const otpDigits    = ref(['1','2','3','4','5','6']);
+const otpDigits    = ref(['', '', '', '', '', '']);
 const otpRefs      = ref([]);
-  const showGpsModal = ref(false);
+const showGpsModal = ref(false);
 let gpsResolve = null;
 
 function aceptarGps() {
@@ -126,11 +214,9 @@ function rechazarGps() {
   if (gpsResolve) gpsResolve(false);
 }
 
-// reCAPTCHA status
 const captchaStatusClass = ref('verif-loading');
 const captchaIco         = ref('⏳');
-const captchaTxt         = ref('Verificando que eres humano...');
-
+const captchaTxt         = ref('');
 const RECAPTCHA_KEY = import.meta.env.VITE_RECAPTCHA_KEY;
 
 async function getRecaptchaToken(action) {
@@ -147,16 +233,16 @@ async function getRecaptchaToken(action) {
   });
 }
 
+import * as api from '@/services/api.js';
+import { useDeviceStore } from '@/stores/device.js';
+const device = useDeviceStore();
+
 onMounted(async () => {
   try {
     await getRecaptchaToken('load');
     captchaStatusClass.value = 'verif-ok';
-    captchaIco.value  = '✓';
-    captchaTxt.value  = t('auth.captchaOk');
   } catch {
     captchaStatusClass.value = 'verif-error';
-    captchaIco.value = '⚠️';
-    captchaTxt.value = t('auth.captchaFail');
   }
 
   try {
@@ -165,18 +251,14 @@ onMounted(async () => {
     if (dev.ipCountry) {
       countryCode.value = dev.ipCountry;
     }
-  } catch {
-    // Fallback
-  }
+  } catch { /* Fallback */ }
 
-  // Para convocatorias local/regional: pedir GPS al entrar en la pantalla,
-  // antes de que el usuario introduzca su número — máximo contexto, mínima fricción.
+  // GPS para local/regional — antes de introducir el número
   const riskLevel = sessionStorage.getItem('vc_risk_level') || 'low';
   const scope = sessionStorage.getItem('vc_protest_scope') || 'national';
   if ((scope === 'regional' || scope === 'local') &&
       (riskLevel === 'low' || riskLevel === 'med') &&
       !device.gpsReady) {
-    // Pequeño delay para que la pantalla se renderice primero
     await new Promise(r => setTimeout(r, 400));
     const accepted = await new Promise(resolve => {
       gpsResolve = resolve;
@@ -193,22 +275,10 @@ onMounted(async () => {
         localStorage.setItem('vc_gps_lng', pos.coords.longitude);
         localStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
         localStorage.setItem('vc_gps_ts', Date.now());
-      } catch {
-        // Usuario denegó o sin señal — continúa sin GPS
-      }
+      } catch { /* sin GPS */ }
     }
   }
 });
-
-  // The pseudonymous identifier is computed server-side with HMAC after OTP
-  // verification — it is never derived in the browser (a client-side hash could
-  // only be plain SHA-256, which is dictionary-attackable). We therefore show an
-  // explanatory message instead of a live, inaccurate client-side hash preview.
-  const hashDisplay = ref(t('auth.hashPlaceholder'));
-
-import * as api from '@/services/api.js';
-import { useDeviceStore } from '@/stores/device.js';
-const device = useDeviceStore();
 
 async function sendSMS() {
   if (sending.value) return;
@@ -225,17 +295,12 @@ async function sendSMS() {
     }
   }
 
-  // GPS se solicita en onMounted para local/regional — aquí ya está disponible si el usuario aceptó
-  // Pequeña espera por si el GPS está procesándose todavía
   if (device.gpsReady) {
     await new Promise(r => setTimeout(r, 300));
   }
-  
-  // Si el dispositivo ya está verificado, saltar OTP
+
   const existingDevice = await api.fetchDeviceLocks(device.getDeviceId());
   if (existingDevice && existingDevice.length > 0) {
-    // Device already verified — fetch the canonical server-side (HMAC) phone_hash.
-    // The client never recomputes an identity hash itself.
     const dev = await api.fetchDevice(device.getDeviceId());
     sessionStorage.setItem('vc_phone_hash', dev.phone_hash);
     sessionStorage.setItem('vc_device_id', device.getDeviceId());
@@ -279,16 +344,9 @@ async function verifyOTP() {
     const v = phone.value.replace(/\D/g, '');
     const deviceId  = device.getDeviceId();
     const res = await api.verifyOtp({ phone: '+' + dialCode.value + v, otp: code, device_id: deviceId, country_code: countryCode.value });
-    // The identity hash is computed server-side with HMAC and returned here.
-    // The client never derives a persistent identity hash itself (a browser
-    // cannot hold the HMAC secret, so any client-side hash would be plain
-    // SHA-256 and dictionary-attackable).
     sessionStorage.setItem('vc_phone_hash', res.phone_hash);
     sessionStorage.setItem('vc_device_id',  res.device_id || deviceId);
     sessionStorage.setItem('vc_sms_sent', 'true');
-    // Sync local device_id with the canonical one from the server (anchored to phone_hash).
-    // If localStorage was cleared and the phone was already verified, the server returns
-    // the original device_id so the user keeps their identity across sessions.
     if (res.device_id && res.device_id !== deviceId) {
       device.setDeviceId(res.device_id);
       sessionStorage.setItem('vc_device_id', res.device_id);

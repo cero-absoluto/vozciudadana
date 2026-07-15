@@ -721,7 +721,24 @@ function downloadPDF() {
   function line() { doc.setDrawColor(76,255,164); doc.setLineWidth(0.3); doc.line(M, y, W-M, y); nl(6); }
   function h2(txt) { doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(76,255,164); doc.text(txt, M, y); nl(8); }
   function body(txt) { doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(220,218,240); doc.splitTextToSize(txt, CW).forEach(l => { if (y > 265) { doc.addPage(); setPageBg(); y = 22; } doc.text(l, M, y); nl(7); }); }
-  function kv(k, v) { doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(76,255,164); doc.text(k+':', M, y); doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(240,238,255); doc.text(doc.splitTextToSize(String(v), CW-48)[0], M+48, y); nl(7); }
+  function kv(k, v) {
+    const label = k + ':';
+    const val = String(v);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(76,255,164);
+    const labelW = doc.getTextWidth(label);
+    if (labelW > 44) {
+      // Etiqueta larga — valor en línea siguiente
+      doc.text(label, M, y); nl(5);
+      doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(240,238,255);
+      const lines = doc.splitTextToSize(val, CW - 8);
+      lines.forEach(l => { if (y > 265) { doc.addPage(); setPageBg(); y = 22; } doc.text(l, M + 8, y); nl(6); });
+    } else {
+      // Etiqueta corta — valor en la misma línea
+      doc.text(label, M, y);
+      doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(240,238,255);
+      doc.text(doc.splitTextToSize(val, CW - 48)[0], M + 48, y); nl(7);
+    }
+  }
   function setPageBg() { doc.setFillColor(12,11,20); doc.rect(0,0,210,297,'F'); }
 
   setPageBg(); y = 20;

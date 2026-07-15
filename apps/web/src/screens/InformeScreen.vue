@@ -1,605 +1,852 @@
 <template>
   <div class="screen active" id="s-informe">
-    <div class="scroll inf-scroll">
+    <div class="scroll ir-scroll">
 
       <!-- Cargando -->
-      <div v-if="loading" style="text-align:center;padding:60px">
+      <div v-if="loading" style="text-align:center;padding:80px 0">
         <div class="spin-ring" style="margin:0 auto 16px"></div>
-        <div style="font-size:16px;color:var(--text2)">{{ $t('informe.loading') }}</div>
+        <div class="ir-caption">{{ $t('informe.loading') }}</div>
       </div>
 
       <!-- Error -->
-      <div v-else-if="error" style="text-align:center;padding:60px;color:var(--accent3);font-size:16px">
+      <div v-else-if="error" style="text-align:center;padding:80px 0;color:var(--accent3)">
         {{ $t('informe.notFound') }}
       </div>
 
-      <!-- ══════════════════════════════════════════════
-           INFORME
-      ══════════════════════════════════════════════ -->
-      <div v-else-if="data">
+      <div v-else-if="data" class="ir-doc">
 
-        <!-- CABECERA — etiqueta -->
-        <div class="inf-label">{{ $t('informe.headerLabel') }}</div>
-
-        <!-- ① A QUIÉN VA DIRIGIDO -->
-        <div class="inf-block inf-block-highlight">
-          <div class="inf-block-title">{{ $t('detail.directedAt') }}</div>
-          <div class="inf-focal">{{ data.protest.focal_point || '—' }}</div>
-          <div v-if="data.protest.country" class="inf-focal-sub">{{ localizedCountryName }}</div>
-        </div>
-
-        <!-- ② CONVOCATORIA COMPLETA -->
-        <div class="inf-block">
-          <div class="inf-block-title">{{ $t('informe.headerLabel') }}</div>
-
-          <div class="inf-title">{{ data.protest.title }}</div>
-
-          <div v-if="data.protest.description" class="inf-field">
-            <span class="inf-field-label">Descripción</span>
-            <span class="inf-field-val">{{ data.protest.description }}</span>
+        <!-- ══ CABECERA DEL DOCUMENTO ══════════════════════════════════ -->
+        <div class="ir-header">
+          <div class="ir-header-meta">
+            <span class="ir-badge">Voice Protest</span>
+            <span class="ir-badge ir-badge-status">
+              {{ data.protest.status === 'closed' ? '● ' + $t('informe.statusClosed') : '● ' + $t('informe.statusActive') }}
+            </span>
           </div>
-
-          <div class="inf-field">
-            <span class="inf-field-label">{{ $t('detail.demandsTitle') }}</span>
-            <span class="inf-field-val inf-demands">{{ data.protest.demands }}</span>
+          <h1 class="ir-title">{{ data.protest.title }}</h1>
+          <div class="ir-directed">
+            <span class="ir-caption">{{ $t('detail.directedAt') }}</span>
+            <span class="ir-institution">{{ data.protest.focal_point }}</span>
+            <span class="ir-country" v-if="data.protest.country">{{ localizedCountryName }}</span>
           </div>
-
-          <div class="inf-field">
-            <span class="inf-field-label">{{ $t('detail.typeOfAbuse') }}</span>
-            <span class="inf-field-val" style="color:var(--accent4);font-weight:600">{{ tipoAbusoLabel }}</span>
-          </div>
-
-          <div v-if="data.protest.fuente_url" class="inf-field">
-            <span class="inf-field-label">{{ $t('informe.fuente') }}</span>
-            <a :href="data.protest.fuente_url" target="_blank" class="inf-link">{{ data.protest.fuente_url }}</a>
-          </div>
-
-          <div class="inf-dates">
-            <div class="inf-date-item">
-              <span class="inf-field-label">Inicio</span>
-              <span class="inf-field-val">{{ formatDate(data.protest.starts_at) }}</span>
-            </div>
-            <div class="inf-date-sep">→</div>
-            <div class="inf-date-item">
-              <span class="inf-field-label">Cierre</span>
-              <span class="inf-field-val">{{ formatDate(data.protest.ends_at) }}</span>
-            </div>
+          <div class="ir-dates-row">
+            <span class="ir-caption">{{ formatDate(data.protest.starts_at) }}</span>
+            <span class="ir-dates-sep">→</span>
+            <span class="ir-caption">{{ formatDate(data.protest.ends_at) }}</span>
           </div>
         </div>
 
-        <!-- ③ TITULAR POLÍTICO -->
-        <div class="inf-block inf-block-headline">
-          <div class="inf-block-title">{{ $t('informe.headlineBlock') }}</div>
-          <div class="inf-headline-text">
+        <!-- ══ NÚMERO PRINCIPAL ════════════════════════════════════════ -->
+        <div class="ir-hero">
+          <!-- Local/Regional: GPS territorial es el dato principal -->
+          <template v-if="(data.protest.scope === 'local' || data.protest.scope === 'regional') && data.desglose_geografico_local">
+            <div class="ir-hero-n">{{ data.desglose_geografico_local.gps_local }}</div>
+            <div class="ir-hero-label">
+              {{ data.protest.scope === 'local' ? $t('informe.heroLabelLocal', { territorio: data.protest.convocatoria_ciudad_nombre }) : $t('informe.heroLabelRegional', { territorio: data.protest.convocatoria_ciudad_nombre }) }}
+            </div>
+            <div class="ir-hero-sub" v-if="data.total_adhesiones > data.desglose_geografico_local.gps_local">
+              {{ $t('informe.heroSubLocal', { total: data.total_adhesiones, nacional: data.desglose_geografico_local.gps_nacional }) }}
+            </div>
+          </template>
 
-            <!-- Local/Regional: el GPS territorial es el dato principal -->
-            <template v-if="(data.protest.scope === 'local' || data.protest.scope === 'regional') && data.desglose_geografico_local">
-              {{ $t('informe.headlineLocal', {
-                count: data.desglose_geografico_local.gps_local,
-                territorio: data.protest.convocatoria_ciudad_nombre,
-                focal: data.protest.focal_point,
-                demands: data.protest.demands
-              }) }}
-              <span v-if="data.desglose_geografico_local.gps_nacional > 0"
-                style="display:block;margin-top:6px;font-size:14px;color:var(--text2);font-weight:500">
-                {{ $t('informe.headlineLocalSupport', { nacional: data.desglose_geografico_local.gps_nacional }) }}
-              </span>
-            </template>
+          <!-- Institucional -->
+          <template v-else-if="data.protest.dominio_email">
+            <div class="ir-hero-n">{{ data.total_adhesiones }}</div>
+            <div class="ir-hero-label">{{ $t('informe.heroLabelInstitutional', { dominio: data.protest.dominio_email }) }}</div>
+          </template>
 
-            <!-- Institucional: el dominio es el dato principal -->
-            <template v-else-if="data.protest.dominio_email">
-              {{ $t('informe.headlineInstitutional', {
-                count: data.total_adhesiones,
-                dominio: data.protest.dominio_email,
-                focal: data.protest.focal_point,
-                demands: data.protest.demands
-              }) }}
-            </template>
+          <!-- Nacional / Global -->
+          <template v-else>
+            <div class="ir-hero-n">{{ data.total_adhesiones }}</div>
+            <div class="ir-hero-label">{{ $t('informe.heroLabel', { country: localizedCountryName }) }}</div>
+          </template>
 
-            <!-- Nacional/Global: el total es el dato principal -->
-            <template v-else>
-              {{ $t('informe.headline', {
-                count: data.total_adhesiones,
-                country: localizedCountryName,
-                focal: data.protest.focal_point,
-                demands: data.protest.demands
-              }) }}
-            </template>
+          <div class="ir-hero-demand">{{ data.protest.demands }}</div>
+        </div>
 
+        <!-- ══ SELLOS DE VERIFICACIÓN ══════════════════════════════════ -->
+        <div class="ir-seals">
+          <div class="ir-seal">
+            <span class="ir-seal-icon">✓</span>
+            <span>{{ $t('informe.sealUnique') }}</span>
+          </div>
+          <div class="ir-seal">
+            <span class="ir-seal-icon">✓</span>
+            <span>{{ $t('informe.sealOne') }}</span>
+          </div>
+          <div class="ir-seal">
+            <span class="ir-seal-icon">✓</span>
+            <span>{{ $t('informe.sealPrivacy') }}</span>
+          </div>
+          <div class="ir-seal">
+            <span class="ir-seal-icon">✓</span>
+            <span>{{ $t('informe.sealAuditable') }}</span>
           </div>
         </div>
 
-        <!-- ④ LOS NÚMEROS — adhesiones, ciudades, verificadas -->
-        <div class="inf-block">
-          <div class="inf-block-title">{{ $t('informe.numbersTitle') }}</div>
-          <div class="inf-stats-row">
-            <div class="inf-sc">
-              <div class="inf-sc-n" style="color:var(--accent)">{{ data.total_adhesiones }}</div>
-              <div class="inf-sc-l">{{ $t('informe.statAdhesiones') }}</div>
-            </div>
-            <div class="inf-sc">
-              <div class="inf-sc-n" style="color:var(--accent2)">{{ data.ciudades_distintas }}</div>
-              <div class="inf-sc-l">{{ $t('informe.statCiudades') }}</div>
-            </div>
-            <div class="inf-sc">
-              <div class="inf-sc-n" style="color:var(--accent4)">100%</div>
-              <div class="inf-sc-l">{{ $t('informe.statVerificadas') }}</div>
-            </div>
-            <div class="inf-sc">
-              <div class="inf-sc-n" style="color:var(--text2)">{{ data.paises_distintos }}</div>
-              <div class="inf-sc-l">{{ data.paises_distintos === 1 ? $t('informe.pais') : $t('informe.paises') }}</div>
-            </div>
-            <div class="inf-sc">
-              <div class="inf-sc-n" style="color:var(--text2)">{{ data.idiomas_distintos }}</div>
-              <div class="inf-sc-l">{{ data.idiomas_distintos === 1 ? $t('informe.idioma') : $t('informe.idiomas') }}</div>
-            </div>
-            <div class="inf-sc">
-              <div class="inf-sc-n" style="color:var(--accent2)">{{ data.adhesiones_con_gps }}</div>
-              <div class="inf-sc-l">GPS ✅</div>
-            </div>
-          </div>
-          <div class="inf-time-row" v-if="data.primera_adhesion || data.ultima_adhesion">
-            <span>· {{ $t('informe.firstAdhesion') }} {{ formatDateTime(data.primera_adhesion) }}</span>
-            <span>· {{ $t('informe.lastAdhesion') }} {{ formatDateTime(data.ultima_adhesion) }}</span>
-          </div>
-        </div>
+        <div class="ir-divider"></div>
 
-        <!-- ⑤ DISTRIBUCIÓN GEOGRÁFICA -->
-        <div class="inf-block">
-          <div class="inf-block-title">{{ $t('informe.geoTitle') }}</div>
-          <div v-if="hasGeoData">
+        <!-- ══ SOBRE LA CONVOCATORIA ═══════════════════════════════════ -->
+        <section class="ir-section">
+          <h2 class="ir-section-title">{{ $t('informe.sectionConvocatoria') }}</h2>
+
+          <div v-if="data.protest.description" class="ir-prose">{{ data.protest.description }}</div>
+
+          <div class="ir-field">
+            <span class="ir-field-label">{{ $t('detail.demandsTitle') }}</span>
+            <span class="ir-field-val ir-demands">{{ data.protest.demands }}</span>
+          </div>
+
+          <div class="ir-field">
+            <span class="ir-field-label">{{ $t('detail.typeOfAbuse') }}</span>
+            <span class="ir-field-val" style="color:var(--accent4)">{{ tipoAbusoLabel }}</span>
+          </div>
+
+          <div v-if="data.protest.fuente_url" class="ir-field">
+            <span class="ir-field-label">{{ $t('informe.fuente') }}</span>
+            <a :href="data.protest.fuente_url" target="_blank" class="ir-link">{{ data.protest.fuente_url }}</a>
+          </div>
+        </section>
+
+        <div class="ir-divider"></div>
+
+        <!-- ══ EVIDENCIA GEOGRÁFICA ════════════════════════════════════ -->
+        <section class="ir-section">
+          <h2 class="ir-section-title">{{ $t('informe.sectionGeo') }}</h2>
+
+          <!-- Desglose local/regional -->
+          <div v-if="data.desglose_geografico_local" class="ir-geo-breakdown">
+            <div class="ir-geo-row">
+              <div class="ir-geo-label">
+                <span class="ir-geo-dot" style="background:var(--accent2)"></span>
+                {{ data.desglose_geografico_local.scope === 'regional' ? $t('informe.geoRegionalVerified') : $t('informe.geoLocalVerified') }}
+              </div>
+              <div class="ir-geo-count" style="color:var(--accent2)">{{ data.desglose_geografico_local.gps_local }}</div>
+            </div>
+            <div class="ir-geo-bar-bg">
+              <div class="ir-geo-bar-fill" :style="{width: pctLocal(data.desglose_geografico_local.gps_local) + '%', background: 'var(--accent2)'}"></div>
+            </div>
+
+            <div v-if="data.desglose_geografico_local.nacionales_sin_gps > 0" class="ir-geo-row" style="margin-top:12px">
+              <div class="ir-geo-label">
+                <span class="ir-geo-dot" style="background:var(--accent4)"></span>
+                {{ $t('informe.geoNational') }}
+              </div>
+              <div class="ir-geo-count" style="color:var(--accent4)">{{ data.desglose_geografico_local.nacionales_sin_gps }}</div>
+            </div>
+            <div v-if="data.desglose_geografico_local.nacionales_sin_gps > 0" class="ir-geo-bar-bg">
+              <div class="ir-geo-bar-fill" :style="{width: pctLocal(data.desglose_geografico_local.nacionales_sin_gps) + '%', background: 'var(--accent4)'}"></div>
+            </div>
+
+            <div v-if="data.desglose_geografico_local.internacionales > 0" class="ir-geo-row" style="margin-top:12px">
+              <div class="ir-geo-label">
+                <span class="ir-geo-dot" style="background:var(--accent)"></span>
+                {{ $t('informe.geoInternational') }}
+              </div>
+              <div class="ir-geo-count" style="color:var(--accent)">{{ data.desglose_geografico_local.internacionales }}</div>
+            </div>
+            <div v-if="data.desglose_geografico_local.internacionales > 0" class="ir-geo-bar-bg">
+              <div class="ir-geo-bar-fill" :style="{width: pctLocal(data.desglose_geografico_local.internacionales) + '%', background: 'var(--accent)'}"></div>
+            </div>
+          </div>
+
+          <!-- Distribución geográfica general -->
+          <div v-if="hasGeoData" style="margin-top:20px">
             <div v-if="Object.keys(data.distribucion_regiones).length" style="margin-bottom:12px">
-              <div class="inf-section-label">{{ $t('informe.geoByRegion') }}</div>
-              <div class="inf-geo-list">
-                <span v-for="(count, region) in data.distribucion_regiones" :key="region" class="inf-geo-item">
-                  {{ region }}: <strong>{{ count }}</strong>
+              <div class="ir-caption" style="margin-bottom:8px">{{ $t('informe.geoByRegion') }}</div>
+              <div class="ir-tags">
+                <span v-for="(count, region) in data.distribucion_regiones" :key="region" class="ir-tag">
+                  {{ region }} <strong>{{ count }}</strong>
                 </span>
               </div>
             </div>
             <div v-if="data.distribucion_ciudades.length">
-              <div class="inf-section-label">{{ $t('informe.geoByCity') }}</div>
-              <div class="inf-geo-list">
-                <span v-for="ciudad in data.distribucion_ciudades.slice(0,15)" :key="ciudad" class="inf-geo-item">{{ ciudad }}</span>
-                <span v-if="data.distribucion_ciudades.length > 15" class="inf-geo-item" style="color:var(--text2)">
-                  +{{ data.distribucion_ciudades.length - 15 }} {{ $t('informe.moreCities', { n: '' }).replace('  ','') }}
-                </span>
+              <div class="ir-caption" style="margin-bottom:8px">{{ $t('informe.geoByCity') }}</div>
+              <div class="ir-tags">
+                <span v-for="ciudad in data.distribucion_ciudades.slice(0,15)" :key="ciudad" class="ir-tag">{{ ciudad }}</span>
               </div>
             </div>
           </div>
-          <div v-else class="inf-empty">Sin datos geográficos disponibles</div>
-        </div>
 
-        <!-- ⑥ DESGLOSE LOCAL (solo local/regional) -->
-        <div v-if="data.desglose_geografico_local" class="inf-block">
-          <div class="inf-block-title">📍 {{ $t('informe.geoLocalTitle') }}</div>
-          <div class="inf-section-label" style="margin-bottom:14px">
-            {{ data.desglose_geografico_local.scope === 'regional'
-              ? $t('informe.geoRegionalSubtitle', { region: data.desglose_geografico_local.municipio })
-              : $t('informe.geoLocalSubtitle', { municipio: data.desglose_geografico_local.municipio }) }}
-          </div>
-          <div class="inf-geo-bar-row">
-            <div class="inf-geo-bar-label">
-              <span style="color:var(--accent2)">📍 {{ data.desglose_geografico_local.scope === 'regional' ? $t('informe.geoRegionalVerified') : $t('informe.geoLocalVerified') }}</span>
-              <strong>{{ data.desglose_geografico_local.gps_local }}</strong>
+          <!-- Stats secundarias -->
+          <div class="ir-stats-row" style="margin-top:20px">
+            <div class="ir-stat">
+              <div class="ir-stat-n">{{ data.ciudades_distintas }}</div>
+              <div class="ir-caption">{{ $t('informe.statCiudades') }}</div>
             </div>
-            <div class="inf-bar-track"><div class="inf-bar-fill" :style="barStyleLocal(data.desglose_geografico_local.gps_local, 'var(--accent2)')"></div></div>
-          </div>
-          <div class="inf-geo-bar-row">
-            <div class="inf-geo-bar-label">
-              <span style="color:var(--accent4)">🌐 {{ $t('informe.geoNational') }}</span>
-              <strong>{{ data.desglose_geografico_local.nacionales_sin_gps }}</strong>
+            <div class="ir-stat">
+              <div class="ir-stat-n">{{ data.paises_distintos }}</div>
+              <div class="ir-caption">{{ data.paises_distintos === 1 ? $t('informe.pais') : $t('informe.paises') }}</div>
             </div>
-            <div class="inf-bar-track"><div class="inf-bar-fill" :style="barStyleLocal(data.desglose_geografico_local.nacionales_sin_gps, 'var(--accent4)')"></div></div>
-          </div>
-          <div v-if="data.desglose_geografico_local.internacionales > 0" class="inf-geo-bar-row">
-            <div class="inf-geo-bar-label">
-              <span style="color:var(--accent)">🌍 {{ $t('informe.geoInternational') }}</span>
-              <strong>{{ data.desglose_geografico_local.internacionales }}</strong>
+            <div class="ir-stat">
+              <div class="ir-stat-n">{{ data.adhesiones_con_gps }}</div>
+              <div class="ir-caption">GPS ✓</div>
             </div>
-            <div class="inf-bar-track"><div class="inf-bar-fill" :style="barStyleLocal(data.desglose_geografico_local.internacionales, 'var(--accent)')"></div></div>
           </div>
-        </div>
 
-        <!-- ⑦ CALIDAD DE VERIFICACIÓN -->
-        <div class="inf-block">
-          <div class="inf-block-title">{{ $t('informe.fiabilidadTitle') }}</div>
-
-          <!-- GPS -->
-          <div class="inf-gps-row">
-            <div class="inf-gps-cell" style="border-color:rgba(76,255,164,.2);background:rgba(76,255,164,.05)">
-              <div class="inf-gps-n" style="color:var(--accent2)">{{ data.adhesiones_con_gps }}</div>
-              <div class="inf-gps-l">{{ $t('informe.gpsVerified') }}</div>
-            </div>
-            <div class="inf-gps-cell" style="border-color:var(--border)">
-              <div class="inf-gps-n" style="color:var(--accent)">{{ data.adhesiones_sin_gps }}</div>
-              <div class="inf-gps-l">{{ $t('informe.gpsSim') }}</div>
-            </div>
+          <div class="ir-timeline-row" v-if="data.primera_adhesion">
+            <span class="ir-caption">{{ $t('informe.firstAdhesion') }} {{ formatDateTime(data.primera_adhesion) }}</span>
+            <span class="ir-caption">{{ $t('informe.lastAdhesion') }} {{ formatDateTime(data.ultima_adhesion) }}</span>
           </div>
-          <div class="inf-note" style="margin-bottom:16px">{{ $t('informe.gpsNote') }}</div>
+        </section>
 
-          <!-- Bandas de fiabilidad -->
-          <div v-if="data.desglose_fiabilidad" style="display:flex;flex-direction:column;gap:14px">
-            <div v-if="data.desglose_fiabilidad.alta.count > 0">
-              <div class="inf-rel-header">
-                <span style="color:var(--accent2);font-weight:600">{{ $t('informe.fiabilidadAlta') }}</span>
-                <span class="inf-rel-count">{{ data.desglose_fiabilidad.alta.count }} {{ $t('informe.ciudadanos') }}</span>
+        <div class="ir-divider"></div>
+
+        <!-- ══ CALIDAD DE LA EVIDENCIA ════════════════════════════════ -->
+        <section class="ir-section">
+          <h2 class="ir-section-title">{{ $t('informe.sectionQuality') }}</h2>
+          <p class="ir-prose">{{ $t('informe.qualityIntro') }}</p>
+
+          <div v-if="data.desglose_fiabilidad" class="ir-quality-bands">
+            <div v-if="data.desglose_fiabilidad.alta.count > 0" class="ir-quality-band">
+              <div class="ir-quality-header">
+                <div>
+                  <div class="ir-quality-title" style="color:var(--accent2)">{{ $t('informe.fiabilidadAlta') }}</div>
+                  <div class="ir-caption">{{ data.desglose_fiabilidad.alta.descripcion }}</div>
+                </div>
+                <div class="ir-quality-n" style="color:var(--accent2)">{{ data.desglose_fiabilidad.alta.count }}</div>
               </div>
-              <div class="inf-bar-track"><div class="inf-bar-fill" :style="{width:pct(data.desglose_fiabilidad.alta.count)+'%',background:'var(--accent2)'}"></div></div>
-              <div class="inf-note">{{ data.desglose_fiabilidad.alta.descripcion }}</div>
+              <div class="ir-geo-bar-bg"><div class="ir-geo-bar-fill" :style="{width:pct(data.desglose_fiabilidad.alta.count)+'%',background:'var(--accent2)'}"></div></div>
             </div>
-            <div v-if="data.desglose_fiabilidad.media.count > 0">
-              <div class="inf-rel-header">
-                <span style="color:var(--accent4);font-weight:600">{{ $t('informe.fiabilidadMedia') }}</span>
-                <span class="inf-rel-count">{{ data.desglose_fiabilidad.media.count }} {{ $t('informe.ciudadanos') }}</span>
+            <div v-if="data.desglose_fiabilidad.media.count > 0" class="ir-quality-band">
+              <div class="ir-quality-header">
+                <div>
+                  <div class="ir-quality-title" style="color:var(--accent4)">{{ $t('informe.fiabilidadMedia') }}</div>
+                  <div class="ir-caption">{{ data.desglose_fiabilidad.media.descripcion }}</div>
+                </div>
+                <div class="ir-quality-n" style="color:var(--accent4)">{{ data.desglose_fiabilidad.media.count }}</div>
               </div>
-              <div class="inf-bar-track"><div class="inf-bar-fill" :style="{width:pct(data.desglose_fiabilidad.media.count)+'%',background:'var(--accent4)'}"></div></div>
-              <div class="inf-note">{{ data.desglose_fiabilidad.media.descripcion }}</div>
+              <div class="ir-geo-bar-bg"><div class="ir-geo-bar-fill" :style="{width:pct(data.desglose_fiabilidad.media.count)+'%',background:'var(--accent4)'}"></div></div>
             </div>
-            <div v-if="data.desglose_fiabilidad.base.count > 0">
-              <div class="inf-rel-header">
-                <span style="color:var(--accent);font-weight:600">{{ $t('informe.fiabilidadBase') }}</span>
-                <span class="inf-rel-count">{{ data.desglose_fiabilidad.base.count }} {{ $t('informe.ciudadanos') }}</span>
+            <div v-if="data.desglose_fiabilidad.base.count > 0" class="ir-quality-band">
+              <div class="ir-quality-header">
+                <div>
+                  <div class="ir-quality-title" style="color:var(--accent)">{{ $t('informe.fiabilidadBase') }}</div>
+                  <div class="ir-caption">{{ data.desglose_fiabilidad.base.descripcion }}</div>
+                </div>
+                <div class="ir-quality-n" style="color:var(--accent)">{{ data.desglose_fiabilidad.base.count }}</div>
               </div>
-              <div class="inf-bar-track"><div class="inf-bar-fill" :style="{width:pct(data.desglose_fiabilidad.base.count)+'%',background:'var(--accent)'}"></div></div>
-              <div class="inf-note">{{ data.desglose_fiabilidad.base.descripcion }}</div>
-            </div>
-            <div v-if="data.desglose_fiabilidad.sin_dato.count > 0">
-              <div class="inf-rel-header">
-                <span style="color:var(--text2);font-weight:600">{{ $t('informe.fiabilidadSin') }}</span>
-                <span class="inf-rel-count">{{ data.desglose_fiabilidad.sin_dato.count }} {{ $t('informe.ciudadanos') }}</span>
-              </div>
-              <div class="inf-note">{{ $t('informe.fiabilidadSinDesc') }}</div>
+              <div class="ir-geo-bar-bg"><div class="ir-geo-bar-fill" :style="{width:pct(data.desglose_fiabilidad.base.count)+'%',background:'var(--accent)'}"></div></div>
             </div>
           </div>
-          <div v-else class="inf-empty">{{ $t('informe.fiabilidadNoData') }}</div>
-        </div>
+        </section>
 
-        <!-- ⑧ VELOCIDAD -->
-        <div class="inf-block" v-if="data.velocidad">
-          <div class="inf-block-title">{{ $t('informe.velocidadTitle') }}</div>
-          <div class="inf-gps-row" style="margin-bottom:14px">
-            <div class="inf-gps-cell">
-              <div class="inf-gps-n" style="color:var(--accent2)">{{ data.velocidad.media_diaria }}</div>
-              <div class="inf-gps-l">{{ $t('informe.velocidadMediaDiaria') }}</div>
-            </div>
-            <div v-if="data.velocidad.dia_pico" class="inf-gps-cell">
-              <div class="inf-gps-n" style="color:var(--accent)">{{ data.velocidad.dia_pico.count }}</div>
-              <div class="inf-gps-l">{{ $t('informe.velocidadPico') }} {{ formatDate(data.velocidad.dia_pico.fecha) }}</div>
-            </div>
-          </div>
-          <div class="inf-note" style="margin-bottom:8px">{{ $t('informe.velocidadPorDia') }}</div>
-          <div style="display:flex;align-items:flex-end;gap:3px;height:72px">
-            <div v-for="d in data.velocidad.adhesiones_por_dia" :key="d.fecha"
-              :style="{
-                flex:1,
-                background: d.count === data.velocidad.dia_pico?.count ? 'var(--accent2)' : 'var(--accent)',
-                height: maxPct(d.count) + '%',
-                borderRadius:'3px 3px 0 0',
-                minHeight:'4px',
-                opacity: d.count === data.velocidad.dia_pico?.count ? 1 : 0.6
-              }">
-            </div>
-          </div>
-        </div>
+        <div class="ir-divider"></div>
 
-        <!-- ⑨ LO QUE ESTE INFORME DEMUESTRA Y LO QUE NO -->
-        <div v-if="data.evidential_scope" class="inf-block">
-          <div class="inf-block-title">{{ $t('evidence.title') }}</div>
+        <!-- ══ QUÉ DEMUESTRA Y QUÉ NO ═════════════════════════════════ -->
+        <section v-if="data.evidential_scope" class="ir-section">
+          <h2 class="ir-section-title">{{ $t('evidence.title') }}</h2>
 
-          <!-- Lo que SÍ demuestra — en verde, positivo -->
-          <div class="inf-evidence-section inf-evidence-yes">
-            <div class="inf-evidence-icon">✓</div>
+          <div class="ir-scope-yes">
+            <div class="ir-scope-icon">✓</div>
             <div>
-              <div class="inf-evidence-label">{{ $t('evidence.demonstratesTitle') }}</div>
-              <div v-for="(it,i) in data.evidential_scope.demonstrates" :key="'d'+i" class="inf-evidence-item">
-                {{ $t('evidence.'+it.key, it.params || {}) }}
-              </div>
-              <div v-if="data.evidential_scope.participation_rate" class="inf-evidence-item">
-                {{ $t('evidence.participationRate', {
-                  count: data.evidential_scope.participation_rate.count,
-                  eligible: data.evidential_scope.participation_rate.eligible,
-                  rate: data.evidential_scope.participation_rate.rate }) }}
-              </div>
-            </div>
-          </div>
-
-          <!-- Lo que NO demuestra — en ámbar, límites -->
-          <div class="inf-evidence-section inf-evidence-no">
-            <div class="inf-evidence-icon">○</div>
-            <div>
-              <div class="inf-evidence-label">{{ $t('evidence.outsideScopeTitle') }}</div>
-              <div v-for="(it,i) in data.evidential_scope.outside_scope" :key="'o'+i" class="inf-evidence-item">
+              <div class="ir-scope-heading">{{ $t('evidence.demonstratesTitle') }}</div>
+              <div v-for="(it,i) in data.evidential_scope.demonstrates" :key="'d'+i" class="ir-scope-item">
                 {{ $t('evidence.'+it.key, it.params || {}) }}
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- ⑩ CADENA DE VERIFICACIÓN -->
-        <div class="inf-block">
-          <div class="inf-block-title">{{ $t('informe.chainTitle') }}</div>
-          <div class="inf-chain-steps">
-            <div class="inf-chain-step">
-              <div class="inf-chain-num">1</div>
-              <div>
-                <div class="inf-chain-title">reCAPTCHA v3</div>
-                <div class="inf-note">{{ $t('informe.chain1') }}</div>
-              </div>
-            </div>
-            <div class="inf-chain-step">
-              <div class="inf-chain-num">2</div>
-              <div>
-                <div class="inf-chain-title">SMS / Email OTP</div>
-                <div class="inf-note">{{ $t('informe.chain2') }}</div>
-              </div>
-            </div>
-            <div class="inf-chain-step">
-              <div class="inf-chain-num">3</div>
-              <div>
-                <div class="inf-chain-title">HMAC-SHA256</div>
-                <div class="inf-note">{{ $t('informe.chain3') }}</div>
-              </div>
-            </div>
-            <div class="inf-chain-step">
-              <div class="inf-chain-num">4</div>
-              <div>
-                <div class="inf-chain-title">{{ $t('informe.chain4Title') }}</div>
-                <div class="inf-note">{{ $t('informe.chain4') }}</div>
+          <div class="ir-scope-no">
+            <div class="ir-scope-icon">○</div>
+            <div>
+              <div class="ir-scope-heading">{{ $t('evidence.outsideScopeTitle') }}</div>
+              <div v-for="(it,i) in data.evidential_scope.outside_scope" :key="'o'+i" class="ir-scope-item">
+                {{ $t('evidence.'+it.key, it.params || {}) }}
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <!-- ⑪ SELLO DE INTEGRIDAD -->
-        <div class="inf-block" style="margin-bottom:28px">
-          <div class="inf-block-title">{{ $t('informe.selloTitle') }}</div>
+        <div class="ir-divider"></div>
 
-          <div v-if="data.protest.hash_integridad" class="inf-hash-box">
-            <div class="inf-note" style="margin-bottom:8px">{{ $t('informe.selloHashLabel') }}</div>
-            <div class="inf-hash">{{ data.protest.hash_integridad }}</div>
-            <div class="inf-note" style="margin-top:10px;line-height:1.6">{{ $t('informe.selloDesc') }}</div>
-          </div>
-          <div v-else class="inf-pending-box">
-            ⏳ {{ $t('informe.selloHashPending') }}
-          </div>
+        <!-- ══ SELLO DE INTEGRIDAD ════════════════════════════════════ -->
+        <section class="ir-section">
+          <h2 class="ir-section-title">{{ $t('informe.selloTitle') }}</h2>
 
-          <!-- Verificador en app -->
-          <div v-if="data.protest.hash_integridad" style="margin:14px 0">
-            <button @click="verifyIntegrity" class="inf-verify-btn">
-              🔍 {{ verifyState === 'running' ? $t('informe.verifyRunning') : $t('informe.verifyBtn') }}
+          <div v-if="data.protest.hash_integridad" class="ir-cert">
+            <div class="ir-cert-header">
+              <span class="ir-cert-icon">🔐</span>
+              <div>
+                <div class="ir-cert-title">{{ $t('informe.selloHashLabel') }}</div>
+                <div class="ir-hash">{{ data.protest.hash_integridad }}</div>
+              </div>
+            </div>
+            <button @click="verifyIntegrity" class="ir-verify-btn">
+              {{ verifyState === 'running' ? $t('informe.verifyRunning') : $t('informe.verifyBtn') }}
             </button>
-            <div v-if="verifyResult" class="inf-verify-result"
-              :class="verifyResult === 'ok' ? 'inf-verify-ok' : verifyResult === 'v1' ? 'inf-verify-v1' : 'inf-verify-fail'">
+            <div v-if="verifyResult" class="ir-verify-result"
+              :class="verifyResult === 'ok' ? 'ir-verify-ok' : verifyResult === 'v1' ? 'ir-verify-v1' : 'ir-verify-fail'">
               {{ verifyResult === 'ok' ? $t('informe.verifyOk') : verifyResult === 'v1' ? $t('informe.verifyV1') : $t('informe.verifyFail') }}
             </div>
           </div>
+          <div v-else class="ir-cert-pending">
+            <span>⏳</span> {{ $t('informe.selloHashPending') }}
+          </div>
 
-          <!-- Registro público v2 -->
-          <div class="inf-ledger-box">
-            <div class="inf-ledger-title">🔗 {{ $t('informe.ledgerTitle') }}</div>
-            <div class="inf-note" style="line-height:1.7">
+          <!-- Acordeón: cadena de verificación + ledger -->
+          <details class="ir-details">
+            <summary class="ir-details-summary">{{ $t('informe.chainTitle') }}</summary>
+            <div class="ir-chain">
+              <div class="ir-chain-step">
+                <div class="ir-chain-num">1</div>
+                <div><strong>reCAPTCHA v3</strong><div class="ir-caption">{{ $t('informe.chain1') }}</div></div>
+              </div>
+              <div class="ir-chain-step">
+                <div class="ir-chain-num">2</div>
+                <div><strong>SMS / Email OTP</strong><div class="ir-caption">{{ $t('informe.chain2') }}</div></div>
+              </div>
+              <div class="ir-chain-step">
+                <div class="ir-chain-num">3</div>
+                <div><strong>HMAC-SHA256</strong><div class="ir-caption">{{ $t('informe.chain3') }}</div></div>
+              </div>
+              <div class="ir-chain-step">
+                <div class="ir-chain-num">4</div>
+                <div><strong>{{ $t('informe.chain4Title') }}</strong><div class="ir-caption">{{ $t('informe.chain4') }}</div></div>
+              </div>
+            </div>
+          </details>
+
+          <details class="ir-details">
+            <summary class="ir-details-summary">{{ $t('informe.ledgerTitle') }}</summary>
+            <div class="ir-caption" style="line-height:1.7;padding:12px 0">
               {{ $t('informe.ledgerV1') }}
-              <strong style="color:var(--text2)"> {{ $t('informe.ledgerV1Caveat') }}</strong> —
+              <strong> {{ $t('informe.ledgerV1Caveat') }}</strong> —
               {{ $t('informe.ledgerV1Detail') }}<br><br>
               {{ $t('informe.ledgerV2Pre') }} <strong style="color:var(--accent)">{{ $t('informe.ledgerV2Name') }}</strong> {{ $t('informe.ledgerV2Post') }}
               <em>{{ $t('informe.ledgerV2Planned') }}</em>
             </div>
+          </details>
+        </section>
+
+        <div class="ir-divider"></div>
+
+        <!-- ══ PIE DEL DOCUMENTO ══════════════════════════════════════ -->
+        <div class="ir-footer">
+          <div class="ir-footer-row">
+            <span class="ir-caption">{{ $t('informe.selloGenerated') }}</span>
+            <span class="ir-caption">{{ formatDateTime(new Date().toISOString()) }}</span>
           </div>
-
-          <!-- Metadatos -->
-          <div class="inf-meta-grid">
-            <div class="inf-meta-row">
-              <span class="inf-meta-key">{{ $t('informe.selloSourceDesc') }}</span>
-              <button onclick="window.open('https://github.com/cero-absoluto/vozciudadana','_blank')" class="inf-github-btn">
-                {{ $t('informe.selloSourceBtn') }}
-              </button>
-            </div>
-            <div class="inf-meta-row">
-              <span class="inf-meta-key">{{ $t('informe.selloGenerated') }}</span>
-              <span class="inf-meta-val">{{ formatDateTime(new Date().toISOString()) }}</span>
-            </div>
-            <div class="inf-meta-row">
-              <span class="inf-meta-key">{{ $t('informe.selloId') }}</span>
-              <span class="inf-meta-val inf-mono">{{ $route.params.id }}</span>
-            </div>
+          <div class="ir-footer-row">
+            <span class="ir-caption">{{ $t('informe.selloId') }}</span>
+            <span class="ir-mono">{{ $route.params.id }}</span>
           </div>
-        </div>
-
-        <!-- BOTONES -->
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px">
-          <button class="btn-primary" style="flex:1;padding:12px" @click="$router.back()">{{ $t('informe.back') }}</button>
-          <button class="btn-primary" style="flex:1;padding:12px;background:var(--accent2);color:#000" @click="downloadPDF">{{ $t('informe.downloadPdf') }}</button>
-          <button class="btn-primary" style="flex:1;padding:12px;background:rgba(76,111,255,.2);border:.5px solid #4C6FFF;color:#4C6FFF" @click="showEmbed=true">{{ $t('informe.embedBtn') }}</button>
-        </div>
-
-        <!-- EMBED MODAL -->
-        <div v-if="showEmbed" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;display:flex;align-items:center;justify-content:center;padding:24px" @click.self="showEmbed=false">
-          <div style="background:#13111F;border:.5px solid rgba(255,255,255,.1);border-radius:16px;padding:24px;max-width:500px;width:100%">
-            <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">{{ $t('informe.embedTitle') }}</div>
-            <div style="font-size:16px;color:var(--text2);margin-bottom:16px;line-height:1.7">{{ $t('informe.embedDesc') }}</div>
-            <div style="background:#0C0B14;border:.5px solid rgba(255,255,255,.08);border-radius:10px;padding:14px;font-family:monospace;font-size:14px;color:#4CFFA4;word-break:break-all;margin-bottom:14px;line-height:1.7">{{ embedCode }}</div>
-            <div style="display:flex;gap:10px">
-              <button class="btn-primary" style="flex:1;background:#4C6FFF" @click="copyEmbed">{{ copied ? $t('informe.embedCopied') : $t('informe.embedCopy') }}</button>
-              <button class="btn-primary" style="flex:1;background:transparent;border:.5px solid var(--border2);color:var(--text2)" @click="showEmbed=false">{{ $t('informe.embedClose') }}</button>
-            </div>
+          <div class="ir-footer-row">
+            <button onclick="window.open('https://github.com/cero-absoluto/vozciudadana','_blank')" class="ir-github-btn">
+              {{ $t('informe.selloSourceBtn') }}
+            </button>
           </div>
         </div>
 
+        <!-- ══ ACCIONES ═══════════════════════════════════════════════ -->
+        <div class="ir-actions">
+          <button class="btn-primary ir-btn-back" @click="$router.back()">{{ $t('informe.back') }}</button>
+          <button class="btn-primary ir-btn-pdf" @click="downloadPDF">{{ $t('informe.downloadPdf') }}</button>
+          <button class="ir-btn-embed" @click="showEmbed=true">{{ $t('informe.embedBtn') }}</button>
+        </div>
+
+      </div><!-- fin ir-doc -->
+
+      <!-- EMBED MODAL -->
+      <div v-if="showEmbed" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;display:flex;align-items:center;justify-content:center;padding:24px" @click.self="showEmbed=false">
+        <div style="background:#13111F;border:.5px solid rgba(255,255,255,.1);border-radius:16px;padding:24px;max-width:500px;width:100%">
+          <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">{{ $t('informe.embedTitle') }}</div>
+          <div style="font-size:15px;color:var(--text2);margin-bottom:16px;line-height:1.7">{{ $t('informe.embedDesc') }}</div>
+          <div style="background:#0C0B14;border:.5px solid rgba(255,255,255,.08);border-radius:10px;padding:14px;font-family:monospace;font-size:13px;color:#4CFFA4;word-break:break-all;margin-bottom:14px;line-height:1.7">{{ embedCode }}</div>
+          <div style="display:flex;gap:10px">
+            <button class="btn-primary" style="flex:1;background:#4C6FFF" @click="copyEmbed">{{ copied ? $t('informe.embedCopied') : $t('informe.embedCopy') }}</button>
+            <button class="btn-primary" style="flex:1;background:transparent;border:.5px solid var(--border2);color:var(--text2)" @click="showEmbed=false">{{ $t('informe.embedClose') }}</button>
+          </div>
+        </div>
       </div>
+
     </div>
   </div>
 </template>
 
 <style scoped>
-/* ── Contenedor principal ─────────────────────────────────────────────── */
-/* La clave: width+box-sizing garantizan que el padding no desborde.      */
-/* overflow-x en el propio scroll corta cualquier hijo que se salga.      */
-.inf-scroll {
-  padding: 20px 16px;
+
+/* ── Scroll y documento ─────────────────────────────────────── */
+.ir-scroll {
   width: 100%;
-  max-width: 720px;
+  max-width: 680px;
   margin: 0 auto;
+  padding: 0 0 40px;
   box-sizing: border-box;
   overflow-x: hidden;
 }
 
-/* Todos los bloques respetan el ancho del padre */
-.inf-block {
-  background: var(--bg2);
-  border: .5px solid var(--border);
-  border-radius: var(--r2);
-  padding: 16px;
-  margin-bottom: 14px;
-  width: 100%;
-  box-sizing: border-box;
-  min-width: 0;
+.ir-doc {
+  display: flex;
+  flex-direction: column;
 }
-.inf-block-highlight { border-color: rgba(76,255,164,.3); background: rgba(76,255,164,.04); }
-.inf-block-headline  { border-color: rgba(255,179,71,.25); background: rgba(255,179,71,.04); }
-.inf-block-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text2); margin-bottom: 14px; }
 
-/* ── Cabecera convocatoria ─────────────────────────────────────────────── */
-.inf-focal     { font-family: 'Syne',sans-serif; font-size: 22px; font-weight: 800; color: var(--accent2); line-height: 1.25; word-break: break-word; }
-.inf-focal-sub { font-size: 16px; color: var(--text2); margin-top: 4px; }
-.inf-title     { font-family: 'Syne',sans-serif; font-size: 20px; font-weight: 800; line-height: 1.35; color: var(--text); margin-bottom: 16px; word-break: break-word; }
-.inf-headline-text { font-size: 16px; font-weight: 600; line-height: 1.7; color: var(--text); word-break: break-word; }
+/* ── Cabecera ────────────────────────────────────────────────── */
+.ir-header {
+  padding: 28px 24px 24px;
+  border-bottom: 1px solid var(--border);
+}
 
-.inf-field       { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; min-width: 0; }
-.inf-field-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); }
-.inf-field-val   { font-size: 16px; color: var(--text); line-height: 1.65; word-break: break-word; }
-.inf-demands     { color: var(--text); font-style: italic; }
-.inf-link {
+.ir-header-meta {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.ir-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text3);
+  border: .5px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+}
+
+.ir-badge-status {
+  color: var(--accent2);
+  border-color: rgba(76,255,164,.3);
+}
+
+.ir-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--text);
+  margin: 0 0 16px;
+  word-break: break-word;
+}
+
+.ir-directed {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.ir-institution {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent2);
+}
+
+.ir-country {
+  font-size: 14px;
+  color: var(--text2);
+}
+
+.ir-dates-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ir-dates-sep {
+  color: var(--text3);
+  font-size: 14px;
+}
+
+/* ── Número principal ─────────────────────────────────────────── */
+.ir-hero {
+  padding: 40px 24px 32px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+
+.ir-hero-n {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(72px, 20vw, 96px);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent2);
+  letter-spacing: -2px;
+  margin-bottom: 8px;
+}
+
+.ir-hero-label {
   font-size: 15px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.ir-hero-sub {
+  font-size: 13px;
+  color: var(--text3);
+  margin-bottom: 20px;
+}
+
+.ir-hero-demand {
+  font-size: 14px;
+  color: var(--text2);
+  font-style: italic;
+  line-height: 1.6;
+  max-width: 480px;
+  margin: 16px auto 0;
+  padding-top: 16px;
+  border-top: .5px solid var(--border);
+  text-align: left;
+}
+
+/* ── Sellos ───────────────────────────────────────────────────── */
+.ir-seals {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.ir-seal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg);
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.3;
+}
+
+.ir-seal-icon {
+  color: var(--accent2);
+  font-weight: 800;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+/* ── Divisor ──────────────────────────────────────────────────── */
+.ir-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0;
+}
+
+/* ── Secciones ────────────────────────────────────────────────── */
+.ir-section {
+  padding: 28px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ir-section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text3);
+  margin: 0 0 20px;
+}
+
+.ir-prose {
+  font-size: 15px;
+  color: var(--text2);
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+.ir-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 14px;
+}
+
+.ir-field-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text3);
+}
+
+.ir-field-val {
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.ir-demands { font-style: italic; }
+
+.ir-link {
+  font-size: 14px;
   color: var(--accent);
   text-decoration: underline;
   word-break: break-all;
   overflow-wrap: anywhere;
   line-height: 1.6;
-  display: block;
-  max-width: 100%;
 }
 
-.inf-dates     { display: flex; align-items: center; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
-.inf-date-item { display: flex; flex-direction: column; gap: 3px; }
-.inf-date-sep  { font-size: 16px; color: var(--text2); }
+.ir-caption {
+  font-size: 12px;
+  color: var(--text3);
+  line-height: 1.5;
+}
 
-/* ── Estadísticas (grid) ──────────────────────────────────────────────── */
-.inf-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 14px; }
-.inf-sc   { background: var(--bg3); border: .5px solid var(--border); border-radius: var(--r); padding: 12px 6px; text-align: center; min-width: 0; }
-.inf-sc-n { font-family: 'Syne',sans-serif; font-size: 22px; font-weight: 800; line-height: 1; }
-.inf-sc-l { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text2); margin-top: 5px; }
-.inf-time-row { display: flex; flex-direction: column; gap: 4px; font-size: 15px; color: var(--text2); }
+/* ── Geografía ────────────────────────────────────────────────── */
+.ir-geo-breakdown { display: flex; flex-direction: column; gap: 4px; }
 
-/* ── Geografía ────────────────────────────────────────────────────────── */
-.inf-section-label { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
-.inf-geo-list { display: flex; flex-wrap: wrap; gap: 6px; }
-.inf-geo-item { font-size: 14px; color: var(--text); background: var(--bg3); border: .5px solid var(--border); border-radius: 20px; padding: 3px 10px; }
+.ir-geo-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
 
-.inf-geo-bar-row   { margin-bottom: 12px; }
-.inf-geo-bar-label { display: flex; justify-content: space-between; align-items: center; font-size: 15px; margin-bottom: 6px; }
-.inf-bar-track     { background: var(--bg4); border-radius: 6px; height: 10px; overflow: hidden; width: 100%; }
-.inf-bar-fill      { height: 100%; border-radius: 6px; transition: width .5s; }
+.ir-geo-label { display: flex; align-items: center; gap: 8px; color: var(--text2); }
+.ir-geo-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.ir-geo-count { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; }
 
-/* ── GPS / Fiabilidad ─────────────────────────────────────────────────── */
-.inf-gps-row  { display: flex; gap: 8px; margin-bottom: 12px; }
-.inf-gps-cell { flex: 1; min-width: 0; border: .5px solid var(--border); border-radius: var(--r); padding: 12px 6px; text-align: center; }
-.inf-gps-n    { font-family: 'Syne',sans-serif; font-size: 26px; font-weight: 800; }
-.inf-gps-l    { font-size: 14px; color: var(--text2); margin-top: 4px; }
-
-.inf-rel-header { display: flex; justify-content: space-between; align-items: center; font-size: 15px; margin-bottom: 6px; flex-wrap: wrap; gap: 4px; }
-.inf-rel-count  { color: var(--text); }
-
-/* ── Listas de evidencia ──────────────────────────────────────────────── */
-.inf-list        { margin: 0; padding-left: 18px; font-size: 16px; line-height: 1.85; }
-.inf-list li     { margin-bottom: 4px; word-break: break-word; }
-.inf-list-green  { color: var(--text); }
-.inf-list-muted  { color: var(--text2); }
-
-/* ── Cadena de verificación ──────────────────────────────────────────── */
-.inf-chain-steps { display: flex; flex-direction: column; gap: 14px; }
-.inf-chain-step  { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
-.inf-chain-num   { min-width: 28px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #000; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
-.inf-chain-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
-
-/* ── Sello de integridad ──────────────────────────────────────────────── */
-.inf-hash-box {
-  background: rgba(76,255,164,.05);
-  border: .5px solid rgba(76,255,164,.25);
-  border-radius: var(--r);
-  padding: 14px;
-  margin-bottom: 12px;
+.ir-geo-bar-bg {
+  height: 6px;
+  background: var(--bg3);
+  border-radius: 3px;
   overflow: hidden;
+  margin-top: 4px;
+}
+
+.ir-geo-bar-fill { height: 100%; border-radius: 3px; transition: width .5s; }
+
+.ir-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.ir-tag { font-size: 13px; color: var(--text2); background: var(--bg2); border: .5px solid var(--border); border-radius: 4px; padding: 3px 9px; }
+
+.ir-stats-row { display: flex; gap: 24px; }
+.ir-stat { display: flex; flex-direction: column; gap: 2px; }
+.ir-stat-n { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: var(--text); line-height: 1; }
+
+.ir-timeline-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 12px;
+}
+
+/* ── Calidad ──────────────────────────────────────────────────── */
+.ir-quality-bands { display: flex; flex-direction: column; gap: 18px; }
+
+.ir-quality-band { display: flex; flex-direction: column; gap: 6px; }
+
+.ir-quality-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.ir-quality-title { font-size: 14px; font-weight: 700; }
+.ir-quality-n { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; line-height: 1; flex-shrink: 0; }
+
+/* ── Evidencia ────────────────────────────────────────────────── */
+.ir-scope-yes, .ir-scope-no {
+  display: flex;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: .5px solid var(--border);
+}
+
+.ir-scope-no { border-bottom: none; padding-bottom: 0; }
+
+.ir-scope-icon {
+  font-size: 18px;
+  font-weight: 800;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ir-scope-yes .ir-scope-icon { color: var(--accent2); }
+.ir-scope-no  .ir-scope-icon { color: var(--text3); }
+
+.ir-scope-heading {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+
+.ir-scope-item {
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.65;
+  margin-bottom: 4px;
+}
+
+.ir-scope-yes .ir-scope-item { color: var(--text); }
+
+/* ── Integridad ───────────────────────────────────────────────── */
+.ir-cert {
+  background: rgba(76,255,164,.04);
+  border: .5px solid rgba(76,255,164,.2);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.ir-cert-header { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+.ir-cert-icon { font-size: 22px; flex-shrink: 0; }
+.ir-cert-title { font-size: 12px; color: var(--text3); margin-bottom: 6px; }
+
+.ir-hash {
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--accent2);
+  word-break: break-all;
+  line-height: 1.7;
+}
+
+.ir-cert-pending {
+  background: var(--bg2);
+  border: .5px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 14px;
+  color: var(--text3);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ir-verify-btn {
   width: 100%;
+  padding: 9px;
+  background: transparent;
+  border: .5px solid rgba(76,255,164,.3);
+  border-radius: 6px;
+  color: var(--accent2);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
   box-sizing: border-box;
 }
-.inf-hash {
-  font-family: monospace;
+
+.ir-verify-result { margin-top: 8px; padding: 10px 12px; border-radius: 6px; font-size: 13px; line-height: 1.6; }
+.ir-verify-ok   { background: rgba(76,255,164,.06); border: .5px solid rgba(76,255,164,.25); color: var(--accent2); }
+.ir-verify-v1   { background: rgba(124,111,255,.06); border: .5px solid rgba(124,111,255,.25); color: var(--accent); }
+.ir-verify-fail { background: rgba(255,80,80,.06); border: .5px solid rgba(255,80,80,.25); color: var(--accent3); }
+
+/* ── Acordeón ─────────────────────────────────────────────────── */
+.ir-details {
+  border-top: .5px solid var(--border);
+  margin-top: 8px;
+}
+
+.ir-details-summary {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  padding: 12px 0;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ir-details-summary::after {
+  content: '›';
+  font-size: 16px;
+  color: var(--text3);
+  transition: transform .2s;
+}
+
+.ir-details[open] .ir-details-summary::after { transform: rotate(90deg); }
+
+.ir-chain { display: flex; flex-direction: column; gap: 12px; padding-bottom: 12px; }
+.ir-chain-step { display: flex; gap: 12px; align-items: flex-start; }
+.ir-chain-num {
+  min-width: 24px; width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #000;
+  font-weight: 800;
   font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ── Pie y acciones ───────────────────────────────────────────── */
+.ir-footer {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ir-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ir-mono {
+  font-family: monospace;
+  font-size: 11px;
   color: var(--accent2);
   word-break: break-all;
-  overflow-wrap: anywhere;
-  line-height: 1.7;
-  margin: 8px 0;
-  width: 100%;
-  display: block;
 }
-.inf-pending-box { background: var(--bg3); border: .5px solid var(--border); border-radius: var(--r); padding: 14px; font-size: 15px; color: var(--text2); margin-bottom: 12px; }
 
-.inf-verify-btn    { width: 100%; padding: 10px; background: rgba(76,255,164,.08); border: .5px solid rgba(76,255,164,.3); border-radius: var(--r); color: var(--accent2); font-size: 15px; font-weight: 600; cursor: pointer; box-sizing: border-box; }
-.inf-verify-result { margin-top: 10px; padding: 10px 12px; border-radius: var(--r); font-size: 15px; line-height: 1.6; }
-.inf-verify-ok     { background: rgba(76,255,164,.08); border: .5px solid rgba(76,255,164,.3); }
-.inf-verify-v1     { background: rgba(124,111,255,.08); border: .5px solid rgba(124,111,255,.3); }
-.inf-verify-fail   { background: rgba(255,80,80,.08); border: .5px solid rgba(255,80,80,.3); }
-
-.inf-ledger-box   { background: rgba(124,111,255,.06); border: .5px solid rgba(124,111,255,.25); border-radius: var(--r); padding: 14px; margin: 14px 0; }
-.inf-ledger-title { font-size: 16px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
-
-/* ── Metadatos finales ────────────────────────────────────────────────── */
-.inf-meta-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: .5px solid var(--border); }
-.inf-meta-row  { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; min-width: 0; }
-.inf-meta-key  { font-size: 14px; color: var(--text2); min-width: 80px; flex-shrink: 0; }
-.inf-meta-val  { font-size: 15px; color: var(--text); word-break: break-word; min-width: 0; flex: 1; }
-.inf-mono {
-  font-family: monospace;
+.ir-github-btn {
+  background: transparent;
+  border: .5px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 12px;
+  color: var(--text2);
   font-size: 12px;
-  color: var(--accent2);
-  word-break: break-all;
-  overflow-wrap: anywhere;
-  max-width: 100%;
-  display: block;
+  cursor: pointer;
 }
-.inf-github-btn { background: transparent; border: .5px solid var(--accent); border-radius: var(--r); padding: 6px 12px; color: var(--accent); cursor: pointer; font-size: 14px; }
 
-.inf-note  { font-size: 15px; color: var(--text2); line-height: 1.7; margin-top: 6px; word-break: break-word; }
-.inf-empty { font-size: 16px; color: var(--text2); }
+.ir-actions {
+  display: flex;
+  gap: 8px;
+  padding: 20px 24px;
+  flex-wrap: wrap;
+}
 
-/* ── Label global ─────────────────────────────────────────────────────── */
-.inf-label { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
+.ir-btn-back { flex: 1; padding: 11px; font-size: 14px; }
+.ir-btn-pdf  { flex: 1; padding: 11px; font-size: 14px; background: var(--accent2); color: #000; }
+.ir-btn-embed {
+  padding: 11px 16px;
+  background: transparent;
+  border: .5px solid var(--border2);
+  border-radius: var(--r);
+  color: var(--text2);
+  font-size: 13px;
+  cursor: pointer;
+}
 
-.inf-evidence-section { display: flex; gap: 14px; padding: 14px 0; border-bottom: .5px solid var(--border); }
-.inf-evidence-section:last-child { border-bottom: none; padding-bottom: 0; }
-.inf-evidence-section:first-of-type { padding-top: 0; }
-.inf-evidence-icon { font-size: 20px; font-weight: 800; flex-shrink: 0; margin-top: 1px; }
-.inf-evidence-yes .inf-evidence-icon { color: var(--accent2); }
-.inf-evidence-no  .inf-evidence-icon { color: var(--accent4); }
-.inf-evidence-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); margin-bottom: 8px; }
-.inf-evidence-item { font-size: 15px; color: var(--text); line-height: 1.7; margin-bottom: 4px; }
-.inf-evidence-yes .inf-evidence-item { color: var(--text); }
-.inf-evidence-no  .inf-evidence-item { color: var(--text2); }
+/* ── Mobile adjustments ───────────────────────────────────────── */
+@media (max-width: 420px) {
+  .ir-header, .ir-section, .ir-footer, .ir-actions { padding-left: 16px; padding-right: 16px; }
+  .ir-hero { padding: 32px 16px 24px; }
+  .ir-seal { padding: 10px 12px; font-size: 12px; }
+  .ir-seals { grid-template-columns: 1fr; }
+}
 </style>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
-import * as api from '@/services/api.js';
 import { jsPDF } from 'jspdf';
 import { localizedCountry } from '@/constants.js';
 
 const route = useRoute();
 const { t, locale } = useI18n({ useScope: 'global' });
 
-// Mapa completo de los 16 tipos de abuso
 const ABUSE_MAP = {
   corruption:         () => t('create.abusoCorrupcion'),
   influence_peddling: () => t('create.abusoInfluencias'),
@@ -638,10 +885,14 @@ const hasGeoData = computed(() => {
 const data = ref(null);
 const verifyState  = ref('idle');
 const verifyResult = ref(null);
+const loading = ref(true);
+const error = ref(false);
+const showEmbed = ref(false);
+const copied = ref(false);
 
 async function verifyIntegrity() {
   if (verifyState.value === 'running') return;
-  verifyState.value  = 'running';
+  verifyState.value = 'running';
   verifyResult.value = null;
   try {
     const version = data.value?.protest?.integrity_version || 1;
@@ -659,11 +910,6 @@ async function verifyIntegrity() {
   } catch { verifyResult.value = 'fail'; }
   finally { verifyState.value = 'idle'; }
 }
-
-const loading = ref(true);
-const error = ref(false);
-const showEmbed = ref(false);
-const copied = ref(false);
 
 const embedCode = computed(() =>
   `<script src="https://www.voiceprotest.org/widget.js?id=${route.params.id}"><\/script>`
@@ -689,22 +935,24 @@ function formatDate(iso) {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 }
+
 function formatDateTime(iso) {
   if (!iso) return '—';
   return new Date(iso).toLocaleString('es-ES', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
 }
+
 function pct(count) {
   if (!data.value?.total_adhesiones) return 0;
   return Math.round((count / data.value.total_adhesiones) * 100);
 }
+
 function pctLocal(count) {
-  const total = data.value?.desglose_geografico_local?.total;
+  const dg = data.value?.desglose_geografico_local;
+  const total = dg ? (dg.gps_local + dg.nacionales_sin_gps + dg.internacionales) : data.value?.total_adhesiones;
   if (!total) return 0;
   return Math.round((count / total) * 100);
 }
-function barStyleLocal(count, color) {
-  return { width: pctLocal(count) + '%', background: color, height: '100%', borderRadius: '6px', transition: 'width .5s' };
-}
+
 function maxPct(count) {
   if (!data.value?.velocidad?.adhesiones_por_dia?.length) return 0;
   const max = Math.max(...data.value.velocidad.adhesiones_por_dia.map(d => d.count));
@@ -727,13 +975,11 @@ function downloadPDF() {
     doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(76,255,164);
     const labelW = doc.getTextWidth(label);
     if (labelW > 44) {
-      // Etiqueta larga — valor en línea siguiente
       doc.text(label, M, y); nl(5);
       doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(240,238,255);
       const lines = doc.splitTextToSize(val, CW - 8);
       lines.forEach(l => { if (y > 265) { doc.addPage(); setPageBg(); y = 22; } doc.text(l, M + 8, y); nl(6); });
     } else {
-      // Etiqueta corta — valor en la misma línea
       doc.text(label, M, y);
       doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(240,238,255);
       doc.text(doc.splitTextToSize(val, CW - 48)[0], M + 48, y); nl(7);
@@ -762,7 +1008,6 @@ function downloadPDF() {
   kv('Cierre', d.protest.ends_at ? new Date(d.protest.ends_at).toLocaleDateString('es-ES') : '—');
   kv('Tipo de abuso', tipoAbusoLabel.value);
   if (d.protest.fuente_url) {
-    // URL larga — imprimir en múltiples líneas sin truncar
     doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(76,255,164);
     doc.text('Fuente:', M, y);
     doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(100,160,255);
@@ -774,14 +1019,11 @@ function downloadPDF() {
   nl(2); line();
 
   h2('3. RESULTADOS');
-  // Para local/regional: destacar GPS territorial primero
   if ((d.protest.scope === 'local' || d.protest.scope === 'regional') && d.desglose_geografico_local) {
     const territorio = d.protest.convocatoria_ciudad_nombre || '—';
-    const label = d.protest.scope === 'local' ? 'GPS verificado en ' + territorio : 'GPS verificado en ' + territorio;
-    kv(label, d.desglose_geografico_local.gps_local + ' participantes');
+    kv('GPS verificado en ' + territorio, d.desglose_geografico_local.gps_local + ' participantes');
     if (d.desglose_geografico_local.gps_nacional > 0) kv('Participantes nacionales adicionales', d.desglose_geografico_local.gps_nacional);
-    if (d.desglose_geografico_local.internacionales > 0)
-      kv('Participantes internacionales', d.desglose_geografico_local.internacionales);
+    if (d.desglose_geografico_local.internacionales > 0) kv('Participantes internacionales', d.desglose_geografico_local.internacionales);
     kv('Total adhesiones verificadas', d.total_adhesiones);
   } else if (d.protest.dominio_email) {
     kv('Miembros verificados de ' + d.protest.dominio_email, d.total_adhesiones);
@@ -797,15 +1039,14 @@ function downloadPDF() {
   h2('4. DISTRIBUCIÓN GEOGRÁFICA');
   if (d.desglose_geografico_local) {
     const dg = d.desglose_geografico_local;
-    const territorio = dg.scope === 'regional' ? 'región declarada' : 'municipio declarado';
-    body('Verificación territorial (' + (dg.municipio || territorio) + '):');
+    body('Verificación territorial (' + (dg.municipio || dg.scope) + '):');
     if (dg.gps_local > 0) body('  GPS confirmado dentro del territorio: ' + dg.gps_local);
     if (dg.gps_nacional > 0) body('  Participantes nacionales sin GPS: ' + dg.gps_nacional);
     if (dg.internacionales > 0) body('  Participantes internacionales: ' + dg.internacionales);
     nl(1);
   }
   if (d.distribucion_regiones && Object.keys(d.distribucion_regiones).length) {
-    body('Por región (estimación por señal disponible — solo el bloque GPS constituye verificación territorial):');
+    body('Por región:');
     Object.entries(d.distribucion_regiones).forEach(([r,c]) => body('  ' + r + ': ' + c));
   }
   if (d.distribucion_ciudades?.length) body('Ciudades: ' + d.distribucion_ciudades.slice(0,15).join(' · '));

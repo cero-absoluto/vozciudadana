@@ -537,7 +537,22 @@
     "geoNationalDescRegional": "没有区域GPS确认的参与者。可能在该国其他地方。",
     "headlineLocal": "{territorio}的{count}名经验证参与者要求{focal}：\"{demands}\"",
     "headlineLocalSupport": "另有{nacional}名全国参与者支持此次抗议。",
-    "headlineInstitutional": "{dominio}的{count}名经验证成员要求{focal}：\"{demands}\""
+    "headlineInstitutional": "{dominio}的{count}名经验证成员要求{focal}：\"{demands}\"",
+    "statusClosed": "已关闭",
+    "statusActive": "进行中",
+    "heroLabel": "来自{country}的经验证参与者",
+    "heroLabelLocal": "来自{territorio}的经验证参与者",
+    "heroLabelRegional": "来自{territorio}的经验证参与者",
+    "heroLabelInstitutional": "{dominio}的经验证成员",
+    "heroSubLocal": "共{total}次粘附 · {nacional}名无本地GPS的全国参与者",
+    "sealUnique": "参与已验证",
+    "sealOne": "每人一次粘附",
+    "sealPrivacy": "身份受保护",
+    "sealAuditable": "公开可审计",
+    "sectionConvocatoria": "关于此次召集",
+    "sectionGeo": "地理证据",
+    "sectionQuality": "证据质量",
+    "qualityIntro": "每次粘附累积独立验证信号。信号越多，参与真实性的可信度越高。"
   },
   "invite": {
     "loading": "验证邀请中...",

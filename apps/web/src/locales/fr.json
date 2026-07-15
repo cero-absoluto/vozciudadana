@@ -537,7 +537,22 @@
     "geoNationalDescRegional": "Participants sans confirmation GPS régionale. Peuvent être ailleurs dans le pays.",
     "headlineLocal": "{count} participants vérifiés de {territorio} exigent de {focal} : \"{demands}\"",
     "headlineLocalSupport": "{nacional} participants nationaux supplémentaires soutiennent la protestation.",
-    "headlineInstitutional": "{count} membres vérifiés de {dominio} exigent de {focal} : \"{demands}\""
+    "headlineInstitutional": "{count} membres vérifiés de {dominio} exigent de {focal} : \"{demands}\"",
+    "statusClosed": "Clôturée",
+    "statusActive": "Active",
+    "heroLabel": "participants vérifiés de {country}",
+    "heroLabelLocal": "participants vérifiés de {territorio}",
+    "heroLabelRegional": "participants vérifiés de {territorio}",
+    "heroLabelInstitutional": "membres vérifiés de {dominio}",
+    "heroSubLocal": "{total} adhésions totales · {nacional} nationaux sans GPS local",
+    "sealUnique": "Participation vérifiée",
+    "sealOne": "Une adhésion par personne",
+    "sealPrivacy": "Identité protégée",
+    "sealAuditable": "Publiquement auditable",
+    "sectionConvocatoria": "Sur la convocation",
+    "sectionGeo": "Preuve géographique",
+    "sectionQuality": "Qualité des preuves",
+    "qualityIntro": "Chaque adhésion accumule des signaux de vérification indépendants. Plus de signaux signifie plus de confiance."
   },
   "invite": {
     "loading": "Validation de l'invitation...",

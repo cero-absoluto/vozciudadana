@@ -64,26 +64,6 @@
           <div class="ir-hero-demand">{{ data.protest.demands }}</div>
         </div>
 
-        <!-- ══ SELLOS DE VERIFICACIÓN ══════════════════════════════════ -->
-        <div class="ir-seals">
-          <div class="ir-seal">
-            <span class="ir-seal-icon">✓</span>
-            <span>{{ $t('informe.sealUnique') }}</span>
-          </div>
-          <div class="ir-seal">
-            <span class="ir-seal-icon">✓</span>
-            <span>{{ $t('informe.sealOne') }}</span>
-          </div>
-          <div class="ir-seal">
-            <span class="ir-seal-icon">✓</span>
-            <span>{{ $t('informe.sealPrivacy') }}</span>
-          </div>
-          <div class="ir-seal">
-            <span class="ir-seal-icon">✓</span>
-            <span>{{ $t('informe.sealAuditable') }}</span>
-          </div>
-        </div>
-
         <div class="ir-divider"></div>
 
         <!-- ══ SOBRE LA CONVOCATORIA ═══════════════════════════════════ -->
@@ -237,25 +217,27 @@
         <section v-if="data.evidential_scope" class="ir-section">
           <h2 class="ir-section-title">{{ $t('evidence.title') }}</h2>
 
-          <div class="ir-scope-yes">
-            <div class="ir-scope-icon">✓</div>
-            <div>
-              <div class="ir-scope-heading">{{ $t('evidence.demonstratesTitle') }}</div>
-              <div v-for="(it,i) in data.evidential_scope.demonstrates" :key="'d'+i" class="ir-scope-item">
+          <details class="ir-details">
+            <summary class="ir-details-summary">
+              <span style="color:var(--accent2)">✓</span> {{ $t('evidence.demonstratesTitle') }}
+            </summary>
+            <div style="padding:10px 0 4px">
+              <div v-for="(it,i) in data.evidential_scope.demonstrates" :key="'d'+i" class="ir-scope-item" style="padding:4px 0;border-bottom:.5px solid var(--border)">
                 {{ $t('evidence.'+it.key, it.params || {}) }}
               </div>
             </div>
-          </div>
+          </details>
 
-          <div class="ir-scope-no">
-            <div class="ir-scope-icon">○</div>
-            <div>
-              <div class="ir-scope-heading">{{ $t('evidence.outsideScopeTitle') }}</div>
-              <div v-for="(it,i) in data.evidential_scope.outside_scope" :key="'o'+i" class="ir-scope-item">
+          <details class="ir-details">
+            <summary class="ir-details-summary">
+              <span style="color:var(--text3)">○</span> {{ $t('evidence.outsideScopeTitle') }}
+            </summary>
+            <div style="padding:10px 0 4px">
+              <div v-for="(it,i) in data.evidential_scope.outside_scope" :key="'o'+i" class="ir-scope-item" style="padding:4px 0;border-bottom:.5px solid var(--border)">
                 {{ $t('evidence.'+it.key, it.params || {}) }}
               </div>
             </div>
-          </div>
+          </details>
         </section>
 
         <div class="ir-divider"></div>
@@ -435,7 +417,8 @@
 }
 
 .ir-country {
-  font-size: 14px;
+  font-size: 15px;
+  color: var(--text);
   color: var(--text2);
 }
 
@@ -447,7 +430,7 @@
 }
 
 .ir-dates-sep {
-  color: var(--text3);
+  color: var(--text);
   font-size: 14px;
 }
 
@@ -469,7 +452,7 @@
 }
 
 .ir-hero-label {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text);
   margin-bottom: 4px;
@@ -477,7 +460,8 @@
 }
 
 .ir-hero-sub {
-  font-size: 13px;
+  font-size: 14px;
+  color: var(--text);
   color: var(--text3);
   margin-bottom: 20px;
 }
@@ -485,8 +469,8 @@
 .ir-hero-demand {
   font-size: 14px;
   color: var(--text);
-  font-style: italic;
-  line-height: 1.7;
+  font-style: normal;
+  line-height: 1.75;
   max-width: 480px;
   margin: 16px auto 0;
   padding-top: 16px;
@@ -681,6 +665,7 @@
 }
 
 .ir-scope-yes .ir-scope-item { color: var(--text); font-size: 16px; }
+.ir-scope-no  .ir-scope-item { color: var(--text); }
 
 /* ── Integridad ───────────────────────────────────────────────── */
 .ir-cert {

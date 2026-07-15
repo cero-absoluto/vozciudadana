@@ -534,7 +534,10 @@
     "ledgerV2Planned": "Planned — not yet implemented.",
     "geoRegionalVerified": "GPS verified in the region",
     "geoRegionalVerifiedDesc": "Participants with GPS confirmed within {region} at the time of adhesion.",
-    "geoNationalDescRegional": "Participants without regional GPS confirmation. May be elsewhere in the country."
+    "geoNationalDescRegional": "Participants without regional GPS confirmation. May be elsewhere in the country.",
+    "headlineLocal": "{count} verified participants from {territorio} demand from {focal}: \"{demands}\"",
+    "headlineLocalSupport": "{nacional} additional national participants support the protest.",
+    "headlineInstitutional": "{count} verified members of {dominio} demand from {focal}: \"{demands}\""
   },
   "invite": {
     "loading": "Validating invitation...",

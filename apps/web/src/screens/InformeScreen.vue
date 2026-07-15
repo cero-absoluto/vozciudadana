@@ -779,7 +779,7 @@ function downloadPDF() {
     const territorio = d.protest.convocatoria_ciudad_nombre || '—';
     const label = d.protest.scope === 'local' ? 'GPS verificado en ' + territorio : 'GPS verificado en ' + territorio;
     kv(label, d.desglose_geografico_local.gps_local + ' participantes');
-    kv('Participantes nacionales adicionales', d.desglose_geografico_local.gps_nacional);
+    if (d.desglose_geografico_local.gps_nacional > 0) kv('Participantes nacionales adicionales', d.desglose_geografico_local.gps_nacional);
     if (d.desglose_geografico_local.internacionales > 0)
       kv('Participantes internacionales', d.desglose_geografico_local.internacionales);
     kv('Total adhesiones verificadas', d.total_adhesiones);
@@ -789,7 +789,7 @@ function downloadPDF() {
     kv('Adhesiones verificadas', d.total_adhesiones);
     kv('Países distintos', d.paises_distintos);
   }
-  kv('Ciudades distintas', d.ciudades_distintas);
+  if (d.ciudades_distintas > 0) kv('Ciudades distintas', d.ciudades_distintas);
   kv('Primera adhesión', d.primera_adhesion ? new Date(d.primera_adhesion).toLocaleString('es-ES') : '—');
   kv('Última adhesión', d.ultima_adhesion ? new Date(d.ultima_adhesion).toLocaleString('es-ES') : '—');
   nl(2); line();
@@ -799,10 +799,9 @@ function downloadPDF() {
     const dg = d.desglose_geografico_local;
     const territorio = dg.scope === 'regional' ? 'región declarada' : 'municipio declarado';
     body('Verificación territorial (' + (dg.municipio || territorio) + '):');
-    body('  GPS confirmado dentro del territorio: ' + dg.gps_local);
-    body('  GPS confirmado fuera del territorio: ' + dg.gps_nacional);
-    body('  Sin GPS, mismo país: ' + dg.nacionales_sin_gps);
-    body('  Internacionales: ' + dg.internacionales);
+    if (dg.gps_local > 0) body('  GPS confirmado dentro del territorio: ' + dg.gps_local);
+    if (dg.gps_nacional > 0) body('  Participantes nacionales sin GPS: ' + dg.gps_nacional);
+    if (dg.internacionales > 0) body('  Participantes internacionales: ' + dg.internacionales);
     nl(1);
   }
   if (d.distribucion_regiones && Object.keys(d.distribucion_regiones).length) {

@@ -395,7 +395,7 @@
 }
 
 .ir-badge {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1.5px;
@@ -412,7 +412,7 @@
 
 .ir-title {
   font-family: 'Syne', sans-serif;
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 800;
   line-height: 1.3;
   color: var(--text);
@@ -429,13 +429,13 @@
 
 .ir-institution {
   font-family: 'Syne', sans-serif;
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--accent2);
 }
 
 .ir-country {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text2);
 }
 
@@ -469,7 +469,7 @@
 }
 
 .ir-hero-label {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--text2);
   margin-bottom: 4px;
@@ -477,13 +477,13 @@
 }
 
 .ir-hero-sub {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--text3);
   margin-bottom: 20px;
 }
 
 .ir-hero-demand {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text2);
   font-style: italic;
   line-height: 1.6;
@@ -510,15 +510,15 @@
   gap: 8px;
   padding: 12px 16px;
   background: var(--bg);
-  font-size: 13px;
-  color: var(--text2);
+  font-size: 15px;
+  color: var(--text);
   line-height: 1.3;
 }
 
 .ir-seal-icon {
   color: var(--accent2);
   font-weight: 800;
-  font-size: 15px;
+  font-size: 18px;
   flex-shrink: 0;
 }
 
@@ -537,17 +537,17 @@
 
 .ir-section-title {
   font-family: 'Syne', sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: var(--text3);
+  color: var(--text2);
   margin: 0 0 20px;
 }
 
 .ir-prose {
-  font-size: 15px;
-  color: var(--text2);
+  font-size: 17px;
+  color: var(--text);
   line-height: 1.7;
   margin-bottom: 16px;
 }
@@ -560,15 +560,15 @@
 }
 
 .ir-field-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: var(--text3);
+  color: var(--text2);
 }
 
 .ir-field-val {
-  font-size: 15px;
+  font-size: 17px;
   color: var(--text);
   line-height: 1.6;
   word-break: break-word;
@@ -577,7 +577,7 @@
 .ir-demands { font-style: italic; }
 
 .ir-link {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--accent);
   text-decoration: underline;
   word-break: break-all;
@@ -586,8 +586,8 @@
 }
 
 .ir-caption {
-  font-size: 12px;
-  color: var(--text3);
+  font-size: 14px;
+  color: var(--text2);
   line-height: 1.5;
 }
 
@@ -601,9 +601,9 @@
   font-size: 14px;
 }
 
-.ir-geo-label { display: flex; align-items: center; gap: 8px; color: var(--text2); }
+.ir-geo-label { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 15px; }
 .ir-geo-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.ir-geo-count { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; }
+.ir-geo-count { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; }
 
 .ir-geo-bar-bg {
   height: 6px;
@@ -616,11 +616,11 @@
 .ir-geo-bar-fill { height: 100%; border-radius: 3px; transition: width .5s; }
 
 .ir-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.ir-tag { font-size: 13px; color: var(--text2); background: var(--bg2); border: .5px solid var(--border); border-radius: 4px; padding: 3px 9px; }
+.ir-tag { font-size: 15px; color: var(--text); background: var(--bg2); border: .5px solid var(--border); border-radius: 4px; padding: 3px 9px; }
 
 .ir-stats-row { display: flex; gap: 24px; }
 .ir-stat { display: flex; flex-direction: column; gap: 2px; }
-.ir-stat-n { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: var(--text); line-height: 1; }
+.ir-stat-n { font-family: 'Syne', sans-serif; font-size: 30px; font-weight: 800; color: var(--text); line-height: 1; }
 
 .ir-timeline-row {
   display: flex;
@@ -641,8 +641,8 @@
   gap: 12px;
 }
 
-.ir-quality-title { font-size: 14px; font-weight: 700; }
-.ir-quality-n { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; line-height: 1; flex-shrink: 0; }
+.ir-quality-title { font-size: 17px; font-weight: 700; }
+.ir-quality-n { font-family: 'Syne', sans-serif; font-size: 34px; font-weight: 800; line-height: 1; flex-shrink: 0; }
 
 /* ── Evidencia ────────────────────────────────────────────────── */
 .ir-scope-yes, .ir-scope-no {
@@ -665,22 +665,22 @@
 .ir-scope-no  .ir-scope-icon { color: var(--text3); }
 
 .ir-scope-heading {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: var(--text3);
+  color: var(--text2);
   margin-bottom: 8px;
 }
 
 .ir-scope-item {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text2);
   line-height: 1.65;
   margin-bottom: 4px;
 }
 
-.ir-scope-yes .ir-scope-item { color: var(--text); }
+.ir-scope-yes .ir-scope-item { color: var(--text); font-size: 16px; }
 
 /* ── Integridad ───────────────────────────────────────────────── */
 .ir-cert {
@@ -693,11 +693,11 @@
 
 .ir-cert-header { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
 .ir-cert-icon { font-size: 22px; flex-shrink: 0; }
-.ir-cert-title { font-size: 12px; color: var(--text3); margin-bottom: 6px; }
+.ir-cert-title { font-size: 14px; color: var(--text2); margin-bottom: 6px; }
 
 .ir-hash {
   font-family: monospace;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--accent2);
   word-break: break-all;
   line-height: 1.7;
@@ -708,8 +708,8 @@
   border: .5px solid var(--border);
   border-radius: 8px;
   padding: 14px 16px;
-  font-size: 14px;
-  color: var(--text3);
+  font-size: 16px;
+  color: var(--text2);
   margin-bottom: 12px;
   display: flex;
   align-items: center;
@@ -718,18 +718,18 @@
 
 .ir-verify-btn {
   width: 100%;
-  padding: 9px;
+  padding: 10px;
   background: transparent;
   border: .5px solid rgba(76,255,164,.3);
   border-radius: 6px;
   color: var(--accent2);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   box-sizing: border-box;
 }
 
-.ir-verify-result { margin-top: 8px; padding: 10px 12px; border-radius: 6px; font-size: 13px; line-height: 1.6; }
+.ir-verify-result { margin-top: 8px; padding: 10px 12px; border-radius: 6px; font-size: 15px; line-height: 1.6; }
 .ir-verify-ok   { background: rgba(76,255,164,.06); border: .5px solid rgba(76,255,164,.25); color: var(--accent2); }
 .ir-verify-v1   { background: rgba(124,111,255,.06); border: .5px solid rgba(124,111,255,.25); color: var(--accent); }
 .ir-verify-fail { background: rgba(255,80,80,.06); border: .5px solid rgba(255,80,80,.25); color: var(--accent3); }
@@ -741,9 +741,9 @@
 }
 
 .ir-details-summary {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
-  color: var(--text2);
+  color: var(--text);
   padding: 12px 0;
   cursor: pointer;
   list-style: none;
@@ -794,7 +794,7 @@
 
 .ir-mono {
   font-family: monospace;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--accent2);
   word-break: break-all;
 }
@@ -803,9 +803,9 @@
   background: transparent;
   border: .5px solid var(--border);
   border-radius: 4px;
-  padding: 5px 12px;
+  padding: 6px 14px;
   color: var(--text2);
-  font-size: 12px;
+  font-size: 14px;
   cursor: pointer;
 }
 
@@ -816,24 +816,52 @@
   flex-wrap: wrap;
 }
 
-.ir-btn-back { flex: 1; padding: 11px; font-size: 14px; }
-.ir-btn-pdf  { flex: 1; padding: 11px; font-size: 14px; background: var(--accent2); color: #000; }
+.ir-btn-back { flex: 1; padding: 13px; font-size: 16px; }
+.ir-btn-pdf  { flex: 1; padding: 13px; font-size: 16px; background: var(--accent2); color: #000; }
 .ir-btn-embed {
-  padding: 11px 16px;
+  padding: 13px 16px;
   background: transparent;
   border: .5px solid var(--border2);
   border-radius: var(--r);
   color: var(--text2);
-  font-size: 13px;
+  font-size: 15px;
   cursor: pointer;
 }
 
 /* ── Mobile adjustments ───────────────────────────────────────── */
-@media (max-width: 420px) {
+@media (max-width: 520px) {
   .ir-header, .ir-section, .ir-footer, .ir-actions { padding-left: 16px; padding-right: 16px; }
   .ir-hero { padding: 32px 16px 24px; }
-  .ir-seal { padding: 10px 12px; font-size: 12px; }
   .ir-seals { grid-template-columns: 1fr; }
+
+  /* Tamaños legibles en móvil */
+  .ir-title       { font-size: 20px; }
+  .ir-institution { font-size: 18px; }
+  .ir-hero-label  { font-size: 16px; }
+  .ir-hero-sub    { font-size: 14px; }
+  .ir-hero-demand { font-size: 15px; }
+  .ir-seal        { font-size: 15px; padding: 10px 12px; }
+  .ir-seal-icon   { font-size: 16px; }
+  .ir-prose       { font-size: 16px; }
+  .ir-field-val   { font-size: 16px; }
+  .ir-field-label { font-size: 12px; }
+  .ir-caption     { font-size: 13px; }
+  .ir-link        { font-size: 15px; }
+  .ir-geo-label   { font-size: 14px; }
+  .ir-geo-count   { font-size: 22px; }
+  .ir-tag         { font-size: 14px; }
+  .ir-stat-n      { font-size: 26px; }
+  .ir-quality-title { font-size: 15px; }
+  .ir-quality-n   { font-size: 28px; }
+  .ir-scope-item  { font-size: 15px; }
+  .ir-hash        { font-size: 12px; }
+  .ir-details-summary { font-size: 15px; }
+  .ir-verify-btn  { font-size: 15px; }
+  .ir-verify-result { font-size: 14px; }
+  .ir-btn-back, .ir-btn-pdf { font-size: 15px; padding: 12px; }
+  .ir-btn-embed   { font-size: 14px; padding: 12px 14px; }
+  .ir-section-title { font-size: 11px; }
+  .ir-scope-heading { font-size: 11px; }
 }
 </style>
 

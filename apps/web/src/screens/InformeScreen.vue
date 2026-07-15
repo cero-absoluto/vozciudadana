@@ -351,7 +351,7 @@
 /* ── Scroll y documento ─────────────────────────────────────── */
 .ir-scroll {
   width: 100%;
-  max-width: 680px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 0 0 40px;
   box-sizing: border-box;
@@ -394,9 +394,9 @@
 
 .ir-title {
   font-family: 'Syne', sans-serif;
-  font-size: 21px;
-  font-weight: 800;
-  line-height: 1.35;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.3;
   color: var(--text);
   margin: 0 0 16px;
   word-break: break-word;
@@ -452,7 +452,7 @@
 }
 
 .ir-hero-label {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--text);
   margin-bottom: 4px;
@@ -460,18 +460,18 @@
 }
 
 .ir-hero-sub {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text);
   color: var(--text3);
   margin-bottom: 20px;
 }
 
 .ir-hero-demand {
-  font-size: 14px;
+  font-size: 18px;
   color: var(--text);
   font-style: normal;
   line-height: 1.75;
-  max-width: 480px;
+  max-width: 100%;
   margin: 16px auto 0;
   padding-top: 16px;
   border-top: .5px solid var(--border);
@@ -552,7 +552,7 @@
 }
 
 .ir-field-val {
-  font-size: 16px;
+  font-size: 18px;
   color: var(--text);
   line-height: 1.8;
   word-break: break-word;
@@ -561,7 +561,7 @@
 .ir-demands { font-style: italic; }
 
 .ir-link {
-  font-size: 14px;
+  font-size: 17px;
   color: var(--accent);
   text-decoration: underline;
   word-break: break-all;
@@ -570,7 +570,7 @@
 }
 
 .ir-caption {
-  font-size: 13px;
+  font-size: 16px;
   color: var(--text);
   line-height: 1.5;
 }
@@ -585,7 +585,7 @@
   font-size: 14px;
 }
 
-.ir-geo-label { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 16px; }
+.ir-geo-label { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 18px; }
 .ir-geo-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .ir-geo-count { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; }
 
@@ -600,7 +600,7 @@
 .ir-geo-bar-fill { height: 100%; border-radius: 3px; transition: width .5s; }
 
 .ir-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.ir-tag { font-size: 15px; color: var(--text); background: var(--bg2); border: .5px solid var(--border); border-radius: 4px; padding: 3px 9px; }
+.ir-tag { font-size: 17px; color: var(--text); background: var(--bg2); border: .5px solid var(--border); border-radius: 4px; padding: 3px 9px; }
 
 .ir-stats-row { display: flex; gap: 24px; }
 .ir-stat { display: flex; flex-direction: column; gap: 2px; }
@@ -625,7 +625,7 @@
   gap: 12px;
 }
 
-.ir-quality-title { font-size: 16px; font-weight: 700; }
+.ir-quality-title { font-size: 18px; font-weight: 700; }
 .ir-quality-n { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; line-height: 1; flex-shrink: 0; }
 
 /* ── Evidencia ────────────────────────────────────────────────── */
@@ -658,14 +658,14 @@
 }
 
 .ir-scope-item {
-  font-size: 16px;
+  font-size: 18px;
   color: var(--text);
   line-height: 1.85;
   margin-bottom: 4px;
 }
 
-.ir-scope-yes .ir-scope-item { color: var(--text); font-size: 16px; }
-.ir-scope-no  .ir-scope-item { color: var(--text); }
+.ir-scope-yes .ir-scope-item { color: var(--text); font-size: 18px; }
+.ir-scope-no  .ir-scope-item { color: var(--text); font-size: 18px; }
 
 /* ── Integridad ───────────────────────────────────────────────── */
 .ir-cert {
@@ -678,7 +678,7 @@
 
 .ir-cert-header { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
 .ir-cert-icon { font-size: 22px; flex-shrink: 0; }
-.ir-cert-title { font-size: 14px; color: var(--text); margin-bottom: 6px; }
+.ir-cert-title { font-size: 16px; color: var(--text); margin-bottom: 6px; }
 
 .ir-hash {
   font-family: monospace;
@@ -693,7 +693,7 @@
   border: .5px solid var(--border);
   border-radius: 8px;
   padding: 14px 16px;
-  font-size: 15px;
+  font-size: 18px;
   color: var(--text);
   margin-bottom: 12px;
   display: flex;
@@ -703,18 +703,18 @@
 
 .ir-verify-btn {
   width: 100%;
-  padding: 10px;
+  padding: 11px;
   background: transparent;
   border: .5px solid rgba(76,255,164,.3);
   border-radius: 6px;
   color: var(--accent2);
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 600;
   cursor: pointer;
   box-sizing: border-box;
 }
 
-.ir-verify-result { margin-top: 8px; padding: 10px 12px; border-radius: 6px; font-size: 15px; line-height: 1.6; }
+.ir-verify-result { margin-top: 8px; padding: 10px 12px; border-radius: 6px; font-size: 17px; line-height: 1.6; }
 .ir-verify-ok   { background: rgba(76,255,164,.06); border: .5px solid rgba(76,255,164,.25); color: var(--accent2); }
 .ir-verify-v1   { background: rgba(124,111,255,.06); border: .5px solid rgba(124,111,255,.25); color: var(--accent); }
 .ir-verify-fail { background: rgba(255,80,80,.06); border: .5px solid rgba(255,80,80,.25); color: var(--accent3); }
@@ -726,7 +726,7 @@
 }
 
 .ir-details-summary {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--text);
   padding: 12px 0;
@@ -790,7 +790,7 @@
   border-radius: 4px;
   padding: 6px 14px;
   color: var(--text);
-  font-size: 14px;
+  font-size: 16px;
   cursor: pointer;
 }
 
@@ -801,15 +801,15 @@
   flex-wrap: wrap;
 }
 
-.ir-btn-back { flex: 1; padding: 13px; font-size: 16px; }
-.ir-btn-pdf  { flex: 1; padding: 13px; font-size: 16px; background: var(--accent2); color: #000; }
+.ir-btn-back { flex: 1; padding: 14px; font-size: 17px; }
+.ir-btn-pdf  { flex: 1; padding: 14px; font-size: 17px; background: var(--accent2); color: #000; }
 .ir-btn-embed {
-  padding: 12px 16px;
+  padding: 14px 16px;
   background: transparent;
   border: .5px solid var(--border2);
   border-radius: var(--r);
   color: var(--text);
-  font-size: 15px;
+  font-size: 16px;
   cursor: pointer;
 }
 
@@ -836,7 +836,7 @@
   .ir-geo-count   { font-size: 20px; }
   .ir-tag         { font-size: 15px; }
   .ir-stat-n      { font-size: 22px; }
-  .ir-quality-title { font-size: 16px; }
+  .ir-quality-title { font-size: 18px; }
   .ir-quality-n   { font-size: 24px; }
   .ir-scope-item  { font-size: 15px; }
   .ir-hash        { font-size: 12px; }

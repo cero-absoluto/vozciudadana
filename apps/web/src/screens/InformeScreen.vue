@@ -412,9 +412,9 @@
 
 .ir-title {
   font-family: 'Syne', sans-serif;
-  font-size: 26px;
+  font-size: 21px;
   font-weight: 800;
-  line-height: 1.3;
+  line-height: 1.35;
   color: var(--text);
   margin: 0 0 16px;
   word-break: break-word;
@@ -429,13 +429,13 @@
 
 .ir-institution {
   font-family: 'Syne', sans-serif;
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--accent2);
 }
 
 .ir-country {
-  font-size: 16px;
+  font-size: 14px;
   color: var(--text2);
 }
 
@@ -469,24 +469,24 @@
 }
 
 .ir-hero-label {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text2);
   margin-bottom: 4px;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .ir-hero-sub {
-  font-size: 15px;
+  font-size: 13px;
   color: var(--text3);
   margin-bottom: 20px;
 }
 
 .ir-hero-demand {
-  font-size: 16px;
+  font-size: 14px;
   color: var(--text2);
   font-style: italic;
-  line-height: 1.6;
+  line-height: 1.7;
   max-width: 480px;
   margin: 16px auto 0;
   padding-top: 16px;
@@ -510,15 +510,15 @@
   gap: 8px;
   padding: 12px 16px;
   background: var(--bg);
-  font-size: 15px;
-  color: var(--text);
-  line-height: 1.3;
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.4;
 }
 
 .ir-seal-icon {
   color: var(--accent2);
   font-weight: 800;
-  font-size: 18px;
+  font-size: 15px;
   flex-shrink: 0;
 }
 
@@ -546,9 +546,9 @@
 }
 
 .ir-prose {
-  font-size: 17px;
+  font-size: 15px;
   color: var(--text);
-  line-height: 1.7;
+  line-height: 1.8;
   margin-bottom: 16px;
 }
 
@@ -568,16 +568,16 @@
 }
 
 .ir-field-val {
-  font-size: 17px;
+  font-size: 15px;
   color: var(--text);
-  line-height: 1.6;
+  line-height: 1.75;
   word-break: break-word;
 }
 
 .ir-demands { font-style: italic; }
 
 .ir-link {
-  font-size: 16px;
+  font-size: 14px;
   color: var(--accent);
   text-decoration: underline;
   word-break: break-all;
@@ -586,7 +586,7 @@
 }
 
 .ir-caption {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text2);
   line-height: 1.5;
 }
@@ -601,9 +601,9 @@
   font-size: 14px;
 }
 
-.ir-geo-label { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 15px; }
+.ir-geo-label { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 14px; }
 .ir-geo-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.ir-geo-count { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; }
+.ir-geo-count { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; }
 
 .ir-geo-bar-bg {
   height: 6px;
@@ -616,11 +616,11 @@
 .ir-geo-bar-fill { height: 100%; border-radius: 3px; transition: width .5s; }
 
 .ir-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.ir-tag { font-size: 15px; color: var(--text); background: var(--bg2); border: .5px solid var(--border); border-radius: 4px; padding: 3px 9px; }
+.ir-tag { font-size: 13px; color: var(--text); background: var(--bg2); border: .5px solid var(--border); border-radius: 4px; padding: 3px 9px; }
 
 .ir-stats-row { display: flex; gap: 24px; }
 .ir-stat { display: flex; flex-direction: column; gap: 2px; }
-.ir-stat-n { font-family: 'Syne', sans-serif; font-size: 30px; font-weight: 800; color: var(--text); line-height: 1; }
+.ir-stat-n { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: var(--text); line-height: 1; }
 
 .ir-timeline-row {
   display: flex;
@@ -641,8 +641,8 @@
   gap: 12px;
 }
 
-.ir-quality-title { font-size: 17px; font-weight: 700; }
-.ir-quality-n { font-family: 'Syne', sans-serif; font-size: 34px; font-weight: 800; line-height: 1; flex-shrink: 0; }
+.ir-quality-title { font-size: 15px; font-weight: 700; }
+.ir-quality-n { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; line-height: 1; flex-shrink: 0; }
 
 /* ── Evidencia ────────────────────────────────────────────────── */
 .ir-scope-yes, .ir-scope-no {
@@ -674,13 +674,13 @@
 }
 
 .ir-scope-item {
-  font-size: 16px;
+  font-size: 14px;
   color: var(--text2);
-  line-height: 1.65;
+  line-height: 1.8;
   margin-bottom: 4px;
 }
 
-.ir-scope-yes .ir-scope-item { color: var(--text); font-size: 16px; }
+.ir-scope-yes .ir-scope-item { color: var(--text); font-size: 14px; }
 
 /* ── Integridad ───────────────────────────────────────────────── */
 .ir-cert {
@@ -693,7 +693,7 @@
 
 .ir-cert-header { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
 .ir-cert-icon { font-size: 22px; flex-shrink: 0; }
-.ir-cert-title { font-size: 14px; color: var(--text2); margin-bottom: 6px; }
+.ir-cert-title { font-size: 13px; color: var(--text2); margin-bottom: 6px; }
 
 .ir-hash {
   font-family: monospace;
@@ -708,7 +708,7 @@
   border: .5px solid var(--border);
   border-radius: 8px;
   padding: 14px 16px;
-  font-size: 16px;
+  font-size: 14px;
   color: var(--text2);
   margin-bottom: 12px;
   display: flex;
@@ -723,7 +723,7 @@
   border: .5px solid rgba(76,255,164,.3);
   border-radius: 6px;
   color: var(--accent2);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   box-sizing: border-box;
@@ -741,7 +741,7 @@
 }
 
 .ir-details-summary {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text);
   padding: 12px 0;
@@ -816,15 +816,15 @@
   flex-wrap: wrap;
 }
 
-.ir-btn-back { flex: 1; padding: 13px; font-size: 16px; }
-.ir-btn-pdf  { flex: 1; padding: 13px; font-size: 16px; background: var(--accent2); color: #000; }
+.ir-btn-back { flex: 1; padding: 12px; font-size: 15px; }
+.ir-btn-pdf  { flex: 1; padding: 12px; font-size: 15px; background: var(--accent2); color: #000; }
 .ir-btn-embed {
-  padding: 13px 16px;
+  padding: 12px 16px;
   background: transparent;
   border: .5px solid var(--border2);
   border-radius: var(--r);
   color: var(--text2);
-  font-size: 15px;
+  font-size: 14px;
   cursor: pointer;
 }
 
@@ -840,20 +840,20 @@
   .ir-hero-label  { font-size: 16px; }
   .ir-hero-sub    { font-size: 14px; }
   .ir-hero-demand { font-size: 15px; }
-  .ir-seal        { font-size: 15px; padding: 10px 12px; }
+  .ir-seal        { font-size: 13px; padding: 10px 12px; }
   .ir-seal-icon   { font-size: 16px; }
-  .ir-prose       { font-size: 16px; }
-  .ir-field-val   { font-size: 16px; }
+  .ir-prose       { font-size: 15px; }
+  .ir-field-val   { font-size: 15px; }
   .ir-field-label { font-size: 12px; }
   .ir-caption     { font-size: 13px; }
   .ir-link        { font-size: 15px; }
   .ir-geo-label   { font-size: 14px; }
-  .ir-geo-count   { font-size: 22px; }
+  .ir-geo-count   { font-size: 20px; }
   .ir-tag         { font-size: 14px; }
-  .ir-stat-n      { font-size: 26px; }
+  .ir-stat-n      { font-size: 22px; }
   .ir-quality-title { font-size: 15px; }
-  .ir-quality-n   { font-size: 28px; }
-  .ir-scope-item  { font-size: 15px; }
+  .ir-quality-n   { font-size: 24px; }
+  .ir-scope-item  { font-size: 14px; }
   .ir-hash        { font-size: 12px; }
   .ir-details-summary { font-size: 15px; }
   .ir-verify-btn  { font-size: 15px; }

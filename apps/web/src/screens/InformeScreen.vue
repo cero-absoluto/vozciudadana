@@ -71,12 +71,41 @@
         <div class="inf-block inf-block-headline">
           <div class="inf-block-title">{{ $t('informe.headlineBlock') }}</div>
           <div class="inf-headline-text">
-            {{ $t('informe.headline', {
-              count: data.total_adhesiones,
-              country: localizedCountryName,
-              focal: data.protest.focal_point,
-              demands: data.protest.demands
-            }) }}
+
+            <!-- Local/Regional: el GPS territorial es el dato principal -->
+            <template v-if="(data.protest.scope === 'local' || data.protest.scope === 'regional') && data.desglose_geografico_local">
+              {{ $t('informe.headlineLocal', {
+                count: data.desglose_geografico_local.gps_local,
+                territorio: data.protest.convocatoria_ciudad_nombre,
+                focal: data.protest.focal_point,
+                demands: data.protest.demands
+              }) }}
+              <span v-if="data.desglose_geografico_local.gps_nacional > 0"
+                style="display:block;margin-top:6px;font-size:14px;color:var(--text2);font-weight:500">
+                {{ $t('informe.headlineLocalSupport', { nacional: data.desglose_geografico_local.gps_nacional }) }}
+              </span>
+            </template>
+
+            <!-- Institucional: el dominio es el dato principal -->
+            <template v-else-if="data.protest.dominio_email">
+              {{ $t('informe.headlineInstitutional', {
+                count: data.total_adhesiones,
+                dominio: data.protest.dominio_email,
+                focal: data.protest.focal_point,
+                demands: data.protest.demands
+              }) }}
+            </template>
+
+            <!-- Nacional/Global: el total es el dato principal -->
+            <template v-else>
+              {{ $t('informe.headline', {
+                count: data.total_adhesiones,
+                country: localizedCountryName,
+                focal: data.protest.focal_point,
+                demands: data.protest.demands
+              }) }}
+            </template>
+
           </div>
         </div>
 
@@ -715,16 +744,35 @@ function downloadPDF() {
   kv('Inicio', d.protest.starts_at ? new Date(d.protest.starts_at).toLocaleDateString('es-ES') : '—');
   kv('Cierre', d.protest.ends_at ? new Date(d.protest.ends_at).toLocaleDateString('es-ES') : '—');
   kv('Tipo de abuso', tipoAbusoLabel.value);
-  if (d.protest.fuente_url) kv('Fuente', d.protest.fuente_url);
+  if (d.protest.fuente_url) {
+    // URL larga — imprimir en múltiples líneas sin truncar
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(76,255,164);
+    doc.text('Fuente:', M, y);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(100,160,255);
+    const urlLines = doc.splitTextToSize(d.protest.fuente_url, CW - 48);
+    urlLines.forEach((l, i) => { doc.text(l, i === 0 ? M+48 : M+4, y); nl(5); });
+    nl(2);
+  }
   if (d.protest.demands) { nl(1); body('Demandas: ' + d.protest.demands); }
   nl(2); line();
 
   h2('3. RESULTADOS');
-  kv('Adhesiones verificadas', d.total_adhesiones);
+  // Para local/regional: destacar GPS territorial primero
+  if ((d.protest.scope === 'local' || d.protest.scope === 'regional') && d.desglose_geografico_local) {
+    const territorio = d.protest.convocatoria_ciudad_nombre || '—';
+    const label = d.protest.scope === 'local' ? 'GPS verificado en ' + territorio : 'GPS verificado en ' + territorio;
+    kv(label, d.desglose_geografico_local.gps_local + ' participantes');
+    kv('Participantes nacionales adicionales', d.desglose_geografico_local.gps_nacional);
+    if (d.desglose_geografico_local.internacionales > 0)
+      kv('Participantes internacionales', d.desglose_geografico_local.internacionales);
+    kv('Total adhesiones verificadas', d.total_adhesiones);
+  } else if (d.protest.dominio_email) {
+    kv('Miembros verificados de ' + d.protest.dominio_email, d.total_adhesiones);
+  } else {
+    kv('Adhesiones verificadas', d.total_adhesiones);
+    kv('Países distintos', d.paises_distintos);
+  }
   kv('Ciudades distintas', d.ciudades_distintas);
-  kv('Países distintos', d.paises_distintos);
-  kv('Con GPS verificado', d.adhesiones_con_gps);
-  kv('Solo SIM/IP', d.adhesiones_sin_gps);
   kv('Primera adhesión', d.primera_adhesion ? new Date(d.primera_adhesion).toLocaleString('es-ES') : '—');
   kv('Última adhesión', d.ultima_adhesion ? new Date(d.ultima_adhesion).toLocaleString('es-ES') : '—');
   nl(2); line();

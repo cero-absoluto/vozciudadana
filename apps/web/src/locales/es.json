@@ -250,6 +250,7 @@
     "errAbuso": "Selecciona el tipo de abuso",
     "errAbuse": "Selecciona el tipo de abuso",
     "errFuente": "Indica la fuente que respalda los hechos denunciados",
+    "errGeneric": "No se ha podido crear la convocatoria. Revisa los datos e inténtalo de nuevo.",
     "confirmWeakVerb": "Hemos detectado un verbo que puede debilitar tu demanda (\"solicitar\", \"pedir\", etc.).\n\n¿Quieres continuar de todos modos?",
     "errWeakVerb": "Hemos detectado un verbo que puede debilitar tu demanda (\"solicitar\", \"pedir\", etc.).\n\n¿Quieres continuar de todos modos?",
     "errVerb": "Las demandas deben incluir verbos de acción como \"exigir\", \"denunciar\" o \"requerir\".",
@@ -346,7 +347,13 @@
     "closedInformeBtn": "📊 Ver informe público",
     "directedAt": "Dirigido a",
     "typeOfAbuse": "Tipo de abuso",
-    "source": "Fuente"
+    "source": "Fuente",
+    "sourceBulletin": "Boletín oficial",
+    "sourceInstitutional": "Fuente institucional",
+    "sourceMedia": "Medio de comunicación",
+    "sourceAcademic": "Fuente académica",
+    "sourceNgo": "Organización civil",
+    "sourceUnverified": "Sin verificar"
   },
   "verify": {
     "spinVerifying": "Verificando tu participación...",

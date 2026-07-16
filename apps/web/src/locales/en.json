@@ -346,17 +346,7 @@
     "closedInformeBtn": "📊 View public report",
     "directedAt": "Directed at",
     "typeOfAbuse": "Type of abuse",
-    "source": "Source",
-    "reforzarTitle": "Strengthen your participation with your location",
-    "reforzarBody": "Your adhesion already counts. If you are in {territorio} right now, your location turns it into the strongest evidence in the public report: “GPS confirmed inside the territory”. Available for 24h after joining.",
-    "reforzarBtn": "📍 Strengthen my participation",
-    "reforzarPrivacy": "Your coordinates are never stored — only the derived administrative area.",
-    "reforzarDone": "Participation strengthened — you appear as territorial verification in the report.",
-    "reforzarToast": "📍 Location verified. Thank you for strengthening the report.",
-    "gpsPromptTitle": "Territorial convocatoria: {territorio}",
-    "gpsPromptBody": "Your location is what turns your adhesion into verified territorial evidence in the public report. It is optional: your coordinates are never stored, only the derived administrative area.",
-    "gpsPromptYes": "📍 Enable location",
-    "gpsPromptSkip": "Continue without location"
+    "source": "Source"
   },
   "verify": {
     "spinVerifying": "Verifying your participation...",
@@ -374,12 +364,7 @@
     "notiOff": "🔔 Notify me when it closes",
     "toastAlready": "You have already joined this protest with this phone number.",
     "toastSinSaldo": "This protest has no funds. Support it to enable adhesions.",
-    "notiInfo": "If you enable notifications, your browser will be linked to this protest to send you the result. This slightly reduces your pseudonymity. If you prefer maximum privacy, do not enable notifications.",
-    "gpsLocalInfo": "This is a local event in {ciudad}. If you are in the municipality right now, strengthen your participation with your location — you will appear with local geographic verification evidence in the public report.",
-    "gpsRegionalInfo": "This is a regional call in {region}. If you are in the region right now, strengthen your participation with your location — you will appear with geographic verification evidence in the public report.",
-    "gpsError": "Your location could not be registered. Open the convocatoria and try again from there.",
-    "gpsLocalBtn": "Strengthen my participation",
-    "gpsBlocked": "GPS access is blocked in this browser. To strengthen your participation, open the app in normal browsing mode."
+    "notiInfo": "If you enable notifications, your browser will be linked to this protest to send you the result. This slightly reduces your pseudonymity. If you prefer maximum privacy, do not enable notifications."
   },
   "about": {
     "heroTitle": "The tool. No tricks.",

@@ -640,6 +640,39 @@ async function selectTarget(s) {
 const API_BASE = import.meta.env.VITE_API_URL || 'https://vozciudadanaapi-production.up.railway.app';
 let sourceDebounce = null;
 
+// Verb-check logic ported EXACTLY from PROHIBITED_VERB_ROOTS /
+// REQUIRED_VERB_ROOTS / wordBoundary in apps/api/src/routes/protests.js —
+// must be kept in sync with that file if either list changes. This single
+// copy replaces two separate, looser substring-based re-implementations
+// that used to live in this screen (one here, one in validateSource()) and
+// could silently disagree with the real backend gate and with each other.
+const PROHIBITED_VERB_ROOTS = [
+  'pedir', 'solicitar', 'rogar', 'proponer', 'sugerir', 'recomendar',
+  'mejorar', 'agradecer', 'desear', 'esperar', 'apoyar', 'respaldar',
+  'pedimos', 'solicitamos', 'rogamos', 'proponemos', 'sugerimos',
+  'recomendamos', 'mejoramos', 'deseamos', 'esperamos', 'apoyamos',
+  'ask', 'request', 'beg', 'propose', 'suggest', 'recommend',
+  'improve', 'thank', 'wish', 'hope', 'support', 'endorse',
+  'we ask', 'we request', 'we propose', 'we suggest',
+];
+const REQUIRED_VERB_ROOTS = [
+  'exigi', 'exig', 'denuncia', 'denunci', 'demanda', 'rechaza', 'condena',
+  'cese', 'cesar', 'dimt', 'dimitir', 'investig', 'publiqu', 'publica',
+  'revel', 'restitu', 'deten', 'suspend', 'paraliz', 'interp', 'acus',
+  'exigimos', 'denunciamos', 'demandamos', 'rechazamos', 'condenamos',
+  'dimitimos', 'investigamos', 'revelamos', 'suspendemos',
+  'demand', 'denounce', 'reject', 'condemn', 'dismiss', 'resign',
+  'investigate', 'reveal', 'restore', 'halt', 'suspend', 'prosecute',
+];
+function wordBoundary(root) { return new RegExp(`\\b${root}\\b`, 'i'); }
+function checkVerbs(text) {
+  const scan = (text || '').toLowerCase();
+  return {
+    hasProhibited: PROHIBITED_VERB_ROOTS.some(v => wordBoundary(v).test(scan)),
+    hasRequired:   REQUIRED_VERB_ROOTS.some(v => wordBoundary(v).test(scan)),
+  };
+}
+
 watch(() => form.fuente_url, (url) => {
   sourceResult.value  = null;
   fuenteStatus.value  = null;
@@ -652,9 +685,7 @@ async function validateSource(url) {
   sourceChecking.value = true;
   sourceResult.value   = null;
   try {
-    const demandsLower = (form.demands || '').toLowerCase();
-    const VERBOS_PROHIBIDOS = ['apoyar','respaldar','celebrar','felicitar','pedir','solicitar','rogar','desear','esperar','agradecer','proponer','sugerir','recomendar','mejorar','support','endorse','celebrate','congratulate','ask','request','beg','wish','hope','thank','propose','suggest','recommend','improve'];
-    const VERBOS_PERMITIDOS = ['exigi','denuncia','demanda','rechaza','condena','ces','dimt','investig','public','revel','restitu','par','deten','suspend','demand','denounce','reject','condemn','dismiss','resign','investigate','publish','reveal','restore','stop','halt','suspend'];
+    const { hasRequired, hasProhibited } = checkVerbs(form.demands);
     const res = await fetch(`${API_BASE}/api/source/validate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -664,9 +695,9 @@ async function validateSource(url) {
         demands:           form.demands     || '',
         tipo_abuso:        form.tipo_abuso  || '',
         target_name:       form.focal_point || '',
-        has_action_verb:   VERBOS_PERMITIDOS.some(v => demandsLower.includes(v)),
-        has_blocked_verb:  VERBOS_PROHIBIDOS.some(v => demandsLower.includes(v)),
-        wikidata_verified: !!form.focal_point_wikidata_id,
+        has_action_verb:   hasRequired,
+        has_blocked_verb:  hasProhibited,
+        wikidata_verified: !!form.target_wikidata_id,
       }),
     });
     const data = await res.json();
@@ -843,7 +874,9 @@ function selectScope(key) {
   }
 }
 
-function submit() {
+const creating = ref(false);
+
+async function submit() {
   if (!form.title.trim())       { ui.showToast(t('create.errTitle')); return; }
   if (!form.description.trim()) { ui.showToast(t('create.errDesc')); return; }
   if (!form.demands.trim())     { ui.showToast(t('create.errDemands')); return; }
@@ -865,12 +898,7 @@ function submit() {
   if (!form.tipo_abuso) { ui.showToast(t('create.errAbuso')); return; }
   if (!form.fuente_url.trim()) { ui.showToast(t('create.errFuente')); return; }
 
-  const VERBOS_PROHIBIDOS = ['apoyar','respaldar','celebrar','felicitar','pedir','solicitar','rogar','desear','esperar','agradecer','proponer','sugerir','recomendar','mejorar','support','endorse','celebrate','congratulate','ask','request','beg','wish','hope','thank','propose','suggest','recommend','improve'];
-  const VERBOS_PERMITIDOS = ['exigi','denuncia','demanda','rechaza','condena','ces','dimt','investig','public','revel','restitu','par','deten','suspend','demand','denounce','reject','condemn','dismiss','resign','investigate','publish','reveal','restore','stop','halt','suspend'];
-
-  const demandsLower = form.demands.toLowerCase();
-  const tieneProhibido = VERBOS_PROHIBIDOS.some(v => demandsLower.includes(v));
-  const tienePermitido = VERBOS_PERMITIDOS.some(v => demandsLower.includes(v));
+  const { hasRequired: tienePermitido, hasProhibited: tieneProhibido } = checkVerbs(form.demands);
 
   if (tieneProhibido && !window.confirm(t('create.confirmWeakVerb'))) return;
   if (!tienePermitido) { ui.showToast(t('create.errVerb')); return; }
@@ -902,39 +930,52 @@ function submit() {
     'TH': 'Tailandia', 'TW': 'Taiwán', 'KZ': 'Kazajistán',
   };
 
-  protests.createProtest((() => {
-    // institutionalMode is a UI-only flag — never sent to the backend
-    // (the create schema uses additionalProperties:false).
-    const { institutionalMode, ...formData } = form;
-    // 08:00 in the convocante's local time on the selected date. Building the
-    // Date from local components lets the engine apply the correct DST offset
-    // for *that* date (not today's), then .toISOString() yields the right UTC
-    // instant. Out-of-range dates are already rejected above.
-    let startsAtIso = null;
-    if (form.starts_at) {
-      const [y, m, d] = form.starts_at.split('-').map(Number);
-      const startLocal = new Date(y, m - 1, d, 8, 0, 0, 0);
-      if (!Number.isNaN(startLocal.getTime())) startsAtIso = startLocal.toISOString();
-    }
-    return {
-    ...formData,
-    starts_at: startsAtIso,
-    convocatoria_pais: form.convocatoria_pais || null,
-    convocatoria_region: form.convocatoria_region || null,
-    convocatoria_institucion: form.convocatoria_institucion || null,
-    convocatoria_osm_id: form.convocatoria_osm_id || null,
-    convocatoria_ciudad_nombre: form.convocatoria_ciudad_nombre || null,
-    dominio_email: form.dominio_email || null,
-    tipo_abuso: form.tipo_abuso || null,
-    fuente_url: form.fuente_url || null,
-    requiere_censo: form.requiere_censo || false,
-    country: form.convocatoria_pais || null,
-    country_name: PAIS_NOMBRES[form.convocatoria_pais] || form.convocatoria_pais || 'regional',
-  }; })());
-  router.push('/');
-  setTimeout(() => {
-    ui.showToast(t('create.createdSaldo'));
-  }, 800);
+  if (creating.value) return;
+  creating.value = true;
+  try {
+    await protests.createProtest((() => {
+      // institutionalMode is a UI-only flag — never sent to the backend
+      // (the create schema uses additionalProperties:false).
+      const { institutionalMode, ...formData } = form;
+      // 08:00 in the convocante's local time on the selected date. Building the
+      // Date from local components lets the engine apply the correct DST offset
+      // for *that* date (not today's), then .toISOString() yields the right UTC
+      // instant. Out-of-range dates are already rejected above.
+      let startsAtIso = null;
+      if (form.starts_at) {
+        const [y, m, d] = form.starts_at.split('-').map(Number);
+        const startLocal = new Date(y, m - 1, d, 8, 0, 0, 0);
+        if (!Number.isNaN(startLocal.getTime())) startsAtIso = startLocal.toISOString();
+      }
+      return {
+      ...formData,
+      starts_at: startsAtIso,
+      convocatoria_pais: form.convocatoria_pais || null,
+      convocatoria_region: form.convocatoria_region || null,
+      convocatoria_institucion: form.convocatoria_institucion || null,
+      convocatoria_osm_id: form.convocatoria_osm_id || null,
+      convocatoria_ciudad_nombre: form.convocatoria_ciudad_nombre || null,
+      dominio_email: form.dominio_email || null,
+      tipo_abuso: form.tipo_abuso || null,
+      fuente_url: form.fuente_url || null,
+      requiere_censo: form.requiere_censo || false,
+      country: form.convocatoria_pais || null,
+      country_name: PAIS_NOMBRES[form.convocatoria_pais] || form.convocatoria_pais || 'regional',
+    }; })());
+
+    router.push('/');
+    setTimeout(() => {
+      ui.showToast(t('create.createdSaldo'));
+    }, 800);
+  } catch (err) {
+    // A real admission rejection (err.status set, e.g. 400) — the
+    // convocatoria was NOT created. Show the server's actual reason and
+    // stay on the form so it can be fixed, instead of navigating away as
+    // if it had succeeded.
+    ui.showToast(err.reason || err.message || t('create.errGeneric'));
+  } finally {
+    creating.value = false;
+  }
 }
 </script>
 

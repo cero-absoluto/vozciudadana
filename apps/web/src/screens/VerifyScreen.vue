@@ -53,7 +53,6 @@ const ui       = useUiStore();
 
 const success    = ref(false);
 const spinMsg    = ref('');
-const receiptHash = ref('');
 const notiActivada = ref(false);
 
 // Local scope GPS reinforce
@@ -116,10 +115,10 @@ onMounted(async () => {
     localStorage.removeItem('vc_gps_accuracy');
     localStorage.removeItem('vc_gps_ts');
   }, 5000);
-  for (const msg of [t('verify.spinVerifying'), t('verify.spinRegistering'), t('verify.spinGenerating')]) {
-    spinMsg.value = msg;
-    await new Promise(r => setTimeout(r, 850));
-  }
+  // Mensaje honesto: se muestra mientras dura la llamada real de adhesión
+  // más abajo, no un progreso simulado con tiempos fijos que no corresponden
+  // a ningún trabajo real (antes: 3 mensajes x 850ms fijos).
+  spinMsg.value = t('verify.spinVerifying');
 
   // Find the protest the user was viewing (the first joinable one for demo)
   const lastId = sessionStorage.getItem('vc_last_joined');
@@ -181,9 +180,6 @@ const target = lastId
     sessionStorage.setItem('vc_last_joined', String(target.id));
   }
 
-  const c = '0123456789abcdef'; let h = 'sha256:';
-  for (let i = 0; i < 64; i++) h += c[Math.floor(Math.random() * 16)];
-  receiptHash.value = h;
   success.value = true;
 
   ui.showToast(t('verify.toast'));

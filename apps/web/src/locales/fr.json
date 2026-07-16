@@ -250,6 +250,7 @@
     "errAbuso": "Sélectionnez le type d'abus",
     "errAbuse": "Sélectionnez le type d'abus",
     "errFuente": "Indiquez la source étayant les faits dénoncés",
+    "errGeneric": "Impossible de créer la convocation. Vérifiez les informations et réessayez.",
     "confirmWeakVerb": "Nous avons détecté un verbe qui peut affaiblir votre demande.\n\nVoulez-vous continuer quand même ?",
     "errWeakVerb": "Nous avons détecté un verbe qui peut affaiblir votre demande.\n\nVoulez-vous continuer quand même ?",
     "errVerb": "Les demandes doivent inclure des verbes d'action tels que \"exiger\", \"dénoncer\" ou \"demander\".",
@@ -346,7 +347,13 @@
     "closedInformeBtn": "📊 Voir le rapport public",
     "directedAt": "Adressé à",
     "typeOfAbuse": "Type d'abus",
-    "source": "Source"
+    "source": "Source",
+    "sourceBulletin": "Bulletin officiel",
+    "sourceInstitutional": "Source institutionnelle",
+    "sourceMedia": "Média d'information",
+    "sourceAcademic": "Source académique",
+    "sourceNgo": "Organisation de la société civile",
+    "sourceUnverified": "Non vérifiée"
   },
   "verify": {
     "spinVerifying": "Vérification de votre participation...",

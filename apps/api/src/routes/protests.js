@@ -1,6 +1,7 @@
 import { supabase } from '../services/supabase.js';
 import { createHmac } from 'crypto';
 import { buildEvidentialScope } from '../lib/evidentialScope.js';
+import { evaluateSource, BLOCKED_DOMAINS } from '../lib/sourceCheck.js';
 
 const VALID_SCOPES    = ['national', 'regional', 'local', 'global'];
 const VALID_REGIONS   = ['region', 'provincia', 'ciudad', 'distrito', 'institucion'];
@@ -8,7 +9,7 @@ const VALID_RISK      = ['low', 'med', 'high', 'critical'];
 
 // ── Backend admission rules — these mirror and enforce frontend validation ──
 // Frontend = helps the user. Backend = real border. These rules cannot be
-// bypassed by calling the API directly. All four checks are required because
+// bypassed by calling the API directly. All five checks are required because
 // Voice Protest must not function as a petition platform.
 
 // 1. Closed list of accepted abuse types — tipo_abuso is required and must
@@ -118,7 +119,7 @@ const COUNTRY_RE      = /^[A-Z]{2}$/;
 //
 // Does NOT call reply directly — the caller decides what to do with the result.
 // Rule 4 calls Wikidata asynchronously; the function is therefore async.
-async function validateAdmissionRules({ fuente_url, title, description, demands, tipo_abuso, target_wikidata_id }) {
+async function validateAdmissionRules({ fuente_url, title, description, demands, tipo_abuso, target_wikidata_id, focal_point }) {
 
   // Rule 1 — fuente_url must not be a petition platform
   let sourceDomain = '';
@@ -133,6 +134,52 @@ async function validateAdmissionRules({ fuente_url, title, description, demands,
       ok: false, status: 400,
       error: 'Source not accepted',
       reason: 'Petition platforms are not accepted as documentary sources. Please provide a news article, official document or statistical data.',
+    };
+  }
+
+  // Rule 1a — social media / user-generated content platforms are not
+  // accepted as a documentary source either. Voice Protest requires a
+  // source someone else can independently check (a news article, official
+  // document, dataset, or NGO report) — not a social media post, which can
+  // be edited, deleted, or was never subject to any editorial process.
+  if (BLOCKED_DOMAINS.has(sourceDomain)) {
+    return {
+      ok: false, status: 400,
+      error: 'Source not accepted',
+      reason: 'Social media posts are not accepted as documentary sources. Please provide a news article, official document, dataset or NGO report.',
+    };
+  }
+
+  // Rule 1b — the source must have some real, checkable connection to the
+  // reported event. This is deliberately NOT a quality bar — a source with
+  // an unrecognised outlet or a weak topical match still passes. It exists
+  // only to reject a URL that is disconnected from the event entirely (e.g.
+  // pasting an arbitrary working link just to get past the form field).
+  // Never blocks on reputation, language, or documentary strength — only on
+  // "no connection found at all". See lib/sourceCheck.js for the full
+  // rationale and the informational-vs-hard-gate distinction.
+  let sourceInfo;
+  try {
+    sourceInfo = await evaluateSource(fuente_url, { title, demands, tipo_abuso, target_name: focal_point });
+  } catch {
+    return {
+      ok: false, status: 400,
+      error: 'Source not accepted',
+      reason: 'The source URL could not be read. Please check the link and try again.',
+    };
+  }
+  if (!sourceInfo.fetchOk) {
+    return {
+      ok: false, status: 400,
+      error: 'Source not accepted',
+      reason: 'The source URL could not be reached (it may be broken, offline, or return an error). Please provide a working link.',
+    };
+  }
+  if (!sourceInfo.minimalConnection.ok) {
+    return {
+      ok: false, status: 400,
+      error: 'Source not accepted',
+      reason: 'We could not confirm that this source is related to the reported event — neither the recipient\'s name nor any distinctive word from the title or demands appears on the page. Please provide a source that actually discusses this event.',
     };
   }
 
@@ -181,7 +228,7 @@ async function validateAdmissionRules({ fuente_url, title, description, demands,
     }
   }
 
-  return { ok: true, computedTargetValidation };
+  return { ok: true, computedTargetValidation, sourceInfo };
 }
 
 // ── Backend Wikidata target verification ───────────────────────────────────
@@ -397,7 +444,7 @@ export default async function protestRoutes(app) {
     // Delegated to validateAdmissionRules() — a shared function that can be
     // reused by any future endpoint without risk of the rules drifting apart.
     const admission = await validateAdmissionRules({
-      fuente_url, title, description, demands, tipo_abuso, target_wikidata_id,
+      fuente_url, title, description, demands, tipo_abuso, target_wikidata_id, focal_point,
     });
     if (!admission.ok) {
       return reply.status(admission.status).send({
@@ -405,7 +452,7 @@ export default async function protestRoutes(app) {
         reason: admission.reason,
       });
     }
-    const { computedTargetValidation } = admission;
+    const { computedTargetValidation, sourceInfo } = admission;
 
     // ── Local/regional scopes require an OSM geographic entity ─────────────
     // Both local and regional scopes require an OSM geographic entity to enable
@@ -460,6 +507,10 @@ export default async function protestRoutes(app) {
         target_type:        target_type ?? null,
         target_country:     target_country ?? null,
         target_validation:  computedTargetValidation,
+        // ── Source quality snapshot (informational — see lib/sourceCheck.js) ──
+        source_type:              sourceInfo.sourceType,
+        source_confidence_score:  sourceInfo.confidenceScore,
+        source_checked_at:        new Date().toISOString(),
       })
       .select()
       .single();

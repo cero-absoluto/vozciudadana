@@ -250,6 +250,7 @@
     "errAbuso": "请选择滥权类型",
     "errAbuse": "请选择滥权类型",
     "errFuente": "请填写支持所报告事实的来源",
+    "errGeneric": "无法创建该活动。请检查信息后重试。",
     "confirmWeakVerb": "我们检测到可能削弱您诉求的动词（「申请」、「请求」等）。\n\n您还要继续吗？",
     "errWeakVerb": "我们检测到可能削弱您诉求的动词（「申请」、「请求」等）。\n\n您还要继续吗？",
     "errVerb": "诉求必须包含行动动词，如「要求」、「谴责」或「强制」。",
@@ -346,7 +347,13 @@
     "closedInformeBtn": "📊 查看公开报告",
     "directedAt": "针对",
     "typeOfAbuse": "滥用类型",
-    "source": "来源"
+    "source": "来源",
+    "sourceBulletin": "官方公报",
+    "sourceInstitutional": "机构来源",
+    "sourceMedia": "新闻媒体",
+    "sourceAcademic": "学术来源",
+    "sourceNgo": "民间组织",
+    "sourceUnverified": "未验证"
   },
   "verify": {
     "spinVerifying": "正在验证您的参与...",

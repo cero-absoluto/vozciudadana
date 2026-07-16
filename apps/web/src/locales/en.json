@@ -250,6 +250,7 @@
     "errAbuso": "Select the type of abuse",
     "errAbuse": "Select the type of abuse",
     "errFuente": "Indicate the source supporting the reported facts",
+    "errGeneric": "The convocatoria could not be created. Please check the details and try again.",
     "confirmWeakVerb": "We detected a verb that may weaken your demand (\"request\", \"ask\", etc.).\n\nDo you want to continue anyway?",
     "errWeakVerb": "We detected a verb that may weaken your demand (\"request\", \"ask\", etc.).\n\nDo you want to continue anyway?",
     "errVerb": "Demands must include action verbs like \"demand\", \"denounce\" or \"require\".",
@@ -346,7 +347,13 @@
     "closedInformeBtn": "📊 View public report",
     "directedAt": "Directed at",
     "typeOfAbuse": "Type of abuse",
-    "source": "Source"
+    "source": "Source",
+    "sourceBulletin": "Official bulletin",
+    "sourceInstitutional": "Institutional source",
+    "sourceMedia": "News media",
+    "sourceAcademic": "Academic source",
+    "sourceNgo": "Civil society organisation",
+    "sourceUnverified": "Unverified"
   },
   "verify": {
     "spinVerifying": "Verifying your participation...",

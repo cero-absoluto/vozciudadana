@@ -147,13 +147,6 @@ const target = lastId
    ip_pais:    localStorage.getItem('vc_geo_pais') || device.ipCountryName || null,
    ip_region:  localStorage.getItem('vc_geo_region') || device.ipRegion || null,
   });
-  // Store GPS update token for post-adhesion GPS reinforcement.
-  // sessionStorage kept for the button on this screen; localStorage record
-  // (Decision July 2026) honors the token's real 24h TTL so the user can
-  // reinforce later from DetailScreen — e.g. join from home, reinforce from
-  // the neighborhood. Random single-use UUID, no personal data; removed on
-  // use or expiry.
-
 });
     } catch (e) {
       if (e.code === 'NATIONAL_ONLY') {

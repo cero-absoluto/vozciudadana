@@ -50,6 +50,7 @@
             <div style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.3px;margin-bottom:3px">{{ $t('detail.source') }}</div>
             <a :href="protest.fuente_url" target="_blank" rel="noopener"
               style="font-size:13px;color:var(--accent);word-break:break-all">{{ protest.fuente_url }}</a>
+            <span style="font-size:12px;color:var(--text2)"> · {{ $t(sourceLabelKey) }}</span>
           </div>
         </div>
       </div>
@@ -208,6 +209,25 @@ const loadingFallback = ref(false);
 const notFound        = ref(false);
 
 const isClosed = computed(() => !!protest.value && protest.value.timer <= 0);
+
+// Minimal, informational-only label for the source-quality indicator (never
+// a truth/quality judgement — see lib/sourceCheck.js on the backend for the
+// full rationale). Deliberately just one short label, shown inline next to
+// the existing source link — no new section, no icon-heavy card.
+const SOURCE_TYPE_LABEL = {
+  official_bulletin:   'detail.sourceBulletin',
+  official_government: 'detail.sourceInstitutional',
+  parliament:           'detail.sourceInstitutional',
+  court:                'detail.sourceInstitutional',
+  public_institution:   'detail.sourceInstitutional',
+  dataset:              'detail.sourceInstitutional',
+  public_broadcaster:   'detail.sourceMedia',
+  reputable_media:      'detail.sourceMedia',
+  academic:             'detail.sourceAcademic',
+  ngo:                  'detail.sourceNgo',
+};
+const sourceLabelKey = computed(() =>
+  SOURCE_TYPE_LABEL[protest.value?.source_type] || 'detail.sourceUnverified');
 
 // Mapa completo de los 16 tipos de abuso
 const ABUSE_MAP = {

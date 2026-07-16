@@ -252,33 +252,38 @@ onMounted(async () => {
       countryCode.value = dev.ipCountry;
     }
   } catch { /* Fallback */ }
+});
 
-  // GPS para local/regional — antes de introducir el número
+// GPS para local/regional — se pide justo después de pulsar "Recibir código"
+// (dentro de sendSMS), no nada más entrar en la pantalla. Sigue siendo
+// pre-adhesión: el dato viaja en la misma llamada de adhesión que hace
+// VerifyScreen, solo cambia el instante dentro de este flujo.
+async function requestGpsFlow() {
   const riskLevel = sessionStorage.getItem('vc_risk_level') || 'low';
   const scope = sessionStorage.getItem('vc_protest_scope') || 'national';
-  if ((scope === 'regional' || scope === 'local') &&
-      (riskLevel === 'low' || riskLevel === 'med') &&
-      !device.gpsReady) {
-    await new Promise(r => setTimeout(r, 400));
-    const accepted = await new Promise(resolve => {
-      gpsResolve = resolve;
-      showGpsModal.value = true;
-    });
-    if (accepted) {
-      try {
-        const pos = await new Promise((resolve, reject) =>
-          navigator.geolocation.getCurrentPosition(resolve, reject,
-            { enableHighAccuracy: true, timeout: 10000 })
-        );
-        ui.setGps(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
-        localStorage.setItem('vc_gps_lat', pos.coords.latitude);
-        localStorage.setItem('vc_gps_lng', pos.coords.longitude);
-        localStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
-        localStorage.setItem('vc_gps_ts', Date.now());
-      } catch { /* sin GPS */ }
-    }
+  if (!((scope === 'regional' || scope === 'local') &&
+        (riskLevel === 'low' || riskLevel === 'med') &&
+        !device.gpsReady)) {
+    return;
   }
-});
+  const accepted = await new Promise(resolve => {
+    gpsResolve = resolve;
+    showGpsModal.value = true;
+  });
+  if (accepted) {
+    try {
+      const pos = await new Promise((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject,
+          { enableHighAccuracy: true, timeout: 10000 })
+      );
+      ui.setGps(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+      localStorage.setItem('vc_gps_lat', pos.coords.latitude);
+      localStorage.setItem('vc_gps_lng', pos.coords.longitude);
+      localStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
+      localStorage.setItem('vc_gps_ts', Date.now());
+    } catch { /* sin GPS */ }
+  }
+}
 
 async function sendSMS() {
   if (sending.value) return;
@@ -294,6 +299,10 @@ async function sendSMS() {
       return;
     }
   }
+
+  // GPS para local/regional — ahora se pide aquí, justo tras pulsar el botón,
+  // en vez de nada más entrar en la pantalla (ver requestGpsFlow más arriba).
+  await requestGpsFlow();
 
   if (device.gpsReady) {
     await new Promise(r => setTimeout(r, 300));

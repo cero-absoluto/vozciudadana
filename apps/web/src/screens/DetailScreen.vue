@@ -64,7 +64,7 @@
     </div>
 
     <!-- Join footer -->
-    <div class="join-footer">
+    <div class="join-footer" v-if="!isClosed">
       <!-- Risk info — solo para alto riesgo -->
       <div v-if="!protest.joined && cj.ok && (protest.risk_level === 'high' || protest.risk_level === 'critical')"
         class="risk-info" style="margin-bottom:8px;padding:10px 12px;border-radius:var(--r);font-size:13px;line-height:1.6;background:rgba(255,107,107,.06);border:.5px solid rgba(255,107,107,.2);color:var(--accent3)">
@@ -121,6 +121,37 @@
         <span style="font-size:12px;color:rgba(255,140,80,.9)"><strong style="color:#e85d24">{{ fmt(protest.viralCount) }}</strong> {{ $t('detail.viralCountSuffix') }}</span>
       </div>
     </div>
+    <!-- Convocatoria cerrada — ej. enlace visitado tras el cierre -->
+    <div class="join-footer" v-else style="text-align:center">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:10px;line-height:1.5">
+        <strong style="color:var(--text)">{{ $t('detail.closedTitle') }}</strong><br>
+        {{ $t('detail.closedBody') }}
+      </div>
+      <button class="btn-primary" @click="router.push(`/informe/${protest.id}`)">
+        {{ $t('detail.closedInformeBtn') }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Cargando (fallback fetch por id — enlace directo, ej. WhatsApp) -->
+  <div class="screen active" id="s-detail" v-else-if="loadingFallback">
+    <div class="spinner on">
+      <div class="spin-ring"></div>
+      <div class="spin-txt">{{ $t('detail.loadingEvent') }}</div>
+    </div>
+  </div>
+
+  <!-- No encontrada (id inválido o convocatoria eliminada) -->
+  <div class="screen active" id="s-detail" v-else-if="notFound">
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;padding:24px;text-align:center">
+      <div style="font-size:32px">🔍</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--text)">{{ $t('detail.notFoundTitle') }}</div>
+      <div style="font-size:14px;color:var(--text2);line-height:1.6;max-width:280px">{{ $t('detail.notFoundBody') }}</div>
+      <button @click="$router.push('/')"
+        style="margin-top:8px;padding:10px 18px;background:var(--accent);border:none;border-radius:var(--r);color:#000;font-weight:700;font-size:13px;cursor:pointer">
+        {{ $t('detail.notFoundBtn') }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -169,6 +200,15 @@ const tendenciaHoy = ref(0);
 const geoOpen = ref(false);
 const sobreOpen = ref(true);
 
+// Fallback state for direct links (e.g. shared via WhatsApp) that arrive
+// before the store's protest list has loaded, or that point to a protest
+// no longer in that list (closed convocatorias are excluded from GET
+// /api/protests). Without this, the screen used to render nothing at all.
+const loadingFallback = ref(false);
+const notFound        = ref(false);
+
+const isClosed = computed(() => !!protest.value && protest.value.timer <= 0);
+
 // Mapa completo de los 16 tipos de abuso
 const ABUSE_MAP = {
   corruption:          () => t('create.abusoCorrupcion'),
@@ -206,6 +246,20 @@ const donacionesInfo = computed(() => {
 });
 
 onMounted(async () => {
+  // Fallback: this protest isn't in the already-loaded list yet — either
+  // restoreFromStorage() hasn't resolved, or (for closed convocatorias)
+  // it never will, since the list endpoint only returns active ones.
+  // Fetch it directly by id instead of leaving the screen blank.
+  if (!protest.value) {
+    loadingFallback.value = true;
+    const found = await store.fetchProtestById(route.params.id);
+    loadingFallback.value = false;
+    if (!found) {
+      notFound.value = true;
+      return;
+    }
+  }
+
   if (protest.value?.requiere_censo) {
     try {
       const data = await api.fetchGrupoPorConvocatoria(route.params.id);

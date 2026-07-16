@@ -229,41 +229,17 @@ export const useProtestsStore = defineStore('protests', () => {
   async function createProtest(data) {
     const device = useDeviceStore();
     const dur = parseFloat(data.duration_h) || 2;
+    // No optimistic local-only fallback here anymore: CreateScreen.vue now
+    // awaits this call and shows the real error to the person on ANY
+    // failure (network or a real admission rejection), so a phantom local
+    // entry no longer serves its original purpose (masking a failure as a
+    // success) — it only left a ghost card in the list until the next
+    // reload, which is exactly the "duplicate" that showed up in testing.
     const created = await api.createProtest({
       ...data,
       duration_h: dur,
       country: data.country || (data.scope === 'national' ? device.simCountry : null),
       country_name: data.country_name || (data.scope === 'national' ? device.simName : data.scope === 'regional' ? 'Regional' : 'Global'),
-    }).catch(err => {
-      // Only fall back to an optimistic local-only insert for a genuine
-      // network/connectivity failure (fetch() itself threw, so the request
-      // never got a response — no err.status). A real admission rejection
-      // (err.status set, e.g. 400 with a reason) must never be treated as a
-      // success: it means the convocatoria was NOT created, and the person
-      // needs to see why and fix it, not be shown a phantom local entry and
-      // navigated away as if it worked.
-      if (typeof err.status === 'number') throw err;
-
-      protests.value.push({
-        id: Date.now(),
-        title:       data.title,
-        country:     data.scope === 'national' ? device.simCountry : null,
-        countryName: data.scope === 'national' ? device.simName
-                   : data.scope === 'regional' ? (REGIONS[data.region]?.name || 'Regional')
-                   : 'Global',
-        scope:       data.scope,
-        region:      data.region || undefined,
-        count:       0,
-        heat:        5,
-        timer:       dur * 3600,
-        color:       SCOPE_COLOR[data.scope] ?? '#7C6FFF',
-        cities:      1,
-        desc:        data.description,
-        demands:     data.demands,
-        joined:      false,
-        viralCount:  0,
-      });
-      throw err;
     });
     protests.value.push(normalizeProtest(created));
     return created;
@@ -293,3 +269,4 @@ export const useProtestsStore = defineStore('protests', () => {
     loadProtests, fetchProtestById, joinProtest, incrementViral, boostQueue, createProtest, tickTimers, restoreFromStorage,
   };
 });
+

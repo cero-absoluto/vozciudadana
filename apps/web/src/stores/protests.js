@@ -60,11 +60,22 @@ export const useProtestsStore = defineStore('protests', () => {
   const countryFilter = ref(null);    // ISO alpha-2 or null
 
   // ── Getters ────────────────────────────────────────────────────────────────
-  const globalCount = computed(() => protests.value.reduce((s, p) => s + p.count, 0));
+  // Closed convocatorias only ever end up in `protests` via fetchProtestById()
+  // (someone viewing a direct link after closure) — they must never surface
+  // in home listings, map picks or the global counter, only on their own
+  // DetailScreen/InformeScreen.
+  const globalCount = computed(() =>
+    protests.value.reduce((s, p) => s + (p.timer > 0 ? p.count : 0), 0));
+
+  // Same exclusion as filteredProtests/globalCount, exposed as a plain list
+  // for components that render every open protest without going through the
+  // scope/country filter pipeline (the map, the slots tab).
+  const openProtests = computed(() => protests.value.filter(p => p.timer > 0));
 
   const filteredProtests = computed(() => {
     const device = useDeviceStore();
-    let list = filter.value === 'all' ? protests.value : protests.value.filter(p => displayScope(p) === filter.value);
+    const open = protests.value.filter(p => p.timer > 0);
+    let list = filter.value === 'all' ? open : open.filter(p => displayScope(p) === filter.value);
     // Al pinchar un país, filtrar ESTRICTAMENTE a ese país (nacional, regional,
     // local e institucional — todas llevan p.country). Si no hay ninguna, la
     // lista queda vacía (estado vacío), en vez de mostrar las de otros países.
@@ -148,11 +159,19 @@ export const useProtestsStore = defineStore('protests', () => {
     try {
       const data = await api.fetchProtests(filters);
       const locks = useDeviceStore().getLocks();
-      protests.value = data.map(p => {
+      const fresh = data.map(p => {
         const n = normalizeProtest(p);
         if (locks[n.id]) n.joined = true;
         return n;
       });
+      // GET /api/protests only returns active convocatorias (ends_at in the
+      // future). Preserve any already-closed one currently held in memory —
+      // it only gets there via fetchProtestById(), i.e. someone is actively
+      // viewing it via a direct link — so a background refresh here doesn't
+      // race it back into a blank DetailScreen.
+      const freshIds = new Set(fresh.map(p => p.id));
+      const keptClosed = protests.value.filter(p => p.timer <= 0 && !freshIds.has(p.id));
+      protests.value = [...fresh, ...keptClosed];
     } catch (err) {
       error.value = err.message;
       // Fall back to demo data so the UI stays usable offline
@@ -161,6 +180,27 @@ export const useProtestsStore = defineStore('protests', () => {
       }
     } finally {
       loading.value = false;
+    }
+  }
+
+  // Fallback fetch for direct links (e.g. shared via WhatsApp) to a protest
+  // that isn't in the already-loaded list — either because loadProtests()
+  // hasn't resolved yet, or because the protest has already closed and the
+  // list endpoint only returns active ones (GET /api/protests filters by
+  // ends_at). Returns the normalized protest, or null if it truly doesn't
+  // exist (404). Never throws — callers just check the return value.
+  async function fetchProtestById(id) {
+    const existing = protests.value.find(p => String(p.id) === String(id));
+    if (existing) return existing;
+    try {
+      const raw = await api.fetchProtest(id);
+      const n = normalizeProtest(raw);
+      const locks = useDeviceStore().getLocks();
+      if (locks[n.id]) n.joined = true;
+      protests.value.push(n);
+      return n;
+    } catch (err) {
+      return null;
     }
   }
 
@@ -240,8 +280,8 @@ export const useProtestsStore = defineStore('protests', () => {
 
   return {
     protests, queue, filter, countryFilter, loading, error,
-    globalCount, filteredProtests,
+    globalCount, filteredProtests, openProtests,
     canJoin, scopeBadge,
-    loadProtests, joinProtest, incrementViral, boostQueue, createProtest, tickTimers, restoreFromStorage,
+    loadProtests, fetchProtestById, joinProtest, incrementViral, boostQueue, createProtest, tickTimers, restoreFromStorage,
   };
 });

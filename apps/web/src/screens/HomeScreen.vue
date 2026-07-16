@@ -47,7 +47,7 @@
       </div>
       <!-- World map -->
       <WorldMap
-        :protests="protests.protests"
+        :protests="protests.openProtests"
         :filter="protests.filter"
         :country-filter="protests.countryFilter"
         :country-filter-name="countryFilterName"
@@ -84,7 +84,7 @@
       <div class="panel-body">
         <ActiveTab  v-if="tab==='active'" :protests="protests.filteredProtests" @open="openDetail" />
         <QueueTab   v-if="tab==='queue'"  :queue="protests.queue"               @boost="protests.boostQueue" />
-        <SlotsTab   v-if="tab==='slots'"  :protests="protests.protests"         :queue="protests.queue" />
+        <SlotsTab   v-if="tab==='slots'"  :protests="protests.openProtests"         :queue="protests.queue" />
       </div>
     </div>
 

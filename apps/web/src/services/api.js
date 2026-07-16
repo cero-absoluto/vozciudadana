@@ -24,6 +24,13 @@ async function request(method, path, body) {
   if (!res.ok) {
     const err = new Error(json.error ?? json.message ?? `API error ${res.status}`);
     if (json.code) err.code = json.code;
+    // status + reason let callers tell "the server rejected this input"
+    // (4xx, with a human-readable reason) apart from "the network/API is
+    // down" (thrown before a response was ever received, see below) — the
+    // two need very different handling: a rejection must be shown to the
+    // user, never silently treated as if it had succeeded.
+    err.status = res.status;
+    err.reason = json.reason ?? null;
     throw err;
   }
   return json;

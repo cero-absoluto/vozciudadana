@@ -35,9 +35,9 @@
     "captchaOk": "已验证 — 您是真人。请输入您的号码。",
     "captchaFail": "无法验证reCAPTCHA。如果您在开发中，请继续。",
     "captchaError": "无法验证reCAPTCHA。如果您在开发中，请继续。",
-    "gpsTitle": "本地 / 区域召集",
+    "gpsTitle": "这是一次本地或区域召集",
     "gpsBody": "为增强您参与的可信度，我们会请您分享位置。这会增加一个支持您所在国家的地理信号——它不是位置证明且有局限——并使您的参与更难被质疑。",
-    "gpsNote": "开启定位，让本地报告更有说服力。不会保存精确坐标。",
+    "gpsNote": "开启定位，强化报告并施加压力。不会保存坐标。",
     "gpsAccept": "📍 启用位置",
     "gpsSkip": "不分享位置继续",
     "gpsDecline": "不使用位置继续",
@@ -56,7 +56,6 @@
     "verificationCannotContinue": "此次活动的验证无法继续。"
   },
   "home": {
-    "geoConfidence": "你的声音权重为",
     "filterAll": "全部",
     "filterNational": "🏛️ 全国",
     "filterRegional": "🌐 地区",
@@ -75,8 +74,6 @@
     "overlayBody": "放大地图以发现正在进行的行动。",
     "overlayLive": "地图上的活跃活动",
     "overlayTap": "点击探索 →",
-    "dotDocument": "证件",
-    "improveConfidence": "标记你的位置，向他们施压",
     "filterLocal": "📍 本地"
   },
   "active": {
@@ -549,8 +546,8 @@
     "sealAuditable": "公开可审计",
     "sectionConvocatoria": "关于此次召集",
     "sectionGeo": "地理证据",
-    "sectionQuality": "证据质量",
-    "qualityIntro": "每次粘附累积独立验证信号。信号越多，参与真实性的可信度越高。"
+    "sectionQuality": "证据质量（基于设备信号）",
+    "qualityIntro": "每次参与都会结合加入时可用的信号——GPS 位置、经短信验证的电话号码、按连接检测到的国家。匹配的信号越多，该参与的证据就越充分。"
   },
   "invite": {
     "loading": "验证邀请中...",

@@ -13,7 +13,8 @@
     "about": "Cómo funciona"
   },
   "auth": {
-    "title": "Tu número de teléfono",
+    "title": "Introduce tu número de móvil para recibir un código de verificación por SMS y unirte a la protesta.",
+    "phoneHint": "Tu número se transforma en un código secreto e indescifrable.",
     "subtitle": "Enviamos un código de 6 dígitos. Tu número se utiliza para la verificación por SMS y luego se transforma en una huella matemática irreversible. El número original no se almacena.",
     "prefixLabel": "Prefijo del país",
     "phoneLabel": "Número de teléfono",

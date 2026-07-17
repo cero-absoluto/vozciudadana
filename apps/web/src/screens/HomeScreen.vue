@@ -3,25 +3,16 @@
 
     <!-- Left column: map + filters -->
     <div id="home-left">
-      <!-- Device status bar -->
+      <!-- Device status bar — simplificada: solo país detectado, de orientación.
+           El % de confianza, el botón de GPS y los puntos SIM/IP/documento se
+           quitaron (16 julio 2026): no aportaban nada aquí — el GPS solo
+           importa dentro de una convocatoria local/regional concreta, y ahí
+           ya se pide en su momento (AuthScreen), con el argumento real
+           (pertenencia + que no lo tachen de manipulado), no como un
+           porcentaje abstracto sin ninguna decisión asociada. -->
       <div class="device-bar">
         <div class="dev-info">
           <div class="dev-country"><span class="dev-flag">{{ deviceFlag }}</span> {{ displayCountryName }}{{ device.regionLabel ? ' · ' + device.regionLabel : '' }}</div>
-          <div class="dev-conf">
-            {{ $t('home.geoConfidence') }} <span :style="{color: confColor}">{{ device.confidence }}%</span>
-          </div>
-          <div v-if="!device.gpsReady" @click="strengthenGps"
-            style="font-size:13px;color:var(--accent2);cursor:pointer;text-decoration:underline;font-weight:600;margin-top:3px">
-            📍 {{ strengtheningGps ? '...' : $t('home.improveConfidence') }}
-          </div>
-          <div v-else style="font-size:13px;color:var(--accent);font-weight:700;margin-top:3px">
-            📍 GPS ✓
-          </div>
-        </div>
-        <div class="dev-dots">
-          <div class="dev-dot" :style="{background:'var(--accent2)'}" title="SIM"></div>
-          <div class="dev-dot" :style="{background:'var(--accent2)'}" title="IP"></div>
-          <div class="dev-dot" :style="{background: device.docCountry ? 'var(--accent2)' : 'var(--accent4)'}" :title="$t('home.dotDocument')"></div>
         </div>
       </div>
 
@@ -143,18 +134,6 @@ const deviceFlag = computed(() => {
 });
 
 const displayCountryName = computed(() => localizedCountry(device.simCountry || device.ipCountry, locale.value) || device.simName);
-const strengtheningGps = ref(false);
-async function strengthenGps() {
-  if (strengtheningGps.value || device.gpsReady) return;
-  strengtheningGps.value = true;
-  await device.requestGps();
-  strengtheningGps.value = false;
-}
-
-const confColor = computed(() => {
-  const c = device.confidence;
-  return c >= 75 ? 'var(--accent2)' : 'var(--accent4)';
-});
 
 function setFilter(f) {
   // toggle: tapping the active scope again returns to the no-filter (gateway) view

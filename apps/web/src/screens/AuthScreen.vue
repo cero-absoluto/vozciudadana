@@ -49,6 +49,8 @@
             :ref="el => { if (el) otpRefs[i] = el }"
             v-model="otpDigits[i]"
             @input="onOtpInput(i)"
+            inputmode="numeric"
+            :autocomplete="i === 0 ? 'one-time-code' : 'off'"
             :aria-label="$t('auth.otpDigit', { n: i + 1 })">
         </div>
         <div class="auth-resend">
@@ -175,7 +177,7 @@
 
 <script setup>
 import { useProtestsStore } from '@/stores/protests.js';
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUiStore } from '@/stores/ui.js';
 import { useI18n } from 'vue-i18n';
@@ -330,6 +332,7 @@ async function sendSMS() {
     }
     otpDigits.value = ['', '', '', '', '', ''];
     otpVisible.value = true;
+    startWebOtpListener();
   } catch (err) {
     if (err.status === 429 || err.message?.includes('429') || err.code === 'otp_rate_limited') {
       ui.showToast(t('auth.otpRateLimited'));
@@ -342,10 +345,50 @@ async function sendSMS() {
 }
 
 function onOtpInput(i) {
+  // iOS Safari doesn't implement the WebOTP JS API at all — its only
+  // autofill mechanism is the passive `autocomplete="one-time-code"`
+  // suggestion, which some iOS versions deliver as the FULL 6-digit string
+  // typed into whichever box carries that attribute (box 0 here), ignoring
+  // its maxlength="1". Detect that case and redistribute across all boxes,
+  // instead of just keeping the first digit and discarding the rest.
+  if (otpDigits.value[i] && otpDigits.value[i].length > 1) {
+    fillOtpDigits(otpDigits.value[i]);
+    return;
+  }
   if (otpDigits.value[i] && i < 5) otpRefs.value[i + 1]?.focus();
 }
 
+// Splits a full code string (from iOS's multi-char autofill, or from the
+// WebOTP API result on Android/Chrome) across the 6 boxes, focuses the
+// last one, and auto-submits — the person never has to open the SMS app
+// or type anything by hand.
+function fillOtpDigits(codeStr) {
+  const digits = (codeStr || '').replace(/\D/g, '').slice(0, 6).split('');
+  if (digits.length < 6) return;
+  digits.forEach((d, idx) => { otpDigits.value[idx] = d; });
+  otpRefs.value[5]?.focus();
+  verifyOTP();
+}
+
+let otpAbortController = null;
+
+// Android/Chrome only (Safari never implemented this API — see onOtpInput
+// above for its separate, passive mechanism). Requires the SMS to end with
+// "@voiceprotest.org #123456" — see the Twilio Verify custom template.
+function startWebOtpListener() {
+  if (!('OTPCredential' in window)) return;
+  otpAbortController?.abort();
+  otpAbortController = new AbortController();
+  navigator.credentials
+    .get({ otp: { transport: ['sms'] }, signal: otpAbortController.signal })
+    .then(otp => { if (otp?.code) fillOtpDigits(otp.code); })
+    .catch(() => { /* aborted (left the screen) or no matching SMS arrived — silent */ });
+}
+
+onUnmounted(() => otpAbortController?.abort());
+
 async function verifyOTP() {
+  otpAbortController?.abort();
   const code = otpDigits.value.join('');
   if (code.length < 6) { ui.showToast(t('auth.otpError')); return; }
   sending.value = true;

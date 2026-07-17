@@ -171,6 +171,14 @@ export default async function reportsRoutes(app) {
     }
   });
 
+  // GET reports.voiceprotest.org/robots.txt — this is a separate origin
+  // from voiceprotest.org, so it needs its own robots.txt; crawlers check
+  // per-origin, they don't inherit the main site's file.
+  app.get('/robots.txt', async (req, reply) => {
+    reply.type('text/plain');
+    return `User-agent: *\nAllow: /\n\nSitemap: https://${REPORTS_HOST}/sitemap.xml\n`;
+  });
+
   // GET reports.voiceprotest.org/sitemap.xml — dynamic, always current;
   // replaces the static Phase 1 sitemap for public convocatoria/report URLs.
   app.get('/sitemap.xml', async (req, reply) => {

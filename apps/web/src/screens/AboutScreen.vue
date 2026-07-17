@@ -62,9 +62,33 @@
           <div class="tcard-h">{{ $t('funding.title') }}</div>
           <div class="tcard-p">{{ $t('about.openCard4Teaser') }}</div>
         </div>
+        <div class="tcard" style="cursor:pointer" @click="goToQuienesSomos">
+          <div class="tcard-ico">🏛️</div>
+          <div class="tcard-h">{{ $t('about.openCard5Title') }}</div>
+          <div class="tcard-p">{{ $t('about.openCard5Teaser') }}</div>
+        </div>
       </div>
 
     </div>
   </div>
 </template>
+
+<script setup>
+import { useI18n } from 'vue-i18n';
+const { locale } = useI18n();
+
+// quienes-somos.html exists in 4 languages (es at the root — the site's
+// default/x-default — plus /en, /fr, /zh) with cross hreflang tags for
+// search engines. This just sends the person to the version matching
+// whatever language they already have the app in.
+const QUIENES_SOMOS_PATHS = {
+  es: '/quienes-somos.html',
+  en: '/en/quienes-somos.html',
+  fr: '/fr/quienes-somos.html',
+  zh: '/zh/quienes-somos.html',
+};
+function goToQuienesSomos() {
+  window.location.href = QUIENES_SOMOS_PATHS[locale.value] || QUIENES_SOMOS_PATHS.es;
+}
+</script>
 

@@ -13,7 +13,8 @@
     "about": "Comment ça marche"
   },
   "auth": {
-    "title": "Votre numéro de téléphone",
+    "title": "Entrez votre numéro de mobile pour recevoir un code de vérification par SMS et rejoindre la protestation.",
+    "phoneHint": "Votre numéro est transformé en un code secret et indéchiffrable.",
     "subtitle": "Nous envoyons un code à 6 chiffres. Votre numéro est utilisé pour la vérification par SMS, puis transformé en empreinte mathématique irréversible. Le numéro original n'est pas conservé.",
     "prefixLabel": "Indicatif du pays",
     "phoneLabel": "Numéro de téléphone",

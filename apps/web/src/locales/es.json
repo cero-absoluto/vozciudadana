@@ -35,9 +35,9 @@
     "captchaOk": "Verificado — eres humano. Introduce tu número.",
     "captchaFail": "No se pudo verificar reCAPTCHA. Continúa si estás en desarrollo.",
     "captchaError": "No se pudo verificar reCAPTCHA. Continúa si estás en desarrollo.",
-    "gpsTitle": "Convocatoria local / regional",
+    "gpsTitle": "Esta es una convocatoria local o regional",
     "gpsBody": "Para reforzar la credibilidad de tu participación, te pediremos que compartas tu ubicación. Esto añade una señal geográfica que respalda tu país — no es prueba de ubicación y tiene limitaciones — y hace tu participación más difícil de cuestionar.",
-    "gpsNote": "Activa la ubicación. Refuerza el informe local. Coordenadas no almacenadas.",
+    "gpsNote": "Activa la ubicación, refuerza el informe y mete presión. Coordenadas no almacenadas.",
     "gpsAccept": "📍 Activar localización",
     "gpsSkip": "Continuar sin ubicación",
     "gpsDecline": "Continuar sin localización",
@@ -56,7 +56,6 @@
     "verificationCannotContinue": "La verificación no puede continuar para este evento."
   },
   "home": {
-    "geoConfidence": "Tu voz cuenta en",
     "filterAll": "Todos",
     "filterNational": "🏛️ Nacional",
     "filterRegional": "🌐 Regional",
@@ -75,8 +74,6 @@
     "overlayBody": "Amplía el mapa para descubrir eventos activos.",
     "overlayLive": "Eventos activos en el mapa",
     "overlayTap": "Toca para explorar →",
-    "dotDocument": "Documento",
-    "improveConfidence": "Marca tu posición y que se pongan a sudar",
     "filterLocal": "📍 Local"
   },
   "active": {
@@ -549,8 +546,8 @@
     "sealAuditable": "Públicamente auditable",
     "sectionConvocatoria": "Sobre la convocatoria",
     "sectionGeo": "Evidencia geográfica",
-    "sectionQuality": "Calidad de la evidencia",
-    "qualityIntro": "Cada adhesión acumula señales de verificación independientes. A más señales, mayor confianza en que la participación es real."
+    "sectionQuality": "Calidad de la evidencia según las señales del dispositivo",
+    "qualityIntro": "Cada adhesión combina las señales disponibles en el momento de participar — ubicación GPS, número verificado por SMS, país detectado por conexión. Cuantas más coinciden, más sólida es la evidencia de esa participación."
   },
   "invite": {
     "loading": "Validando invitación...",

@@ -1,0 +1,12 @@
+# Voice Protest is a hash-routed single-page app (voiceprotest.org/#/auth,
+# /#/create, etc.) — everything after the # is never sent to the server, so
+# a Disallow rule per route here would have no effect (crawlers only ever
+# see "/"). Internal routes (auth, verify, create, group management,
+# invite links) are excluded from indexing instead via a `<meta
+# name="robots" content="noindex">` tag injected at runtime based on the
+# active route — see src/router/index.js. This file only needs to point
+# crawlers to the sitemap.
+User-agent: *
+Allow: /
+
+Sitemap: https://voiceprotest.org/sitemap.xml

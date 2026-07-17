@@ -7,17 +7,55 @@
   misleading — a crawler would fetch the same document for each. Individual
   convocatorias and public reports will be added here in Phase 2 (Dynamic
   Rendering), once each has its own server-rendered URL and content.
+
+  quienes-somos.html exists in 4 languages with cross hreflang annotations
+  (xhtml:link) so search engines serve the right language version per user.
 -->
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://voiceprotest.org/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://voiceprotest.org/about.html</loc>
+    <loc>https://voiceprotest.org/quienes-somos.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://voiceprotest.org/quienes-somos.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://voiceprotest.org/en/quienes-somos.html"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://voiceprotest.org/fr/quienes-somos.html"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://voiceprotest.org/zh/quienes-somos.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://voiceprotest.org/quienes-somos.html"/>
+  </url>
+  <url>
+    <loc>https://voiceprotest.org/en/quienes-somos.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://voiceprotest.org/quienes-somos.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://voiceprotest.org/en/quienes-somos.html"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://voiceprotest.org/fr/quienes-somos.html"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://voiceprotest.org/zh/quienes-somos.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://voiceprotest.org/quienes-somos.html"/>
+  </url>
+  <url>
+    <loc>https://voiceprotest.org/fr/quienes-somos.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://voiceprotest.org/quienes-somos.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://voiceprotest.org/en/quienes-somos.html"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://voiceprotest.org/fr/quienes-somos.html"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://voiceprotest.org/zh/quienes-somos.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://voiceprotest.org/quienes-somos.html"/>
+  </url>
+  <url>
+    <loc>https://voiceprotest.org/zh/quienes-somos.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://voiceprotest.org/quienes-somos.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://voiceprotest.org/en/quienes-somos.html"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://voiceprotest.org/fr/quienes-somos.html"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://voiceprotest.org/zh/quienes-somos.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://voiceprotest.org/quienes-somos.html"/>
   </url>
 </urlset>
-

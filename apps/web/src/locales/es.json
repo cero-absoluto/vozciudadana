@@ -423,7 +423,9 @@
     "openCard2Body": "Código fuente completo disponible bajo AGPL 3.0 en <a href=\"https://github.com/cero-absoluto/vozciudadana\" target=\"_blank\" style=\"color:var(--accent)\">GitHub</a>.",
     "principleNote": "Voice Protest verifica la participación. No verifica la verdad.",
     "openCard3Teaser": "Sin publicidad. Sin venta de datos. Sin cookies de seguimiento.",
-    "openCard4Teaser": "Sin financiación institucional. Sin grandes donantes. Contribuciones individuales hasta 100€."
+    "openCard4Teaser": "Sin financiación institucional. Sin grandes donantes. Contribuciones individuales hasta 100€.",
+    "openCard5Title": "Quiénes somos",
+    "openCard5Teaser": "La misión, los principios fundacionales y quién está detrás del proyecto."
   },
   "informe": {
     "loading": "Cargando informe...",

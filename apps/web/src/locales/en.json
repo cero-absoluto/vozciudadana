@@ -13,7 +13,8 @@
     "about": "How it works"
   },
   "auth": {
-    "title": "Your phone number",
+    "title": "Enter your mobile number to receive an SMS verification code and join the protest.",
+    "phoneHint": "Your number is transformed into a secret, undecipherable code.",
     "subtitle": "We send a 6-digit code. Your number is used for SMS verification and is then transformed into an irreversible mathematical fingerprint. The original number is not stored.",
     "prefixLabel": "Country prefix",
     "phoneLabel": "Phone number",

@@ -15,6 +15,7 @@ import pushRoutes       from './routes/push.js';
 import sourceRoutes     from './routes/source.js';
 import kofiWebhookRoutes from './routes/webhooks.js';
 import geocodeRoutes    from './routes/geocode.js';
+import reportsRoutes    from './routes/reports.js';
 
 // ── Fail-fast on missing identity-hashing secrets in production ─────────────
 // Identity hashing (phone, institutional email) and nullifiers depend on these
@@ -72,7 +73,14 @@ app.register(geocodeRoutes,     { prefix: '/api/geocode' });
 import { ipinfoRoutes } from './routes/geocode.js';
 app.register(ipinfoRoutes,      { prefix: '/api/ipinfo' });
 
+// No prefix: reports.voiceprotest.org is a second custom domain pointed at
+// this same Railway service. Every route inside gates itself on the Host
+// header (see routes/reports.js), so requests to api.voiceprotest.org for
+// any of these same paths still fall through to a normal 404, unchanged.
+app.register(reportsRoutes);
+
 app.get('/health', async () => ({ status: 'ok' }));
 
 const port = Number(process.env.PORT) || 3000;
 await app.listen({ port, host: '0.0.0.0' });
+

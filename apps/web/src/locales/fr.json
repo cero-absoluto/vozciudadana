@@ -35,9 +35,9 @@
     "captchaOk": "Vérifié — vous êtes humain. Saisissez votre numéro.",
     "captchaFail": "Impossible de vérifier reCAPTCHA. Continuez si vous êtes en développement.",
     "captchaError": "Impossible de vérifier reCAPTCHA. Continuez si vous êtes en développement.",
-    "gpsTitle": "Convocation locale / régionale",
+    "gpsTitle": "Ceci est une convocation locale ou régionale",
     "gpsBody": "Pour renforcer la crédibilité de votre participation, nous vous demanderons de partager votre localisation. Cela ajoute un signal géographique qui corrobore votre pays — ce n'est pas une preuve de localisation et a des limites — et rend votre participation plus difficile à contester.",
-    "gpsNote": "Activez la localisation. Renforcez le rapport local. Coordonnées non conservées.",
+    "gpsNote": "Activez la localisation, renforcez le rapport et mettez la pression. Coordonnées non conservées.",
     "gpsAccept": "📍 Activer la localisation",
     "gpsSkip": "Continuer sans localisation",
     "gpsDecline": "Continuer sans localisation",
@@ -56,7 +56,6 @@
     "verificationCannotContinue": "La vérification ne peut pas continuer pour cet événement."
   },
   "home": {
-    "geoConfidence": "Votre voix compte en",
     "filterAll": "Tous",
     "filterNational": "🏛️ National",
     "filterRegional": "🌐 Régional",
@@ -75,8 +74,6 @@
     "overlayBody": "Zoomez sur la carte pour découvrir les événements actifs.",
     "overlayLive": "Événements actifs sur la carte",
     "overlayTap": "Appuyez pour explorer →",
-    "dotDocument": "Document",
-    "improveConfidence": "Marquez votre position et faites-les transpirer",
     "filterLocal": "📍 Local"
   },
   "active": {
@@ -549,8 +546,8 @@
     "sealAuditable": "Publiquement auditable",
     "sectionConvocatoria": "Sur la convocation",
     "sectionGeo": "Preuve géographique",
-    "sectionQuality": "Qualité des preuves",
-    "qualityIntro": "Chaque adhésion accumule des signaux de vérification indépendants. Plus de signaux signifie plus de confiance."
+    "sectionQuality": "Qualité de la preuve selon les signaux de l'appareil",
+    "qualityIntro": "Chaque adhésion combine les signaux disponibles au moment de participer — localisation GPS, numéro vérifié par SMS, pays détecté par connexion. Plus ils coïncident, plus la preuve de cette participation est solide."
   },
   "invite": {
     "loading": "Validation de l'invitation...",

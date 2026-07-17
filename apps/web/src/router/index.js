@@ -39,4 +39,29 @@ export const router = createRouter({
   routes,
 });
 
+// Phase 1 (Static Foundations, 16 July 2026): robots.txt cannot exclude
+// these routes from indexing — with hash-based routing, everything after
+// the # is client-side only, so a crawler always sees the same server
+// path ("/") regardless of which screen is open. A JS-executing crawler
+// (Googlebot) does see the DOM after navigation, though, so a robots meta
+// tag toggled here has real effect for those. Non-JS crawlers see none of
+// this either way, since they only ever get the empty app shell — for
+// them the distinction is moot.
+const NOINDEX_PREFIXES = ['/auth', '/verify', '/create', '/grupo', '/invite'];
+
+router.afterEach((to) => {
+  const shouldNoindex = NOINDEX_PREFIXES.some(p => to.path.startsWith(p));
+  let tag = document.querySelector('meta[name="robots"]');
+  if (shouldNoindex) {
+    if (!tag) {
+      tag = document.createElement('meta');
+      tag.setAttribute('name', 'robots');
+      document.head.appendChild(tag);
+    }
+    tag.setAttribute('content', 'noindex, nofollow');
+  } else if (tag) {
+    tag.remove();
+  }
+});
+
 

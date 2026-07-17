@@ -1,1 +1,23 @@
-sitemap
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Phase 1 (Static Foundations) — only pages with real, crawlable content
+  today are listed. The hash-routed SPA screens (home, privacy, funding,
+  archive, api-docs) all resolve to the same server path ("/") regardless
+  of which one is open, so listing them individually here would be
+  misleading — a crawler would fetch the same document for each. Individual
+  convocatorias and public reports will be added here in Phase 2 (Dynamic
+  Rendering), once each has its own server-rendered URL and content.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://voiceprotest.org/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://voiceprotest.org/about.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>
+

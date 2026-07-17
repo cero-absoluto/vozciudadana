@@ -19,6 +19,7 @@
 
       <!-- Phone input -->
       <div class="auth-phone-label">{{ $t('auth.title') }}</div>
+      <div class="auth-phone-hint">{{ $t('auth.phoneHint') }}</div>
 
       <div style="width:100%" v-if="!otpVisible">
         <div class="phone-wrap">
@@ -125,6 +126,15 @@
   color: var(--text2);
   margin-bottom: 10px;
   text-align: left;
+}
+.auth-phone-hint {
+  width: 100%;
+  font-size: 13px;
+  color: var(--text3, var(--text2));
+  margin-top: -6px;
+  margin-bottom: 14px;
+  text-align: left;
+  line-height: 1.4;
 }
 /* Inputs con borde blanco visible */
 .cc-sel-visible {

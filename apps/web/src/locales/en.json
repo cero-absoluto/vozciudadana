@@ -35,9 +35,9 @@
     "captchaOk": "Verified — you're human. Enter your number.",
     "captchaFail": "Could not verify reCAPTCHA. Continue if you're in development.",
     "captchaError": "Could not verify reCAPTCHA. Continue if you're in development.",
-    "gpsTitle": "Local / regional convocation",
+    "gpsTitle": "This is a local or regional convocation",
     "gpsBody": "To strengthen the credibility of your participation, we'll ask you to share your location. This adds a geographic signal supporting your country — it is not proof of location and has limits — and makes your participation harder to question.",
-    "gpsNote": "Enable location. Make the local report stronger. Coordinates not stored.",
+    "gpsNote": "Enable location, strengthen the report and add pressure. Coordinates not stored.",
     "gpsAccept": "📍 Enable location",
     "gpsSkip": "Continue without location",
     "gpsDecline": "Continue without location",
@@ -56,7 +56,6 @@
     "verificationCannotContinue": "Verification cannot continue for this event."
   },
   "home": {
-    "geoConfidence": "Your voice counts at",
     "filterAll": "All",
     "filterNational": "🏛️ National",
     "filterRegional": "🌐 Regional",
@@ -75,8 +74,6 @@
     "overlayBody": "Zoom the map to discover active events.",
     "overlayLive": "Active events on the map",
     "overlayTap": "Tap to explore →",
-    "dotDocument": "Document",
-    "improveConfidence": "Drop your pin and make them sweat",
     "filterLocal": "📍 Local"
   },
   "active": {
@@ -549,8 +546,8 @@
     "sealAuditable": "Publicly auditable",
     "sectionConvocatoria": "About this convocation",
     "sectionGeo": "Geographic evidence",
-    "sectionQuality": "Evidence quality",
-    "qualityIntro": "Each adhesion accumulates independent verification signals. More signals means greater confidence that participation is genuine."
+    "sectionQuality": "Evidence quality, based on device signals",
+    "qualityIntro": "Each adhesion combines the signals available at the moment of joining — GPS location, SMS-verified phone number, country detected by connection. The more that coincide, the stronger the evidence for that participation."
   },
   "invite": {
     "loading": "Validating invitation...",

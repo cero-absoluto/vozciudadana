@@ -90,6 +90,15 @@ function renderReportHtml(protest) {
         endDate: protest.ends_at,
         eventStatus: 'https://schema.org/EventScheduled',
         eventAttendanceMode: 'https://schema.org/OnlineEventAttendanceMode',
+        // Required by Google's Event rich-result guidelines even for online
+        // events — omitting it entirely (as the first version of this file
+        // did) meant Google silently disqualified the whole block rather
+        // than reporting a validation error, which is why Rich Results
+        // Test showed "No items detected" instead of a fixable warning.
+        location: {
+          '@type': 'VirtualLocation',
+          url: appLink,
+        },
         organizer: { '@type': 'Organization', name: 'Stichting Voice Protest', url: `${APP_URL}/` },
       };
 

@@ -438,6 +438,7 @@
     "geoTitle": "📍 Geographic distribution",
     "geoByRegion": "By region:",
     "geoByCity": "By city:",
+    "geoIpCaveat": "Except where marked as GPS-verified, city and region are estimated from IP address — an approximate signal with a known margin of error, especially on mobile connections.",
     "moreCities": "and {n} more cities.",
     "adhesion": "adhesion",
     "adhesiones": "adhesions",

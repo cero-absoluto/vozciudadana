@@ -45,7 +45,7 @@
               {{ data.protest.scope === 'local' ? $t('informe.heroLabelLocal', { territorio: data.protest.convocatoria_ciudad_nombre }) : $t('informe.heroLabelRegional', { territorio: data.protest.convocatoria_ciudad_nombre }) }}
             </div>
             <div class="ir-hero-sub" v-if="data.total_adhesiones > data.desglose_geografico_local.gps_local">
-              {{ $t('informe.heroSubLocal', { total: data.total_adhesiones, nacional: data.desglose_geografico_local.gps_nacional }) }}
+              {{ $t('informe.heroSubLocal', { total: data.total_adhesiones, nacional: data.desglose_geografico_local.nacionales_sin_gps }) }}
             </div>
           </template>
 
@@ -132,6 +132,7 @@
 
           <!-- Distribución geográfica general -->
           <div v-if="hasGeoData" style="margin-top:20px">
+            <div class="ir-caption" style="font-style:italic;opacity:.75;margin-bottom:10px">{{ $t('informe.geoIpCaveat') }}</div>
             <div v-if="Object.keys(data.distribucion_regiones).length" style="margin-bottom:12px">
               <div class="ir-caption" style="margin-bottom:8px">{{ $t('informe.geoByRegion') }}</div>
               <div class="ir-tags">
@@ -1054,8 +1055,15 @@ function downloadPDF() {
     const dg = d.desglose_geografico_local;
     body('Verificación territorial (' + (dg.municipio || dg.scope) + '):');
     if (dg.gps_local > 0) body('  GPS confirmado dentro del territorio: ' + dg.gps_local);
-    if (dg.gps_nacional > 0) body('  Participantes nacionales sin GPS: ' + dg.gps_nacional);
+    if (dg.nacionales_sin_gps > 0) body('  Participantes nacionales sin GPS: ' + dg.nacionales_sin_gps);
     if (dg.internacionales > 0) body('  Participantes internacionales: ' + dg.internacionales);
+    nl(1);
+  }
+  if ((d.distribucion_regiones && Object.keys(d.distribucion_regiones).length) || d.distribucion_ciudades?.length) {
+    doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(140,140,140);
+    const caveatLines = doc.splitTextToSize(t('informe.geoIpCaveat'), CW);
+    caveatLines.forEach(l => { doc.text(l, M, y); nl(4); });
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(60,60,60);
     nl(1);
   }
   if (d.distribucion_regiones && Object.keys(d.distribucion_regiones).length) {

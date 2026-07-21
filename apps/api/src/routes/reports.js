@@ -53,6 +53,47 @@ function esc(s) {
   }[c]));
 }
 
+// Defence in depth: fuente_url already passes through hard admission rules
+// at creation time (routes/protests.js — petition/social-media domain
+// blocks, minimal-connection check), so a non-http(s) scheme shouldn't
+// reach this table today. But this render path trusts whatever is in the
+// row, with no re-validation of its own — a future change to the creation
+// rules, or a direct database edit, could put something like
+// "javascript:..." in fuente_url, and esc() alone only prevents breaking
+// the HTML, not a scheme that executes when clicked. Only ever render the
+// source as a link if it's actually http(s).
+function safeHref(url) {
+  try {
+    const u = new URL(url);
+    return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : null;
+  } catch { return null; }
+}
+
+// Short-lived cache (Discoverability Phase 2 hardening, per internal
+// review 18 July 2026): every hit to /:id previously ran a fresh Supabase
+// query, with no caching and only the app-wide 120 req/min rate limit to
+// slow abuse — fine at today's traffic, but a real cost amplification
+// vector once a link gets shared widely or a crawler revisits aggressively.
+// A short TTL keeps counts and time-remaining close enough to live for a
+// public report/share page (unlike the actual adhesion flow, which always
+// reads Supabase directly, never this cache) while absorbing repeat hits.
+const RENDER_CACHE_TTL_MS = 30_000;
+const renderCache = new Map(); // id -> { html, status, expires }
+
+function getCached(id) {
+  const entry = renderCache.get(id);
+  if (!entry || entry.expires < Date.now()) return null;
+  return entry;
+}
+function setCached(id, html, status) {
+  renderCache.set(id, { html, status, expires: Date.now() + RENDER_CACHE_TTL_MS });
+  // Bound the map so a scan/enumeration attempt (many distinct ids) can't
+  // grow it unboundedly — oldest entries are evicted first.
+  if (renderCache.size > 2000) {
+    renderCache.delete(renderCache.keys().next().value);
+  }
+}
+
 function renderReportHtml(protest) {
   const isClosed = new Date(protest.ends_at) < new Date();
   const abuseLabel = ABUSE_LABELS[protest.tipo_abuso] || 'Abuso de poder público';
@@ -152,7 +193,12 @@ function renderReportHtml(protest) {
 
   ${protest.demands ? `<div class="field-label">Qué exige</div><div class="field-value">${esc(protest.demands)}</div>` : ''}
 
-  ${protest.fuente_url ? `<div class="field-label">Fuente</div><div class="field-value"><a href="${esc(protest.fuente_url)}" rel="noopener">${esc(protest.fuente_url)}</a> · ${esc(sourceLabel)}</div>` : ''}
+  ${protest.fuente_url ? (() => {
+    const href = safeHref(protest.fuente_url);
+    return href
+      ? `<div class="field-label">Fuente</div><div class="field-value"><a href="${esc(href)}" rel="noopener">${esc(protest.fuente_url)}</a> · ${esc(sourceLabel)}</div>`
+      : `<div class="field-label">Fuente</div><div class="field-value">${esc(protest.fuente_url)} · ${esc(sourceLabel)}</div>`;
+  })() : ''}
 
   <a class="cta" href="${appLink}">${isClosed ? 'Ver el informe completo →' : 'Unirse a la convocatoria →'}</a>
 
@@ -190,7 +236,14 @@ export default async function reportsRoutes(app) {
 
   // GET reports.voiceprotest.org/sitemap.xml — dynamic, always current;
   // replaces the static Phase 1 sitemap for public convocatoria/report URLs.
-  app.get('/sitemap.xml', async (req, reply) => {
+  // Stricter, route-specific rate limit on top of the app-wide 120/min
+  // (server.js): this is the single most expensive query in the plugin —
+  // up to 5,000 rows, unauthenticated — and under the shared global limit
+  // it could be hit hard enough, on its own, to eat into the budget other
+  // legitimate API routes rely on.
+  app.get('/sitemap.xml', {
+    config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+  }, async (req, reply) => {
     const { data, error } = await supabase
       .from('protests')
       .select('id, updated_at, created_at')
@@ -222,6 +275,12 @@ export default async function reportsRoutes(app) {
   app.get('/:id', {
     schema: { params: { type: 'object', properties: { id: { type: 'string', format: 'uuid' } }, required: ['id'] } },
   }, async (req, reply) => {
+    const cached = getCached(req.params.id);
+    if (cached) {
+      reply.type('text/html').code(cached.status);
+      return cached.html;
+    }
+
     const { data: protest, error } = await supabase
       .from('protests')
       .select('*')
@@ -230,9 +289,12 @@ export default async function reportsRoutes(app) {
 
     reply.type('text/html');
     if (error || !protest) {
+      setCached(req.params.id, renderNotFoundHtml(), 404);
       reply.code(404);
       return renderNotFoundHtml();
     }
-    return renderReportHtml(protest);
+    const html = renderReportHtml(protest);
+    setCached(req.params.id, html, 200);
+    return html;
   });
 }

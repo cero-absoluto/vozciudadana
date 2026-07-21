@@ -438,6 +438,7 @@
     "geoTitle": "📍 地理分布",
     "geoByRegion": "按地区：",
     "geoByCity": "按城市：",
+    "geoIpCaveat": "除非标注为 GPS 已验证，城市和地区均为根据 IP 地址估算——这是一个近似信号，存在已知的误差范围，在移动网络连接下尤其明显。",
     "moreCities": "还有{n}个城市。",
     "adhesion": "次加入",
     "adhesiones": "次加入",

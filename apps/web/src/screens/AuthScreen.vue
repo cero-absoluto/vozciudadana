@@ -293,7 +293,30 @@ async function requestGpsFlow() {
       localStorage.setItem('vc_gps_lng', pos.coords.longitude);
       localStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
       localStorage.setItem('vc_gps_ts', Date.now());
-    } catch { /* sin GPS */ }
+    } catch (err) {
+      // Previously silent — a real production convocatoria (Las Llamas,
+      // 16-19 July 2026) showed two participants who tapped "Activar
+      // localización" with no visible failure of any kind: no OS
+      // permission dialog, no error, the flow just continued without GPS
+      // as if they had chosen "Continuar sin localización". Both were on
+      // devices where the browser or OS can reject getCurrentPosition()
+      // before ever showing its own prompt (denied at the OS/OEM level —
+      // e.g. ColorOS's own location gate on some Android devices, or iOS
+      // Location Services switched off system-wide) — the person never
+      // gets a chance to say yes, and never finds out why. This does not
+      // fix that underlying block (only the person can, in their own
+      // settings), but it stops hiding it.
+      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+      let key;
+      if (err?.code === 1) {           // PERMISSION_DENIED
+        key = isIOS ? 'auth.gpsErrorDeniedIOS' : 'auth.gpsErrorDeniedAndroid';
+      } else if (err?.code === 3) {     // TIMEOUT
+        key = 'auth.gpsErrorTimeout';
+      } else {                          // POSITION_UNAVAILABLE or unknown
+        key = 'auth.gpsErrorUnavailable';
+      }
+      ui.showToast(t(key));
+    }
   }
 }
 

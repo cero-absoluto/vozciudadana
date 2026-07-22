@@ -89,6 +89,23 @@ export function joinProtest(protestId, payload) {
 }
 
 /**
+ * Reinforce an existing adhesion with GPS captured after the join call
+ * already completed (Capa 1, 21 July 2026) — for someone whose first GPS
+ * attempt (in AuthScreen, pre-adhesion) failed, was skipped, or silently
+ * didn't happen (see the Capa 0 fix for why that used to be invisible).
+ * One-time use, tied to the single-use token issued in the original join
+ * response — see PATCH /api/protests/:id/adhesion in the backend, which
+ * this reconnects rather than duplicates: the endpoint itself was never
+ * removed, only every frontend caller of it was.
+ * @param {number|string} protestId
+ * @param {{ gps_update_token: string, gps_lat: number, gps_lng: number, gps_accuracy?: number }} payload
+ * @returns {Promise<{ ok: boolean, fiabilidad: number, adhesion_osm_id: number|null }>}
+ */
+export function patchAdhesionGps(protestId, payload) {
+  return request('PATCH', `/api/protests/${protestId}/adhesion`, payload);
+}
+
+/**
  * Record a viral share for a protest.
  * @param {number|string} protestId
  * @returns {Promise<{ ok: boolean }>}
@@ -225,3 +242,4 @@ export function generarInvite(groupId, payload) {
 export function fetchGrupoPorConvocatoria(protestId) {
   return request('GET', `/api/grupos/convocatoria/${protestId}`);
 }
+

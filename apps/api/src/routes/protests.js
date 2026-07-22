@@ -707,7 +707,26 @@ export default async function protestRoutes(app) {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      // Postgres unique_violation (23505) here means the nullifier or
+      // (protest_id, device_id) constraint caught a genuine duplicate
+      // adhesion attempt — most likely the earlier application-level check
+      // (before the SMS/OTP step) was bypassed by a race condition, not an
+      // enumeration probe: reaching this point already required completing
+      // real OTP verification for this exact phone number, so unlike the
+      // request-otp step (which deliberately stays neutral — see the 24
+      // June 2026 design decision, still in force there), there is no
+      // meaningful enumeration risk left to protect against by staying
+      // vague here. A clear message serves the legitimate person better
+      // than a generic error would.
+      if (error.code === '23505') {
+        return reply.code(409).send({
+          error: 'ALREADY_JOINED',
+          reason: 'You have already joined this convocatoria — one verified adhesion per person, per event.',
+        });
+      }
+      throw error;
+    }
 
     const { error: rpcErr } = await supabase.rpc('increment_protest_count', { protest_id: req.params.id });
     await supabase.rpc('update_cities_count', { protest_id: req.params.id });

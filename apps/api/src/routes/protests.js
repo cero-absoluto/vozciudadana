@@ -390,11 +390,19 @@ export default async function protestRoutes(app) {
   });
 
   // POST /api/protests — create a new protest
+  // Threat-model review, 22 July 2026: creation previously had no
+  // reCAPTCHA requirement and no route-specific rate limit — a scripted
+  // flood of creation attempts could rack up real cost (each attempt
+  // triggers a Wikidata lookup and a fetch of the source URL, in
+  // validateAdmissionRules(), before ever being rejected) without a single
+  // one needing to succeed. Both added here; unified in one review with
+  // the /join endpoint's existing pattern rather than a separate ad hoc fix.
   app.post('/', {
+    config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
     schema: {
       body: {
         type: 'object',
-        required: ['title', 'country_name', 'scope', 'duration_h', 'fuente_url', 'tipo_abuso', 'demands'],
+        required: ['title', 'country_name', 'scope', 'duration_h', 'fuente_url', 'tipo_abuso', 'demands', 'recaptcha_token'],
         properties: {
           title:        { type: 'string', minLength: 1, maxLength: 255 },
           description:  { type: 'string', maxLength: 5000 },
@@ -423,6 +431,7 @@ export default async function protestRoutes(app) {
           target_type:        { type: 'string', nullable: true },
           target_country:     { type: 'string', nullable: true },
           target_validation:  { type: 'string', nullable: true },
+          recaptcha_token:    { type: 'string', minLength: 1 },
         },
         additionalProperties: false,
       },
@@ -434,7 +443,10 @@ export default async function protestRoutes(app) {
         convocatoria_osm_id, convocatoria_ciudad_nombre,
         convocatoria_lat, convocatoria_lon,
         fuente_url, tipo_abuso, requiere_censo,
-        target_wikidata_id, target_type, target_country, target_validation } = req.body;
+        target_wikidata_id, target_type, target_country, target_validation,
+        recaptcha_token } = req.body;
+
+    await verifyRecaptcha(recaptcha_token, 'create_protest', reply);
 
     const ends_at = new Date(
       new Date(starts_at ?? Date.now()).getTime() + duration_h * 3_600_000
@@ -1262,7 +1274,21 @@ export default async function protestRoutes(app) {
  */
 async function verifyRecaptcha(token, expectedAction, reply) {
   const secret = process.env.RECAPTCHA_SECRET;
-  if (!secret) return;
+  if (!secret) {
+    // Fail closed in production, not open: a missing secret is a
+    // misconfiguration, not a reason to silently skip bot protection.
+    // Found in a threat-model review, 22 July 2026 — the previous
+    // behaviour (`return;` unconditionally) meant a deployment mistake (an
+    // unset env var) would disable reCAPTCHA entirely, in production,
+    // without anyone noticing. Mirrors the same production/dev distinction
+    // already used for PHONE_HASH_SECRET in routes/users.js.
+    if (process.env.NODE_ENV === 'production') {
+      reply.internalServerError('Server misconfiguration: reCAPTCHA is not configured.');
+      throw new Error('recaptcha_not_configured');
+    }
+    console.warn('[SECURITY] RECAPTCHA_SECRET not set — skipping verification (non-production only).');
+    return;
+  }
 
   const res = await fetch(
     `https://www.google.com/recaptcha/api/siteverify?secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}`,

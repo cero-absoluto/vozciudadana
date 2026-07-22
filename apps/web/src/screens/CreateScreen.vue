@@ -874,6 +874,27 @@ function selectScope(key) {
   }
 }
 
+// reCAPTCHA v3 for convocatoria creation (threat-model review, 22 July
+// 2026): creation had no bot-protection at all — a scripted flood of
+// creation attempts could rack up real cost (each attempt triggers a
+// Wikidata lookup and a fetch of the source URL before being rejected)
+// even without a single one succeeding. Same pattern already used in
+// AuthScreen.vue for phone verification.
+const RECAPTCHA_KEY = import.meta.env.VITE_RECAPTCHA_KEY;
+async function getRecaptchaToken(action) {
+  return new Promise((resolve, reject) => {
+    if (typeof window.grecaptcha === 'undefined' || !RECAPTCHA_KEY) {
+      reject(new Error('reCAPTCHA no disponible'));
+      return;
+    }
+    window.grecaptcha.ready(() => {
+      window.grecaptcha.execute(RECAPTCHA_KEY, { action })
+        .then(t => resolve(t))
+        .catch(err => reject(err));
+    });
+  });
+}
+
 const creating = ref(false);
 
 async function submit() {
@@ -933,6 +954,14 @@ async function submit() {
   if (creating.value) return;
   creating.value = true;
   try {
+    let recaptchaToken = 'dev';
+    try {
+      recaptchaToken = await getRecaptchaToken('create_protest');
+    } catch {
+      // Falls back to 'dev', same as AuthScreen.vue — if reCAPTCHA truly
+      // isn't available, the backend rejects with a clear error in
+      // production rather than silently letting the request through.
+    }
     await protests.createProtest((() => {
       // institutionalMode is a UI-only flag — never sent to the backend
       // (the create schema uses additionalProperties:false).
@@ -949,6 +978,7 @@ async function submit() {
       }
       return {
       ...formData,
+      recaptcha_token: recaptchaToken,
       starts_at: startsAtIso,
       convocatoria_pais: form.convocatoria_pais || null,
       convocatoria_region: form.convocatoria_region || null,

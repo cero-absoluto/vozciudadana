@@ -13,6 +13,23 @@
             <!-- Escalera de acción -->
       <div style="width:100%;margin-top:8px">
 
+        <!-- Refuerzo de GPS (Capa 1, 21 julio 2026) — solo si no hubo GPS al unirse -->
+        <div v-if="showGpsReinforce" style="width:100%;margin-bottom:14px;padding:14px;background:rgba(76,255,164,.08);border:.5px solid var(--accent);border-radius:var(--r)">
+          <div style="font-weight:700;font-size:13px;margin-bottom:4px">{{ $t('verify.gpsReinforceTitle') }}</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:10px">{{ $t('verify.gpsReinforceBody') }}</div>
+          <button @click="reinforceGps" :disabled="reinforcing"
+            style="width:100%;padding:10px;background:var(--accent);border:none;border-radius:var(--r);color:#000;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:6px">
+            {{ reinforcing ? '…' : $t('verify.gpsReinforceAccept') }}
+          </button>
+          <button @click="showGpsReinforce = false"
+            style="width:100%;padding:8px;background:transparent;border:none;color:var(--text2);font-size:12px;cursor:pointer">
+            {{ $t('verify.gpsReinforceDecline') }}
+          </button>
+        </div>
+        <div v-if="gpsReinforceDone" style="width:100%;margin-bottom:14px;padding:10px;background:rgba(76,255,164,.08);border-radius:var(--r);text-align:center;font-size:12px;color:var(--accent);font-weight:700">
+          ✓ {{ $t('verify.gpsReinforceSuccess') }}
+        </div>
+
         <!-- Peldaño 1 — Notificación -->
 
         <button @click="activarNotificacion"
@@ -54,6 +71,10 @@ const ui       = useUiStore();
 const success    = ref(false);
 const spinMsg    = ref('');
 const notiActivada = ref(false);
+const gpsUpdateToken  = ref(null);
+const hadGpsAtJoin    = ref(false);
+const showGpsReinforce = ref(false);
+const gpsReinforceDone = ref(false);
 
 // Local scope GPS reinforce
 
@@ -147,6 +168,17 @@ const target = lastId
    ip_pais:    localStorage.getItem('vc_geo_pais') || device.ipCountryName || null,
    ip_region:  localStorage.getItem('vc_geo_region') || device.ipRegion || null,
   });
+  // Capa 1 (21 July 2026): if this adhesion didn't carry GPS the first
+  // time — declined, failed silently (see the Capa 0 fix in AuthScreen.vue),
+  // or simply skipped — and the backend issued a reinforcement token
+  // (local/regional scope only), offer one more attempt right here, once
+  // the person has already completed a successful adhesion. Reconnects an
+  // existing, already-hardened backend endpoint (PATCH .../adhesion) that
+  // had been fully built and working with no frontend caller since the old
+  // UI for it was removed — see the Audit Trail, 16 and 21 July 2026.
+  hadGpsAtJoin.value = !!(ui.gpsLat ?? (localStorage.getItem('vc_gps_lat') ? parseFloat(localStorage.getItem('vc_gps_lat')) : null) ?? (device.gpsReady ? device.gpsLat : null));
+  gpsUpdateToken.value = joinRes.gps_update_token || null;
+  showGpsReinforce.value = !hadGpsAtJoin.value && !!gpsUpdateToken.value;
 });
     } catch (e) {
       if (e.code === 'NATIONAL_ONLY') {
@@ -179,6 +211,46 @@ const target = lastId
   setTimeout(() => ui.revealInstallBanner(), 1500);
 });
 
+const reinforcing = ref(false);
+async function reinforceGps() {
+  if (reinforcing.value) return;
+  reinforcing.value = true;
+  try {
+    const pos = await new Promise((resolve, reject) =>
+      navigator.geolocation.getCurrentPosition(resolve, reject,
+        { enableHighAccuracy: true, timeout: 10000 })
+    );
+    const res = await import('@/services/api.js').then(api =>
+      api.patchAdhesionGps(sessionStorage.getItem('vc_last_joined'), {
+        gps_update_token: gpsUpdateToken.value,
+        gps_lat:          pos.coords.latitude,
+        gps_lng:          pos.coords.longitude,
+        gps_accuracy:     pos.coords.accuracy,
+      })
+    );
+    showGpsReinforce.value = false;
+    gpsReinforceDone.value = true;
+    ui.showToast(t('verify.gpsReinforceSuccess'));
+  } catch (err) {
+    // Same honest-error treatment as Capa 0 (AuthScreen.vue) — a failure
+    // here must never again disappear silently.
+    if (err?.status === 409 || err?.status === 410 || err?.status === 404) {
+      // Token already used/expired/missing — nothing the person can do by
+      // retrying; just stop offering it rather than show a confusing error.
+      showGpsReinforce.value = false;
+    } else {
+      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+      let key;
+      if (err?.code === 1) key = isIOS ? 'auth.gpsErrorDeniedIOS' : 'auth.gpsErrorDeniedAndroid';
+      else if (err?.code === 3) key = 'auth.gpsErrorTimeout';
+      else key = 'auth.gpsErrorUnavailable';
+      ui.showToast(t(key));
+    }
+  } finally {
+    reinforcing.value = false;
+  }
+}
+
 function goDetail() {
   const id = sessionStorage.getItem('vc_last_joined');
   if (id) router.push(`/detail/${id}`);
@@ -190,5 +262,6 @@ function goDetail() {
   else    router.push('/');
 }
 </script>
+
 
 

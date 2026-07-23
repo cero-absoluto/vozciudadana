@@ -6,6 +6,13 @@ import {
 
 // ── Blocked IP ranges and schemes ─────────────────────────────────────────
 const BLOCKED_SCHEMES = ['file:', 'ftp:', 'data:', 'javascript:'];
+// Fast, cheap pre-filter only — a plain string match on the hostname as
+// written. The real protection (DNS resolution, private/reserved-IP
+// rejection on every redirect hop, no automatic redirect-following) lives
+// in safeFetch() (lib/sourceCheck.js, VP-SEC-005 fix, 23 July 2026), which
+// every caller of source validation goes through, including this route.
+// This regex catches the most obvious cases slightly earlier and cheaper,
+// nothing more — do not rely on it alone.
 const PRIVATE_HOSTNAMES = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)/ ;
 
 // ── Validation status from score ───────────────────────────────────────────

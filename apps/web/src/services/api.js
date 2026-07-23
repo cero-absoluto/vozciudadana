@@ -78,8 +78,14 @@ export function createProtest(data) {
 
 /**
  * Join a protest (pseudonymous verified adhesion).
+ *
+ * VP-SEC-001 fix (23 July 2026): this used to send a raw phone_hash and
+ * device_id, trusted directly by the server. It now sends the signed
+ * participation_token issued by verifyOtp()/reauthDevice() instead — the
+ * server reads the real identity from inside that token, never from
+ * anything the client asserts directly in the request body.
  * @param {number|string} protestId
- * @param {{ phone_hash: string, doc_hash?: string, device_id: string, recaptcha_token: string }} payload
+ * @param {{ participation_token: string, doc_hash?: string, recaptcha_token: string }} payload
  * @returns {Promise<{ receipt: string }>}
  *
  * Replaces: protests.joinProtest() local mutation in stores/protests.js
@@ -131,8 +137,15 @@ export function requestOtp(payload) {
 
 /**
  * Verify the OTP and register the device.
+ *
+ * VP-SEC-001/002/003 fix (23 July 2026): the response no longer includes a
+ * raw phone_hash. It returns a short-lived participation_token (send this,
+ * not phone_hash, to joinProtest()) and, only the very first time this
+ * device is ever verified, a device_secret — store that in localStorage
+ * (never sessionStorage: it must survive across sessions) and present it to
+ * reauthDevice() later to skip a fresh OTP without ever exposing phone_hash.
  * @param {{ phone: string, otp: string, device_id: string }} payload
- * @returns {Promise<{ verified: boolean, device_id: string }>}
+ * @returns {Promise<{ verified: boolean, device_id: string, participation_token: string, device_secret?: string }>}
  *
  * Replaces: verifyOTP() fake navigation in AuthScreen.vue
  */
@@ -141,18 +154,30 @@ export function verifyOtp(payload) {
 }
 
 /**
- * Fetch the active protest locks for a device.
+ * Re-authenticate a returning, already-verified device without a fresh
+ * OTP — requires the device_secret minted at first verification (see
+ * verifyOtp()). Replaces the old, unauthenticated GET /device/:id, which
+ * returned phone_hash to anyone who merely knew the device_id (VP-SEC-002).
  * @param {string} deviceId
+ * @param {string} deviceSecret
+ * @returns {Promise<{ authenticated: boolean, participation_token: string, country_code: string|null }>}
+ */
+export function reauthDevice(deviceId, deviceSecret) {
+  return request('POST', `/api/users/device/${deviceId}/reauth`, { device_secret: deviceSecret });
+}
+
+/**
+ * Fetch the active protest locks for a device — requires the same
+ * device_secret as reauthDevice() (VP-SEC-002 fix; previously an
+ * unauthenticated GET keyed only on device_id).
+ * @param {string} deviceId
+ * @param {string} deviceSecret
  * @returns {Promise<Array>}
  *
  * Replaces: useDeviceStore().getLocks() localStorage read in stores/device.js
  */
-export function fetchDeviceLocks(deviceId) {
-  return request('GET', `/api/users/device/${deviceId}/locks`);
-}
-
-export function fetchDevice(deviceId) {
-  return request('GET', `/api/users/device/${deviceId}`);
+export function fetchDeviceLocks(deviceId, deviceSecret) {
+  return request('POST', `/api/users/device/${deviceId}/locks`, { device_secret: deviceSecret });
 }
 
 // ── Reference data ────────────────────────────────────────────────────────────

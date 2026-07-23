@@ -132,6 +132,19 @@ export const useDeviceStore = defineStore('device', () => {
     localStorage.setItem('vc_device_id', id);
   }
 
+  // ── device_secret (VP-SEC-002 fix, 23 July 2026) ────────────────────────
+  // Minted once by the backend at first OTP verification, stored here so a
+  // returning device can re-authenticate (see api.reauthDevice()) without a
+  // fresh SMS — without ever needing the bare device_id to work as a
+  // bearer credential the way it used to.
+  function getDeviceSecret() {
+    return localStorage.getItem('vc_device_secret') || null;
+  }
+
+  function setDeviceSecret(secret) {
+    localStorage.setItem('vc_device_secret', secret);
+  }
+
   // ── GPS boost ────────────────────────────────────────────────────────────
   const gpsLat      = ref(null);
   const gpsLng      = ref(null);
@@ -193,6 +206,7 @@ export const useDeviceStore = defineStore('device', () => {
     simPrefix, simCountry, simName, ipCountry, ipCity, docCountry,
     confidence, myRegions, regionLabel,
     setDocCountry, getLocks, setLock, getDeviceId, setDeviceId,
+    getDeviceSecret, setDeviceSecret,
     tzCountry, langCountry, detectSecondarySignals, detectCountryByIp, ipRegion, ipCountryName,
     gpsLat, gpsLng, gpsAccuracy, gpsCity, gpsRegion, gpsPais, gpsCountryCode, gpsReady, requestGps,
   };

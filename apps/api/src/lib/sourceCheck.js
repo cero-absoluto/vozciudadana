@@ -166,20 +166,111 @@ function hasMinimalConnection(sourceText, { title = '', demands = '', target_nam
 // (often enough to extract og:title/og:description from a paywalled
 // article) but flags it via `paywallLike` so callers can label it
 // accordingly instead of silently treating it as a normal 200.
-async function safeFetch(url, timeoutMs = 8000, maxBytes = 500_000) {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+// ── SSRF hardening (VP-SEC-005 fix, 23 July 2026) ───────────────────────────
+// The previous safeFetch() used `redirect: 'follow'` with no validation of
+// the IP a hostname actually resolves to, anywhere — only routes/source.js
+// had a hostname-string blocklist (PRIVATE_HOSTNAMES), checked once, before
+// the fetch, and never re-checked on a redirect. That meant: (a) the actual
+// admission-gate fetch at convocatoria creation (protests.js → evaluateSource
+// → safeFetch) never went through that check at all, and (b) even where it
+// did run, a URL that redirects to an internal address (a cloud metadata
+// endpoint, localhost, a private-network service) would be followed blindly,
+// since fetch's automatic redirect handling never re-validates the target.
+// Fixed here, once, for every caller of safeFetch — not duplicated per route.
+import dns from 'dns/promises';
+import net from 'net';
+
+const MAX_REDIRECTS = 3;
+
+function isPrivateOrReservedIp(ip) {
+  const type = net.isIP(ip);
+  if (type === 4) {
+    const [a, b] = ip.split('.').map(Number);
+    if (a === 10) return true;                                  // 10.0.0.0/8
+    if (a === 127) return true;                                  // loopback
+    if (a === 0) return true;                                    // "this network"
+    if (a === 169 && b === 254) return true;                     // link-local incl. cloud metadata (169.254.169.254)
+    if (a === 172 && b >= 16 && b <= 31) return true;             // 172.16.0.0/12
+    if (a === 192 && b === 168) return true;                     // 192.168.0.0/16
+    if (a === 100 && b >= 64 && b <= 127) return true;            // 100.64.0.0/10 (carrier-grade NAT)
+    if (a >= 224) return true;                                    // multicast + reserved
+    return false;
+  }
+  if (type === 6) {
+    const lower = ip.toLowerCase();
+    if (lower === '::1' || lower === '::') return true;           // loopback / unspecified
+    if (lower.startsWith('fe80:') || lower.startsWith('fe8') || lower.startsWith('fe9') ||
+        lower.startsWith('fea') || lower.startsWith('feb')) return true; // fe80::/10 link-local
+    if (lower.startsWith('fc') || lower.startsWith('fd')) return true;   // fc00::/7 unique local
+    // IPv4-mapped IPv6 (::ffff:a.b.c.d) — unwrap and re-check as IPv4
+    const mapped = lower.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+    if (mapped) return isPrivateOrReservedIp(mapped[1]);
+    return false;
+  }
+  return true; // couldn't parse — treat as unsafe rather than assume it's fine
+}
+
+async function resolveAndCheck(hostname) {
+  let records;
   try {
-    const res = await fetch(url, {
-      signal: ctrl.signal,
-      headers: {
-        'User-Agent': 'VoiceProtest-SourceValidator/1.0 (+https://voiceprotest.org)',
-        'Accept': 'text/html,application/xhtml+xml',
-        'Accept-Language': 'en,es;q=0.9',
-      },
-      redirect: 'follow',
-    });
+    records = await dns.lookup(hostname, { all: true, verbatim: true });
+  } catch {
+    return { ok: false, reason: 'dns_error' };
+  }
+  if (!records.length) return { ok: false, reason: 'dns_error' };
+  if (records.some(r => isPrivateOrReservedIp(r.address))) {
+    return { ok: false, reason: 'private_address' };
+  }
+  return { ok: true };
+}
+
+async function safeFetch(url, timeoutMs = 8000, maxBytes = 500_000) {
+  let currentUrl = url;
+
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    let parsed;
+    try {
+      parsed = new URL(currentUrl);
+    } catch {
+      return { ok: false, reason: 'invalid_url' };
+    }
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return { ok: false, reason: 'blocked_scheme' };
+    }
+
+    const dnsCheck = await resolveAndCheck(parsed.hostname);
+    if (!dnsCheck.ok) return { ok: false, reason: dnsCheck.reason };
+
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    let res;
+    try {
+      res = await fetch(parsed.href, {
+        signal: ctrl.signal,
+        headers: {
+          'User-Agent': 'VoiceProtest-SourceValidator/1.0 (+https://voiceprotest.org)',
+          'Accept': 'text/html,application/xhtml+xml',
+          'Accept-Language': 'en,es;q=0.9',
+        },
+        redirect: 'manual', // never follow automatically — every hop is re-validated above
+      });
+    } catch (e) {
+      clearTimeout(timer);
+      if (e.name === 'AbortError') return { ok: false, reason: 'timeout' };
+      return { ok: false, reason: 'fetch_error', message: e.message };
+    }
     clearTimeout(timer);
+
+    if ([301, 302, 303, 307, 308].includes(res.status)) {
+      const location = res.headers.get('location');
+      if (!location) return { ok: false, reason: 'redirect_without_location' };
+      try {
+        currentUrl = new URL(location, parsed.href).href;
+      } catch {
+        return { ok: false, reason: 'invalid_redirect' };
+      }
+      continue; // loop re-validates scheme + DNS on the new target before fetching it
+    }
 
     const status = res.status;
     if (status === 404 || status >= 500) {
@@ -206,12 +297,10 @@ async function safeFetch(url, timeoutMs = 8000, maxBytes = 500_000) {
     const html = new TextDecoder().decode(
       new Uint8Array(chunks.reduce((acc, c) => [...acc, ...c], []))
     );
-    return { ok: true, html, status, finalUrl: res.url, paywallLike };
-  } catch (e) {
-    clearTimeout(timer);
-    if (e.name === 'AbortError') return { ok: false, reason: 'timeout' };
-    return { ok: false, reason: 'fetch_error', message: e.message };
+    return { ok: true, html, status, finalUrl: res.url || parsed.href, paywallLike };
   }
+
+  return { ok: false, reason: 'too_many_redirects' };
 }
 
 // ── Metadata extraction from HTML ─────────────────────────────────────────

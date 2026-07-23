@@ -2,6 +2,8 @@ import { supabase } from '../services/supabase.js';
 import { createHmac } from 'crypto';
 import { buildEvidentialScope } from '../lib/evidentialScope.js';
 import { evaluateSource, BLOCKED_DOMAINS } from '../lib/sourceCheck.js';
+import { verifyRecaptcha } from '../lib/recaptcha.js';
+import { verifyParticipationToken } from '../lib/participationToken.js';
 
 const VALID_SCOPES    = ['national', 'regional', 'local', 'global'];
 const VALID_REGIONS   = ['region', 'provincia', 'ciudad', 'distrito', 'institucion'];
@@ -446,7 +448,7 @@ export default async function protestRoutes(app) {
         target_wikidata_id, target_type, target_country, target_validation,
         recaptcha_token } = req.body;
 
-    await verifyRecaptcha(recaptcha_token, 'create_protest', reply);
+    await verifyRecaptcha(recaptcha_token, 'create_protest', req, reply);
 
     const ends_at = new Date(
       new Date(starts_at ?? Date.now()).getTime() + duration_h * 3_600_000
@@ -532,6 +534,19 @@ export default async function protestRoutes(app) {
   });
 
   // POST /api/protests/:id/join — anonymous adhesion
+  //
+  // VP-SEC-001 fix (23 July 2026): this endpoint used to accept phone_hash
+  // and device_id directly from the client body and trust them outright —
+  // nothing checked that this device_id had ever actually completed OTP
+  // verification for this exact phone_hash. A comment here previously
+  // asserted that reaching this point "requires having completed real OTP
+  // verification for the exact phone number" (see the 21-22 July 2026 Audit
+  // Trail entry on the request-otp/join duplicate-handling distinction) —
+  // that assertion was never actually enforced in code until now. The
+  // client now sends a signed, short-lived participation_token (issued by
+  // POST /verify-otp or the device-secret reauth path — see routes/users.js)
+  // instead; device_id and phone_hash are read from the token's verified
+  // payload, never from anything the client asserts directly.
   app.post('/:id/join', {
     config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
     schema: {
@@ -542,11 +557,10 @@ export default async function protestRoutes(app) {
       },
       body: {
         type: 'object',
-        required: ['phone_hash', 'device_id', 'recaptcha_token'],
+        required: ['participation_token', 'recaptcha_token'],
         properties: {
-          phone_hash:      { type: 'string', minLength: 64, maxLength: 64 },
+          participation_token: { type: 'string', minLength: 1 },
           doc_hash:        { type: 'string', minLength: 64, maxLength: 64, nullable: true },
-          device_id:       { type: 'string', minLength: 8, maxLength: 128 },
           recaptcha_token: { type: 'string', minLength: 1 },
           gps_lat:         { type: 'number', nullable: true },
           gps_lng:         { type: 'number', nullable: true },
@@ -560,8 +574,27 @@ export default async function protestRoutes(app) {
       },
     },
   }, async (req, reply) => {
-    const { phone_hash, doc_hash, device_id, recaptcha_token, gps_lat, gps_lng, gps_accuracy, ip_ciudad, ip_pais, ip_region, sms_sent } = req.body;
-    await verifyRecaptcha(recaptcha_token, 'join_protest', reply);
+    const { participation_token, doc_hash, recaptcha_token,
+      gps_lat: rawGpsLat, gps_lng: rawGpsLng, gps_accuracy: rawGpsAccuracy,
+      ip_ciudad, ip_pais, ip_region, sms_sent } = req.body;
+    await verifyRecaptcha(recaptcha_token, 'join_protest', req, reply);
+
+    const tokenPayload = verifyParticipationToken(participation_token, { expectedPurpose: 'join_protest' });
+    if (!tokenPayload) {
+      return reply.code(401).send({ error: 'VERIFICATION_REQUIRED', reason: 'Missing, invalid, or expired verification. Please verify your phone number again.' });
+    }
+    const { device_id, phone_hash } = tokenPayload;
+
+    // VP-SEC-004 fix: gps_lat/gps_lng/gps_accuracy are client-supplied and
+    // were previously trusted as "confirmed" just by being non-null — a
+    // value like {lat: 999} passed with no check at all. Out-of-range
+    // values are now treated the same as no GPS being provided (reduced
+    // evidentiary weight), not silently accepted at face value. This still
+    // does not "confirm presence" in any strong sense — see the Methodology,
+    // §4, on GPS's stated, bounded evidentiary meaning: a signal, not proof.
+    const gps_lat = (typeof rawGpsLat === 'number' && rawGpsLat >= -90 && rawGpsLat <= 90) ? rawGpsLat : null;
+    const gps_lng = (typeof rawGpsLng === 'number' && rawGpsLng >= -180 && rawGpsLng <= 180) ? rawGpsLng : null;
+    const gps_accuracy = (typeof rawGpsAccuracy === 'number' && rawGpsAccuracy > 0 && rawGpsAccuracy <= 50_000) ? rawGpsAccuracy : null;
 
     // Fetch protest metadata and idempotency check in parallel
     const [{ data: protest, error: protestErr }, { data: existing }] = await Promise.all([
@@ -871,6 +904,14 @@ export default async function protestRoutes(app) {
   }, async (req, reply) => {
     const { gps_update_token, gps_lat, gps_lng, gps_accuracy } = req.body;
 
+    // VP-SEC-004 fix (23 July 2026): same validation as POST /:id/join — an
+    // out-of-range value here was previously accepted at face value with no
+    // check at all.
+    if (gps_lat < -90 || gps_lat > 90 || gps_lng < -180 || gps_lng > 180 ||
+        (gps_accuracy != null && (gps_accuracy <= 0 || gps_accuracy > 50_000))) {
+      return reply.badRequest('GPS coordinates out of range');
+    }
+
     // Validate token — must exist, not used, not expired, match protest
     const { data: tokenRow } = await supabase
       .from('gps_update_tokens')
@@ -1112,7 +1153,11 @@ export default async function protestRoutes(app) {
   });
 
   // GET /api/protests/:id/informe — datos para el informe público
+  // The only endpoint genuinely fetched from third-party origins — widget.js,
+  // embedded on someone else's page, calls this directly. Everything else
+  // uses the restrictive default set in server.js (VP-SEC-006 fix).
   app.get('/:id/informe', {
+    config: { cors: { origin: true } },
     schema: {
       params: {
         type: 'object',
@@ -1291,34 +1336,7 @@ export default async function protestRoutes(app) {
 /**
  * Verify a reCAPTCHA v3 token server-side.
  */
-async function verifyRecaptcha(token, expectedAction, reply) {
-  const secret = process.env.RECAPTCHA_SECRET;
-  if (!secret) {
-    // Fail closed in production, not open: a missing secret is a
-    // misconfiguration, not a reason to silently skip bot protection.
-    // Found in a threat-model review, 22 July 2026 — the previous
-    // behaviour (`return;` unconditionally) meant a deployment mistake (an
-    // unset env var) would disable reCAPTCHA entirely, in production,
-    // without anyone noticing. Mirrors the same production/dev distinction
-    // already used for PHONE_HASH_SECRET in routes/users.js.
-    if (process.env.NODE_ENV === 'production') {
-      reply.internalServerError('Server misconfiguration: reCAPTCHA is not configured.');
-      throw new Error('recaptcha_not_configured');
-    }
-    console.warn('[SECURITY] RECAPTCHA_SECRET not set — skipping verification (non-production only).');
-    return;
-  }
-
-  const res = await fetch(
-    `https://www.google.com/recaptcha/api/siteverify?secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}`,
-    { method: 'POST' }
-  );
-  const json = await res.json();
-
-  if (!json.success || json.score < 0.5) {
-    reply.badRequest('reCAPTCHA verification failed');
-    throw new Error('recaptcha');
-  }
-}
+// verifyRecaptcha now lives in lib/recaptcha.js — shared with routes/users.js,
+// which used to have its own separate, drifted copy (VP-SEC-007 fix).
 
 

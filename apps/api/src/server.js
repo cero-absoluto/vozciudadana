@@ -23,10 +23,11 @@ import reportsRoutes    from './routes/reports.js';
 // a 'dev-secret', which is dictionary-attackable and correlatable. In production
 // that silent downgrade is unacceptable, so the server refuses to start.
 if (process.env.NODE_ENV === 'production') {
-  const missing = ['PHONE_HASH_SECRET', 'NULLIFIER_SECRET'].filter(k => !process.env[k]);
+  const missing = ['PHONE_HASH_SECRET', 'NULLIFIER_SECRET', 'RECAPTCHA_SECRET',
+    'PARTICIPATION_TOKEN_SECRET', 'DEVICE_SECRET_PEPPER'].filter(k => !process.env[k]);
   if (missing.length) {
     console.error(`[SECURITY] Refusing to start: missing required secret(s) in production: ${missing.join(', ')}. ` +
-      `Identity hashes would silently downgrade to plain SHA-256 / dev-secret.`);
+      `Identity hashes, reCAPTCHA and participation tokens would silently downgrade or be disabled.`);
     process.exit(1);
   }
 }
@@ -37,12 +38,28 @@ const app = Fastify({
 });
 
 await app.register(helmet);
+// ── CORS (VP-SEC-006 fix, 23 July 2026) ─────────────────────────────────────
+// This used to accept any origin for the entire API, though the comment
+// here claimed it was only for the embeddable widget. In fact only one
+// endpoint is ever called from a third-party origin — GET
+// /api/protests/:id/informe, fetched directly by widget.js when embedded on
+// someone else's page — every other route only needs to answer
+// voiceprotest.org itself. That one route now opts back into "any origin"
+// explicitly, at the route level (see routes/protests.js); everything else
+// uses this restrictive default. Open CORS alone was not exploitable without
+// cookies or other ambient credentials, but combined with the device_id
+// endpoints (VP-SEC-002) it meant any origin could read a response once it
+// had a device_id — this closes that path regardless of the device_id fix.
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://voiceprotest.org,https://www.voiceprotest.org')
+  .split(',').map(o => o.trim()).filter(Boolean);
+
 await app.register(cors, {
   origin: (origin, cb) => {
-    // Public endpoints used by the embeddable widget — allow any origin
-    cb(null, true);
+    // No Origin header at all (server-to-server, curl, same-origin) — allow.
+    if (!origin) return cb(null, true);
+    cb(null, ALLOWED_ORIGINS.includes(origin));
   },
-  methods: ['GET', 'POST', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
 });
 await app.register(sensible);
 await app.register(rateLimit, {
@@ -83,4 +100,5 @@ app.get('/health', async () => ({ status: 'ok' }));
 
 const port = Number(process.env.PORT) || 3000;
 await app.listen({ port, host: '0.0.0.0' });
+
 

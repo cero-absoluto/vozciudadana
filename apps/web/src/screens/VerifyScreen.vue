@@ -148,8 +148,7 @@ const target = lastId
   : protests.protests.find(p => !p.joined && protests.canJoin(p).ok);
   if (target) {
     try {
-      const phoneHash = sessionStorage.getItem('vc_phone_hash');
-      const deviceId  = sessionStorage.getItem('vc_device_id');
+      const participationToken = sessionStorage.getItem('vc_participation_token');
       const smsSent   = sessionStorage.getItem('vc_sms_sent') === 'true';
       let token = '';
       try {
@@ -157,8 +156,7 @@ const target = lastId
       } catch { /* dev */ }
       await import('@/services/api.js').then(async api => {
   const joinRes = await api.joinProtest(target.id, {
-    phone_hash:      phoneHash,
-    device_id:       deviceId,
+    participation_token: participationToken,
     sms_sent:        smsSent,
     recaptcha_token: token || 'dev',
    gps_lat:         ui.gpsLat ?? (localStorage.getItem('vc_gps_lat') ? parseFloat(localStorage.getItem('vc_gps_lat')) : null) ?? (device.gpsReady ? device.gpsLat : null),

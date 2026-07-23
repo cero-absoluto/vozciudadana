@@ -343,14 +343,27 @@ async function sendSMS() {
     await new Promise(r => setTimeout(r, 300));
   }
 
-  const existingDevice = await api.fetchDeviceLocks(device.getDeviceId());
-  if (existingDevice && existingDevice.length > 0) {
-    const dev = await api.fetchDevice(device.getDeviceId());
-    sessionStorage.setItem('vc_phone_hash', dev.phone_hash);
-    sessionStorage.setItem('vc_device_id', device.getDeviceId());
-    sessionStorage.setItem('vc_sms_sent', 'false');
-    router.push('/verify');
-    return;
+  // VP-SEC-002 fix (23 July 2026): both calls below now require the
+  // device_secret minted at this device's first verification — without it
+  // (a genuinely new device, or one verified before this fix existed),
+  // there is nothing to re-authenticate with, so this fast path is skipped
+  // entirely and a fresh OTP is requested below, same as for a new device.
+  const deviceSecret = device.getDeviceSecret();
+  if (deviceSecret) {
+    try {
+      const existingDevice = await api.fetchDeviceLocks(device.getDeviceId(), deviceSecret);
+      if (existingDevice && existingDevice.length > 0) {
+        const reauth = await api.reauthDevice(device.getDeviceId(), deviceSecret);
+        sessionStorage.setItem('vc_participation_token', reauth.participation_token);
+        sessionStorage.setItem('vc_device_id', device.getDeviceId());
+        sessionStorage.setItem('vc_sms_sent', 'false');
+        router.push('/verify');
+        return;
+      }
+    } catch {
+      // Secret invalid, expired locks, or reauth otherwise failed — fall
+      // through to a fresh OTP below rather than surfacing an error here.
+    }
   }
   const v = phone.value.replace(/\D/g, '');
   if (v.length < 6) { sending.value = false; return; }
@@ -429,9 +442,16 @@ async function verifyOTP() {
     const v = phone.value.replace(/\D/g, '');
     const deviceId  = device.getDeviceId();
     const res = await api.verifyOtp({ phone: '+' + dialCode.value + v, otp: code, device_id: deviceId, country_code: countryCode.value });
-    sessionStorage.setItem('vc_phone_hash', res.phone_hash);
+    // VP-SEC-001/002/003 fix (23 July 2026): the response no longer
+    // includes phone_hash — store the signed participation_token instead,
+    // and (only present the very first time this device is ever verified)
+    // the device_secret that lets it re-authenticate later without SMS.
+    sessionStorage.setItem('vc_participation_token', res.participation_token);
     sessionStorage.setItem('vc_device_id',  res.device_id || deviceId);
     sessionStorage.setItem('vc_sms_sent', 'true');
+    if (res.device_secret) {
+      device.setDeviceSecret(res.device_secret);
+    }
     if (res.device_id && res.device_id !== deviceId) {
       device.setDeviceId(res.device_id);
       sessionStorage.setItem('vc_device_id', res.device_id);

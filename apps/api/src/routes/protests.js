@@ -809,7 +809,7 @@ export default async function protestRoutes(app) {
     // Reverse geocode GPS coordinates via Nominatim (backend proxy — user IP not exposed)
     const zoomLevel = patchProtest?.scope === 'regional' ? 6 : 10;
     let adhesion_osm_id = null;
-    let ciudad = null, region = null, pais = null;
+    let ciudad = null, region = null, pais = null, pais_code = null;
     try {
       const geoRes = await fetch(
         `https://nominatim.openstreetmap.org/reverse?lat=${gps_lat}&lon=${gps_lng}&format=json&zoom=${zoomLevel}`,
@@ -819,6 +819,7 @@ export default async function protestRoutes(app) {
       ciudad = geoData.address?.city || geoData.address?.town || geoData.address?.village || null;
       region = geoData.address?.state || geoData.address?.county || null;
       pais   = geoData.address?.country || null;
+      pais_code = geoData.address?.country_code?.toUpperCase() || null;
       if (geoData.osm_id) adhesion_osm_id = parseInt(geoData.osm_id);
       req.log.info({ zoomLevel, adhesion_osm_id, osm_name: geoData.display_name?.slice(0, 60) }, 'GPS reinforcement: reverse geocode result');
     } catch { /* silencioso — GPS update proceeds without osm_id */ }
@@ -840,17 +841,41 @@ export default async function protestRoutes(app) {
       else nuevaFiabilidad = 60;
     }
 
-    // Update adhesion — single write
-    // ciudad/region/pais are NOT updated — they were set correctly at join time from IP.
-    // GPS coordinates (gps_lat/gps_lng/gps_accuracy) are NEVER stored: those columns
-    // were removed in migration 20260607_gps_confirmed.sql to align the database with
-    // the privacy policy. GPS is used here only to reverse-geocode and derive osm_id;
-    // only the gps_confirmed boolean, the derived osm_id and the reliability signals
-    // are persisted. (Writing the dropped columns previously made this UPDATE fail
-    // silently, so GPS reinforcement never actually upgraded the adhesion.)
+    // Update adhesion — single write.
+    //
+    // Bug fixed 24 July 2026 (found via a real test case: joined without
+    // GPS — ciudad/region set from IP fallback to a wrong city hundreds of
+    // km away, a known failure mode already documented in the Methodology
+    // — then confirmed GPS on the reinforcement card). This UPDATE
+    // previously deliberately left ciudad/region/pais untouched, on the
+    // assumption "they were set correctly at join time from IP" — an
+    // assumption already contradicted by the project's own documented
+    // empirical finding about mobile-carrier IP geolocation, before this
+    // line was even written. The result: gps_confirmed flipped to true and
+    // adhesion_osm_id updated to the correct region, while the human-
+    // readable ciudad/region text silently kept showing the old, wrong,
+    // IP-derived city — an internal inconsistency between the machine-
+    // matched OSM id and the displayed place name. Now both update together,
+    // from the same reverse-geocode call, so they can never disagree.
+    //
+    // GPS coordinates (gps_lat/gps_lng/gps_accuracy) are still NEVER stored:
+    // those columns were removed in migration 20260607_gps_confirmed.sql to
+    // align the database with the privacy policy. GPS is used here only to
+    // reverse-geocode and derive osm_id/ciudad/region/pais; the coordinates
+    // themselves are discarded immediately after this call.
+    // Only overwrite the geographic text fields if this reverse-geocode call
+    // actually returned something — if Nominatim timed out or failed (the
+    // catch above), ciudad/region/pais/pais_code are all still null here,
+    // and silently including them in the update would overwrite whatever
+    // was already correctly stored with nothing. Omitting them from the
+    // object entirely (rather than passing null) leaves the existing
+    // database values untouched in that case.
+    const geoFields = (ciudad || region || pais) ? { ciudad, region, pais, pais_code } : {};
+
     const { error: updErr } = await supabase.from('adhesions').update({
       gps_confirmed:   true,
       adhesion_osm_id,
+      ...geoFields,
       fiabilidad:      nuevaFiabilidad,
       senales:         senales.join(','),
     }).eq('id', tokenRow.adhesion_id);

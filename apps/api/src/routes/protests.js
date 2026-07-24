@@ -1,9 +1,12 @@
 import { supabase } from '../services/supabase.js';
-import { createHmac } from 'crypto';
 import { buildEvidentialScope } from '../lib/evidentialScope.js';
 import { evaluateSource, BLOCKED_DOMAINS } from '../lib/sourceCheck.js';
 import { verifyRecaptcha } from '../lib/recaptcha.js';
 import { verifyParticipationToken } from '../lib/participationToken.js';
+import {
+  createVerifiedAdhesion, AlreadyJoinedError, ProtestNotFoundError,
+  ProtestClosedError, BalanceExhaustedError, NationalCountryMismatchError,
+} from '../lib/adhesionService.js';
 
 const VALID_SCOPES    = ['national', 'regional', 'local', 'global'];
 const VALID_REGIONS   = ['region', 'provincia', 'ciudad', 'distrito', 'institucion'];
@@ -536,17 +539,17 @@ export default async function protestRoutes(app) {
   // POST /api/protests/:id/join — anonymous adhesion
   //
   // VP-SEC-001 fix (23 July 2026): this endpoint used to accept phone_hash
-  // and device_id directly from the client body and trust them outright —
-  // nothing checked that this device_id had ever actually completed OTP
-  // verification for this exact phone_hash. A comment here previously
-  // asserted that reaching this point "requires having completed real OTP
-  // verification for the exact phone number" (see the 21-22 July 2026 Audit
-  // Trail entry on the request-otp/join duplicate-handling distinction) —
-  // that assertion was never actually enforced in code until now. The
-  // client now sends a signed, short-lived participation_token (issued by
-  // POST /verify-otp or the device-secret reauth path — see routes/users.js)
-  // instead; device_id and phone_hash are read from the token's verified
-  // payload, never from anything the client asserts directly.
+  // and device_id directly from the client body and trust them outright.
+  // Fixed with a signed participation_token (see routes/users.js).
+  //
+  // VP-SEC-008 fix (Fase 2 — Despliegue A, 23 July 2026): the actual
+  // creation of the adhesion — nullifier, geocoding, the insert, the count
+  // increment — no longer lives here. It is delegated to
+  // AdhesionService.createVerifiedAdhesion(), the single authorised place
+  // in the application allowed to create an adhesion, shared with the
+  // institutional path once it migrates (Despliegue B). This route's job,
+  // per the auditor's division of responsibility, is only to prove that
+  // THIS identity is authentic — not to decide what it may do.
   app.post('/:id/join', {
     config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
     schema: {
@@ -575,8 +578,7 @@ export default async function protestRoutes(app) {
     },
   }, async (req, reply) => {
     const { participation_token, doc_hash, recaptcha_token,
-      gps_lat: rawGpsLat, gps_lng: rawGpsLng, gps_accuracy: rawGpsAccuracy,
-      ip_ciudad, ip_pais, ip_region, sms_sent } = req.body;
+      gps_lat, gps_lng, gps_accuracy, sms_sent } = req.body;
     await verifyRecaptcha(recaptcha_token, 'join_protest', req, reply);
 
     const tokenPayload = verifyParticipationToken(participation_token, { expectedPurpose: 'join_protest' });
@@ -585,192 +587,59 @@ export default async function protestRoutes(app) {
     }
     const { device_id, phone_hash } = tokenPayload;
 
-    // VP-SEC-004 fix: gps_lat/gps_lng/gps_accuracy are client-supplied and
-    // were previously trusted as "confirmed" just by being non-null — a
-    // value like {lat: 999} passed with no check at all. Out-of-range
-    // values are now treated the same as no GPS being provided (reduced
-    // evidentiary weight), not silently accepted at face value. This still
-    // does not "confirm presence" in any strong sense — see the Methodology,
-    // §4, on GPS's stated, bounded evidentiary meaning: a signal, not proof.
-    const gps_lat = (typeof rawGpsLat === 'number' && rawGpsLat >= -90 && rawGpsLat <= 90) ? rawGpsLat : null;
-    const gps_lng = (typeof rawGpsLng === 'number' && rawGpsLng >= -180 && rawGpsLng <= 180) ? rawGpsLng : null;
-    const gps_accuracy = (typeof rawGpsAccuracy === 'number' && rawGpsAccuracy > 0 && rawGpsAccuracy <= 50_000) ? rawGpsAccuracy : null;
-
-    // Fetch protest metadata and idempotency check in parallel
-    const [{ data: protest, error: protestErr }, { data: existing }] = await Promise.all([
-      supabase.from('protests').select('scope, country, saldo_euros, convocatoria_osm_id, convocatoria_ciudad_nombre').eq('id', req.params.id).maybeSingle(),
-      supabase.from('adhesions').select('id').eq('protest_id', req.params.id).eq('device_id', device_id).is('deleted_at', null).is('anonymized_at', null).maybeSingle(),
-    ]);
-
-    if (protestErr || !protest) return reply.notFound('Protest not found');
-    if (existing) return reply.conflict('Device already joined this protest');
-
-    // Nullifier check — evita doble adhesión con el mismo número aunque cambie el dispositivo
-    const nullifierCheck = createHmac('sha256', process.env.NULLIFIER_SECRET || 'dev-secret')
-      .update(phone_hash + req.params.id)
-      .digest('hex');
-    const { data: existingNullifier } = await supabase
-      .from('adhesions')
-      .select('id')
-      .eq('protest_id', req.params.id)
-      .eq('nullifier', nullifierCheck)
-      .is('deleted_at', null)
-      .is('anonymized_at', null)
+    // Auditor's explicit requirement: never trust the token's payload blindly
+    // for identity — re-check the device it names against the database.
+    // This is what lets a device be revoked or invalidated (e.g. suspected
+    // compromise, abuse) even while a previously-issued token has not yet
+    // expired: the token proves "this was really issued after a real OTP,
+    // at some point" — this check proves "and that is still true right now."
+    const { data: device } = await supabase
+      .from('devices')
+      .select('id, phone_hash, verified_at, country_code')
+      .eq('id', device_id)
       .maybeSingle();
-    if (existingNullifier) return reply.conflict('Phone already joined this protest');
-
-    // Verificar saldo disponible (null = sin límite, 0 = agotado)
-    if (protest.saldo_euros !== null && protest.saldo_euros <= 0) {
-      return reply.status(402).send({ code: 'SALDO_AGOTADO', error: 'Esta convocatoria no tiene saldo. Apóyala con una donación.' });
+    if (!device || device.phone_hash !== phone_hash || !device.verified_at) {
+      return reply.code(401).send({ error: 'VERIFICATION_REQUIRED', reason: 'Missing, invalid, or expired verification. Please verify your phone number again.' });
     }
 
-    // National protests: device country must match protest country
-    if (protest.scope === 'national' && protest.country) {
-      const { data: dev } = await supabase
-        .from('devices')
-        .select('country_code')
-        .eq('id', device_id)
-        .maybeSingle();
-
-      if (!dev?.country_code || dev.country_code !== protest.country) {
-        return reply.status(403).send({ code: 'NATIONAL_ONLY', error: 'protests country does not match device country' });
-      }
-    }
+    // Fetched here (not only inside the service) because the route itself
+    // still needs scope/saldo for concerns that are its own, not the
+    // service's: SMS billing, milestone push notifications, and issuing the
+    // GPS-reinforcement token — none of which are part of "can this
+    // adhesion exist," which is what the service decides.
+    const { data: protest, error: protestErr } = await supabase
+      .from('protests')
+      .select('scope, saldo_euros, convocatoria_osm_id, convocatoria_ciudad_nombre')
+      .eq('id', req.params.id)
+      .maybeSingle();
+    if (protestErr || !protest) return reply.notFound('Protest not found');
 
     const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
-    let ciudad = null;
-    let region = null;
-    let pais   = null;
-    let pais_code = null;
-    let adhesion_osm_id = null;
-
-    // Si hay GPS, usar geocodificación GPS (más precisa) ignorando IP
-    if (gps_lat != null && gps_lng != null) {
-      try {
-        // Use zoom=10 for local (municipality), zoom=6 for regional (admin region)
-        const zoomLevel = protest.scope === 'regional' ? 6 : 10;
-        const geoRes = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${gps_lat}&lon=${gps_lng}&format=json&zoom=${zoomLevel}`,
-          { headers: { 'Accept-Language': 'es', 'User-Agent': 'VozCiudadana/1.0' } }
-        );
-        const geoData = await geoRes.json();
-        ciudad = geoData.address?.city || geoData.address?.town || geoData.address?.village ||
-                 geoData.address?.suburb || geoData.address?.hamlet ||
-                 geoData.address?.locality || geoData.address?.municipality || null;
-        region = geoData.address?.state || geoData.address?.county || null;
-        pais   = geoData.address?.country || null;
-        pais_code = geoData.address?.country_code?.toUpperCase() || null;
-
-        // Extract osm_id for local and regional scope municipality/region matching.
-        // zoom=10 targets municipality level; zoom=6 targets region level.
-        // Stored as adhesion_osm_id and used in the informe geographic breakdown.
-        if (geoData.osm_id && (protest.scope === 'local' || protest.scope === 'regional')) {
-          adhesion_osm_id = parseInt(geoData.osm_id);
-        }
-      } catch { /* silencioso */ }
-    }
-
-    // Si no hay GPS, consultar ipapi.co con la IP real del usuario
-    // NO usar ip_ciudad del frontend — puede estar cacheado incorrectamente
-    if (!ciudad) {
-      try {
-        const geoRes = await fetch(`https://ipapi.co/${ip}/json/`, {
-          headers: { 'User-Agent': 'VoiceProtest/1.0 (voiceprotest.org)' },
-          signal: AbortSignal.timeout(4000),
-        });
-        const geo = await geoRes.json();
-        ciudad = geo.city         || null;
-        region = geo.region       || null;
-        pais   = geo.country_name || null;
-        // ipapi returns names in ENGLISH ("Spain") while the convocatoria's
-        // country_name is stored in Spanish ("España"). Never compare names —
-        // capture the ISO code for language-independent classification.
-        pais_code = (geo.country_code || geo.country || '').toUpperCase() || null;
-        if (pais_code && !/^[A-Z]{2}$/.test(pais_code)) pais_code = null;
-      } catch { /* silencioso */ }
-    }
-
     const idioma = req.headers['accept-language']?.split(',')[0] || null;
 
-    // Nullifier: HMAC-SHA256(phone_hash, protest_id) — evita correlación entre convocatorias
-    const nullifier = createHmac('sha256', process.env.NULLIFIER_SECRET || 'dev-secret')
-      .update(phone_hash + req.params.id)
-      .digest('hex');
-
-    // Timestamp redondeado a la hora — evita correlación temporal
-    const created_at = new Date(
-      Math.floor(Date.now() / 3_600_000) * 3_600_000
-    ).toISOString();
-
-    // Calcular fiabilidad según señales disponibles
-    const tieneGps = gps_lat != null && gps_lng != null;
-    const tieneSim = !!phone_hash;
-    const tieneIpPais = !!pais;
-
-    let fiabilidad = 60;
-    let senales = [];
-
-    if (tieneGps && tieneSim && tieneIpPais) {
-      fiabilidad = 95;
-      senales = ['gps', 'sim', 'ip'];
-    } else if (tieneGps && tieneSim) {
-      fiabilidad = 92;
-      senales = ['gps', 'sim'];
-    } else if (tieneSim && tieneIpPais) {
-      fiabilidad = 85;
-      senales = ['sim', 'ip'];
-    } else if (tieneSim) {
-      fiabilidad = 75;
-      senales = ['sim'];
-    } else if (tieneIpPais) {
-      fiabilidad = 60;
-      senales = ['ip'];
+    let data;
+    try {
+      data = await createVerifiedAdhesion({
+        protestId: req.params.id,
+        identity: {
+          subjectHash: phone_hash,
+          method: 'phone_otp',
+          deviceId: device_id,
+          countryCode: device.country_code,
+          institutionalDomain: null,
+        },
+        location: { latitude: gps_lat ?? null, longitude: gps_lng ?? null, accuracyMeters: gps_accuracy ?? null, ip, language: idioma },
+        documentHash: doc_hash ?? null,
+        institutionalMembership: null,
+      });
+    } catch (err) {
+      if (err instanceof AlreadyJoinedError) return reply.code(409).send({ error: err.code, reason: err.message });
+      if (err instanceof ProtestNotFoundError) return reply.notFound(err.message);
+      if (err instanceof ProtestClosedError) return reply.code(410).send({ error: err.code, reason: err.message });
+      if (err instanceof BalanceExhaustedError) return reply.status(402).send({ code: 'SALDO_AGOTADO', error: err.message });
+      if (err instanceof NationalCountryMismatchError) return reply.status(403).send({ code: err.code, error: err.message });
+      throw err;
     }
-
-    // GPS coordinates used only for geocoding — not stored
-    const gps_confirmed = (gps_lat != null && gps_lng != null);
-
-    const { data, error } = await supabase
-      .from('adhesions')
-      .insert({ protest_id: req.params.id, phone_hash, doc_hash: doc_hash ?? null,
-                device_id, ciudad, region, pais, pais_code, idioma, nullifier, created_at,
-                gps_confirmed,
-                adhesion_osm_id,
-                fiabilidad, senales: senales.join(',') })
-      .select()
-      .single();
-
-    if (error) {
-      // Postgres unique_violation (23505) here means the nullifier or
-      // (protest_id, device_id) constraint caught a genuine duplicate
-      // adhesion attempt — most likely the earlier application-level check
-      // (before the SMS/OTP step) was bypassed by a race condition, not an
-      // enumeration probe: reaching this point already required completing
-      // real OTP verification for this exact phone number, so unlike the
-      // request-otp step (which deliberately stays neutral — see the 24
-      // June 2026 design decision, still in force there), there is no
-      // meaningful enumeration risk left to protect against by staying
-      // vague here. A clear message serves the legitimate person better
-      // than a generic error would.
-      if (error.code === '23505') {
-        return reply.code(409).send({
-          error: 'ALREADY_JOINED',
-          reason: 'You have already joined this convocatoria — one verified adhesion per person, per event.',
-        });
-      }
-      throw error;
-    }
-
-    const { error: rpcErr } = await supabase.rpc('increment_protest_count', { protest_id: req.params.id });
-    await supabase.rpc('update_cities_count', { protest_id: req.params.id });
-    if (rpcErr) req.log.error({ rpcErr }, 'increment_protest_count failed');
-
-    // Retención de dispositivos (Opción A): refrescar la ventana de actividad en
-    // cada adhesión efectiva → la purga por 270 días de inactividad es deslizante.
-    const { error: lsErr } = await supabase.from('devices')
-      .update({ last_seen: new Date().toISOString() })
-      .eq('id', device_id);
-    if (lsErr) req.log.error({ lsErr }, 'last_seen refresh failed');
 
     // Descontar saldo por adhesion — solo si se envió SMS real (sms_sent !== false)
     if (protest.saldo_euros !== null && protest.saldo_euros > 0 && sms_sent !== false) {
@@ -852,14 +721,14 @@ export default async function protestRoutes(app) {
     // where Nominatim returns a different OSM object ID for the same territory
     // depending on zoom level or object type (relation vs node vs way).
     let local_verified = null;
-    if (isTerritorial && adhesion_osm_id != null) {
-      if (adhesion_osm_id === protest.convocatoria_osm_id) {
+    if (isTerritorial && data.adhesion_osm_id != null) {
+      if (data.adhesion_osm_id === protest.convocatoria_osm_id) {
         // Primary: exact OSM ID match
         local_verified = true;
-      } else if (protest.convocatoria_ciudad_nombre && (region || ciudad)) {
+      } else if (protest.convocatoria_ciudad_nombre && (data.region || data.ciudad)) {
         // Fallback: normalize and compare region name
         const normalize = s => s?.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-        const territoryName = protest.scope === 'local' ? (ciudad || region) : region;
+        const territoryName = protest.scope === 'local' ? (data.ciudad || data.region) : data.region;
         local_verified = normalize(territoryName) === normalize(protest.convocatoria_ciudad_nombre);
       } else {
         local_verified = false;
@@ -875,7 +744,7 @@ export default async function protestRoutes(app) {
       convocatoria_ciudad_nombre: protest.convocatoria_ciudad_nombre ?? null,
       local_verified,
       geo_scope_match:  isTerritorial ? (protest.scope === 'local' ? 'municipality' : 'region') : null,
-      geo_scope_source: (isTerritorial && adhesion_osm_id != null) ? 'gps_osm' : null,
+      geo_scope_source: (isTerritorial && data.adhesion_osm_id != null) ? 'gps_osm' : null,
       gps_update_token,
     });
   });

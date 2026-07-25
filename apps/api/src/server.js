@@ -24,7 +24,7 @@ import reportsRoutes    from './routes/reports.js';
 // that silent downgrade is unacceptable, so the server refuses to start.
 if (process.env.NODE_ENV === 'production') {
   const missing = ['PHONE_HASH_SECRET', 'NULLIFIER_SECRET', 'RECAPTCHA_SECRET',
-    'PARTICIPATION_TOKEN_SECRET', 'DEVICE_SECRET_PEPPER'].filter(k => !process.env[k]);
+    'PARTICIPATION_TOKEN_SECRET', 'DEVICE_SECRET_PEPPER', 'EMAIL_OTP_SECRET'].filter(k => !process.env[k]);
   if (missing.length) {
     console.error(`[SECURITY] Refusing to start: missing required secret(s) in production: ${missing.join(', ')}. ` +
       `Identity hashes, reCAPTCHA and participation tokens would silently downgrade or be disabled.`);
@@ -100,5 +100,6 @@ app.get('/health', async () => ({ status: 'ok' }));
 
 const port = Number(process.env.PORT) || 3000;
 await app.listen({ port, host: '0.0.0.0' });
+
 
 

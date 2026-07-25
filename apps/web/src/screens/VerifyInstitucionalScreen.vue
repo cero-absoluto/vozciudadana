@@ -82,6 +82,21 @@ const emailError = ref('');
 const otpError   = ref('');
 const receiptHash = ref('');
 
+const RECAPTCHA_KEY = import.meta.env.VITE_RECAPTCHA_KEY;
+async function getRecaptchaToken(action) {
+  return new Promise((resolve, reject) => {
+    if (typeof window.grecaptcha === 'undefined' || !RECAPTCHA_KEY) {
+      reject(new Error('reCAPTCHA no disponible'));
+      return;
+    }
+    window.grecaptcha.ready(() => {
+      window.grecaptcha.execute(RECAPTCHA_KEY, { action })
+        .then(t => resolve(t))
+        .catch(err => reject(err));
+    });
+  });
+}
+
 async function sendOtp() {
   emailError.value = '';
   if (!email.value.trim()) { emailError.value = 'Introduce tu email institucional'; return; }
@@ -93,8 +108,12 @@ async function sendOtp() {
   }
   loading.value = true;
   try {
+    let recaptchaToken = 'dev';
+    try {
+      recaptchaToken = await getRecaptchaToken('institutional_send_otp');
+    } catch { /* falls back to 'dev' — the backend rejects with a clear error in production if reCAPTCHA is genuinely unavailable */ }
     const api = await import('@/services/api.js');
-    await api.sendEmailOtp({ email: email.value, protest_id: protestId });
+    await api.sendEmailOtp({ email: email.value, protest_id: protestId, recaptcha_token: recaptchaToken });
     step.value = 2;
   } catch (e) {
     emailError.value = t('verificacional.errorSend');
@@ -110,7 +129,20 @@ async function verifyOtp() {
   try {
     const api = await import('@/services/api.js');
     const result = await api.verifyEmailOtp({ email: email.value, otp: otp.value, protest_id: protestId });
-    receiptHash.value = result.receipt || generarHashFalso();
+    // Found 24 July 2026 while migrating this flow to the shared
+    // AdhesionService: this used to fabricate a fake-looking
+    // "sha256:<random hex>" receipt whenever result.receipt was absent —
+    // meaning a person could see what looked exactly like a cryptographic
+    // confirmation for an adhesion that may never have actually been
+    // created. The backend's new atomic path (verify_institutional_otp_and_
+    // create_adhesion) guarantees receipt is present on any success — if it
+    // is ever missing, something real failed, and pretending otherwise is
+    // exactly the kind of thing this project's own Principle 4 rules out.
+    if (!result.receipt) {
+      otpError.value = t('verificacional.errOtpWrong');
+      return;
+    }
+    receiptHash.value = result.receipt;
     step.value = 3;
     ui.showToast(t('verify.toast'));
   } catch (e) {
@@ -118,12 +150,6 @@ async function verifyOtp() {
   } finally {
     loading.value = false;
   }
-}
-
-function generarHashFalso() {
-  const c = '0123456789abcdef'; let h = 'sha256:';
-  for (let i = 0; i < 64; i++) h += c[Math.floor(Math.random() * 16)];
-  return h;
 }
 
 function goDetail() {

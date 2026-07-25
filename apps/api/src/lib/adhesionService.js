@@ -40,12 +40,34 @@ export class NationalCountryMismatchError extends AdhesionError {
   constructor() { super('NATIONAL_ONLY', 'protests country does not match device country'); }
 }
 
+// ── Institutional OTP errors (VP-SEC-008 Despliegue B, 24 July 2026) ──────
+export class OtpNotFoundError extends AdhesionError {
+  constructor() { super('OTP_NOT_FOUND', 'Código incorrecto o caducado'); }
+}
+export class OtpAlreadyUsedError extends AdhesionError {
+  constructor() { super('OTP_ALREADY_USED', 'Código incorrecto o caducado'); }
+}
+export class OtpExpiredError extends AdhesionError {
+  constructor() { super('OTP_EXPIRED', 'Código incorrecto o caducado'); }
+}
+export class TooManyAttemptsError extends AdhesionError {
+  constructor() { super('TOO_MANY_ATTEMPTS', 'Demasiados intentos. Solicita un nuevo código.'); }
+}
+export class WrongOtpError extends AdhesionError {
+  constructor() { super('WRONG_OTP', 'Código incorrecto o caducado'); }
+}
+
 const RPC_ERROR_MAP = {
   VP_PROTEST_NOT_FOUND:            ProtestNotFoundError,
   VP_PROTEST_CLOSED:               ProtestClosedError,
   VP_BALANCE_EXHAUSTED:            BalanceExhaustedError,
   VP_ALREADY_JOINED:               AlreadyJoinedError,
   VP_MEMBERSHIP_ALREADY_EXISTS:    MembershipAlreadyExistsError,
+  VP_OTP_NOT_FOUND:                OtpNotFoundError,
+  VP_OTP_ALREADY_USED:             OtpAlreadyUsedError,
+  VP_OTP_EXPIRED:                  OtpExpiredError,
+  VP_TOO_MANY_ATTEMPTS:            TooManyAttemptsError,
+  VP_WRONG_OTP:                    WrongOtpError,
   // VP_INVALID_VERIFICATION_METHOD is deliberately NOT mapped to a domain
   // error here — it can only mean a bug in this service's own calling code
   // (sending a method the database doesn't recognise), never a legitimate
@@ -53,6 +75,51 @@ const RPC_ERROR_MAP = {
   // rethrow below, surfacing as a real 500 rather than a handled case, so
   // it cannot be mistaken for an expected rejection during testing.
 };
+
+function throwMappedRpcError(error) {
+  const mapped = RPC_ERROR_MAP[error.message];
+  if (mapped) throw new mapped();
+  if (error.code === '23505') throw new AlreadyJoinedError();
+  throw error;
+}
+
+/**
+ * Verify an institutional OTP and create the adhesion atomically
+ * (VP-SEC-008 Despliegue B, 24 July 2026) — calls
+ * verify_institutional_otp_and_create_adhesion(), which locks and consumes
+ * the OTP and calls create_verified_adhesion() internally, in one
+ * transaction: a failed adhesion rolls back the OTP consumption too.
+ *
+ * @param {{ emailHash: string, protestId: string, submittedOtpHash: string, location: LocationEvidenceInput, institutionalExpiresAt: string }} input
+ * @returns {Promise<{ id: string, created_at: string }>}
+ */
+export async function verifyInstitutionalOtpAndCreateAdhesion({ emailHash, protestId, submittedOtpHash, location, institutionalExpiresAt }) {
+  const evidence = await resolveLocationEvidence({
+    latitude: null, longitude: null, // institutional convocatorias never collect GPS
+    accuracyMeters: null,
+    ip: location?.ip ?? null,
+    scope: 'global',
+  });
+
+  const nullifier = computeNullifier({ method: 'institutional_email_otp', subjectHash: emailHash, protestId });
+
+  const { data, error } = await supabase.rpc('verify_institutional_otp_and_create_adhesion', {
+    p_email_hash:               emailHash,
+    p_protest_id:               protestId,
+    p_submitted_otp_hash:       submittedOtpHash,
+    p_identity_subject_hash:    emailHash,
+    p_nullifier:                nullifier,
+    p_ciudad:                   evidence.ciudad,
+    p_region:                   evidence.region,
+    p_pais:                     evidence.pais,
+    p_pais_code:                evidence.pais_code,
+    p_idioma:                   location?.language ?? null,
+    p_institutional_expires_at: institutionalExpiresAt,
+  });
+
+  if (error) throwMappedRpcError(error);
+  return data;
+}
 
 /**
  * @typedef {'phone_otp'|'institutional_email_otp'|'qr'|'eid'} VerificationMethod
@@ -82,7 +149,7 @@ const RPC_ERROR_MAP = {
 // Domain separation for the nullifier (per the auditor): different
 // verification methods do not share an identity space, and the version
 // prefix lets the format evolve later without colliding with today's values.
-function computeNullifier({ method, subjectHash, protestId }) {
+export function computeNullifier({ method, subjectHash, protestId }) {
   const material = ['v1', method, subjectHash, protestId].join(':');
   return createHmac('sha256', process.env.NULLIFIER_SECRET || 'dev-secret')
     .update(material)
@@ -169,16 +236,7 @@ export async function createVerifiedAdhesion(input) {
     p_institutional_expires_at: institutionalMembership?.expiresAt ?? null,
   });
 
-  if (error) {
-    // The RPC raises a stable VP_* message via ERRCODE P0001 (see the
-    // migration) — map it to the matching domain error rather than leak a
-    // raw Postgres error to the caller. Unrecognised errors are rethrown
-    // as-is so they still surface as a real 500, not silently swallowed.
-    const mapped = RPC_ERROR_MAP[error.message];
-    if (mapped) throw new mapped();
-    if (error.code === '23505') throw new AlreadyJoinedError();
-    throw error;
-  }
+  if (error) throwMappedRpcError(error);
 
   return data;
 }

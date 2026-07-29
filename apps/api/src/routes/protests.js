@@ -3,6 +3,7 @@ import { buildEvidentialScope } from '../lib/evidentialScope.js';
 import { evaluateSource, BLOCKED_DOMAINS } from '../lib/sourceCheck.js';
 import { verifyRecaptcha } from '../lib/recaptcha.js';
 import { verifyParticipationToken } from '../lib/participationToken.js';
+import { notifyIndexNow } from '../lib/indexNow.js';
 import {
   createVerifiedAdhesion, AlreadyJoinedError, ProtestNotFoundError,
   ProtestClosedError, BalanceExhaustedError, NationalCountryMismatchError,
@@ -533,6 +534,7 @@ export default async function protestRoutes(app) {
       .single();
 
     if (error) throw error;
+    notifyIndexNow(supabase, data.id, req.log); // fire-and-forget, never blocks the response
     return reply.code(201).send(data);
   });
 

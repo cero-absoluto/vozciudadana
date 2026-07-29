@@ -234,6 +234,16 @@ export default async function reportsRoutes(app) {
     return `User-agent: *\nAllow: /\n\nSitemap: https://${REPORTS_HOST}/sitemap.xml\n`;
   });
 
+  // GET reports.voiceprotest.org/{key}.txt — IndexNow key verification
+  // (24 July 2026). A fully static route, registered before the
+  // UUID-schema-validated /:id route below, so Fastify's router matches
+  // this literal path first rather than trying (and failing) to validate
+  // the key filename as a convocatoria id.
+  app.get('/e8122c52eea9425398ef936e7f559047.txt', async (req, reply) => {
+    reply.type('text/plain');
+    return 'e8122c52eea9425398ef936e7f559047';
+  });
+
   // GET reports.voiceprotest.org/sitemap.xml — dynamic, always current;
   // replaces the static Phase 1 sitemap for public convocatoria/report URLs.
   // Stricter, route-specific rate limit on top of the app-wide 120/min

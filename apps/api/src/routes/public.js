@@ -214,8 +214,13 @@ export default async function publicRoutes(app) {
         closed_at:                p.ends_at,
         integrity_hash:           record.integrity_hash,
         integrity_calculated_at:  record.calculated_at,
-        first_adhesion:           record.first_adhesion || '',
-        last_adhesion:            record.last_adhesion  || '',
+        // first_adhesion_text/last_adhesion_text are the exact strings
+        // calculate_integrity_hash_v2() hashed — not the raw timestamptz
+        // columns, which PostgREST would serialize as ISO 8601 and which
+        // would then never match the Postgres ::TEXT format the hash was
+        // actually computed from (fixed 9 August 2026).
+        first_adhesion:           record.first_adhesion_text ?? record.first_adhesion ?? '',
+        last_adhesion:            record.last_adhesion_text  ?? record.last_adhesion  ?? '',
         public_commitments:       record.public_commitments || [],
         city_distribution:        record.city_distribution  || {},
         reliability_breakdown:    record.reliability_breakdown || {},

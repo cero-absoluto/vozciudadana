@@ -285,6 +285,17 @@ export default async function reportsRoutes(app) {
   app.get('/:id', {
     schema: { params: { type: 'object', properties: { id: { type: 'string', format: 'uuid' } }, required: ['id'] } },
   }, async (req, reply) => {
+    // VP found 9 August 2026: with no Cache-Control header at all, browsers
+    // are free to apply their own heuristic caching — a real visitor
+    // reported seeing a convocatoria still shown as "active" over a week
+    // after it had genuinely closed, because their browser had cached the
+    // page from an earlier visit and never re-validated. This page's whole
+    // purpose (open/closed status, adhesion count, the integrity seal once
+    // closed) is exactly the kind of content that must never look stale.
+    // 30s matches the server's own render cache (below) — nobody, browser
+    // or server, holds a copy older than the server itself would.
+    reply.header('Cache-Control', 'public, max-age=30, must-revalidate');
+
     const cached = getCached(req.params.id);
     if (cached) {
       reply.type('text/html').code(cached.status);

@@ -34,6 +34,10 @@ The in-app verifier (🔍 button in the public report) performs this calculation
 
 | Closed at (UTC) | Protest ID | Title | Verified adhesions | Version | Integrity hash | Report |
 |-----------------|------------|-------|--------------------|---------|----------------|--------|
-| — | — | No closed protests yet | — | — | — | — |
+| 2026-07-25 14:00 | `3de5405e-a8d6-43b1-8dca-32ebb74060f8` | Contra el desplilfarro del Gobierno catalán de Illa | 2 | v2 | `004d8fedd0e15d8c3fa4a9dad8281ac13492f3f0317b5846a4e3cf63e956c637` | https://voiceprotest.org/#/informe/3de5405e-a8d6-43b1-8dca-32ebb74060f8 |
+| 2026-07-31 14:00 | `9774b676-a6a2-41ea-93d2-cf525fa9b21b` | Recinto ferial en Las Llamas: los vecinos exigen participar en la decisión | 6 | v2 | `f9b048c884950967933b3cbd74cb0edfeae3721033c104a8e0e9473c26e55f33` | https://voiceprotest.org/#/informe/9774b676-a6a2-41ea-93d2-cf525fa9b21b |
+
+Not yet listed: `c1c10dba-b6c0-4827-af52-ec52b726a106` (closed 2026-07-07), which carries an integrity_version 1 hash computed by an older, pre-v2 mechanism with no corresponding `integrity_records` entry — it predates the fixes of 9 August 2026 and has not yet been re-verified end-to-end. Pending a decision on whether to recompute it under v2 before adding it here.
 
 This log is updated manually when a protest closes. Each entry is a permanent Git commit. Source code: github.com/cero-absoluto/vozciudadana — AGPL 3.0
+

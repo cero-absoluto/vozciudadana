@@ -52,7 +52,7 @@ export default async function publicRoutes(app) {
 
     let query = supabase
       .from('protests')
-      .select('id, title, description, scope, country, country_name, region, count, cities_count, starts_at, ends_at, focal_point, category, tipo_abuso, donaciones_total')
+      .select('id, title, description, scope, country, country_name, region, count, cities, starts_at, ends_at, focal_point, category, tipo_abuso, donaciones_total')
       .order('starts_at', { ascending: false })
       .limit(500);
 
@@ -80,7 +80,7 @@ export default async function publicRoutes(app) {
         category:        p.category,
         abuse_type:      p.tipo_abuso,
         adhesions:       p.count || 0,
-        cities:          p.cities_count || 0,
+        cities:          p.cities || 0,
         starts_at:       p.starts_at,
         ends_at:         p.ends_at,
         status:          new Date(p.ends_at) > new Date() ? 'active' : 'closed',
@@ -101,7 +101,7 @@ export default async function publicRoutes(app) {
   }, async (req, reply) => {
     const { data: p, error } = await supabase
       .from('protests')
-      .select('id, title, description, demands, scope, country, country_name, region, count, cities_count, starts_at, ends_at, focal_point, category, tipo_abuso, hash_integridad, saldo_euros, donaciones_count, donaciones_total, ultima_donacion')
+      .select('id, title, description, demands, scope, country, country_name, region, count, cities, starts_at, ends_at, focal_point, category, tipo_abuso, hash_integridad, saldo_euros, donaciones_count, donaciones_total, ultima_donacion')
       .eq('id', req.params.id)
       .single();
 
@@ -177,7 +177,7 @@ export default async function publicRoutes(app) {
   }, async (req, reply) => {
     const { data: p, error } = await supabase
       .from('protests')
-      .select('id, title, demands, scope, country, count, cities_count, starts_at, ends_at, hash_integridad, integrity_version, integrity_calculated_at')
+      .select('id, title, demands, scope, country, count, cities, starts_at, ends_at, hash_integridad, integrity_version, integrity_calculated_at')
       .eq('id', req.params.id)
       .single();
 
@@ -210,7 +210,7 @@ export default async function publicRoutes(app) {
         scope:                    p.scope,
         country:                  p.country,
         total_adhesions:          record.total_adhesions,
-        cities_count:             p.cities_count,
+        cities_count:             p.cities,
         closed_at:                p.ends_at,
         integrity_hash:           record.integrity_hash,
         integrity_calculated_at:  record.calculated_at,
@@ -253,7 +253,7 @@ export default async function publicRoutes(app) {
       scope:                    p.scope,
       country:                  p.country,
       total_adhesions:          p.count,
-      cities_count:             p.cities_count,
+      cities_count:             p.cities,
       closed_at:                p.ends_at,
       integrity_hash:           p.hash_integridad,
       integrity_calculated_at:  p.integrity_calculated_at,

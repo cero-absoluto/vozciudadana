@@ -5,7 +5,7 @@
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow:hidden}
-#app{height:100vh;display:flex;flex-direction:column;overflow:hidden;max-width:520px;margin:0 auto;border-left:1px solid var(--border);border-right:1px solid var(--border)}
+#app{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;max-width:520px;margin:0 auto;border-left:1px solid var(--border);border-right:1px solid var(--border)}
 @media(min-width:900px){#app{max-width:100%;width:100%;margin:0;border:none}}
 /* ── DESKTOP RESPONSIVE ── */
 @media(min-width:900px){
@@ -149,11 +149,14 @@ a:hover{opacity:.8}
 @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 /* TOPBAR */
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 14px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg);gap:6px}
-.logo{display:flex;align-items:center;gap:7px;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;letter-spacing:-.5px;flex-shrink:0}
+.logo{display:flex;align-items:center;gap:7px;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;letter-spacing:-.5px;min-width:0;flex-shrink:1}
+.logo-mark{flex-shrink:0}
+.logo-text{min-width:0;overflow:hidden}
+.logo-title{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 @media(min-width:900px){.logo{font-size:22px}}
 .logo-mark{width:44px;height:44px;border-radius:0;background:transparent;display:flex;align-items:center;justify-content:center}
 .logo-mark svg{width:44px;height:44px;fill:none}
-.topbar-right{display:flex;align-items:center;gap:5px}
+.topbar-right{display:flex;align-items:center;gap:5px;flex-shrink:0}
 .lang-switcher{display:flex;gap:2px;background:var(--bg3);border-radius:8px;padding:2px}
 .lang-btn{padding:3px 6px;border-radius:6px;font-size:9px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text3);transition:all .15s}
 .lang-btn.active{background:var(--accent);color:white}

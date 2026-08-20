@@ -12,8 +12,8 @@
       <path d="M16 22 L20 27 L24 22" fill="#4CFFA4"/>
     </svg>
   </div>
-  <div>
-    <div>{{ $t('app.name') }}</div>
+  <div class="logo-text">
+    <div class="logo-title">{{ $t('app.name') }}</div>
    <div class="topbar-sub" style="font-size:9px;opacity:.5;font-weight:400;letter-spacing:.3px;line-height:1.4">
   {{ $t('app.tagline1') }}<br>
   {{ $t('app.tagline2') }}
@@ -46,3 +46,4 @@ function setLang(code) {
   localStorage.setItem('vc_lang', code);
 }
 </script>
+

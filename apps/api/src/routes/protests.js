@@ -804,9 +804,19 @@ export default async function protestRoutes(app) {
     // physically inside the region were misclassified as gps_nacional.)
     const { data: patchProtest } = await supabase
       .from('protests')
-      .select('scope')
+      .select('scope, ends_at')
       .eq('id', tokenRow.protest_id)
       .maybeSingle();
+    if (!patchProtest) return reply.notFound('Protest not found');
+
+    // Fast-fail only — NOT the security boundary (Credibility First Gate 1,
+    // GPS post-closure evidence freeze). This exists purely to avoid an
+    // unnecessary 6-second Nominatim round trip on a request the database
+    // will reject anyway. The authoritative, race-proof guard is the
+    // clock_timestamp()-based check inside apply_gps_reinforcement() below.
+    if (new Date(patchProtest.ends_at) <= new Date()) {
+      return reply.status(410).send({ error: 'PROTEST_CLOSED', reason: 'GPS reinforcement window closed at protest end time' });
+    }
 
     // Reverse geocode GPS coordinates via Nominatim (backend proxy — user IP not exposed)
     const zoomLevel = patchProtest?.scope === 'regional' ? 6 : 10;
@@ -874,19 +884,37 @@ export default async function protestRoutes(app) {
     // database values untouched in that case.
     const geoFields = (ciudad || region || pais) ? { ciudad, region, pais, pais_code } : {};
 
-    const { error: updErr } = await supabase.from('adhesions').update({
-      gps_confirmed:   true,
-      adhesion_osm_id,
-      ...geoFields,
-      fiabilidad:      nuevaFiabilidad,
-      senales:         senales.join(','),
-    }).eq('id', tokenRow.adhesion_id);
-    if (updErr) {
-      req.log.error({ updErr }, 'GPS reinforcement update failed');
+    // Single atomic call (Credibility First Gate 1, GPS post-closure
+    // evidence freeze): the ends_at guard and the write happen inside one
+    // Postgres statement inside apply_gps_reinforcement() — using
+    // clock_timestamp(), not now()/transaction_timestamp(), which stays
+    // fixed at transaction start and would not catch a request that began
+    // before ends_at but reaches this write after it — so no gap remains
+    // between "we checked" and "we wrote" regardless of how long steps
+    // above (in particular, the up-to-6-second Nominatim call) took.
+    const { data: applied, error: rpcErr } = await supabase.rpc('apply_gps_reinforcement', {
+      p_adhesion_id:     tokenRow.adhesion_id,
+      p_gps_confirmed:   true,
+      p_adhesion_osm_id: adhesion_osm_id,
+      p_ciudad:          ciudad,
+      p_region:          region,
+      p_pais:            pais,
+      p_pais_code:       pais_code,
+      p_fiabilidad:      nuevaFiabilidad,
+      p_senales:         senales.join(','),
+    });
+    if (rpcErr) {
+      req.log.error({ rpcErr }, 'GPS reinforcement update failed');
       return reply.status(500).send({ error: 'GPS update failed' });
     }
+    if (!applied || applied.length === 0) {
+      // ends_at passed between the fast-fail check above and this write
+      // (or that check was skipped/stale) — the atomic database guard
+      // caught it. Nothing was mutated; the token is NOT marked used.
+      return reply.status(410).send({ error: 'PROTEST_CLOSED', reason: 'GPS reinforcement window closed at protest end time' });
+    }
 
-    // Invalidate token — one-time use
+    // Invalidate token — one-time use — only reached on a genuinely applied write.
     await supabase.from('gps_update_tokens').update({ used: true }).eq('token', gps_update_token);
 
     req.log.info({ adhesion_id: tokenRow.adhesion_id, fiabilidad: nuevaFiabilidad, adhesion_osm_id }, 'GPS reinforcement completed');

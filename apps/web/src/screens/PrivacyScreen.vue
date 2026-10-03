@@ -100,12 +100,11 @@
         <div style="font-size:15px;color:var(--text);line-height:1.7">{{ $t('privacy.retentionBody') }}</div>
       </div>
 
-      <!-- Section: Controller -->
+      <!-- Section: Privacy contact / legal status -->
       <div style="background:var(--bg2);border:.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:20px">
         <div style="font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;color:var(--text2)">{{ $t('privacy.controllerTitle') }}</div>
         <div style="font-size:15px;color:var(--text);line-height:1.8">
-          Stichting Voice Protest<br>
-          Utrecht, Netherlands<br>
+          {{ $t('privacy.controllerStatus') }}<br>
           <a href="mailto:voice@voiceprotest.org" style="color:var(--accent)">voice@voiceprotest.org</a>
         </div>
       </div>

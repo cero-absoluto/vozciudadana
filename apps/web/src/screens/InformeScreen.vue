@@ -251,16 +251,25 @@
             <div class="ir-cert-header">
               <span class="ir-cert-icon">🔐</span>
               <div>
-                <div class="ir-cert-title">{{ $t('informe.selloHashLabel') }}</div>
+                <div class="ir-cert-title">{{ $t('informe.recordedHashLabel', { version: data.protest.integrity_version || 1 }) }}</div>
                 <div class="ir-hash">{{ data.protest.hash_integridad }}</div>
               </div>
             </div>
-            <button @click="verifyIntegrity" class="ir-verify-btn">
+            <div v-if="hasSnapshotV2" class="ir-snapshot">
+              <div class="ir-cert-title">{{ $t('informe.snapshotHashLabel', { version: integrityData.integrity_version }) }}</div>
+              <div class="ir-hash">{{ integrityData.integrity_hash }}</div>
+            </div>
+            <div v-if="integrityDiscrepancy" class="ir-verify-result ir-verify-v1" role="note">
+              {{ $t('informe.historicalDiscrepancy') }}
+            </div>
+            <div v-if="integrityLoading" class="ir-caption">{{ $t('informe.verifyRunning') }}</div>
+            <div v-else-if="integrityUnavailable" class="ir-caption">{{ $t('informe.verifyUnavailable') }}</div>
+            <button @click="verifyIntegrity" class="ir-verify-btn" :disabled="verifyState === 'running'">
               {{ verifyState === 'running' ? $t('informe.verifyRunning') : $t('informe.verifyBtn') }}
             </button>
             <div v-if="verifyResult" class="ir-verify-result"
-              :class="verifyResult === 'ok' ? 'ir-verify-ok' : verifyResult === 'v1' ? 'ir-verify-v1' : 'ir-verify-fail'">
-              {{ verifyResult === 'ok' ? $t('informe.verifyOk') : verifyResult === 'v1' ? $t('informe.verifyV1') : $t('informe.verifyFail') }}
+              :class="verifyResult === 'ok' ? 'ir-verify-ok' : ['v1', 'unavailable'].includes(verifyResult) ? 'ir-verify-v1' : 'ir-verify-fail'">
+              {{ verifyResult === 'ok' ? $t(integrityDiscrepancy ? 'informe.verifySnapshotDiscrepancyOk' : hasSnapshotV2 ? 'informe.verifySnapshotOk' : 'informe.verifyOk') : verifyResult === 'v1' ? $t('informe.verifyV1') : verifyResult === 'unavailable' ? $t('informe.verifyUnavailable') : $t('informe.verifyFail') }}
             </div>
           </div>
           <div v-else class="ir-cert-pending">
@@ -680,6 +689,7 @@
 .ir-cert-header { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
 .ir-cert-icon { font-size: 22px; flex-shrink: 0; }
 .ir-cert-title { font-size: 16px; color: var(--text); margin-bottom: 6px; }
+.ir-snapshot { margin: 12px 0; padding-top: 12px; border-top: .5px solid var(--border); }
 
 .ir-hash {
   font-family: monospace;
@@ -853,6 +863,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { hasIntegrityDiscrepancy, verifyIntegrityPayload } from '@/lib/integrityVerification.js';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { jsPDF } from 'jspdf';
@@ -897,6 +908,12 @@ const hasGeoData = computed(() => {
 });
 
 const data = ref(null);
+const integrityData = ref(null);
+const integrityLoading = ref(false);
+const integrityUnavailable = ref(false);
+const hasSnapshotV2 = computed(() => integrityData.value?.data_source === 'integrity_record'
+  && Number(integrityData.value?.integrity_version) >= 2);
+const integrityDiscrepancy = computed(() => hasIntegrityDiscrepancy(data.value?.protest, integrityData.value));
 const verifyState  = ref('idle');
 const verifyResult = ref(null);
 const loading = ref(true);
@@ -904,24 +921,33 @@ const error = ref(false);
 const showEmbed = ref(false);
 const copied = ref(false);
 
+async function loadIntegrityData() {
+  integrityLoading.value = true;
+  integrityUnavailable.value = false;
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/public/protests/${route.params.id}/integrity-data`);
+    if (!res.ok) throw new Error();
+    const payload = await res.json();
+    if (payload.protest_id !== route.params.id) throw new Error();
+    integrityData.value = payload;
+    return payload;
+  } catch {
+    integrityData.value = null;
+    integrityUnavailable.value = true;
+    return null;
+  } finally {
+    integrityLoading.value = false;
+  }
+}
+
 async function verifyIntegrity() {
   if (verifyState.value === 'running') return;
   verifyState.value = 'running';
   verifyResult.value = null;
   try {
-    const version = data.value?.protest?.integrity_version || 1;
-    if (version < 2) { verifyResult.value = 'v1'; verifyState.value = 'idle'; return; }
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/public/protests/${route.params.id}/integrity-data`);
-    if (!res.ok) throw new Error();
-    const d = await res.json();
-    const sorted = [...d.public_commitments].sort();
-    const cities = Object.entries(d.city_distribution || {}).sort((a,b) => a[0].localeCompare(b[0])).map(([k,v]) => `${k}:${v}`).join(',');
-    const rel = Object.entries(d.reliability_breakdown || {}).sort((a,b) => a[0] - b[0]).map(([k,v]) => `${k}:${v}`).join(',');
-    const input = [d.protest_id, d.title, d.demands, d.scope, d.country, d.total_adhesions, d.cities_count, rel, cities, d.first_adhesion||'', d.last_adhesion||'', sorted.join('|')].join('|');
-    const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
-    const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
-    verifyResult.value = hashHex === d.integrity_hash ? 'ok' : 'fail';
-  } catch { verifyResult.value = 'fail'; }
+    const payload = await loadIntegrityData();
+    verifyResult.value = payload ? await verifyIntegrityPayload(payload, route.params.id) : 'unavailable';
+  } catch { verifyResult.value = 'unavailable'; }
   finally { verifyState.value = 'idle'; }
 }
 
@@ -943,6 +969,7 @@ onMounted(async () => {
     data.value = await res.json();
   } catch { error.value = true; }
   finally { loading.value = false; }
+  if (data.value?.protest?.hash_integridad) await loadIntegrityData();
 });
 
 function formatDate(iso) {
@@ -1085,9 +1112,16 @@ function downloadPDF() {
   kv('Código fuente', 'github.com/cero-absoluto/vozciudadana (AGPL 3.0)');
   kv('Generado', new Date().toISOString());
   if (d.protest.hash_integridad) {
-    nl(1); body('Hash HMAC-SHA256 al cierre:');
+    nl(1); body(t('informe.recordedHashLabel', { version: d.protest.integrity_version || 1 }));
     doc.setFont('courier','normal'); doc.setFontSize(9); doc.setTextColor(76,255,164);
     doc.splitTextToSize(d.protest.hash_integridad, CW).forEach(l => { doc.text(l, M, y); nl(4); });
+    if (hasSnapshotV2.value) {
+      nl(2); body(t('informe.snapshotHashLabel', { version: integrityData.value.integrity_version }));
+      doc.setFont('courier','normal'); doc.setFontSize(9);
+      doc.splitTextToSize(integrityData.value.integrity_hash, CW).forEach(l => { doc.text(l, M, y); nl(4); });
+    }
+    if (integrityDiscrepancy.value) { nl(2); body(t('informe.historicalDiscrepancy')); }
+    if (integrityUnavailable.value || integrityLoading.value) { nl(2); body(t('informe.verifyUnavailable')); }
   }
 
   const totalPages = doc.getNumberOfPages();

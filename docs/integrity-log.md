@@ -41,3 +41,11 @@ Not yet listed: `c1c10dba-b6c0-4827-af52-ec52b726a106` (closed 2026-07-07), whic
 
 This log is updated manually when a protest closes. Each entry is a permanent Git commit. Source code: github.com/cero-absoluto/vozciudadana — AGPL 3.0
 
+
+## Dated clarification — 3 October 2026 (Phase I3)
+
+The earlier "Not yet listed" paragraph is preserved as a historical statement. Current production inspection found a corresponding v2 `integrity_records` snapshot for `c1c10dba-b6c0-4827-af52-ec52b726a106`, calculated on 9 August 2026. Its SHA-256 is `db1fece446a60d13fc40a3d848925d729b4fed62236e26cb800d8b2fa8ccee6e`; both its stored canonical input and the public integrity-data payload independently reproduce that hash. It has zero adhesions and zero commitments.
+
+The protests row still carries version 1 and hash `cc2d22963c8bdadd4bf90755d7d9748647905c617f8646c6df5cc925cab38b40`. The exact origin of that older hash has not been established. This cross-table discrepancy is retained; this note does not reconcile the versions, replace the earlier evidence, establish an incident, accept the discrepancy as risk, or add a reconciled event entry to the table above.
+
+I3 removed the disabled legacy trigger by migration `20261003185040_retire_legacy_integrity_trigger`, preserving all existing rows, hashes and snapshots. VP-SEC-027 is remediated/verified for that interference path; VP-ISS-012 remains open, including the partial snapshot-upsert defect. See [I3 verification record](governance/I3_Integrity_Remediation_20261003.md).

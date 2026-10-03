@@ -57,3 +57,34 @@ These fingerprints establish equality of the inspected database representations,
 The two other protests inspected, `3de5405e-a8d6-43b1-8dca-32ebb74060f8` and `9774b676-a6a2-41ea-93d2-cf525fa9b21b`, retain matching protests/snapshot v2 hashes and totals of 2 and 6 respectively. All three stored canonical inputs reproduce their snapshot hashes.
 
 No synthetic production event was created and no live closure/anonymisation job was invoked for testing. Verification covers the targeted schema change, data preservation and current public snapshot, not all future closure paths.
+
+---
+
+## Phase I3 follow-up — VP-ISS-012 snapshot persistence — 3 October 2026
+
+**Authority:** Explicit Project Owner authorisation in this continuation after the proposal to prevent partial updates while preserving existing snapshots. Temporary A3 is limited to this VP-ISS-012 correction and its verification/documentation.
+
+**CURRENT VERIFIED FACT:** Migration `20261003190433_preserve_integrity_snapshots_on_repeat` is applied to production and committed on GitHub main at `a8a7110090b24beca14bb9632dc61ad37daa07b5`.
+
+`calculate_integrity_hash_v2(uuid)` now locks the parent protests row, matching the locking order used by the inspected adhesion RPC. If a valid v2 snapshot already exists, it returns the recorded hash before modifying participant data. Existing non-v2, invalid-hash or inconsistent-count snapshots cause a review-required exception without automatic repair. New snapshots retain the prior v2 canonical format and are inserted once; the partial `ON CONFLICT DO UPDATE` branch is removed. No historical recalculation or reconciliation is performed by this migration.
+
+**Verification:** An isolated in-memory Postgres test using PGlite 0.5.8 and its pgcrypto extension reproduced the old defect (2 stored adhesions / 3 commitments after recalculation), then passed nine correction checks: valid first snapshot; unchanged repeat; repeat after changed live adhesions; repeat after participant data removal; preserved hybrid metadata; empty-event snapshot; missing-event rejection; inconsistent-total rejection; invalid-hash rejection; and legacy-version review requirement. The first-snapshot/unchanged-repeat check is combined in the test output. This test does not stress-test multiple database sessions.
+
+Production calls to the corrected function for each of the three existing snapshots returned the recorded hash twice. Whole-table fingerprints for `protests`, `integrity_records` and `adhesions` remained unchanged after those calls. The existing function owner, EXECUTE ACL, security-invoker setting and configuration remained unchanged. The closure cron was not modified and the retired legacy trigger remains absent.
+
+**VP-ISS-012 — PARTIALLY REMEDIATED / VERIFIED FOR THE PARTIAL-UPDATE DEFECT:** The unsafe partial snapshot-overwrite path is corrected. The separately documented historical protests-side v1 / snapshot-side v2 discrepancy for `c1c10dba-b6c0-4827-af52-ec52b726a106` remains preserved and **AWAITING OWNER DECISION ON HISTORICAL RECONCILIATION**. This is not a risk acceptance, an incident finding, or approval to replace the historical hash. The earlier OPEN entry records the pre-follow-up state and is retained chronologically.
+
+**VP-SEC-027:** REMEDIATED / VERIFIED for the removed legacy trigger; unchanged by this follow-up.
+
+**Other scope:** No I4, financial-model implementation, permission escalation, cron change, manual Railway deployment or historical data migration is included. All non-I3 findings retain their prior status.
+
+**Authority after follow-up:** A1 — READ-ONLY. Temporary A3 ends after verification and documentation.
+
+### Reproduce the isolated regression test
+
+Install `@electric-sql/pglite@0.5.8` in a temporary test directory, copy `tests/integrity-snapshot-repeat.mjs` there so it can resolve that package, and run it with the absolute paths to these two repository files as arguments:
+
+1. `supabase/migrations/20261003190433_preserve_integrity_snapshots_on_repeat.sql`
+2. `supabase/migrations/20260809_fix_hash_timestamp_format.sql`
+
+The test loads the function body from the new migration and the historical implementation from the timestamp-format migration. It uses synthetic data only; it does not connect to Supabase or Railway. Migration application and preservation of production owner/ACL were checked separately through the authorised Supabase connection.

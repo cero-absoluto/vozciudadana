@@ -117,7 +117,7 @@ function renderReportHtml(protest) {
         name: protest.title,
         description,
         url: canonical,
-        creator: { '@type': 'Organization', name: 'Stichting Voice Protest', url: `${APP_URL}/` },
+        creator: { '@type': 'SoftwareApplication', name: 'Voice Protest', url: `${APP_URL}/` },
         license: 'https://www.gnu.org/licenses/agpl-3.0.html',
         temporalCoverage: `${protest.starts_at}/${protest.ends_at}`,
       }
@@ -140,7 +140,7 @@ function renderReportHtml(protest) {
           '@type': 'VirtualLocation',
           url: appLink,
         },
-        organizer: { '@type': 'Organization', name: 'Stichting Voice Protest', url: `${APP_URL}/` },
+        organizer: { '@type': 'Organization', name: 'Voice Protest', url: `${APP_URL}/` },
       };
 
   return `<!DOCTYPE html>
@@ -202,7 +202,7 @@ function renderReportHtml(protest) {
 
   <a class="cta" href="${appLink}">${isClosed ? 'Ver el informe completo →' : 'Unirse a la convocatoria →'}</a>
 
-  <footer>Stichting Voice Protest · AGPL-3.0 · <a href="${APP_URL}/">voiceprotest.org</a></footer>
+  <footer>Voice Protest · pre-incorporation project · AGPL-3.0 · <a href="${APP_URL}/">voiceprotest.org</a></footer>
 </body>
 </html>`;
 }

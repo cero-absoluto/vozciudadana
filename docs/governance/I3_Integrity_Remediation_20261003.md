@@ -88,3 +88,20 @@ Install `@electric-sql/pglite@0.5.8` in a temporary test directory, copy `tests/
 2. `supabase/migrations/20260809_fix_hash_timestamp_format.sql`
 
 The test loads the function body from the new migration and the historical implementation from the timestamp-format migration. It uses synthetic data only; it does not connect to Supabase or Railway. Migration application and preservation of production owner/ACL were checked separately through the authorised Supabase connection.
+
+
+---
+
+## Phase I3 follow-up — historical integrity presentation — 3 October 2026
+
+**Authority:** Explicit Project Owner authorisation for the proposed frontend/verifier correction. Temporary A3 is limited to presentation, verification, publication and documentation.
+
+**CURRENT VERIFIED FACT:** Commit `d9aff143be4fd8a9a7a84330423fa3ae6045beb6` is on main. The frontend now presents the preserved protests-side hash/version separately from the public integrity snapshot hash/version, exposes their historical discrepancy, and verifies the public snapshot without claiming reconciliation of the historical hash. PDF generation labels both hashes and the discrepancy. Translations are included in ES/EN/FR/ZH.
+
+**Verification:** Six automated presentation/verifier tests passed and the web build passed. Existing CSS/chunk warnings remain outside this scope. GitHub Actions run `37147327245` and Pages deployment run `37147346283` both completed successfully. Live browser verification at `https://voiceprotest.org/#/informe/c1c10dba-b6c0-4827-af52-ec52b726a106` displayed both recorded hashes, the discrepancy notice, and: “Registro público v2 verificado. Esto no verifica ni concilia el hash histórico mostrado.” PDF generation compiled; an exported PDF was not separately inspected in this follow-up.
+
+**VP-ISS-012:** Presentation/verifier correction REMEDIATED / VERIFIED. Historical reconciliation remains AWAITING OWNER DECISION; both hashes are preserved. This follow-up does not change historical records or establish an incident. Prior partial-update remediation remains verified.
+
+**Scope:** Frontend and documentation only; no API/database mutation, historical hash replacement, cron change, manual Railway deployment, financial implementation or I4 authorisation.
+
+**Authority after follow-up:** A1 — READ-ONLY. Temporary A3 ends after verification and documentation.

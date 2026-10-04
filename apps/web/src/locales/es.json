@@ -933,5 +933,26 @@
       "petition_filter": "La fuente superó el filtro de plataformas de peticiones (change.org, avaaz.org, etc. son rechazadas).",
       "wikidata_verified": "La validación del destinatario se realizó en el servidor mediante la API de Wikidata."
     }
+  },
+  "fundingI4": {
+    "title": "Financiación: prueba aislada",
+    "simulation": "Simulación: no se envían SMS ni se cobra dinero.",
+    "policy": "Máximo acumulado: 100 EUR por convocatoria y 1.000 EUR por año natural, sumando aportaciones a convocatorias y donaciones generales.",
+    "antiCapture": "Financiar no compra participación, visibilidad, datos ni gobernanza.",
+    "purpose": "Finalidad",
+    "general": "Sostenibilidad general",
+    "event": "Verificación de una convocatoria",
+    "eventId": "ID de convocatoria de prueba",
+    "phone": "Teléfono de prueba en formato internacional",
+    "start": "Solicitar código simulado",
+    "code": "Código de prueba",
+    "verify": "Verificar",
+    "remaining": "Cupo disponible anual / convocatoria",
+    "amount": "Importe EUR",
+    "reserve": "Reservar aportación simulada",
+    "reserved": "Reserva creada sin pago",
+    "error": "No se completó la operación",
+    "reset": "Nueva verificación",
+    "grants": "Grants y subvenciones: carril separado, sin aportación individual desde esta pantalla."
   }
 }

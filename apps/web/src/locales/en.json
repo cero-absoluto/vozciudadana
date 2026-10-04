@@ -933,5 +933,26 @@
       "petition_filter": "The source passed the petition-platform filter (change.org, avaaz.org, etc. are rejected).",
       "wikidata_verified": "Recipient validation was performed server-side via the Wikidata API."
     }
+  },
+  "fundingI4": {
+    "title": "Funding: isolated test",
+    "simulation": "Simulation: no SMS are sent and no money is charged.",
+    "policy": "Cumulative maximum: EUR100 per event and EUR1,000 per calendar year, combining event and general contributions.",
+    "antiCapture": "Funding cannot purchase participation, visibility, data or governance.",
+    "purpose": "Purpose",
+    "general": "General sustainability",
+    "event": "Event verification",
+    "eventId": "Test event ID",
+    "phone": "Test telephone in international format",
+    "start": "Request simulated code",
+    "code": "Test code",
+    "verify": "Verify",
+    "remaining": "Available annual / event capacity",
+    "amount": "Amount EUR",
+    "reserve": "Reserve simulated contribution",
+    "reserved": "Reservation created without payment",
+    "error": "Operation did not complete",
+    "reset": "New verification",
+    "grants": "Grants and subsidies: separate stream, with no individual contribution from this screen."
   }
 }

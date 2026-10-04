@@ -33,6 +33,10 @@ const routes = [
   { path: '/privacy',  component: PrivacyScreen },
   { path: '/funding',  component: FundingScreen },
 ];
+// I4 prototype is inaccessible in standard builds and makes no live payments.
+if (import.meta.env.VITE_I4_ISOLATED === 'true') {
+  routes.push({path:'/funding-isolated',component:()=>import('@/screens/FundingIsolatedScreen.vue')});
+}
 
 export const router = createRouter({
   history: createWebHashHistory(),
@@ -63,5 +67,4 @@ router.afterEach((to) => {
     tag.remove();
   }
 });
-
 

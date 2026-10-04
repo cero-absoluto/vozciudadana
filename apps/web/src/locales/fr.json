@@ -933,5 +933,26 @@
       "petition_filter": "La source a passé le filtre des plateformes de pétitions.",
       "wikidata_verified": "La validation du destinataire a été effectuée côté serveur via l'API Wikidata."
     }
+  },
+  "fundingI4": {
+    "title": "Financement : test isolé",
+    "simulation": "Simulation : aucun SMS envoyé et aucun paiement réel.",
+    "policy": "Plafond cumulé : 100 EUR par événement et 1 000 EUR par année civile, contributions aux événements et dons généraux réunis.",
+    "antiCapture": "Le financement ne peut acheter participation, visibilité, données ou gouvernance.",
+    "purpose": "Finalité",
+    "general": "Pérennité générale",
+    "event": "Vérification d’un événement",
+    "eventId": "Identifiant de l’événement de test",
+    "phone": "Téléphone de test au format international",
+    "start": "Demander un code simulé",
+    "code": "Code de test",
+    "verify": "Vérifier",
+    "remaining": "Plafond disponible annuel / événement",
+    "amount": "Montant EUR",
+    "reserve": "Réserver une contribution simulée",
+    "reserved": "Réservation créée sans paiement",
+    "error": "Opération non terminée",
+    "reset": "Nouvelle vérification",
+    "grants": "Subventions : flux séparé, sans contribution individuelle depuis cet écran."
   }
 }

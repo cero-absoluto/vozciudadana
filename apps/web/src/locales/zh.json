@@ -933,5 +933,26 @@
       "petition_filter": "来源已通过请愿平台过滤（change.org、avaaz.org 等被拒绝）。",
       "wikidata_verified": "收件方验证已在服务器端通过 Wikidata API 完成。"
     }
+  },
+  "fundingI4": {
+    "title": "资助：隔离测试",
+    "simulation": "模拟：不发送短信，不收取真实资金。",
+    "policy": "累计上限：每项活动100欧元，每个自然年1,000欧元，活动资助与一般捐款合并计算。",
+    "antiCapture": "资助不能购买参与、可见性、数据或治理权。",
+    "purpose": "用途",
+    "general": "一般可持续运营",
+    "event": "活动验证",
+    "eventId": "测试活动编号",
+    "phone": "国际格式的测试电话号码",
+    "start": "请求模拟验证码",
+    "code": "测试验证码",
+    "verify": "验证",
+    "remaining": "年度／活动剩余额度",
+    "amount": "欧元金额",
+    "reserve": "预留模拟资助",
+    "reserved": "已创建预留，未付款",
+    "error": "操作未完成",
+    "reset": "重新验证",
+    "grants": "补助与资助项目使用独立渠道，本页面不接受该类个人付款。"
   }
 }

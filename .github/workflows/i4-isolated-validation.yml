@@ -1,0 +1,41 @@
+name: I4 isolated PostgreSQL 17 validation
+on:
+  push:
+    branches: [i4-validation-20261003]
+permissions:
+  contents: read
+jobs:
+  funding:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    if: github.ref == 'refs/heads/i4-validation-20261003'
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: i4_isolated
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: i4_synthetic_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d i4_isolated"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.19.0
+      - run: npm ci
+      - name: PostgreSQL concurrency and funding regressions
+        run: npm run test:funding
+        env:
+          I4_REQUIRE_MULTISESSION: '1'
+          I4_ISOLATED_PG_URL: postgresql://postgres:i4_synthetic_only@127.0.0.1:5432/i4_isolated
+      - name: Integrity regressions
+        run: node --test tests/integrity-presentation.test.mjs
+

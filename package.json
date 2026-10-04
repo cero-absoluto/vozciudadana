@@ -9,10 +9,17 @@
   "scripts": {
     "dev:web": "npm run dev --workspace=apps/web",
     "dev:api": "npm run dev --workspace=apps/api",
-    "build":   "npm run build --workspace=apps/web",
-    "preview": "npm run preview --workspace=apps/web"
+    "build": "npm run build --workspace=apps/web",
+    "preview": "npm run preview --workspace=apps/web",
+    "test:funding": "node --test tests/funding-isolated.test.mjs tests/funding-rollback.test.mjs tests/funding-multisession.test.mjs",
+    "test:funding:concurrency": "I4_REQUIRE_MULTISESSION=1 node --test tests/funding-multisession.test.mjs",
+    "demo:funding": "node scripts/run-i4-isolated.mjs"
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "pg": "8.16.3"
   }
 }

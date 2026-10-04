@@ -439,7 +439,7 @@ if(!connection) {
  let lifecyclePool,lifecycleService,lifecycleApi,lifecycleSession,lifecycleIntent;
  const lifecycleTransport=createLifecycleFixture({mode:'isolated'});after(()=>lifecyclePool?.end());
  test('native lifecycle: ingest is a separate restricted login, with no financial or identity access',async()=>{
-  await admin.query(fundingLifecycleEnrollmentSQL);await admin.query("CREATE ROLE funding_ingest_ci_login LOGIN INHERIT PASSWORD 'i4_synthetic_ingest_only' IN ROLE funding_provider_ingest");
+  await admin.query(fundingLifecycleEnrollmentSQL);await admin.query("CREATE ROLE funding_ingest_ci_login LOGIN INHERIT PASSWORD 'i4_synthetic_ingest_only' IN ROLE funding_provider_ingest;GRANT SELECT ON funding_private.fixture_temporal_clock TO funding_provider_ingest");
   const url=new URL(connection);url.username='funding_ingest_ci_login';url.password='i4_synthetic_ingest_only';lifecyclePool=new pg.Pool({connectionString:url.toString(),max:24,options:'-c statement_timeout=10000 -c lock_timeout=8000'});
   const actor=(await lifecyclePool.query("SELECT current_user AS actor,rolsuper,rolbypassrls,pg_has_role(current_user,'funding_runtime','MEMBER') AS financial_member,pg_has_role(current_user,'service_role','MEMBER') AS service_member FROM pg_roles WHERE rolname=current_user")).rows[0];assert.deepEqual(actor,{actor:'funding_ingest_ci_login',rolsuper:false,rolbypassrls:false,financial_member:false,service_member:false});console.log('I4_NATIVE_INGEST_ACTOR='+JSON.stringify(actor));
   await assert.rejects(lifecyclePool.query('SELECT annual_token FROM funding_private.intents'),e=>e.code==='42501');await assert.rejects(lifecyclePool.query('SELECT * FROM funding_private.annual_limits'),e=>e.code==='42501');

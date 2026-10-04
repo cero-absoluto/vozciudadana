@@ -10,6 +10,7 @@ import {legacyFundingVersion,splitFundingVersion,registerFundingVersion,fixtureR
 import {createOfflineFixtureTransport,createOfflineProviderAdapter} from '../apps/api/src/funding/offlineProvider.js';
 import {createQualificationFixture,createQualificationObserver,rehearseCutover} from '../apps/api/src/funding/providerQualification.js';
 import {createLifecycleFixture,createDurableLifecycleService} from '../apps/api/src/funding/providerLifecycle.js';
+import {transitionSQL,cohort,transition,write,snapshot as transitionSnapshot} from './helpers/funding-transition-fixture.mjs';
 import {fundingLifecycleReplayMigration,fundingLifecycleMigration,fundingLifecycleEnrollmentSQL} from './helpers/funding-fixture.mjs';
 import {createIsolatedReviewAuthenticator,createIsolatedReviewService} from '../apps/api/src/funding/isolatedReview.js';
 import {createIsolatedFundingService,createPaymentSimulator} from '../apps/api/src/funding/isolatedService.js';
@@ -492,5 +493,75 @@ if(!connection) {
  test('native lifecycle: twenty different operations cannot exceed cumulative event cap',async()=>{
   await costsClock();const id=randomUUID();await admin.query("INSERT INTO public.protests(id,starts_at,ends_at,saldo_euros,hash_integridad) VALUES($1,clock_timestamp()-interval '1 day',clock_timestamp()+interval '1 day',0.9,'lifecycle_cap')",[id]);await pool.query("INSERT INTO funding_private.accounts(id,kind,event_id) VALUES($1,'event',$2)",['event:'+id,id]);const c=await lifecycleApi.start({phone:'+349890000102',eventId:id}),session=(await lifecycleApi.verify({challengeId:c.challengeId,code:'123456'})).session;
   const results=await Promise.allSettled(Array.from({length:20},()=>lifecycleApi.lifecycleIntent(session,{kind:'event',amountCents:6000,operationRef:randomUUID()})));assert.equal(results.filter(r=>r.status==='fulfilled').length,1);for(const r of results.filter(r=>r.status==='rejected'))assert.match(r.reason.message,/event_limit/);assert.equal((await lifecycleApi.limits(session)).eventRemainingCents,4000);
+ });
+
+ let transitionLegacyPool;
+ after(()=>transitionLegacyPool?.end());
+ async function transitionActive(id){await cohort(admin,id);const c=await pool.connect();try{await transition(c,id,'FROZEN');await transition(c,id,'ENROLLED');await transition(c,id,'REHEARSAL_ACTIVE');}finally{c.release();}}
+ async function transitionIntent(){await costsClock();const token=randomUUID().replaceAll('-','').repeat(2);const year=(await pool.query('SELECT funding_private.temporal_context() AS c')).rows[0].c.year;return (await pool.query('SELECT funding_private.reserve_v2($1,$2,NULL,NULL,800) AS id',[year,token])).rows[0].id;}
+ async function transitionPaid(client,id,ref){const paidAt=(await client.query('SELECT created_at FROM funding_private.temporal_intents WHERE intent_id=$1',[id])).rows[0].created_at;return {result:(await client.query("SELECT funding_private.confirm_v2($1,$1,$2,800,'EUR',$3,'simulator_successful_payment:v2') AS r",[ref,id,paidAt])).rows[0].r};}
+ const transitionArgs=(id,ref,extra={})=>({cohort:id,ref:'synthetic_'+ref,writer:'candidate',...extra});
+ async function observeWaiting(pid){const end=Date.now()+5000;while(Date.now()<end){await admin.query('SELECT pg_stat_clear_snapshot()');const r=(await admin.query('SELECT wait_event_type FROM pg_stat_activity WHERE pid=$1',[pid])).rows[0];if(r?.wait_event_type==='Lock')return;await new Promise(r=>setTimeout(r,20));}throw Error('transition_lock_not_observed');}
+ test('native transition: restricted writer roles and journal/final immutability',async()=>{
+  await admin.query(transitionSQL);await admin.query("CREATE ROLE synthetic_transition_legacy_login LOGIN INHERIT PASSWORD 'synthetic_transition_only' IN ROLE synthetic_transition_legacy");
+  const url=new URL(connection);url.username='synthetic_transition_legacy_login';url.password='synthetic_transition_only';transitionLegacyPool=new pg.Pool({connectionString:url.toString(),max:4,options:'-c statement_timeout=10000 -c lock_timeout=8000'});
+  for(const [db,expected,financial] of [[pool,'funding_ci_login',true],[transitionLegacyPool,'synthetic_transition_legacy_login',false]]){
+   const role=(await db.query("SELECT current_user AS actor,rolsuper,rolbypassrls,pg_has_role(current_user,'service_role','MEMBER') AS service_member,pg_has_role(current_user,'funding_runtime','MEMBER') AS financial_member FROM pg_roles WHERE rolname=current_user")).rows[0];
+   assert.deepEqual(role,{actor:expected,rolsuper:false,rolbypassrls:false,service_member:false,financial_member:financial});console.log('I4_NATIVE_TRANSITION_ACTOR='+JSON.stringify(role));
+   await assert.rejects(db.query('DELETE FROM synthetic_transition.journal'),e=>e.code==='42501');
+  }
+  await assert.rejects(transitionLegacyPool.query('SELECT * FROM funding_private.annual_limits'),e=>e.code==='42501');
+ });
+ test('native transition: freeze wins race and displaced legacy action never executes',async()=>{
+  await cohort(admin,'native_freeze');const owner=await pool.connect(),legacy=await transitionLegacyPool.connect();let committed=false;
+  try{
+   await owner.query('BEGIN');await owner.query("SELECT * FROM synthetic_transition.manifest WHERE cohort='native_freeze' FOR UPDATE");
+   const pid=(await legacy.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;let called=false;
+   const attempt=write(legacy,transitionArgs('native_freeze','freeze_race',{writer:'legacy'}),async()=>{called=true;return {};});
+   await observeWaiting(pid);await owner.query("UPDATE synthetic_transition.manifest SET state='FROZEN' WHERE cohort='native_freeze'");await owner.query('COMMIT');committed=true;
+   assert.equal((await attempt).outcome,'REJECTED_WRITER');assert.equal(called,false);
+  }finally{if(!committed)await owner.query('ROLLBACK');owner.release();legacy.release();}
+ });
+ test('native transition: legacy wins race before freeze; journal survives reconnect and late callback goes to legacy review',async()=>{
+  await cohort(admin,'native_before');const legacy=await transitionLegacyPool.connect(),freezer=await pool.connect();let committed=false;
+  try{
+   await legacy.query('BEGIN');await legacy.query("SELECT * FROM synthetic_transition.manifest WHERE cohort='native_before' FOR UPDATE");
+   await legacy.query("INSERT INTO synthetic_transition.operations VALUES('synthetic_before','native_before',1,'invented_legacy_digest','{\"synthetic\":true}')");
+   await legacy.query("INSERT INTO synthetic_transition.journal(cohort,ref,outcome) VALUES('native_before','synthetic_before','ACCEPTED')");
+   const pid=(await freezer.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;const freeze=transition(freezer,'native_before','FROZEN');await observeWaiting(pid);await legacy.query('COMMIT');committed=true;await freeze;
+  }finally{if(!committed)await legacy.query('ROLLBACK');legacy.release();freezer.release();}
+  const fresh=await transitionLegacyPool.connect();try{const before=await transitionSnapshot(pool);assert.equal((await write(fresh,transitionArgs('native_before','late_callback',{writer:'legacy',kind:'callback'}),()=>{throw Error('legacy_no_credit');})).outcome,'LEGACY_REVIEW');assert.equal(await transitionSnapshot(pool),before);assert.equal(Number((await fresh.query("SELECT count(*) AS n FROM synthetic_transition.operations WHERE ref='synthetic_before'")).rows[0].n),1);}finally{fresh.release();}
+ });
+ test('native transition: twenty duplicate confirmations write one payment and replay after pause',async()=>{
+  await transitionActive('native_replay');const id=await transitionIntent(),a=transitionArgs('native_replay','replay',{binding:{intent:id,amount:800}});
+  const calls=()=>Promise.all(Array.from({length:20},async()=>{const c=await pool.connect();try{return await write(c,a,()=>transitionPaid(c,id,a.ref));}finally{c.release();}}));
+  const r=await calls();assert.equal(r.filter(x=>x.outcome==='ACCEPTED').length,1);assert.equal(r.filter(x=>x.outcome==='REPLAY').length,19);
+  assert.equal(Number((await pool.query('SELECT count(*) AS n FROM funding_private.payments WHERE intent_id=$1',[id])).rows[0].n),1);
+  const c=await pool.connect();try{await transition(c,'native_replay','PAUSED');}finally{c.release();}
+  const before=await transitionSnapshot(pool);assert.ok((await calls()).every(x=>x.outcome==='REPLAY'));assert.equal(await transitionSnapshot(pool),before);
+ });
+ test('native transition: post-confirmation fault rolls back all writes, reconnect retry succeeds once',async()=>{
+  await transitionActive('native_fault');const id=await transitionIntent(),a=transitionArgs('native_fault','fault_native',{binding:{intent:id,amount:800}}),before=await transitionSnapshot(pool);
+  const c=await pool.connect();try{await assert.rejects(write(c,a,async()=>{await transitionPaid(c,id,a.ref);throw Error('injected_native_transition');}),/injected_native_transition/);}finally{c.release();}
+  assert.equal(await transitionSnapshot(pool),before);
+  const fresh=await pool.connect();try{assert.equal((await write(fresh,a,()=>transitionPaid(fresh,id,a.ref))).result.result,'confirmed');}finally{fresh.release();}
+ });
+ test('native transition: competing claimed writers and concurrent pause cannot create new receipts after pause',async()=>{
+  await transitionActive('native_compete');const candidate=await pool.connect(),legacy=await transitionLegacyPool.connect();
+  try{const r=await Promise.all([write(candidate,transitionArgs('native_compete','same')),write(legacy,transitionArgs('native_compete','same',{writer:'legacy'}))]);assert.equal(r[0].outcome,'ACCEPTED');assert.ok(['REJECTED_WRITER','CONTRADICTION'].includes(r[1].outcome));await transition(candidate,'native_compete','PAUSED');}finally{candidate.release();legacy.release();}
+  const before=await transitionSnapshot(pool);const r=await Promise.all(Array.from({length:20},async(_,n)=>{const c=await pool.connect();try{return await write(c,transitionArgs('native_compete','paused_'+n),()=>{throw Error('new_operation_after_pause');});}finally{c.release();}}));assert.ok(r.every(x=>x.outcome==='REJECTED_WRITER'));assert.equal(await transitionSnapshot(pool),before);
+ });
+
+
+ test('native transition: observed pause lock orders competing new entry, outstanding completion remains allowed',async()=>{
+  await transitionActive('native_pause_race');const id=await transitionIntent(),owner=await pool.connect(),worker=await pool.connect();let committed=false;
+  try{
+   await owner.query('BEGIN');await owner.query("SELECT * FROM synthetic_transition.manifest WHERE cohort='native_pause_race' FOR UPDATE");
+   const pid=(await worker.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;
+   const attempt=write(worker,transitionArgs('native_pause_race','pause_race_new'),()=>{throw Error('new_entry_must_not_execute');});await observeWaiting(pid);
+   await owner.query("UPDATE synthetic_transition.manifest SET state='PAUSED' WHERE cohort='native_pause_race'");await owner.query('COMMIT');committed=true;
+   assert.equal((await attempt).outcome,'REJECTED_WRITER');
+   assert.equal((await write(worker,transitionArgs('native_pause_race','pause_race_completion',{kind:'completion',binding:{intent:id,amount:800}}),()=>transitionPaid(worker,id,'synthetic_pause_race_completion'))).result.result,'confirmed');
+  }finally{if(!committed)await owner.query('ROLLBACK');owner.release();worker.release();}
  });
 }

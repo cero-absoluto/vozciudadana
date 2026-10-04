@@ -34,3 +34,5 @@ export const fundingTemporalMigration=new URL('../../supabase/migrations/2026100
 export const fundingCostsMigration=new URL('../../supabase/migrations/20261004061929_funding_costs_exceptions.sql',import.meta.url);
 
 export const fundingReviewMigration=new URL('../../supabase/migrations/20261004065228_funding_owner_review.sql',import.meta.url);
+
+export const fundingProviderMigration=new URL('../../supabase/migrations/20261004072447_funding_offline_provider_bindings.sql',import.meta.url);

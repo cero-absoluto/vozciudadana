@@ -4,9 +4,10 @@ import { test,after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import pg from 'pg';
+import {createOfflineFixtureTransport,createOfflineProviderAdapter} from '../apps/api/src/funding/offlineProvider.js';
 import {createIsolatedReviewAuthenticator,createIsolatedReviewService} from '../apps/api/src/funding/isolatedReview.js';
 import {createIsolatedFundingService,createPaymentSimulator} from '../apps/api/src/funding/isolatedService.js';
-import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration} from './helpers/funding-fixture.mjs';
+import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration,fundingProviderMigration} from './helpers/funding-fixture.mjs';
 const connection=process.env.I4_ISOLATED_PG_URL;
 if(!connection) {
  if(process.env.I4_REQUIRE_MULTISESSION==='1')throw new Error('Concurrency verification blocked: set I4_ISOLATED_PG_URL to a fresh loopback PostgreSQL 17 i4_isolated database');
@@ -27,6 +28,7 @@ if(!connection) {
  await admin.query(await readFile(fundingTemporalMigration,'utf8'));
  await admin.query(await readFile(fundingCostsMigration,'utf8'));
  await admin.query(await readFile(fundingReviewMigration,'utf8'));
+ await admin.query(await readFile(fundingProviderMigration,'utf8'));
  await admin.query("CREATE ROLE funding_ci_login LOGIN INHERIT PASSWORD 'i4_synthetic_funding_only' IN ROLE funding_runtime");
  const runtimeURL=new URL(connection);runtimeURL.username='funding_ci_login';runtimeURL.password='i4_synthetic_funding_only';
  pool=new pg.Pool({connectionString:runtimeURL.toString(),max:24,connectionTimeoutMillis:5000,options:'-c statement_timeout=10000 -c lock_timeout=8000'});
@@ -313,6 +315,39 @@ if(!connection) {
   const detail=await reviewService.case(reviewCredential,'native-review-fee');assert.equal(detail.case.allocated,false);assert.equal(detail.cashReconciliation,'not_certified');assert.ok(detail.decisions.some(x=>x.decisionId===d.decisionId));
   assert.equal((await pool.query("SELECT funding_private.cover_provider_exposure('native-review-fee',$1) AS result",[d.operationRef])).rows[0].result,'allocated');
   assert.equal((await reviewService.case(reviewCredential,'native-review-fee')).case.allocated,true);
+ });
+
+ // Closed offline provider contracts, exercised by the same restricted financial login.
+ const providerSecret='z'.repeat(32),providerNow=async()=>(await pool.query('SELECT funding_private.temporal_now() AS t')).rows[0].t;
+ const providerTransport=createOfflineFixtureTransport({mode:'isolated',otpCode:'123456',signingSecret:providerSecret,now:providerNow});
+ const providerAdapter=()=>createOfflineProviderAdapter({mode:'isolated',database:pool,transport:providerTransport,signingSecret:providerSecret,now:providerNow,minimumCheckoutSeconds:60});
+ const providerService=()=>createIsolatedFundingService({database:pool,simulator:providerAdapter(),secret:'j'.repeat(32),participationSecret:'p'.repeat(32),timeZone:'Europe/Amsterdam',mode:'isolated'});
+ let providerSession;
+ test('native provider: twenty independent adapter compositions share one OTP claim and one session',async()=>{
+  await costsClock();const c=await providerService().start({phone:'+349790000001'});
+  const results=await Promise.allSettled(Array.from({length:20},()=>providerService().verify({challengeId:c.challengeId,code:'123456'})));
+  assert.equal(results.filter(r=>r.status==='fulfilled').length,1);providerSession=results.find(r=>r.status==='fulfilled').value.session;
+  assert.equal(providerTransport.stats().otpChecks,1);
+  assert.equal(Number((await pool.query('SELECT count(*) FROM funding_private.fixture_otp_bindings WHERE challenge_id=$1',[c.challengeId])).rows[0].count),1);
+  console.log('I4_NATIVE_OFFLINE_PROVIDER_SOURCE=offline_fixture; actor=funding_ci_login; synthetic_minimum_seconds=60');
+ });
+ test('native provider: twenty signed replays create one ingress and one financial confirmation',async()=>{
+  const i=await providerService().intent(providerSession,{kind:'general',amountCents:1000});const proof=await providerTransport.pay(i.intentId),w=await providerTransport.webhook(proof.paymentRef);
+  const results=await Promise.all(Array.from({length:20},()=>providerAdapter().ingest(w.raw,w.signature)));
+  assert.ok(results.every(r=>r.result==='confirmed'));
+  assert.equal(Number((await pool.query('SELECT count(*) FROM funding_private.fixture_ingress_events WHERE payment_ref=$1',[proof.paymentRef])).rows[0].count),1);
+  assert.equal((await pool.query('SELECT state FROM funding_private.intents WHERE id=$1',[i.intentId])).rows[0].state,'confirmed');
+  assert.equal(Number((await pool.query('SELECT committed FROM funding_private.annual_limits WHERE token=(SELECT annual_token FROM funding_private.intents WHERE id=$1)',[i.intentId])).rows[0].committed),1000);
+ });
+ test('native provider: late January signed replay preserves evidenced December payment year',async()=>{
+  await admin.query("UPDATE funding_private.fixture_temporal_clock SET t='2030-12-31T22:58:00Z'");
+  const s=providerService(),c=await s.start({phone:'+349790000002'}),v=await s.verify({challengeId:c.challengeId,code:'123456'}),i=await s.intent(v.session,{kind:'general',amountCents:1000});
+  const proof=await providerTransport.pay(i.intentId,{effectivePaidAt:'2030-12-31T22:59:50Z'});
+  await admin.query("UPDATE funding_private.fixture_temporal_clock SET t='2030-12-31T23:20:00Z'");
+  const w=await providerTransport.webhook(proof.paymentRef,{created:1});const results=await Promise.all(Array.from({length:20},()=>providerAdapter().ingest(w.raw,w.signature)));
+  assert.ok(results.every(r=>r.result==='confirmed'));
+  const row=(await pool.query('SELECT year,committed FROM funding_private.annual_limits WHERE token=(SELECT annual_token FROM funding_private.intents WHERE id=$1)',[i.intentId])).rows[0];assert.equal(row.year,2030);assert.equal(Number(row.committed),1000);
+  await costsClock();
  });
 
 }

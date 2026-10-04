@@ -471,7 +471,7 @@ if(!connection) {
  });
  test('native lifecycle: concurrent existing replays survive exception; new begins and conflicting replays remain blocked',async()=>{
   await costsClock();
-  const existing=(await pool.query("SELECT l.operation_ref,i.id,i.amount FROM funding_private.provider_lifecycles l JOIN funding_private.intents i ON i.id=l.intent_id JOIN funding_private.provider_applications a ON a.intent_id=i.id WHERE a.result='exception' ORDER BY i.created_at DESC LIMIT 1")).rows[0];
+  const existing=(await pool.query("SELECT l.operation_ref,i.id,i.amount FROM funding_private.provider_lifecycles l JOIN funding_private.intents i ON i.id=l.intent_id JOIN funding_private.provider_applications a ON a.intent_id=i.id WHERE a.result='exception' ORDER BY l.created_at DESC LIMIT 1")).rows[0];
   assert.ok(existing);
   const snapshot=async()=>JSON.stringify((await pool.query("SELECT (SELECT jsonb_agg(to_jsonb(i) ORDER BY id) FROM funding_private.intents i) AS intents,(SELECT jsonb_agg(to_jsonb(a) ORDER BY token,policy_year) FROM funding_private.annual_limits a) AS quotas,(SELECT count(*) FROM funding_private.provider_commands) AS commands,(SELECT count(*) FROM funding_private.payments) AS payments,(SELECT count(*) FROM funding_private.provider_applications WHERE result='exception') AS exceptions")).rows);
   const before=await snapshot();

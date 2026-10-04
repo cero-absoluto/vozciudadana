@@ -4,8 +4,9 @@ import { test,after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import pg from 'pg';
+import {createIsolatedReviewAuthenticator,createIsolatedReviewService} from '../apps/api/src/funding/isolatedReview.js';
 import {createIsolatedFundingService,createPaymentSimulator} from '../apps/api/src/funding/isolatedService.js';
-import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration} from './helpers/funding-fixture.mjs';
+import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration} from './helpers/funding-fixture.mjs';
 const connection=process.env.I4_ISOLATED_PG_URL;
 if(!connection) {
  if(process.env.I4_REQUIRE_MULTISESSION==='1')throw new Error('Concurrency verification blocked: set I4_ISOLATED_PG_URL to a fresh loopback PostgreSQL 17 i4_isolated database');
@@ -25,6 +26,7 @@ if(!connection) {
  await admin.query(await readFile(fundingAuthMigration,'utf8'));
  await admin.query(await readFile(fundingTemporalMigration,'utf8'));
  await admin.query(await readFile(fundingCostsMigration,'utf8'));
+ await admin.query(await readFile(fundingReviewMigration,'utf8'));
  await admin.query("CREATE ROLE funding_ci_login LOGIN INHERIT PASSWORD 'i4_synthetic_funding_only' IN ROLE funding_runtime");
  const runtimeURL=new URL(connection);runtimeURL.username='funding_ci_login';runtimeURL.password='i4_synthetic_funding_only';
  pool=new pg.Pool({connectionString:runtimeURL.toString(),max:24,connectionTimeoutMillis:5000,options:'-c statement_timeout=10000 -c lock_timeout=8000'});
@@ -277,6 +279,40 @@ if(!connection) {
   await admin.query("INSERT INTO funding_private.financial_review_decisions(operation_ref,action,intent_id,amount,source_account,expires_at) VALUES('native-cover','cover_exposure',$1,1000,'general',clock_timestamp()+interval '1 day')",[id]);
   assert.equal((await pool.query("SELECT funding_private.cover_provider_exposure('native-final-dispute','native-cover') AS result")).rows[0].result,'allocated');
   assert.equal(JSON.stringify((await pool.query('SELECT * FROM funding_private.settlements WHERE event_id=$1',[e])).rows),final);
+ });
+
+ let reviewPool,reviewService,reviewPaid,reviewInput,reviewDecision;
+ after(()=>reviewPool?.end());
+ const reviewCredential='r'.repeat(32);
+ test('native review: separate inherited login is nonprivileged and cannot move money or impersonate the finance role',async()=>{
+  await admin.query("CREATE ROLE funding_review_ci_login LOGIN INHERIT PASSWORD 'i4_synthetic_review_only' IN ROLE funding_review;GRANT SELECT ON funding_private.fixture_temporal_clock TO funding_review");
+  const url=new URL(connection);url.username='funding_review_ci_login';url.password='i4_synthetic_review_only';
+  reviewPool=new pg.Pool({connectionString:url.toString(),max:24,connectionTimeoutMillis:5000,options:'-c statement_timeout=10000 -c lock_timeout=8000'});
+  const actor=(await reviewPool.query("SELECT current_user AS actor,rolsuper,rolbypassrls,pg_has_role(current_user,'funding_runtime','MEMBER') AS financial_member,pg_has_role(current_user,'service_role','MEMBER') AS service_member FROM pg_roles WHERE rolname=current_user")).rows[0];
+  assert.deepEqual(actor,{actor:'funding_review_ci_login',rolsuper:false,rolbypassrls:false,financial_member:false,service_member:false});console.log('I4_NATIVE_REVIEW_ACTOR='+JSON.stringify(actor));
+  for(const command of ["UPDATE funding_private.accounts SET balance=0","SELECT annual_token FROM funding_private.intents","SET ROLE funding_runtime","SELECT funding_private.cover_provider_exposure('x','x')"]){await assert.rejects(reviewPool.query(command),e=>e.code==='42501');}
+  await assert.rejects(pool.query('SET ROLE funding_review'),e=>e.code==='42501');
+  reviewService=createIsolatedReviewService({database:reviewPool,authenticator:createIsolatedReviewAuthenticator({reviewSecret:reviewCredential,fundingSecret:'f'.repeat(32),providerSecret:'w'.repeat(32),participationSecret:'p'.repeat(32),mode:'isolated'}),mode:'isolated'});
+  await assert.rejects(reviewService.cases('w'.repeat(32)),e=>e.code==='review_authority_required');reviewPaid=await costsPaid(4);
+ });
+ test('native review: twenty Owner replays create one approval/provenance with zero financial effects',async()=>{
+  reviewInput={requestId:'b0000000-0000-0000-0000-000000000001',action:'refund_authorize',intentId:reviewPaid.id,amountCents:100,sourceAccount:'event:'+reviewPaid.e,expiresAt:new Date(Date.now()+600000).toISOString(),evidenceRef:'b0000000-0000-0000-0000-000000000002'};
+  const before=(await pool.query('SELECT balance FROM funding_private.accounts WHERE event_id=$1',[reviewPaid.e])).rows[0].balance;
+  const results=await Promise.all(Array.from({length:20},()=>reviewService.decide(reviewCredential,reviewInput)));assert.equal(new Set(results.map(r=>r.decisionId)).size,1);assert.ok(results.every(r=>r.fundsMoved===false));reviewDecision=results[0];
+  assert.equal(Number((await pool.query('SELECT count(*) FROM funding_private.review_authorizations WHERE request_id=$1',[reviewInput.requestId])).rows[0].count),1);
+  assert.equal((await pool.query('SELECT balance FROM funding_private.accounts WHERE event_id=$1',[reviewPaid.e])).rows[0].balance,before);
+  await assert.rejects(reviewService.decide(reviewCredential,{...reviewInput,amountCents:101}),e=>e.code==='idempotency_conflict');
+ });
+ test('native review: twenty revocations remain one audit fact; review/coverage never silently settles a case',async()=>{
+  const revoke={requestId:'b0000000-0000-0000-0000-000000000003',evidenceRef:'b0000000-0000-0000-0000-000000000004'};
+  await Promise.all(Array.from({length:20},()=>reviewService.revoke(reviewCredential,reviewDecision.decisionId,revoke)));
+  assert.equal(Number((await pool.query('SELECT count(*) FROM funding_private.financial_decision_revocations WHERE decision_id=$1',[reviewDecision.decisionId])).rows[0].count),1);
+  await assert.rejects(pool.query('SELECT funding_private.reserve_refund($1)',[reviewDecision.operationRef]),/owner_decision_required/);
+  await pool.query("SELECT funding_private.record_provider_movement('native-review-fee',$1,'fee',-10,'EUR',NULL,NULL,funding_private.temporal_now())",[reviewPaid.id]);
+  const d=await reviewService.decide(reviewCredential,{...reviewInput,requestId:'b0000000-0000-0000-0000-000000000005',evidenceRef:'b0000000-0000-0000-0000-000000000006',action:'cover_exposure',amountCents:10,sourceAccount:'general',movementRef:'native-review-fee'});
+  const detail=await reviewService.case(reviewCredential,'native-review-fee');assert.equal(detail.case.allocated,false);assert.equal(detail.cashReconciliation,'not_certified');assert.ok(detail.decisions.some(x=>x.decisionId===d.decisionId));
+  assert.equal((await pool.query("SELECT funding_private.cover_provider_exposure('native-review-fee',$1) AS result",[d.operationRef])).rows[0].result,'allocated');
+  assert.equal((await reviewService.case(reviewCredential,'native-review-fee')).case.allocated,true);
  });
 
 }

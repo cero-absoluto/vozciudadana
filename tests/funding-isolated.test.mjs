@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import Fastify from 'fastify';
-import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration} from './helpers/funding-fixture.mjs';
+import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration} from './helpers/funding-fixture.mjs';
 import { createIsolatedFundingService,createPaymentSimulator,fundingTokens,policyYear } from '../apps/api/src/funding/isolatedService.js';
 import { isolatedFundingRoutes } from '../apps/api/src/funding/routes.js';
 
@@ -15,6 +15,7 @@ await db.exec(await readFile(fundingRlsMigration,'utf8'));
  await db.exec(await readFile(fundingAuthMigration,'utf8'));
  await db.exec(await readFile(fundingTemporalMigration,'utf8'));
  await db.exec(await readFile(fundingCostsMigration,'utf8'));
+ await db.exec(await readFile(fundingReviewMigration,'utf8'));
 const q=(text,args=[])=>db.query(text,args),scalar=async(text,args)=>Object.values((await q(text,args)).rows[0])[0];
 const token=n=>String(n).padStart(64,'a');
 let sequence=1;

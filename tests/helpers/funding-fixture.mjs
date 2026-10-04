@@ -32,3 +32,5 @@ export const fundingAuthMigration=new URL('../../supabase/migrations/20261004052
 export const fundingTemporalMigration=new URL('../../supabase/migrations/20261004055625_funding_temporal_v2.sql',import.meta.url);
 
 export const fundingCostsMigration=new URL('../../supabase/migrations/20261004061929_funding_costs_exceptions.sql',import.meta.url);
+
+export const fundingReviewMigration=new URL('../../supabase/migrations/20261004065228_funding_owner_review.sql',import.meta.url);

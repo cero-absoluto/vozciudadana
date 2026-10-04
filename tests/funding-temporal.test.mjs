@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import {PGlite} from '@electric-sql/pglite';
-import {fundingParentFixtureSQL,fundingCoreMigration,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration} from './helpers/funding-fixture.mjs';
+import {fundingParentFixtureSQL,fundingCoreMigration,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration} from './helpers/funding-fixture.mjs';
 import {createIsolatedFundingService,createPaymentSimulator} from '../apps/api/src/funding/isolatedService.js';
 const db=new PGlite();after(()=>db.close());await db.exec(fundingParentFixtureSQL);
-for(const m of [fundingCoreMigration,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration])await db.exec(await readFile(m,'utf8'));
+for(const m of [fundingCoreMigration,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration])await db.exec(await readFile(m,'utf8'));
 // Owner-controlled ephemeral DB clock only. No caller-supplied application clock can set it.
 await db.exec(`CREATE TABLE funding_private.fixture_temporal_clock(t timestamptz NOT NULL);INSERT INTO funding_private.fixture_temporal_clock VALUES('2030-12-31T22:58:00Z');GRANT SELECT ON funding_private.fixture_temporal_clock TO funding_runtime;
 CREATE OR REPLACE FUNCTION funding_private.temporal_now() RETURNS timestamptz LANGUAGE sql VOLATILE SECURITY INVOKER SET search_path=pg_catalog,funding_private AS $$ SELECT t FROM funding_private.fixture_temporal_clock $$;`);

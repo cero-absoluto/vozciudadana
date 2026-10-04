@@ -56,6 +56,14 @@ test('bound revocation blocks financial use; roles cannot enroll or forge bindin
  for(const name of ['funding_review','funding_runtime','anon','authenticated'])await role(name,()=>assert.rejects(q("INSERT INTO funding_owner_private.principals VALUES($1,'synthetic_owner_issuer','forged',1,true,true,$2)",[randomUUID(),randomUUID()]),e=>e.code==='42501'));
  await role('funding_runtime',()=>assert.rejects(q('INSERT INTO funding_owner_private.bindings SELECT * FROM funding_owner_private.bindings'),e=>e.code==='42501'));
 });
+test('stale authority retains incoming cash facts in review without allocating them',async()=>{
+ const {i,d}=await issue();await tail;await role('funding_runtime',()=>q('SELECT funding_private.reserve_refund($1)',[i.requestId]));
+ await role('funding_owner_enrollment',()=>q("SELECT funding_owner_private.recover($1,$2,'suspend',$3)",[randomUUID(),identity.principal,randomUUID()]));
+ await role('funding_runtime',async()=>{assert.equal((await q("SELECT funding_private.record_provider_movement('owner-stale-local',$1,'refund',-100,'EUR',$2,NULL,funding_private.temporal_now()) AS result",[paid,i.requestId])).rows[0].result,'review');assert.equal((await q("SELECT funding_private.apply_movement('owner-stale-local','general',$1) AS result",[d.decisionId])).rows[0].result,'review');});
+ assert.equal((await q("SELECT * FROM funding_private.provider_movements WHERE movement_ref='owner-stale-local'")).rows.length,1);assert.equal((await q("SELECT * FROM funding_private.movement_allocations WHERE movement_ref='owner-stale-local'")).rows.length,0);
+ // Restore only the synthetic fixture so later tests retain their original credential epoch.
+ await q('UPDATE funding_owner_private.principals SET epoch=1,active=true WHERE id=$1',[identity.principal]);
+});
 test('individual session revocation denies its credential while another current session remains usable',async()=>{
  const sessionId=randomUUID(),one=identity.credential({sessionId}),two=identity.credential();assert.ok(await service.cases(one));await tail;
  await role('funding_owner_enrollment',()=>q('INSERT INTO funding_owner_private.session_revocations(session_id,principal,evidence) VALUES($1,$2,$3)',[sessionId,identity.principal,randomUUID()]));

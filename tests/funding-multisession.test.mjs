@@ -609,7 +609,8 @@ if(!connection) {
    const pid=(await a.query('SELECT pg_backend_pid() AS pid')).rows[0].pid,rev=a.query("SELECT funding_owner_private.recover($1,$2,'suspend',$3)",[randomUUID(),ownerIdentity.principal,randomUUID()]);await observeWaiting(pid);await f.query('COMMIT');committed=true;await rev;
    assert.equal(Number((await admin.query('SELECT count(*) AS n FROM funding_private.refund_reservations WHERE decision_id=$1',[d.decisionId])).rows[0].n),1);
    await pool.query("SELECT funding_private.record_provider_movement('owner-stale-refund',$1,'refund',-100,'EUR',$2,NULL,funding_private.temporal_now())",[reviewPaid.id,input.requestId]);
-   await assert.rejects(pool.query("SELECT funding_private.apply_movement('owner-stale-refund',$1,$2)",['event:'+reviewPaid.e,d.decisionId]),/owner_authority_revoked/);
+   assert.equal((await pool.query("SELECT funding_private.apply_movement('owner-stale-refund',$1,$2) AS result",['event:'+reviewPaid.e,d.decisionId])).rows[0].result,'review');
+   assert.equal(Number((await admin.query("SELECT count(*) AS n FROM funding_private.provider_movements WHERE movement_ref='owner-stale-refund'")).rows[0].n),1);
    assert.equal(Number((await admin.query("SELECT count(*) AS n FROM funding_private.movement_allocations WHERE movement_ref='owner-stale-refund'")).rows[0].n),0);
   }finally{if(!committed)await f.query('ROLLBACK');f.release();a.release();}
  });

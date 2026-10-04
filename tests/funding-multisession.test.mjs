@@ -1,5 +1,7 @@
 // Run only against a fresh loopback PostgreSQL database explicitly named i4_isolated.
 // This harness never uses Supabase credentials or a production connection.
+import {createOwnerAuthorityService} from '../apps/api/src/funding/ownerAuthority.js';
+import {authorityMigration,ownerIdentityFixture} from './helpers/funding-owner-authority-fixture.mjs';
 import { test,after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -564,4 +566,52 @@ if(!connection) {
    assert.equal((await write(worker,transitionArgs('native_pause_race','pause_race_completion',{kind:'completion',binding:{intent:id,amount:800}}),()=>transitionPaid(worker,id,'synthetic_pause_race_completion'))).result.result,'confirmed');
   }finally{if(!committed)await owner.query('ROLLBACK');owner.release();worker.release();}
  });
+ let ownerIdentity,ownerService,ownerCredential,ownerEnrollment,ownerInput,ownerChallenge,ownerProof,ownerDecision;
+ after(()=>ownerEnrollment?.end());
+ test('native Owner: restricted issuer/enrollment roles and no legacy authority fallback',async()=>{
+  await admin.query(await readFile(authorityMigration,'utf8'));
+  await admin.query("CREATE ROLE funding_owner_enrollment_ci LOGIN INHERIT PASSWORD 'synthetic_owner_enrollment' IN ROLE funding_owner_enrollment");
+  const u=new URL(connection);u.username='funding_owner_enrollment_ci';u.password='synthetic_owner_enrollment';ownerEnrollment=new pg.Pool({connectionString:u.toString(),max:4});
+  const actor=(await ownerEnrollment.query("SELECT current_user AS actor,rolsuper,rolbypassrls,pg_has_role(current_user,'funding_runtime','MEMBER') AS finance,pg_has_role(current_user,'funding_review','MEMBER') AS review,pg_has_role(current_user,'service_role','MEMBER') AS service FROM pg_roles WHERE rolname=current_user")).rows[0];
+  assert.deepEqual(actor,{actor:'funding_owner_enrollment_ci',rolsuper:false,rolbypassrls:false,finance:false,review:false,service:false});console.log('I4_NATIVE_OWNER_ENROLLMENT_ACTOR='+JSON.stringify(actor));
+  ownerIdentity=ownerIdentityFixture();await ownerEnrollment.query("INSERT INTO funding_owner_private.principals VALUES($1,'synthetic_owner_issuer','fixture-owner',1,true,true,$2)",[ownerIdentity.principal,randomUUID()]);
+  ownerService=createOwnerAuthorityService({database:reviewPool,identity:ownerIdentity.adapter,mode:'isolated'});ownerCredential=ownerIdentity.credential();
+  for(const cmd of ["SET ROLE funding_review","SET ROLE funding_runtime","UPDATE funding_private.accounts SET balance=0"])await assert.rejects(ownerEnrollment.query(cmd),e=>e.code==='42501');
+  for(const p of [pool,reviewPool])await assert.rejects(p.query("UPDATE funding_owner_private.principals SET active=false"),e=>e.code==='42501');
+  ownerInput={requestId:randomUUID(),action:'refund_authorize',intentId:reviewPaid.id,amountCents:100,sourceAccount:'event:'+reviewPaid.e,expiresAt:'2035-01-01T00:00:00Z',evidenceRef:randomUUID()};
+  await assert.rejects(reviewService.decide(reviewCredential,ownerInput),/owner_binding_required|review_unavailable/);
+ });
+ test('native Owner: twenty operation-bound confirmations commit one approval and challenge consumption',async()=>{
+  ownerChallenge=await ownerService.challenge(ownerCredential,'issue',ownerInput);ownerProof=ownerIdentity.confirm('issue',ownerInput,ownerChallenge.challengeId);
+  const result=await Promise.all(Array.from({length:20},()=>ownerService.decide(ownerCredential,ownerInput,ownerChallenge.challengeId,ownerProof)));ownerDecision=result[0];assert.equal(new Set(result.map(x=>x.decisionId)).size,1);
+  assert.equal(Number((await admin.query('SELECT count(*) AS n FROM funding_owner_private.bindings WHERE request_id=$1',[ownerInput.requestId])).rows[0].n),1);
+  await assert.rejects(ownerService.decide(ownerCredential,{...ownerInput,amountCents:101},ownerChallenge.challengeId,ownerProof),/owner_confirmation_required/);
+ });
+ test('native Owner: suspension commits ahead of waiting financial use and invalidates stale approval',async()=>{
+  const a=await ownerEnrollment.connect(),f=await pool.connect();let committed=false;
+  try{await a.query('BEGIN');await a.query("SELECT funding_owner_private.recover($1,$2,'suspend',$3)",[randomUUID(),ownerIdentity.principal,randomUUID()]);
+   const pid=(await f.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;
+   const use=f.query('SELECT funding_private.reserve_refund($1)',[ownerInput.requestId]);const checked=assert.rejects(use,/owner_authority_revoked/);await observeWaiting(pid);
+   await a.query('COMMIT');committed=true;await checked;
+   assert.equal(Number((await admin.query('SELECT count(*) AS n FROM funding_private.refund_reservations WHERE decision_id=$1',[ownerDecision.decisionId])).rows[0].n),0);
+  }finally{if(!committed)await a.query('ROLLBACK');a.release();f.release();}
+ });
+ test('native Owner: recovery replay is idempotent, reenrollment does not revive old decisions',async()=>{
+  const r=randomUUID(),ev=randomUUID(),args=[r,ownerIdentity.principal,ev];const results=await Promise.all(Array.from({length:20},()=>ownerEnrollment.query("SELECT funding_owner_private.recover($1,$2,'reenroll',$3) AS epoch",args)));assert.ok(results.every(x=>x.rows[0].epoch===3));
+  await assert.rejects(ownerService.cases(ownerCredential),/owner_authority_revoked/);
+  await assert.rejects(pool.query('SELECT funding_private.reserve_refund($1)',[ownerInput.requestId]),/owner_authority_revoked/);
+  assert.ok(await ownerService.cases(ownerIdentity.credential({epoch:3})));
+ });
+ test('native Owner: financial-use lock commits before suspension, which prevents later allocation',async()=>{
+  const cred=ownerIdentity.credential({epoch:3}),input={...ownerInput,requestId:randomUUID(),evidenceRef:randomUUID()},c=await ownerService.challenge(cred,'issue',input),proof=ownerIdentity.confirm('issue',input,c.challengeId,3);const d=await ownerService.decide(cred,input,c.challengeId,proof);
+  const f=await pool.connect(),a=await ownerEnrollment.connect();let committed=false;
+  try{await f.query('BEGIN');assert.equal((await f.query('SELECT funding_private.reserve_refund($1) AS result',[input.requestId])).rows[0].result,'reserved');
+   const pid=(await a.query('SELECT pg_backend_pid() AS pid')).rows[0].pid,rev=a.query("SELECT funding_owner_private.recover($1,$2,'suspend',$3)",[randomUUID(),ownerIdentity.principal,randomUUID()]);await observeWaiting(pid);await f.query('COMMIT');committed=true;await rev;
+   assert.equal(Number((await admin.query('SELECT count(*) AS n FROM funding_private.refund_reservations WHERE decision_id=$1',[d.decisionId])).rows[0].n),1);
+   await pool.query("SELECT funding_private.record_provider_movement('owner-stale-refund',$1,'refund',-100,'EUR',$2,NULL,funding_private.temporal_now())",[reviewPaid.id,input.requestId]);
+   await assert.rejects(pool.query("SELECT funding_private.apply_movement('owner-stale-refund',$1,$2)",['event:'+reviewPaid.e,d.decisionId]),/owner_authority_revoked/);
+   assert.equal(Number((await admin.query("SELECT count(*) AS n FROM funding_private.movement_allocations WHERE movement_ref='owner-stale-refund'")).rows[0].n),0);
+  }finally{if(!committed)await f.query('ROLLBACK');f.release();a.release();}
+ });
+
 }

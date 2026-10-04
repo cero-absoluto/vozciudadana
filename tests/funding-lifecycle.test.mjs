@@ -97,3 +97,17 @@ test('ended/final synthetic event quarantines success and never rewrites parent 
  await admin("UPDATE public.protests SET ends_at=clock_timestamp() WHERE id=$1",[eventId]);await admin("UPDATE funding_private.accounts SET state='settled' WHERE event_id=$1",[eventId]);const before=JSON.stringify((await finance.query('SELECT saldo_euros,hash_integridad,updated_at FROM public.protests WHERE id=$1',[eventId])).rows);
  await tick();transport.set(i.operationRef,{status:'paid',successfulAt:new Date().toISOString(),revision:2});const c=await service.request(i.intentId,randomUUID(),'retrieve');assert.equal(await run(i,c),'review');assert.equal(Number(await hold(i)),1000);assert.equal(JSON.stringify((await finance.query('SELECT saldo_euros,hash_integridad,updated_at FROM public.protests WHERE id=$1',[eventId])).rows),before);
 });
+
+test('forward migration preserves exact replay under exception while blocking new operations and conflicts',async()=>{
+ const i=await begin();await run(i);const c=await service.request(i.intentId,randomUUID(),'cancel');await run(i,c);
+ transport.set(i.operationRef,{status:'paid',successfulAt:new Date().toISOString(),revision:3});
+ const r=await service.request(i.intentId,randomUUID(),'retrieve');assert.equal(await run(i,r),'exception');
+ const args={operationRef:i.operationRef,year:await year(),annualToken:i.token,amountCents:1000};
+ await assert.rejects(service.begin(args),/lifecycle_unresolved_exception/);
+ const snapshot=async()=>({intent:await scalar('SELECT row_to_json(i) FROM funding_private.intents i WHERE id=$1',[i.intentId]),quota:await scalar('SELECT row_to_json(a) FROM funding_private.annual_limits a WHERE token=$1',[i.token]),commands:await scalar('SELECT count(*) FROM funding_private.provider_commands'),payments:await scalar('SELECT count(*) FROM funding_private.payments'),exceptions:await scalar("SELECT count(*) FROM funding_private.provider_applications WHERE result='exception'")});
+ const before=await snapshot();await admin(await readFile(fixture.fundingLifecycleReplayMigration,'utf8'));
+ assert.equal((await service.begin(args)).intentId,i.intentId);
+ await assert.rejects(service.begin({...args,amountCents:1001}),/idempotency_conflict/);
+ await assert.rejects(service.begin({...args,operationRef:randomUUID()}),/lifecycle_unresolved_exception/);
+ assert.deepEqual(await snapshot(),before);
+});

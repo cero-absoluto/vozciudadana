@@ -10,7 +10,7 @@ import {legacyFundingVersion,splitFundingVersion,registerFundingVersion,fixtureR
 import {createOfflineFixtureTransport,createOfflineProviderAdapter} from '../apps/api/src/funding/offlineProvider.js';
 import {createQualificationFixture,createQualificationObserver,rehearseCutover} from '../apps/api/src/funding/providerQualification.js';
 import {createLifecycleFixture,createDurableLifecycleService} from '../apps/api/src/funding/providerLifecycle.js';
-import {fundingLifecycleMigration,fundingLifecycleEnrollmentSQL} from './helpers/funding-fixture.mjs';
+import {fundingLifecycleReplayMigration,fundingLifecycleMigration,fundingLifecycleEnrollmentSQL} from './helpers/funding-fixture.mjs';
 import {createIsolatedReviewAuthenticator,createIsolatedReviewService} from '../apps/api/src/funding/isolatedReview.js';
 import {createIsolatedFundingService,createPaymentSimulator} from '../apps/api/src/funding/isolatedService.js';
 import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration,fundingProviderMigration,fundingContinuityMigration,fundingRetentionMigration} from './helpers/funding-fixture.mjs';
@@ -38,6 +38,7 @@ if(!connection) {
  await admin.query(await readFile(fundingContinuityMigration,'utf8'));
   await admin.query(await readFile(fundingRetentionMigration,'utf8'));
  await admin.query(await readFile(fundingLifecycleMigration,'utf8'));
+ await admin.query(await readFile(fundingLifecycleReplayMigration,'utf8'));
  await admin.query("CREATE ROLE funding_ci_login LOGIN INHERIT PASSWORD 'i4_synthetic_funding_only' IN ROLE funding_runtime");
  const runtimeURL=new URL(connection);runtimeURL.username='funding_ci_login';runtimeURL.password='i4_synthetic_funding_only';
  pool=new pg.Pool({connectionString:runtimeURL.toString(),max:24,connectionTimeoutMillis:5000,options:'-c statement_timeout=10000 -c lock_timeout=8000'});
@@ -467,6 +468,19 @@ if(!connection) {
   const cmd=await lifecycleService.request(i.intentId,randomUUID(),'cancel'),e=await lifecycleService.run(cmd),results=await Promise.all(Array.from({length:20},()=>lifecycleService.apply(e.intentId,e.observationId)));assert.ok(results.every(r=>r==='cancelled'));
   assert.equal(Number((await pool.query('SELECT reserved FROM funding_private.annual_limits WHERE token=(SELECT annual_token FROM funding_private.intents WHERE id=$1)',[i.intentId])).rows[0].reserved),0);
   lifecycleTransport.set(i.commandId,{status:'paid',successfulAt:new Date().toISOString(),revision:3});const checkCmd=await lifecycleService.request(i.intentId,randomUUID(),'retrieve'),paid=await lifecycleService.run(checkCmd);assert.equal(await lifecycleService.apply(i.intentId,paid.observationId),'exception');assert.equal((await pool.query('SELECT state FROM funding_private.intents WHERE id=$1',[i.intentId])).rows[0].state,'cancelled');
+ });
+ test('native lifecycle: concurrent existing replays survive exception; new begins and conflicting replays remain blocked',async()=>{
+  await costsClock();
+  const existing=(await pool.query("SELECT l.operation_ref,i.id,i.amount FROM funding_private.provider_lifecycles l JOIN funding_private.intents i ON i.id=l.intent_id JOIN funding_private.provider_applications a ON a.intent_id=i.id WHERE a.result='exception' ORDER BY i.created_at DESC LIMIT 1")).rows[0];
+  assert.ok(existing);
+  const snapshot=async()=>JSON.stringify((await pool.query("SELECT (SELECT jsonb_agg(to_jsonb(i) ORDER BY id) FROM funding_private.intents i) AS intents,(SELECT jsonb_agg(to_jsonb(a) ORDER BY token,policy_year) FROM funding_private.annual_limits a) AS quotas,(SELECT count(*) FROM funding_private.provider_commands) AS commands,(SELECT count(*) FROM funding_private.payments) AS payments,(SELECT count(*) FROM funding_private.provider_applications WHERE result='exception') AS exceptions")).rows);
+  const before=await snapshot();
+  const args={kind:'general',amountCents:Number(existing.amount),operationRef:existing.operation_ref};
+  const results=await Promise.allSettled(Array.from({length:20},(_,n)=>lifecycleApi.lifecycleIntent(lifecycleSession,n%2?{...args,operationRef:randomUUID()}:args)));
+  assert.equal(results.filter(r=>r.status==='fulfilled').length,10);
+  for(const r of results)if(r.status==='fulfilled')assert.equal(r.value.intentId,existing.id);else assert.match(r.reason.message,/lifecycle_unresolved_exception/);
+  await assert.rejects(lifecycleApi.lifecycleIntent(lifecycleSession,{...args,amountCents:args.amountCents+1}),/idempotency_conflict/);
+  assert.equal(await snapshot(),before);
  });
  test('native lifecycle: payment/cancellation race has one financial outcome and records conflicting evidence',async()=>{
   const challenge=await lifecycleApi.start({phone:'+349890000101'});lifecycleSession=(await lifecycleApi.verify({challengeId:challenge.challengeId,code:'123456'})).session;

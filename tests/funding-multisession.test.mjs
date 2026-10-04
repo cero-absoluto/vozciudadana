@@ -7,6 +7,7 @@ import pg from 'pg';
 import {createFundingKeyContinuity,createIsolatedCleanupService} from '../apps/api/src/funding/keyContinuity.js';
 import {legacyFundingVersion,splitFundingVersion,registerFundingVersion,fixtureRetentionPolicySQL} from './helpers/funding-continuity-fixture.mjs';
 import {createOfflineFixtureTransport,createOfflineProviderAdapter} from '../apps/api/src/funding/offlineProvider.js';
+import {createQualificationFixture,createQualificationObserver,rehearseCutover} from '../apps/api/src/funding/providerQualification.js';
 import {createIsolatedReviewAuthenticator,createIsolatedReviewService} from '../apps/api/src/funding/isolatedReview.js';
 import {createIsolatedFundingService,createPaymentSimulator} from '../apps/api/src/funding/isolatedService.js';
 import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration,fundingProviderMigration,fundingContinuityMigration,fundingRetentionMigration} from './helpers/funding-fixture.mjs';
@@ -409,4 +410,26 @@ if(!connection) {
   await assert.rejects(continuityService('v2').limits(continuitySessions[0].session),e=>e.code==='financial_session_required');
  });
 
+ // Read-only composition of the qualification harness under the real restricted login.
+ // It does not attach a remote lifecycle to existing expiry SQL or release funds.
+ const qualificationBinding={reference:'qual_native',provider:'mollie',method:'ideal',amountCents:1000,currency:'EUR',createdAt:'2030-06-01T12:00:00Z',localDeadline:'2030-06-01T12:10:00Z',eventDeadline:'2030-07-01T00:00:00Z',yearDeadline:'2031-01-01T00:00:00Z'};
+ const qualificationTransport=createQualificationFixture({mode:'isolated',records:[{...qualificationBinding,status:'open',mode:'synthetic',observedAt:'2030-06-01T12:20:00Z',revision:1}]});
+ const qualificationObserver=createQualificationObserver({mode:'isolated',transport:qualificationTransport,bindings:[qualificationBinding],now:()=> '2030-06-01T12:20:00Z'});
+ async function qualificationFinancialSnapshot(){
+  return JSON.stringify((await pool.query('SELECT i.state,i.amount,l.committed,l.reserved,(SELECT count(*) FROM funding_private.ledger_transactions) AS ledger_count FROM funding_private.intents i JOIN funding_private.event_limits l ON l.event_id=i.event_id AND l.token=i.event_token WHERE i.id=$1',[continuityIntent.intentId])).rows);
+ }
+ test('native qualification: twenty expired-local observations preserve actual pending quota and ledger',async()=>{
+  const before=await qualificationFinancialSnapshot();assert.notEqual(before,'[]');
+  const results=await Promise.all(Array.from({length:20},async()=>{assert.equal((await pool.query('SELECT current_user AS actor')).rows[0].actor,'funding_ci_login');return qualificationObserver.observe('qual_native');}));
+  assert.ok(results.every(r=>r.action==='HOLD'&&!r.releaseReservation));assert.equal(await qualificationFinancialSnapshot(),before);
+ });
+ test('native qualification: terminal fixture evidence remains an assessment and does not release SQL quota',async()=>{
+  const before=await qualificationFinancialSnapshot();qualificationTransport.set('qual_native',{revision:2,status:'canceled'});
+  const results=await Promise.all(Array.from({length:20},()=>qualificationObserver.observe('qual_native')));assert.ok(results.every(r=>r.releaseReservation));assert.equal(await qualificationFinancialSnapshot(),before);
+ });
+ test('native cutover: unresolved references block rehearsal and preserve final records',async()=>{
+  const before=JSON.stringify((await pool.query('SELECT id,hash_integridad,saldo_euros FROM public.protests ORDER BY id')).rows);
+  const verdict=rehearseCutover({syntheticOnly:true,writerFreezeObserved:true,inventoryComplete:true,referencesReconciled:false,quotaContinuityKnown:false,finalsPreserved:true,rollbackRehearsed:true,qualificationAccepted:false,pendingReferences:1,unknownReferences:1,activeWriters:['legacy','synthetic_candidate']});
+  assert.equal(verdict.verdict,'BLOCKED');assert.equal(verdict.productionActivation,false);assert.equal(JSON.stringify((await pool.query('SELECT id,hash_integridad,saldo_euros FROM public.protests ORDER BY id')).rows),before);
+ });
 }

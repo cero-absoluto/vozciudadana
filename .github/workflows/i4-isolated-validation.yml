@@ -38,4 +38,5 @@ jobs:
           I4_ISOLATED_PG_URL: postgresql://postgres:i4_synthetic_only@127.0.0.1:5432/i4_isolated
       - name: Integrity regressions
         run: node --test tests/integrity-presentation.test.mjs
-
+      - name: Provider qualification and synthetic cutover rehearsal
+        run: npm run test:funding:qualification

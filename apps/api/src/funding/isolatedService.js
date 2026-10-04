@@ -1,5 +1,6 @@
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import {createSharedFundingAuthStore} from './sharedAuthStore.js';
+import {isDurableLifecycleService} from './providerLifecycle.js';
 
 export class FundingError extends Error {
   constructor(code, statusCode = 400) { super(code); this.code = code; this.statusCode = statusCode; }
@@ -23,7 +24,7 @@ export function fundingTokens(secret, normalizedPhone, year, eventId = null) {
 
 // Explicitly test-only composition. No Supabase, Twilio, Ko-fi or production imports.
 export function createIsolatedFundingService({ database, simulator, secret, participationSecret,
-  timeZone, mode, continuity = null, now = () => new Date() }) {
+  timeZone, mode, continuity = null, durableProvider = null, now = () => new Date() }) {
   requireThat(mode === 'isolated' && process.env.NODE_ENV !== 'production', 'isolated_only', 503);
   requireThat(typeof secret === 'string' && Buffer.byteLength(secret) >= 32 && secret !== participationSecret,
     'independent_funding_secret_required', 503);
@@ -112,6 +113,12 @@ export function createIsolatedFundingService({ database, simulator, secret, part
         [s.year,s.tokens.annual,s.eventId,s.tokens.event]);
       return { year: s.year, annualRemainingCents: 100000-Number(r.rows[0].annual_used || 0),
         eventRemainingCents: s.eventId ? 10000-Number(r.rows[0].event_used || 0) : null };
+    },
+    async lifecycleIntent(sessionId,{kind,amountCents,currency='EUR',operationRef}) {
+      const s=await session(sessionId);
+      requireThat(isDurableLifecycleService(durableProvider),'durable_lifecycle_required',503);
+      requireThat(currency==='EUR'&&kind===(s.eventId?'event':'general'),'session_purpose_mismatch');
+      return durableProvider.begin({operationRef,year:s.year,annualToken:s.tokens.annual,eventToken:s.tokens.event,eventId:s.eventId,amountCents});
     },
     async intent(sessionId, { kind, amountCents, currency = 'EUR' }) {
       const s = await session(sessionId);

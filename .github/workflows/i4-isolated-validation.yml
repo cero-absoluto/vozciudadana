@@ -40,3 +40,5 @@ jobs:
         run: node --test tests/integrity-presentation.test.mjs
       - name: Provider qualification and synthetic cutover rehearsal
         run: npm run test:funding:qualification
+      - name: Durable provider lifecycle regressions
+        run: npm run test:funding:lifecycle

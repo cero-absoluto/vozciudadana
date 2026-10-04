@@ -39,3 +39,5 @@ export const fundingProviderMigration=new URL('../../supabase/migrations/2026100
 
 export const fundingContinuityMigration=new URL('../../supabase/migrations/20261004080912_funding_key_scope_continuity.sql',import.meta.url);
 export const fundingRetentionMigration=new URL('../../supabase/migrations/20261004080913_funding_retention_controls.sql',import.meta.url);
+export const fundingLifecycleMigration=new URL('../../supabase/migrations/20261004122418_funding_provider_lifecycle.sql',import.meta.url);
+export const fundingLifecycleEnrollmentSQL="INSERT INTO funding_private.provider_lifecycle_enrollment VALUES(true,'synthetic_closed_fixture','d0000000-0000-0000-0000-000000000001',true)";

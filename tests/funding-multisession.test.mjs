@@ -4,6 +4,7 @@ import { test,after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import pg from 'pg';
+import {fundingParentFixtureSQL,fundingRlsMigration} from './helpers/funding-fixture.mjs';
 const connection=process.env.I4_ISOLATED_PG_URL;
 if(!connection) {
  if(process.env.I4_REQUIRE_MULTISESSION==='1')throw new Error('Concurrency verification blocked: set I4_ISOLATED_PG_URL to a fresh loopback PostgreSQL 17 i4_isolated database');
@@ -12,17 +13,22 @@ if(!connection) {
  const u=new URL(connection);
  assert.ok(['127.0.0.1','localhost','[::1]'].includes(u.hostname)&&u.pathname==='/i4_isolated','fresh loopback i4_isolated database required');
  assert.notEqual(process.env.NODE_ENV,'production');
- const pool=new pg.Pool({connectionString:connection,max:24,connectionTimeoutMillis:5000,options:'-c statement_timeout=10000 -c lock_timeout=8000'});after(()=>pool.end());
+ let pool=new pg.Pool({connectionString:connection,max:24,connectionTimeoutMillis:5000,options:'-c statement_timeout=10000 -c lock_timeout=8000'});const admin=pool;after(()=>Promise.all([admin.end(),pool.end()]));
  const version=Number((await pool.query('SHOW server_version_num')).rows[0].server_version_num);
  assert.ok(version>=170000&&version<180000,'PostgreSQL 17 required for production-version concurrency validation');
  console.log('I4_NATIVE_POSTGRES_VERSION_NUM='+version);
  console.log('I4_NATIVE_POSTGRES_VERSION='+(await pool.query('SHOW server_version')).rows[0].server_version);
- await pool.query(`CREATE TABLE public.protests(id uuid PRIMARY KEY,starts_at timestamptz,ends_at timestamptz,saldo_euros numeric,hash_integridad text);
- DO $$BEGIN IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon; END IF;
- IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated; END IF; END $$;`);
+ await admin.query(fundingParentFixtureSQL);
  await pool.query(await readFile(new URL('../supabase/migrations/20261003200832_funding_private_core.sql',import.meta.url),'utf8'));
+ await admin.query(await readFile(fundingRlsMigration,'utf8'));
+ await admin.query("CREATE ROLE funding_ci_login LOGIN INHERIT PASSWORD 'i4_synthetic_funding_only' IN ROLE funding_runtime");
+ const runtimeURL=new URL(connection);runtimeURL.username='funding_ci_login';runtimeURL.password='i4_synthetic_funding_only';
+ pool=new pg.Pool({connectionString:runtimeURL.toString(),max:24,connectionTimeoutMillis:5000,options:'-c statement_timeout=10000 -c lock_timeout=8000'});
+ const actor=(await pool.query("SELECT current_user AS actor,rolsuper,rolbypassrls,pg_has_role(current_user,'service_role','MEMBER') AS service_member FROM pg_roles WHERE rolname=current_user")).rows[0];
+ assert.deepEqual(actor,{actor:'funding_ci_login',rolsuper:false,rolbypassrls:false,service_member:false});
+ console.log('I4_NATIVE_FINANCIAL_ACTOR='+JSON.stringify(actor));
  const event='20000000-0000-0000-0000-000000000001',token='b'.repeat(64);
- await pool.query(`INSERT INTO public.protests VALUES($1,now()-interval '1 day',now()+interval '1 day',0,'untouched')`,[event]);
+ await admin.query(`INSERT INTO public.protests(id,starts_at,ends_at,saldo_euros,hash_integridad) VALUES($1,now()-interval '1 day',now()+interval '1 day',0,'untouched')`,[event]);
  await pool.query(`INSERT INTO funding_private.accounts(id,kind,event_id) VALUES($1,'event',$2)`,['event:'+event,event]);
  test('20 concurrent reservations cannot exceed cumulative event capacity',async()=>{
   const clients=await Promise.all(Array.from({length:20},()=>pool.connect()));
@@ -54,7 +60,7 @@ if(!connection) {
  });
  async function freshEvent(n,amount=1000){
   const e=`30000000-0000-0000-0000-${String(n).padStart(12,'0')}`;
-  await pool.query(`INSERT INTO public.protests VALUES($1,now()-interval '1 day',now()+interval '1 day',0,'untouched')`,[e]);
+  await admin.query(`INSERT INTO public.protests(id,starts_at,ends_at,saldo_euros,hash_integridad) VALUES($1,now()-interval '1 day',now()+interval '1 day',0,'untouched')`,[e]);
   await pool.query(`INSERT INTO funding_private.accounts(id,kind,event_id) VALUES($1,'event',$2)`,['event:'+e,e]);
   const id=(await pool.query(`SELECT funding_private.reserve(2026,$1,$1,$2,$3,clock_timestamp()+interval '10 minutes') AS id`,[String(n).padStart(64,'d'),e,amount])).rows[0].id;
   return {e,id};
@@ -68,7 +74,7 @@ if(!connection) {
  });
  test('reservation and new cost wait for parent lock then reject ended event while closure proceeds',async()=>{
   const {e,id}=await freshEvent(2);await pool.query(`SELECT funding_private.confirm('closing-seed',$1,1000,'EUR')`,[id]);
-  const owner=await pool.connect(),workers=await Promise.all(Array.from({length:3},()=>pool.connect()));
+  const owner=await admin.connect(),workers=await Promise.all(Array.from({length:3},()=>pool.connect()));
   let committed=false,resultsPromise;
   try{
    await owner.query('BEGIN');await owner.query('SELECT id FROM public.protests WHERE id=$1 FOR UPDATE',[e]);
@@ -97,7 +103,7 @@ if(!connection) {
  });
  test('confirmation racing settlement yields one final surplus without losing contribution',async()=>{
   const {e,id}=await freshEvent(3,700);
-  await pool.query(`UPDATE public.protests SET ends_at=clock_timestamp()-interval '1 second' WHERE id=$1`,[e]);
+  await admin.query(`UPDATE public.protests SET ends_at=clock_timestamp()-interval '1 second' WHERE id=$1`,[e]);
   await pool.query('SELECT funding_private.close_event($1)',[e]);
   const results=await Promise.allSettled([
    pool.query(`SELECT funding_private.confirm('settlement-race',$1,700,'EUR') AS result`,[id]),

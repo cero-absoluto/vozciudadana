@@ -3,20 +3,21 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import Fastify from 'fastify';
+import {fundingParentFixtureSQL,fundingRlsMigration} from './helpers/funding-fixture.mjs';
 import { createIsolatedFundingService,createPaymentSimulator,fundingTokens,policyYear } from '../apps/api/src/funding/isolatedService.js';
 import { isolatedFundingRoutes } from '../apps/api/src/funding/routes.js';
 
 const db=new PGlite();
-await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated;
-CREATE TABLE public.protests(id uuid PRIMARY KEY,starts_at timestamptz,ends_at timestamptz,saldo_euros numeric,hash_integridad text);
-INSERT INTO public.protests VALUES('00000000-0000-0000-0000-000000000090',now()-interval '2 days',now()-interval '1 day',0.90,'historic');`);
+await db.exec(fundingParentFixtureSQL);
+await db.exec(`INSERT INTO public.protests(id,starts_at,ends_at,saldo_euros,hash_integridad) VALUES('00000000-0000-0000-0000-000000000090',now()-interval '2 days',now()-interval '1 day',0.90,'historic');`);
 await db.exec(await readFile(new URL('../supabase/migrations/20261003200832_funding_private_core.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(fundingRlsMigration,'utf8'));
 const q=(text,args=[])=>db.query(text,args),scalar=async(text,args)=>Object.values((await q(text,args)).rows[0])[0];
 const token=n=>String(n).padStart(64,'a');
 let sequence=1;
 async function event({open=true,enabled=true}={}){
  const id=`10000000-0000-0000-0000-${String(sequence++).padStart(12,'0')}`;
- await q(`INSERT INTO public.protests VALUES($1,now()-interval '1 day',now()+interval '1 day',0,'untouched')`,[id]);
+ await q(`INSERT INTO public.protests(id,starts_at,ends_at,saldo_euros,hash_integridad) VALUES($1,now()-interval '1 day',now()+interval '1 day',0,'untouched')`,[id]);
  if(!open)await q(`UPDATE public.protests SET ends_at=now()-interval '1 second' WHERE id=$1`,[id]);
  if(enabled)await q(`INSERT INTO funding_private.accounts(id,kind,event_id) VALUES($1,'event',$2)`,['event:'+id,id]);return id;
 }
@@ -164,7 +165,7 @@ test('isolated API enforces financial verification and never contacts providers'
 });
 test('UUID case variants share verified API sessions and one cumulative event limit',async()=>{
  const lower='abcdefab-cdef-abcd-efab-cdefabcdefab',upper=lower.toUpperCase();
- await q(`INSERT INTO public.protests VALUES($1,now()-interval '1 day',now()+interval '1 day',0,'untouched')`,[lower]);
+ await q(`INSERT INTO public.protests(id,starts_at,ends_at,saldo_euros,hash_integridad) VALUES($1,now()-interval '1 day',now()+interval '1 day',0,'untouched')`,[lower]);
  await q(`INSERT INTO funding_private.accounts(id,kind,event_id) VALUES($1,'event',$2)`,['event:'+lower,lower]);
  const simulator=createPaymentSimulator({otpCode:'123456',webhookSecret:'v'.repeat(32)});
  const sessionEventIds=[];

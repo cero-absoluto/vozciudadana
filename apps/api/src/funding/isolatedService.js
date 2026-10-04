@@ -23,7 +23,7 @@ export function fundingTokens(secret, normalizedPhone, year, eventId = null) {
 
 // Explicitly test-only composition. No Supabase, Twilio, Ko-fi or production imports.
 export function createIsolatedFundingService({ database, simulator, secret, participationSecret,
-  timeZone, mode, now = () => new Date() }) {
+  timeZone, mode, continuity = null, now = () => new Date() }) {
   requireThat(mode === 'isolated' && process.env.NODE_ENV !== 'production', 'isolated_only', 503);
   requireThat(typeof secret === 'string' && Buffer.byteLength(secret) >= 32 && secret !== participationSecret,
     'independent_funding_secret_required', 503);
@@ -51,9 +51,15 @@ export function createIsolatedFundingService({ database, simulator, secret, part
     requireThat(context?.timeZone===timeZone,'policy_timezone_mismatch',503);
     return context;
   }
+  async function continuityReady(){
+    if(continuity){await continuity.assertReady();return;}
+    let present;try{present=(await database.query('SELECT EXISTS(SELECT 1 FROM funding_private.key_versions) AS present')).rows[0].present;}catch{throw new FundingError('financial_auth_unavailable',503);}
+    requireThat(!present,'key_provenance_required',503);
+  }
   async function session(id) {
     requireThat(typeof id==='string' && /^[0-9a-f-]{36}$/.test(id),'financial_session_required',401);
-    const s=await authCall(()=>auth.session(sessionDigest(id)));
+    await continuityReady();
+    const s=await authCall(()=>continuity?continuity.session(id):auth.session(sessionDigest(id)));
     requireThat(s,'financial_session_required',401);
     requireThat(s.year===(await temporalContext()).year,'reverify_for_policy_year',401);
     return s;
@@ -72,9 +78,10 @@ export function createIsolatedFundingService({ database, simulator, secret, part
       const normalized = phone(value);
       requireThat(eventId === null || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventId), 'invalid_event');
       eventId = eventId === null ? null : eventId.toLowerCase();
-      const year=(await temporalContext()).year,rateKey=hash(normalized),tokens=fundingTokens(secret,normalized,year,eventId);
+      await continuityReady();
+      const year=(await temporalContext()).year,rateKey=hash(normalized),tokens=continuity?continuity.initialTokens(normalized,year,eventId):fundingTokens(secret,normalized,year,eventId);
       const id=randomUUID();
-      const created=await authCall(()=>auth.start(id,rateKey,{tokens,year,eventId}));
+      const created=await authCall(()=>continuity?continuity.start(id,normalized,{tokens,year,eventId}):auth.start(id,rateKey,{tokens,year,eventId}));
       try {await bounded(()=>simulator.startOtp(id,normalized),created.sendTimeoutMilliseconds);} catch {
         await authCall(()=>auth.sent(id,false));
         throw new FundingError('otp_send_unavailable',503);
@@ -84,17 +91,19 @@ export function createIsolatedFundingService({ database, simulator, secret, part
     },
     async verify({ challengeId, code }) {
       requireThat(typeof challengeId==='string' && /^[0-9a-f-]{36}$/.test(challengeId),'challenge_expired',401);
+      await continuityReady();
       const operation=randomUUID();
       const claimed=await authCall(()=>auth.claim(challengeId,operation));
       let ok;
       try {ok=await bounded(()=>simulator.verifyOtp(challengeId,code),claimed.leaseMilliseconds);} catch {
-        await authCall(()=>auth.finish(challengeId,operation,'uncertain',null));
+        await authCall(()=>continuity?continuity.finish(challengeId,operation,'uncertain',null):auth.finish(challengeId,operation,'uncertain',null));
         throw new FundingError('otp_verification_unavailable',503);
       }
       const id=randomUUID();
-      const result=await authCall(()=>auth.finish(challengeId,operation,ok?'valid':'invalid',sessionDigest(id)));
+      const result=await authCall(()=>continuity?continuity.finish(challengeId,operation,ok?'valid':'invalid',id):auth.finish(challengeId,operation,ok?'valid':'invalid',sessionDigest(id)));
       return {session:id,expiresInSeconds:Number(result.expiresInSeconds),year:result.year};
     },
+    async revokeSession(sessionId){await session(sessionId);requireThat(continuity,'key_continuity_required',503);return continuity.revoke(sessionId);},
     async limits(sessionId) {
       const s = await session(sessionId);
       const r = await sql(`SELECT

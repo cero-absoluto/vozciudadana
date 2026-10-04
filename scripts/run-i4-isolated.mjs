@@ -1,7 +1,7 @@
 import {randomBytes} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {PGlite} from '@electric-sql/pglite';
-import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration,fundingProviderMigration} from '../tests/helpers/funding-fixture.mjs';
+import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration,fundingProviderMigration,fundingContinuityMigration,fundingRetentionMigration} from '../tests/helpers/funding-fixture.mjs';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
@@ -18,6 +18,8 @@ await db.exec(await readFile(fundingRlsMigration,'utf8'));
  await db.exec(await readFile(fundingCostsMigration,'utf8'));
  await db.exec(await readFile(fundingReviewMigration,'utf8'));
  await db.exec(await readFile(fundingProviderMigration,'utf8'));
+ await db.exec(await readFile(fundingContinuityMigration,'utf8'));
+ await db.exec(await readFile(fundingRetentionMigration,'utf8'));
 await db.exec(`INSERT INTO funding_private.accounts(id,kind,event_id) VALUES('event:40000000-0000-0000-0000-000000000001','event','40000000-0000-0000-0000-000000000001')`);
 const app=Fastify({logger:false});
 await app.register(cors,{origin:['http://127.0.0.1:5174','http://localhost:5174'],allowedHeaders:['Content-Type','X-Funding-Session','X-Simulator-Auth']});

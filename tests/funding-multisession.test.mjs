@@ -4,10 +4,12 @@ import { test,after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import pg from 'pg';
+import {createFundingKeyContinuity,createIsolatedCleanupService} from '../apps/api/src/funding/keyContinuity.js';
+import {legacyFundingVersion,splitFundingVersion,registerFundingVersion,fixtureRetentionPolicySQL} from './helpers/funding-continuity-fixture.mjs';
 import {createOfflineFixtureTransport,createOfflineProviderAdapter} from '../apps/api/src/funding/offlineProvider.js';
 import {createIsolatedReviewAuthenticator,createIsolatedReviewService} from '../apps/api/src/funding/isolatedReview.js';
 import {createIsolatedFundingService,createPaymentSimulator} from '../apps/api/src/funding/isolatedService.js';
-import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration,fundingProviderMigration} from './helpers/funding-fixture.mjs';
+import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration,fundingProviderMigration,fundingContinuityMigration,fundingRetentionMigration} from './helpers/funding-fixture.mjs';
 const connection=process.env.I4_ISOLATED_PG_URL;
 if(!connection) {
  if(process.env.I4_REQUIRE_MULTISESSION==='1')throw new Error('Concurrency verification blocked: set I4_ISOLATED_PG_URL to a fresh loopback PostgreSQL 17 i4_isolated database');
@@ -29,6 +31,8 @@ if(!connection) {
  await admin.query(await readFile(fundingCostsMigration,'utf8'));
  await admin.query(await readFile(fundingReviewMigration,'utf8'));
  await admin.query(await readFile(fundingProviderMigration,'utf8'));
+ await admin.query(await readFile(fundingContinuityMigration,'utf8'));
+ await admin.query(await readFile(fundingRetentionMigration,'utf8'));
  await admin.query("CREATE ROLE funding_ci_login LOGIN INHERIT PASSWORD 'i4_synthetic_funding_only' IN ROLE funding_runtime");
  const runtimeURL=new URL(connection);runtimeURL.username='funding_ci_login';runtimeURL.password='i4_synthetic_funding_only';
  pool=new pg.Pool({connectionString:runtimeURL.toString(),max:24,connectionTimeoutMillis:5000,options:'-c statement_timeout=10000 -c lock_timeout=8000'});
@@ -350,6 +354,59 @@ if(!connection) {
   assert.ok(results.every(r=>r.result==='confirmed'));
   const row=(await pool.query('SELECT policy_year,committed FROM funding_private.annual_limits WHERE token=(SELECT annual_token FROM funding_private.intents WHERE id=$1)',[i.intentId])).rows[0];assert.equal(row.policy_year,2030);assert.equal(Number(row.committed),1000);
   await costsClock();
+ });
+
+ // Owner-approved isolated key continuity and a separately inherited cleanup operator.
+ const continuityClock=async()=>(await pool.query('SELECT funding_private.temporal_now() AS t')).rows[0].t;
+ const continuitySimulator=createPaymentSimulator({otpCode:'123456',webhookSecret:'w'.repeat(32),now:continuityClock});
+ const continuityRing=[legacyFundingVersion,splitFundingVersion];
+ const continuityService=(currentVersion='v1')=>createIsolatedFundingService({database:pool,simulator:continuitySimulator,secret:'f'.repeat(32),participationSecret:'p'.repeat(32),timeZone:'Europe/Amsterdam',mode:'isolated',continuity:createFundingKeyContinuity({database:pool,mode:'isolated',versions:continuityRing,currentVersion,participationSecret:'p'.repeat(32)})});
+ let continuityEvent,continuitySessions,continuityIntent,cleanupPool,cleanupService;
+ after(()=>cleanupPool?.end());
+ test('native continuity: twenty old/new-version reservations share one canonical quota',async()=>{
+  await admin.query("UPDATE funding_private.fixture_temporal_clock SET t='2030-06-01T12:00:00Z'");await registerFundingVersion(admin,legacyFundingVersion);await registerFundingVersion(admin,splitFundingVersion);
+  continuityEvent='c0000000-0000-0000-0000-000000000001';await admin.query("INSERT INTO public.protests(id,starts_at,ends_at,saldo_euros,hash_integridad) VALUES($1,'2030-01-01','2032-01-01',0.9,'untouched')",[continuityEvent]);await pool.query("INSERT INTO funding_private.accounts(id,kind,event_id) VALUES($1,'event',$2)",['event:'+continuityEvent,continuityEvent]);
+  continuitySessions=[];for(const current of ['v1','v2']){const a=continuityService(current),c=await a.start({phone:'+349890000001',eventId:continuityEvent});continuitySessions.push(await a.verify({challengeId:c.challengeId,code:'123456'}));}
+  const results=await Promise.allSettled(Array.from({length:20},(_,n)=>continuityService(n%2?'v1':'v2').intent(continuitySessions[n%2].session,{kind:'event',amountCents:6000})));
+  assert.equal(results.filter(r=>r.status==='fulfilled').length,1);for(const r of results.filter(r=>r.status==='rejected'))assert.equal(r.reason.code,'event_limit');continuityIntent=results.find(r=>r.status==='fulfilled').value;
+  assert.equal(Number((await pool.query('SELECT count(*) FROM funding_private.event_limits WHERE event_id=$1',[continuityEvent])).rows[0].count),1);
+  assert.equal(Number((await pool.query("SELECT count(*) FROM funding_private.quota_scopes WHERE purpose='event' AND scope_ref=$1",[continuityEvent])).rows[0].count),1);
+ });
+ test('native continuity: twenty versioned OTP completions issue one session and one financial scope',async()=>{
+  const c=await continuityService().start({phone:'+349890000002'});
+  const results=await Promise.allSettled(Array.from({length:20},(_,n)=>continuityService(n%2?'v1':'v2').verify({challengeId:c.challengeId,code:'123456'})));
+  assert.equal(results.filter(r=>r.status==='fulfilled').length,1);
+  const digest=(await pool.query('SELECT digest FROM funding_auth_private.verified_sessions WHERE challenge_id=$1',[c.challengeId])).rows;assert.equal(digest.length,1);
+  const v=results.find(r=>r.status==='fulfilled').value;await continuityService('v2').revokeSession(v.session);await assert.rejects(continuityService().limits(v.session),e=>e.code==='financial_session_required');
+ });
+ test('native cleanup: separate inherited login has no financial/review/service authority and no payload access',async()=>{
+  await admin.query("CREATE ROLE funding_cleanup_ci_login LOGIN INHERIT PASSWORD 'i4_synthetic_cleanup_only' IN ROLE funding_cleanup");const url=new URL(connection);url.username='funding_cleanup_ci_login';url.password='i4_synthetic_cleanup_only';
+  cleanupPool=new pg.Pool({connectionString:url.toString(),max:24,connectionTimeoutMillis:5000,options:'-c statement_timeout=10000 -c lock_timeout=8000'});
+  const actor=(await cleanupPool.query("SELECT current_user AS actor,rolsuper,rolbypassrls,pg_has_role(current_user,'funding_runtime','MEMBER') AS financial_member,pg_has_role(current_user,'funding_review','MEMBER') AS review_member,pg_has_role(current_user,'service_role','MEMBER') AS service_member FROM pg_roles WHERE rolname=current_user")).rows[0];
+  assert.deepEqual(actor,{actor:'funding_cleanup_ci_login',rolsuper:false,rolbypassrls:false,financial_member:false,review_member:false,service_member:false});console.log('I4_NATIVE_CLEANUP_ACTOR='+JSON.stringify(actor));
+  for(const sql of ['SELECT * FROM funding_private.annual_limits','SELECT payload FROM funding_auth_private.verified_sessions','SELECT candidates FROM funding_auth_private.continuity_challenges','SET ROLE funding_runtime','SET ROLE funding_review','UPDATE funding_private.accounts SET balance=0'])await assert.rejects(cleanupPool.query(sql),e=>e.code==='42501');
+  cleanupService=createIsolatedCleanupService({database:cleanupPool,mode:'isolated'});await assert.rejects(cleanupService.run('c0000000-0000-0000-0000-000000000002'),e=>e.code==='cleanup_policy_required');await admin.query(fixtureRetentionPolicySQL);
+ });
+ test('native cleanup: twenty batch replays preserve pending quota and live auth; finance cannot clean',async()=>{
+  const quota=JSON.stringify((await pool.query('SELECT * FROM funding_private.event_limits WHERE event_id=$1',[continuityEvent])).rows),ledger=Number((await pool.query('SELECT count(*) FROM funding_private.ledger_transactions')).rows[0].count);
+  const request='c0000000-0000-0000-0000-000000000003',results=await Promise.all(Array.from({length:20},()=>cleanupService.run(request)));assert.ok(results.every(r=>r.request_id===request));
+  assert.equal(Number((await cleanupPool.query('SELECT count(*) FROM funding_auth_private.cleanup_batches WHERE request_id=$1',[request])).rows[0].count),1);
+  assert.equal(JSON.stringify((await pool.query('SELECT * FROM funding_private.event_limits WHERE event_id=$1',[continuityEvent])).rows),quota);assert.equal(Number((await pool.query('SELECT count(*) FROM funding_private.ledger_transactions')).rows[0].count),ledger);
+  await assert.rejects(pool.query('SELECT funding_auth_private.run_cleanup($1)',[request]),e=>e.code==='42501');
+  assert.equal((await continuityService('v2').limits(continuitySessions[0].session)).eventRemainingCents,4000);
+ });
+
+ test('native cleanup: twenty expired-auth replays delete once while preserving pending financial quota',async()=>{
+  const before=JSON.stringify((await pool.query('SELECT * FROM funding_private.event_limits WHERE event_id=$1',[continuityEvent])).rows);
+  const ch=(await pool.query("SELECT id,rate_token FROM funding_auth_private.otp_challenges WHERE payload->>'eventId'=$1",[continuityEvent])).rows;assert.equal(ch.length,2);
+  await admin.query("UPDATE funding_auth_private.verified_sessions SET expires_at=clock_timestamp()-interval '1 second' WHERE challenge_id=ANY($1::uuid[])",[ch.map(r=>r.id)]);
+  await admin.query("UPDATE funding_auth_private.otp_challenges SET expires_at=clock_timestamp()-interval '1 second' WHERE id=ANY($1::uuid[])",[ch.map(r=>r.id)]);
+  await admin.query("UPDATE funding_auth_private.otp_rate_windows SET expires_at=clock_timestamp()-interval '1 second' WHERE rate_token=$1",[ch[0].rate_token]);
+  const request='c0000000-0000-0000-0000-000000000004',results=await Promise.all(Array.from({length:20},()=>cleanupService.run(request)));
+  assert.ok(results.every(r=>r.session_count===2&&r.challenge_count===2&&r.rate_count===1&&r.scope_count===1));
+  assert.equal(JSON.stringify((await pool.query('SELECT * FROM funding_private.event_limits WHERE event_id=$1',[continuityEvent])).rows),before);
+  assert.equal((await pool.query('SELECT state FROM funding_private.intents WHERE id=$1',[continuityIntent.intentId])).rows[0].state,'reserved');
+  await assert.rejects(continuityService('v2').limits(continuitySessions[0].session),e=>e.code==='financial_session_required');
  });
 
 }

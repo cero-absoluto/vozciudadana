@@ -2,7 +2,7 @@ import {test,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {PGlite} from '@electric-sql/pglite';
-import {fundingParentFixtureSQL,fundingCoreMigration,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration,fundingProviderMigration} from './helpers/funding-fixture.mjs';
+import {fundingParentFixtureSQL,fundingCoreMigration,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration,fundingProviderMigration,fundingContinuityMigration,fundingRetentionMigration} from './helpers/funding-fixture.mjs';
 const db=new PGlite();after(()=>db.close());
 await db.exec(fundingParentFixtureSQL);
 await db.exec(await readFile(fundingCoreMigration,'utf8'));
@@ -25,6 +25,8 @@ test('compatibility permits financial lifecycle while parent values and legacy t
  await db.exec(await readFile(fundingCostsMigration,'utf8'));
  await db.exec(await readFile(fundingReviewMigration,'utf8'));
  await db.exec(await readFile(fundingProviderMigration,'utf8'));
+ await db.exec(await readFile(fundingContinuityMigration,'utf8'));
+ await db.exec(await readFile(fundingRetentionMigration,'utf8'));
  const cost=await asRole('funding_runtime',async()=>{
   const id=await reserve();assert.equal(await scalar(`SELECT funding_private.confirm('rls-payment',$1,1000,'EUR')`,[id]),'confirmed');
   return scalar(`SELECT funding_private.reserve_cost($1,300,'rls-cost')`,[e]);

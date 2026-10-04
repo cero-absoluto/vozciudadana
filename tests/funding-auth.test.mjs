@@ -4,11 +4,11 @@ import {readFile} from 'node:fs/promises';
 import {PGlite} from '@electric-sql/pglite';
 import {randomUUID} from 'node:crypto';
 import Fastify from 'fastify';
-import {fundingParentFixtureSQL,fundingCoreMigration,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration,fundingProviderMigration} from './helpers/funding-fixture.mjs';
+import {fundingParentFixtureSQL,fundingCoreMigration,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration,fundingProviderMigration,fundingContinuityMigration,fundingRetentionMigration} from './helpers/funding-fixture.mjs';
 import {createIsolatedFundingService,createPaymentSimulator} from '../apps/api/src/funding/isolatedService.js';
 import {isolatedFundingRoutes} from '../apps/api/src/funding/routes.js';
 const db=new PGlite();after(()=>db.close());await db.exec(fundingParentFixtureSQL);
-for(const migration of [fundingCoreMigration,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration,fundingProviderMigration])await db.exec(await readFile(migration,'utf8'));
+for(const migration of [fundingCoreMigration,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration,fundingProviderMigration,fundingContinuityMigration,fundingRetentionMigration])await db.exec(await readFile(migration,'utf8'));
 await db.exec('SET ROLE funding_runtime');
 const q=(sql,args=[])=>db.query(sql,args);
 const scalar=async(sql,args)=>Object.values((await q(sql,args)).rows[0])[0];
@@ -109,6 +109,8 @@ test('private auth has no raw phone/OTP/bearer and client roles cannot access it
  assert.equal(Number(await scalar(`SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='funding_auth_private' AND p.prosecdef`)),0);
 });
 test('controlled expiry cleanup preserves live session and all financial quotas/ledger',async()=>{
+ await admin(()=>db.exec("INSERT INTO funding_auth_private.retention_policy VALUES('session',1,true,0),('challenge',1,true,0),('rate',1,true,0)"));
+ const cleanup=()=>admin(async()=>{await db.exec('SET ROLE funding_cleanup');await q('SELECT funding_auth_private.cleanup_expired()');await db.exec('RESET ROLE');});
  const a=compose(),c=await a.start({phone:nextPhone()}),s=await verify(a,c.challengeId);
  const intent=await a.intent(s.session,{kind:'general',amountCents:800});
  await a.webhook({eventRef:'cleanup-ledger-seed',intentId:intent.intentId,amountCents:800,currency:'EUR'},'w'.repeat(32));
@@ -116,12 +118,12 @@ test('controlled expiry cleanup preserves live session and all financial quotas/
  const ledgerBefore=Number(await scalar('SELECT count(*) FROM funding_private.ledger_transactions'));
  const balanceBefore=await scalar("SELECT balance FROM funding_private.accounts WHERE id='general'");
  await admin(()=>q(`UPDATE funding_auth_private.otp_challenges SET expires_at=clock_timestamp()-interval '1 second' WHERE id=$1`,[c.challengeId]));
- await q('SELECT funding_auth_private.cleanup_expired()');assert.equal((await a.limits(s.session)).annualRemainingCents,99200);
+ await cleanup();assert.equal((await a.limits(s.session)).annualRemainingCents,99200);
  assert.equal(Number(await scalar('SELECT count(*) FROM funding_private.ledger_transactions')),ledgerBefore);
  assert.equal(await scalar("SELECT balance FROM funding_private.accounts WHERE id='general'"),balanceBefore);
  assert.equal(JSON.stringify((await q('SELECT * FROM funding_private.annual_limits')).rows),before);
  await admin(()=>q(`UPDATE funding_auth_private.verified_sessions SET expires_at=clock_timestamp()-interval '1 second' WHERE challenge_id=$1`,[c.challengeId]));
- await q('SELECT funding_auth_private.cleanup_expired()');assert.equal(Number(await scalar('SELECT count(*) FROM funding_auth_private.otp_challenges WHERE id=$1',[c.challengeId])),0);
+ await cleanup();assert.equal(Number(await scalar('SELECT count(*) FROM funding_auth_private.otp_challenges WHERE id=$1',[c.challengeId])),0);
 });
 test('bounded adapter timeout fails closed and late promise completion cannot issue a session',async()=>{
  let approve;const sim=simulator();sim.verifyOtp=()=>new Promise(resolve=>{approve=resolve;});

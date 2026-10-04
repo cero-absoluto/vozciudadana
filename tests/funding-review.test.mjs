@@ -4,10 +4,10 @@ import {readFile} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import {PGlite} from '@electric-sql/pglite';
 import Fastify from 'fastify';
-import {fundingParentFixtureSQL,fundingCoreMigration,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration,fundingProviderMigration} from './helpers/funding-fixture.mjs';
+import {fundingParentFixtureSQL,fundingCoreMigration,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration,fundingProviderMigration,fundingContinuityMigration,fundingRetentionMigration} from './helpers/funding-fixture.mjs';
 import {createIsolatedReviewAuthenticator,createIsolatedReviewService,isolatedReviewRoutes} from '../apps/api/src/funding/isolatedReview.js';
 const db=new PGlite();after(()=>db.close());await db.exec(fundingParentFixtureSQL);
-for(const m of [fundingCoreMigration,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration,fundingProviderMigration])await db.exec(await readFile(m,'utf8'));
+for(const m of [fundingCoreMigration,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration,fundingReviewMigration,fundingProviderMigration,fundingContinuityMigration,fundingRetentionMigration])await db.exec(await readFile(m,'utf8'));
 const q=(s,a=[])=>db.query(s,a),scalar=async(s,a)=>Object.values((await q(s,a)).rows[0])[0];
 async function as(role,fn){await db.exec('SET ROLE '+role);try{return await fn();}finally{await db.exec('RESET ROLE');}}
 const financial=(s,a)=>as('funding_runtime',()=>q(s,a));

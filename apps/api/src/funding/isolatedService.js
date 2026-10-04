@@ -44,18 +44,25 @@ export function createIsolatedFundingService({ database, simulator, secret, part
     try {return await Promise.race([Promise.resolve().then(operation),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('adapter_timeout')),Number(milliseconds));})]);}
     finally {clearTimeout(timer);}
   }
+  async function temporalContext() {
+    let context;
+    try {context=(await database.query('SELECT funding_private.temporal_context() AS context',[])).rows[0].context;}
+    catch {throw new FundingError('financial_auth_unavailable',503);}
+    requireThat(context?.timeZone===timeZone,'policy_timezone_mismatch',503);
+    return context;
+  }
   async function session(id) {
     requireThat(typeof id==='string' && /^[0-9a-f-]{36}$/.test(id),'financial_session_required',401);
     const s=await authCall(()=>auth.session(sessionDigest(id)));
     requireThat(s,'financial_session_required',401);
-    requireThat(s.year===policyYear(now(),timeZone),'reverify_for_policy_year',401);
+    requireThat(s.year===(await temporalContext()).year,'reverify_for_policy_year',401);
     return s;
   }
   async function sql(text, values) {
     try { return await database.query(text, values); }
     catch (err) {
       const known = ['annual_limit','event_limit','event_not_open','event_not_enabled','idempotency_conflict',
-        'provider_may_still_charge','unknown_intent','pending_items','insufficient_event_funds','not_ready'];
+        'provider_may_still_charge','unknown_intent','pending_items','insufficient_event_funds','not_ready','funding_window_closed','reverify_for_policy_year','temporal_evidence_required'];
       const code = known.find(code => err.message?.includes(code));
       throw new FundingError(code || 'funding_operation_failed', code ? 409 : 503);
     }
@@ -65,7 +72,7 @@ export function createIsolatedFundingService({ database, simulator, secret, part
       const normalized = phone(value);
       requireThat(eventId === null || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventId), 'invalid_event');
       eventId = eventId === null ? null : eventId.toLowerCase();
-      const rateKey=hash(normalized),year=policyYear(now(),timeZone),tokens=fundingTokens(secret,normalized,year,eventId);
+      const year=(await temporalContext()).year,rateKey=hash(normalized),tokens=fundingTokens(secret,normalized,year,eventId);
       const id=randomUUID();
       const created=await authCall(()=>auth.start(id,rateKey,{tokens,year,eventId}));
       try {await bounded(()=>simulator.startOtp(id,normalized),created.sendTimeoutMilliseconds);} catch {
@@ -102,22 +109,25 @@ export function createIsolatedFundingService({ database, simulator, secret, part
       requireThat(currency === 'EUR' && Number.isSafeInteger(amountCents) && amountCents > 0 && amountCents <= 100000,
         'invalid_amount_or_currency');
       requireThat(kind === (s.eventId ? 'event' : 'general'), 'session_purpose_mismatch');
-      const expiry = new Date(now().getTime()+600000);
-      const r = await sql('SELECT funding_private.reserve($1,$2,$3,$4,$5,$6) AS id',
-        [s.year,s.tokens.annual,s.tokens.event,s.eventId,amountCents,expiry]);
-      const id = r.rows[0].id;
-      // External work happens after the atomic reservation. Failure retains capacity safely.
-      await simulator.checkout({ intentId: id, amountCents, currency });
-      return { intentId: id, amountCents, currency, expiresAt: expiry.toISOString(), simulated: true };
+      const r = await sql('SELECT funding_private.reserve_v2($1,$2,$3,$4,$5,$6) AS id',
+        [s.year,s.tokens.annual,s.tokens.event,s.eventId,amountCents,simulator.minimumCheckoutSeconds || 1]);
+      const id=r.rows[0].id;
+      const row=(await sql('SELECT created_at,valid_until FROM funding_private.temporal_intents WHERE intent_id=$1',[id])).rows[0];
+      const expiry=new Date(row.valid_until).toISOString();
+      const checkout=await simulator.checkout({intentId:id,amountCents,currency,expiresAt:expiry});
+      requireThat(checkout?.expiresAt===expiry,'checkout_deadline_mismatch',503);
+      return {intentId:id,amountCents,currency,expiresAt:expiry,simulated:true,policyVersion:2};
     },
     async webhook(event, auth) {
-      requireThat(simulator.authenticate(auth), 'invalid_provider_auth', 401);
-      requireThat(typeof event.eventRef === 'string' && event.eventRef.length > 0 && event.eventRef.length <= 128,
-        'invalid_provider_reference');
-      requireThat(Number.isSafeInteger(event.amountCents) && event.amountCents>0, 'invalid_provider_amount');
-      const r = await sql('SELECT funding_private.confirm($1,$2,$3,$4) AS result',
-        [event.eventRef,event.intentId,event.amountCents,event.currency]);
-      return { result: r.rows[0].result };
+      requireThat(simulator.authenticate(auth),'invalid_provider_auth',401);
+      requireThat(typeof event.eventRef==='string' && event.eventRef.length>0 && event.eventRef.length<=128,'invalid_provider_reference');
+      requireThat(Number.isSafeInteger(event.amountCents) && event.amountCents>0,'invalid_provider_amount');
+      // Adapter-owned evidence; caller-provided paidAt is never used as proof.
+      const proof=await simulator.paymentEvidence({eventRef:event.eventRef,intentId:event.intentId,amountCents:event.amountCents,currency:event.currency});
+      requireThat(proof.intentId===event.intentId && proof.amountCents===event.amountCents && proof.currency===event.currency,'provider_evidence_mismatch',409);
+      const r=await sql('SELECT funding_private.confirm_v2($1,$2,$3,$4,$5,$6,$7) AS result',
+        [event.eventRef,proof.paymentRef,event.intentId,event.amountCents,event.currency,proof.effectivePaidAt,proof.semantic]);
+      return {result:r.rows[0].result};
     },
     async summary() {
       const r = await sql(`SELECT kind,COALESCE(sum(balance),0) AS balance FROM funding_private.accounts
@@ -127,19 +137,34 @@ export function createIsolatedFundingService({ database, simulator, secret, part
   };
 }
 
-export function createPaymentSimulator({ otpCode, webhookSecret }) {
+export function createPaymentSimulator({ otpCode, webhookSecret, minimumCheckoutSeconds=1, now=()=>new Date() }) {
   requireThat(/^\d{6}$/.test(otpCode || '') && typeof webhookSecret === 'string' && webhookSecret.length>=32,
     'simulator_configuration_required', 503);
-  const challenges = new Set(), checkouts = new Map();
+  requireThat(Number.isSafeInteger(minimumCheckoutSeconds) && minimumCheckoutSeconds>=1,'simulator_window_required',503);
+  const challenges = new Set(), checkouts = new Map(), paidEvents=new Map();
   return {
-    kind: 'simulator',
+    kind: 'simulator',minimumCheckoutSeconds,
     async startOtp(id) { challenges.add(id); }, // Deliberately no phone argument retained.
     async verifyOtp(id, code) {
       const a=Buffer.from(String(code)),b=Buffer.from(otpCode);
       const ok=challenges.has(id)&&a.length===b.length&&timingSafeEqual(a,b);
       if(ok) challenges.delete(id); return ok;
     },
-    async checkout(intent) { checkouts.set(intent.intentId, {...intent}); },
+    async checkout(intent) {
+      const t=new Date(await now());
+      requireThat(new Date(intent.expiresAt).getTime()-t.getTime()>=minimumCheckoutSeconds*1000,'funding_window_closed',409);
+      checkouts.set(intent.intentId,{...intent});return {expiresAt:intent.expiresAt};
+    },
+    async recordPayment(event,effectivePaidAt=null) {
+      const proof={intentId:event.intentId,amountCents:event.amountCents,currency:event.currency,paymentRef:event.paymentRef || event.eventRef,effectivePaidAt:new Date(effectivePaidAt ?? await now()).toISOString(),semantic:'simulator_successful_payment:v2'};
+      paidEvents.set(event.eventRef,proof);return proof;
+    },
+    async paymentEvidence(event) {
+      if(paidEvents.has(event.eventRef))return paidEvents.get(event.eventRef);
+      // Authenticated mock callback represents immediate simulated payment only.
+      // Delayed cases explicitly record the payment before delivering its notification.
+      return this.recordPayment(event);
+    },
     authenticate(value) {
       const a=Buffer.from(String(value || '')),b=Buffer.from(webhookSecret);
       return a.length===b.length&&timingSafeEqual(a,b);

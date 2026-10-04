@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import Fastify from 'fastify';
-import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration} from './helpers/funding-fixture.mjs';
+import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration} from './helpers/funding-fixture.mjs';
 import { createIsolatedFundingService,createPaymentSimulator,fundingTokens,policyYear } from '../apps/api/src/funding/isolatedService.js';
 import { isolatedFundingRoutes } from '../apps/api/src/funding/routes.js';
 
@@ -13,6 +13,7 @@ await db.exec(`INSERT INTO public.protests(id,starts_at,ends_at,saldo_euros,hash
 await db.exec(await readFile(new URL('../supabase/migrations/20261003200832_funding_private_core.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(fundingRlsMigration,'utf8'));
  await db.exec(await readFile(fundingAuthMigration,'utf8'));
+ await db.exec(await readFile(fundingTemporalMigration,'utf8'));
 const q=(text,args=[])=>db.query(text,args),scalar=async(text,args)=>Object.values((await q(text,args)).rows[0])[0];
 const token=n=>String(n).padStart(64,'a');
 let sequence=1;
@@ -170,7 +171,7 @@ test('UUID case variants share verified API sessions and one cumulative event li
  await q(`INSERT INTO funding_private.accounts(id,kind,event_id) VALUES($1,'event',$2)`,['event:'+lower,lower]);
  const simulator=createPaymentSimulator({otpCode:'123456',webhookSecret:'v'.repeat(32)});
  const sessionEventIds=[];
- const database={query(text,values){if(text.startsWith('SELECT funding_private.reserve('))sessionEventIds.push(values[3]);return db.query(text,values);}};
+ const database={query(text,values){if(text.startsWith('SELECT funding_private.reserve_v2('))sessionEventIds.push(values[3]);return db.query(text,values);}};
  const service=createIsolatedFundingService({database,simulator,secret:'c'.repeat(32),participationSecret:'p'.repeat(32),timeZone:'Europe/Amsterdam',mode:'isolated'});
  const app=Fastify({logger:false});await app.register(isolatedFundingRoutes,{prefix:'/api/funding',service});
  try{
@@ -180,9 +181,9 @@ test('UUID case variants share verified API sessions and one cumulative event li
   }
   const lowSession=await verifiedSession(lower),upSession=await verifiedSession(upper);
   const contribute=(session,amountCents)=>app.inject({method:'POST',url:'/api/funding/intents',headers:{'x-funding-session':session},payload:{kind:'event',amountCents,currency:'EUR'}});
-  let r=await contribute(lowSession,6000);assert.equal(r.statusCode,200);await confirm(r.json().intentId,6000);
+  let r=await contribute(lowSession,6000);assert.equal(r.statusCode,200);await service.webhook({eventRef:r.json().intentId,intentId:r.json().intentId,amountCents:6000,currency:'EUR'},'v'.repeat(32));
   r=await contribute(upSession,5000);assert.equal(r.statusCode,409);assert.equal(r.json().error,'event_limit');
-  r=await contribute(upSession,4000);assert.equal(r.statusCode,200);await confirm(r.json().intentId,4000);
+  r=await contribute(upSession,4000);assert.equal(r.statusCode,200);await service.webhook({eventRef:r.json().intentId,intentId:r.json().intentId,amountCents:4000,currency:'EUR'},'v'.repeat(32));
   r=await contribute(lowSession,1);assert.equal(r.statusCode,409);
   r=await contribute(upSession,1);assert.equal(r.statusCode,409);
   for(const session of [lowSession,upSession]){

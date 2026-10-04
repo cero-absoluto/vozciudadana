@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import pg from 'pg';
 import {createIsolatedFundingService,createPaymentSimulator} from '../apps/api/src/funding/isolatedService.js';
-import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration} from './helpers/funding-fixture.mjs';
+import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration} from './helpers/funding-fixture.mjs';
 const connection=process.env.I4_ISOLATED_PG_URL;
 if(!connection) {
  if(process.env.I4_REQUIRE_MULTISESSION==='1')throw new Error('Concurrency verification blocked: set I4_ISOLATED_PG_URL to a fresh loopback PostgreSQL 17 i4_isolated database');
@@ -23,6 +23,7 @@ if(!connection) {
  await pool.query(await readFile(new URL('../supabase/migrations/20261003200832_funding_private_core.sql',import.meta.url),'utf8'));
  await admin.query(await readFile(fundingRlsMigration,'utf8'));
  await admin.query(await readFile(fundingAuthMigration,'utf8'));
+ await admin.query(await readFile(fundingTemporalMigration,'utf8'));
  await admin.query("CREATE ROLE funding_ci_login LOGIN INHERIT PASSWORD 'i4_synthetic_funding_only' IN ROLE funding_runtime");
  const runtimeURL=new URL(connection);runtimeURL.username='funding_ci_login';runtimeURL.password='i4_synthetic_funding_only';
  pool=new pg.Pool({connectionString:runtimeURL.toString(),max:24,connectionTimeoutMillis:5000,options:'-c statement_timeout=10000 -c lock_timeout=8000'});
@@ -170,6 +171,67 @@ if(!connection) {
   const client=await admin.connect();try{
    for(const role of ['anon','authenticated']){await client.query('SET ROLE '+role);await assert.rejects(client.query('SELECT * FROM funding_auth_private.verified_sessions'),/permission denied/);await client.query('RESET ROLE');}
   }finally{client.release();}
+ });
+
+ test('native temporal: delayed December payment delivered twenty times in January credits once in old year',async()=>{
+  await admin.query("CREATE TABLE funding_private.fixture_temporal_clock(t timestamptz NOT NULL);INSERT INTO funding_private.fixture_temporal_clock VALUES('2030-12-31T22:58:00Z');GRANT SELECT ON funding_private.fixture_temporal_clock TO funding_runtime;CREATE OR REPLACE FUNCTION funding_private.temporal_now() RETURNS timestamptz LANGUAGE sql VOLATILE SECURITY INVOKER SET search_path=pg_catalog,funding_private AS $$ SELECT t FROM funding_private.fixture_temporal_clock $$");
+  const id=(await pool.query("SELECT funding_private.reserve_v2(2030,$1,NULL,NULL,800,1) AS id",['1'.repeat(64)])).rows[0].id;
+  await admin.query("UPDATE funding_private.fixture_temporal_clock SET t='2030-12-31T23:20:00Z'");
+  const results=await Promise.all(Array.from({length:20},()=>pool.query("SELECT funding_private.confirm_v2('native-late','native-payment',$1,800,'EUR','2030-12-31T22:59:50Z','simulator_successful_payment:v2') AS result",[id])));
+  assert.ok(results.every(r=>r.rows[0].result==='confirmed'));
+  assert.equal(Number((await pool.query('SELECT count(*) FROM funding_private.payments WHERE intent_id=$1',[id])).rows[0].count),1);
+  assert.equal(Number((await pool.query('SELECT committed FROM funding_private.annual_limits WHERE policy_year=2030 AND token=$1',['1'.repeat(64)])).rows[0].committed),800);
+ });
+ test('native temporal: cancellation and confirmation races never both credit and release quota',async()=>{
+  await admin.query("UPDATE funding_private.fixture_temporal_clock SET t='2030-12-31T22:58:00Z'");
+  for(let n=0;n<5;n++){
+   const token=String(n+2).repeat(64),id=(await pool.query('SELECT funding_private.reserve_v2(2030,$1,NULL,NULL,800,1) AS id',[token])).rows[0].id;
+   const results=await Promise.allSettled([
+    pool.query("SELECT funding_private.confirm_v2($1,$1,$2,800,'EUR','2030-12-31T22:58:00Z','simulator_successful_payment:v2') AS result",['cancel-race-v2:'+n,id]),
+    pool.query('SELECT funding_private.cancel($1,true) AS result',[id])]);
+   assert.equal(results[0].status,'fulfilled');
+   const state=(await pool.query('SELECT state FROM funding_private.intents WHERE id=$1',[id])).rows[0].state;
+   const quota=(await pool.query('SELECT committed,reserved FROM funding_private.annual_limits WHERE policy_year=2030 AND token=$1',[token])).rows[0];
+   assert.equal(Number(quota.reserved),0);
+   if(state==='confirmed'){assert.equal(Number(quota.committed),800);assert.equal(results[1].status,'rejected');assert.match(results[1].reason.message,/cannot_cancel/);}
+   else{assert.equal(state,'cancelled');assert.equal(Number(quota.committed),0);assert.equal(results[0].value.rows[0].result,'review');}
+  }
+ });
+ test('native temporal: parent-locked requests crossing midnight cannot reserve old-year capacity',async()=>{
+  const e='90000000-0000-0000-0000-000000000001';
+  await admin.query("INSERT INTO public.protests(id,starts_at,ends_at,saldo_euros,hash_integridad) VALUES($1,'2030-01-01','2032-01-01',0,'untouched')",[e]);
+  await pool.query("INSERT INTO funding_private.accounts(id,kind,event_id) VALUES($1,'event',$2)",['event:'+e,e]);
+  await admin.query("UPDATE funding_private.fixture_temporal_clock SET t='2030-12-31T22:59:59Z'");
+  const owner=await admin.connect(),workers=await Promise.all(Array.from({length:10},()=>pool.connect()));let result,committed=false;
+  try{
+   await owner.query('BEGIN');await owner.query('SELECT id FROM public.protests WHERE id=$1 FOR UPDATE',[e]);
+   const pids=await Promise.all(workers.map(async c=>(await c.query('SELECT pg_backend_pid() AS pid')).rows[0].pid));
+   result=Promise.allSettled(workers.map((c,n)=>c.query('SELECT funding_private.reserve_v2(2030,$1,$1,$2,100,1)',[(n+10).toString(16).padStart(64,'b'),e])));
+   let blocked=0;const deadline=Date.now()+5000;
+   while(Date.now()<deadline){await owner.query('SELECT pg_stat_clear_snapshot()');blocked=Number((await owner.query("SELECT count(*) AS n FROM pg_stat_activity WHERE pid=ANY($1::int[]) AND wait_event_type='Lock'",[pids])).rows[0].n);if(blocked===10)break;await new Promise(r=>setTimeout(r,10));}
+   assert.equal(blocked,10);
+   await owner.query("UPDATE funding_private.fixture_temporal_clock SET t='2030-12-31T23:00:00Z'");await owner.query('COMMIT');committed=true;
+   const settled=await result;for(const r of settled){assert.equal(r.status,'rejected');assert.match(r.reason.message,/reverify_for_policy_year|funding_window_closed/);}
+   assert.equal(Number((await pool.query('SELECT count(*) FROM funding_private.intents WHERE event_id=$1',[e])).rows[0].count),0);
+  }finally{if(!committed)await owner.query('ROLLBACK');if(result)await result;owner.release();workers.forEach(c=>c.release());}
+  await assert.rejects(pool.query('SELECT funding_private.reserve_v2(2031,$1,NULL,NULL,100,1800)',['9'.repeat(64)]),/funding_window_closed/);
+ });
+ test('native temporal: delayed confirmation racing settlement preserves final surplus and parent values',async()=>{
+  const real=(await admin.query('SELECT clock_timestamp() AS t')).rows[0].t,paid=new Date(real.getTime()-5000);
+  await admin.query('UPDATE funding_private.fixture_temporal_clock SET t=$1',[paid]);
+  const e='90000000-0000-0000-0000-000000000002';
+  await admin.query("INSERT INTO public.protests(id,starts_at,ends_at,saldo_euros,hash_integridad) VALUES($1,clock_timestamp()-interval '1 day',clock_timestamp()+interval '10 minutes',0,'untouched')",[e]);
+  await pool.query("INSERT INTO funding_private.accounts(id,kind,event_id) VALUES($1,'event',$2)",['event:'+e,e]);
+  const year=(await pool.query('SELECT funding_private.temporal_context() AS c')).rows[0].c.year;
+  const id=(await pool.query('SELECT funding_private.reserve_v2($1,$2,$2,$3,800,1) AS id',[year,'a'.repeat(64),e])).rows[0].id;
+  await admin.query("UPDATE public.protests SET ends_at=clock_timestamp()-interval '1 second' WHERE id=$1",[e]);await pool.query('SELECT funding_private.close_event($1)',[e]);
+  const parent=JSON.stringify((await pool.query('SELECT * FROM public.protests WHERE id=$1',[e])).rows);
+  await admin.query('UPDATE funding_private.fixture_temporal_clock SET t=$1',[new Date(real.getTime()+1000)]);
+  const results=await Promise.allSettled([pool.query("SELECT funding_private.confirm_v2('settle-v2','settle-payment-v2',$1,800,'EUR',$2,'simulator_successful_payment:v2') AS result",[id,paid]),pool.query('SELECT funding_private.settle($1) AS surplus',[e])]);
+  assert.equal(results[0].status,'fulfilled');assert.equal(results[0].value.rows[0].result,'confirmed');
+  if(results[1].status==='rejected')assert.match(results[1].reason.message,/pending_items/);
+  assert.equal(Number((await pool.query('SELECT funding_private.settle($1) AS surplus',[e])).rows[0].surplus),800);
+  assert.equal(JSON.stringify((await pool.query('SELECT * FROM public.protests WHERE id=$1',[e])).rows),parent);
  });
 
 }

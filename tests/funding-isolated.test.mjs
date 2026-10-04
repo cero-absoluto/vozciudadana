@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import Fastify from 'fastify';
-import {fundingParentFixtureSQL,fundingRlsMigration} from './helpers/funding-fixture.mjs';
+import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration} from './helpers/funding-fixture.mjs';
 import { createIsolatedFundingService,createPaymentSimulator,fundingTokens,policyYear } from '../apps/api/src/funding/isolatedService.js';
 import { isolatedFundingRoutes } from '../apps/api/src/funding/routes.js';
 
@@ -12,6 +12,7 @@ await db.exec(fundingParentFixtureSQL);
 await db.exec(`INSERT INTO public.protests(id,starts_at,ends_at,saldo_euros,hash_integridad) VALUES('00000000-0000-0000-0000-000000000090',now()-interval '2 days',now()-interval '1 day',0.90,'historic');`);
 await db.exec(await readFile(new URL('../supabase/migrations/20261003200832_funding_private_core.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(fundingRlsMigration,'utf8'));
+ await db.exec(await readFile(fundingAuthMigration,'utf8'));
 const q=(text,args=[])=>db.query(text,args),scalar=async(text,args)=>Object.values((await q(text,args)).rows[0])[0];
 const token=n=>String(n).padStart(64,'a');
 let sequence=1;

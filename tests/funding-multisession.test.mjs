@@ -4,7 +4,8 @@ import { test,after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import pg from 'pg';
-import {fundingParentFixtureSQL,fundingRlsMigration} from './helpers/funding-fixture.mjs';
+import {createIsolatedFundingService,createPaymentSimulator} from '../apps/api/src/funding/isolatedService.js';
+import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration} from './helpers/funding-fixture.mjs';
 const connection=process.env.I4_ISOLATED_PG_URL;
 if(!connection) {
  if(process.env.I4_REQUIRE_MULTISESSION==='1')throw new Error('Concurrency verification blocked: set I4_ISOLATED_PG_URL to a fresh loopback PostgreSQL 17 i4_isolated database');
@@ -21,6 +22,7 @@ if(!connection) {
  await admin.query(fundingParentFixtureSQL);
  await pool.query(await readFile(new URL('../supabase/migrations/20261003200832_funding_private_core.sql',import.meta.url),'utf8'));
  await admin.query(await readFile(fundingRlsMigration,'utf8'));
+ await admin.query(await readFile(fundingAuthMigration,'utf8'));
  await admin.query("CREATE ROLE funding_ci_login LOGIN INHERIT PASSWORD 'i4_synthetic_funding_only' IN ROLE funding_runtime");
  const runtimeURL=new URL(connection);runtimeURL.username='funding_ci_login';runtimeURL.password='i4_synthetic_funding_only';
  pool=new pg.Pool({connectionString:runtimeURL.toString(),max:24,connectionTimeoutMillis:5000,options:'-c statement_timeout=10000 -c lock_timeout=8000'});
@@ -113,6 +115,61 @@ if(!connection) {
   assert.equal(Number((await pool.query('SELECT funding_private.settle($1) AS surplus',[e])).rows[0].surplus),700);
   assert.equal(Number((await pool.query('SELECT count(*) FROM funding_private.settlements WHERE event_id=$1',[e])).rows[0].count),1);
   assert.equal(Number((await pool.query('SELECT balance FROM funding_private.accounts WHERE event_id=$1',[e])).rows[0].balance),0);
+ });
+
+ const authSimulator=createPaymentSimulator({otpCode:'123456',webhookSecret:'z'.repeat(32)});
+ const authService=(sim=authSimulator)=>createIsolatedFundingService({database:pool,simulator:sim,secret:'s'.repeat(32),participationSecret:'p'.repeat(32),timeZone:'Europe/Amsterdam',mode:'isolated'});
+ test('native auth: 20 starts across instances share one three-start quota',async()=>{
+  const a=authService(),b=authService();
+  const results=await Promise.allSettled(Array.from({length:20},(_,i)=>(i%2?a:b).start({phone:'+34980000001',eventId:i%3?event:null})));
+  assert.equal(results.filter(r=>r.status==='fulfilled').length,3);
+  for(const r of results.filter(r=>r.status==='rejected'))assert.equal(r.reason.code,'otp_rate_limit');
+ });
+ test('native auth: 20 valid verifications create exactly one shared session',async()=>{
+  const a=authService(),b=authService(),c=await a.start({phone:'+34980000002'});
+  const results=await Promise.allSettled(Array.from({length:20},(_,i)=>(i%2?a:b).verify({challengeId:c.challengeId,code:'123456'})));
+  assert.equal(results.filter(r=>r.status==='fulfilled').length,1);
+  for(const r of results.filter(r=>r.status==='rejected'))assert.equal(r.reason.code,'challenge_expired');
+  assert.equal(Number((await pool.query('SELECT count(*) FROM funding_auth_private.verified_sessions WHERE challenge_id=$1',[c.challengeId])).rows[0].count),1);
+  const session=results.find(r=>r.status==='fulfilled').value.session;
+  assert.equal((await authService().limits(session)).annualRemainingCents,100000);
+ });
+ test('native auth: invalid verification race cannot exceed five shared attempts',async()=>{
+  const a=authService(),b=authService(),c=await a.start({phone:'+34980000003'});
+  const results=await Promise.allSettled(Array.from({length:20},(_,i)=>(i%2?a:b).verify({challengeId:c.challengeId,code:'000000'})));
+  assert.ok(results.every(r=>r.status==='rejected'));
+  for(const r of results)assert.ok(['invalid_otp','challenge_expired'].includes(r.reason.code));
+  let attempts=Number((await pool.query('SELECT attempts FROM funding_auth_private.otp_challenges WHERE id=$1',[c.challengeId])).rows[0].attempts);
+  assert.ok(attempts>0&&attempts<=5);
+  for(;attempts<5;attempts++)await assert.rejects(a.verify({challengeId:c.challengeId,code:'000000'}),e=>e.code==='invalid_otp');
+  await assert.rejects(b.verify({challengeId:c.challengeId,code:'123456'}),e=>e.code==='challenge_expired');
+ });
+ test('native auth: abandoned lease rejects concurrent recovery and late approval',async()=>{
+  const a=authService(),c=await a.start({phone:'+34980000004'}),op='80000000-0000-0000-0000-000000000001';
+  await pool.query('SELECT funding_auth_private.claim_challenge($1,$2)',[c.challengeId,op]);
+  await admin.query("UPDATE funding_auth_private.otp_challenges SET lease_until=clock_timestamp()-interval '1 second' WHERE id=$1",[c.challengeId]);
+  const results=await Promise.allSettled(Array.from({length:10},()=>authService().verify({challengeId:c.challengeId,code:'123456'})));
+  assert.ok(results.every(r=>r.status==='rejected'&&r.reason.code==='challenge_expired'));
+  const result=(await pool.query("SELECT funding_auth_private.finish_verification($1,$2,'valid',$3) AS result",[c.challengeId,op,'f'.repeat(64)])).rows[0].result;
+  assert.equal(result.error,'challenge_expired');
+  assert.equal(Number((await pool.query('SELECT count(*) FROM funding_auth_private.verified_sessions WHERE challenge_id=$1',[c.challengeId])).rows[0].count),0);
+ });
+ test('native auth: session insert fault rolls back consumption as restricted actor',async()=>{
+  const a=authService(),c=await a.start({phone:'+34980000005'});
+  await admin.query("CREATE FUNCTION public.native_auth_fault() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic_insert_fault';END $$;CREATE TRIGGER native_auth_fault BEFORE INSERT ON funding_auth_private.verified_sessions FOR EACH ROW EXECUTE FUNCTION public.native_auth_fault()");
+  try{
+   await assert.rejects(a.verify({challengeId:c.challengeId,code:'123456'}),e=>e.code==='financial_auth_unavailable');
+   assert.equal((await pool.query('SELECT state FROM funding_auth_private.otp_challenges WHERE id=$1',[c.challengeId])).rows[0].state,'verifying');
+   assert.equal(Number((await pool.query('SELECT count(*) FROM funding_auth_private.verified_sessions WHERE challenge_id=$1',[c.challengeId])).rows[0].count),0);
+  }finally{await admin.query('DROP TRIGGER native_auth_fault ON funding_auth_private.verified_sessions');}
+ });
+ test('native auth: client roles denied and expiry uses DB rather than replica clock',async()=>{
+  const a=authService(),c=await a.start({phone:'+34980000006'}),s=await a.verify({challengeId:c.challengeId,code:'123456'});
+  await admin.query("UPDATE funding_auth_private.verified_sessions SET expires_at=clock_timestamp()-interval '1 second' WHERE challenge_id=$1",[c.challengeId]);
+  await assert.rejects(authService().limits(s.session),e=>e.code==='financial_session_required');
+  const client=await admin.connect();try{
+   for(const role of ['anon','authenticated']){await client.query('SET ROLE '+role);await assert.rejects(client.query('SELECT * FROM funding_auth_private.verified_sessions'),/permission denied/);await client.query('RESET ROLE');}
+  }finally{client.release();}
  });
 
 }

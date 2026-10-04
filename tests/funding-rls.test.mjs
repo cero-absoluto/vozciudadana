@@ -2,7 +2,7 @@ import {test,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {PGlite} from '@electric-sql/pglite';
-import {fundingParentFixtureSQL,fundingCoreMigration,fundingRlsMigration} from './helpers/funding-fixture.mjs';
+import {fundingParentFixtureSQL,fundingCoreMigration,fundingRlsMigration,fundingAuthMigration} from './helpers/funding-fixture.mjs';
 const db=new PGlite();after(()=>db.close());
 await db.exec(fundingParentFixtureSQL);
 await db.exec(await readFile(fundingCoreMigration,'utf8'));
@@ -20,6 +20,7 @@ test('original funding role cannot lock enabled parent with observed production 
 });
 test('compatibility permits financial lifecycle while parent values and legacy trigger counters remain unchanged',async()=>{
  await db.exec(await readFile(fundingRlsMigration,'utf8'));
+ await db.exec(await readFile(fundingAuthMigration,'utf8'));
  const cost=await asRole('funding_runtime',async()=>{
   const id=await reserve();assert.equal(await scalar(`SELECT funding_private.confirm('rls-payment',$1,1000,'EUR')`,[id]),'confirmed');
   return scalar(`SELECT funding_private.reserve_cost($1,300,'rls-cost')`,[e]);

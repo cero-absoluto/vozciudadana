@@ -26,3 +26,5 @@ CREATE TRIGGER trg_transfer_protest_surplus_to_platform_fund AFTER UPDATE ON pub
 export const fundingCoreMigration=new URL('../../supabase/migrations/20261003200832_funding_private_core.sql',import.meta.url);
 export const fundingRlsMigration=new URL('../../supabase/migrations/20261004050924_funding_rls_compatibility.sql',import.meta.url);
 
+
+export const fundingAuthMigration=new URL('../../supabase/migrations/20261004052915_funding_shared_auth.sql',import.meta.url);

@@ -1,4 +1,5 @@
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
+import {createSharedFundingAuthStore} from './sharedAuthStore.js';
 
 export class FundingError extends Error {
   constructor(code, statusCode = 400) { super(code); this.code = code; this.statusCode = statusCode; }
@@ -29,16 +30,25 @@ export function createIsolatedFundingService({ database, simulator, secret, part
   requireThat(typeof timeZone === 'string', 'policy_timezone_required', 503);
   policyYear(now(), timeZone); // Validate configuration, never silently pick the year timezone.
   requireThat(simulator?.kind === 'simulator', 'simulator_required', 503);
-  const challenges = new Map(), sessions = new Map(), attempts = new Map();
+  const auth=createSharedFundingAuthStore(database);
   const hash = value => createHmac('sha256', secret).update(`rate:${value}`).digest('hex');
-  const clean = () => {
-    for (const map of [challenges, sessions]) for (const [id, item] of map) if (item.expires <= now().getTime()) map.delete(id);
-    for (const [id, item] of attempts) if (item.until <= now().getTime()) attempts.delete(id);
-  };
-  function session(id) {
-    clean(); const s = sessions.get(id);
-    requireThat(s, 'financial_session_required', 401);
-    requireThat(s.year === policyYear(now(), timeZone), 'reverify_for_policy_year', 401);
+  const sessionDigest = value => createHmac('sha256',secret).update(JSON.stringify(['voice-protest:funding:session:v1',value])).digest('hex');
+  async function authCall(operation) {
+    let result;
+    try {result=await operation();} catch {throw new FundingError('financial_auth_unavailable',503);}
+    if(result?.error)throw new FundingError(result.error,result.error==='otp_rate_limit'?429:result.error==='otp_verification_unavailable'?503:401);
+    return result;
+  }
+  async function bounded(operation,milliseconds) {
+    let timer;
+    try {return await Promise.race([Promise.resolve().then(operation),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('adapter_timeout')),Number(milliseconds));})]);}
+    finally {clearTimeout(timer);}
+  }
+  async function session(id) {
+    requireThat(typeof id==='string' && /^[0-9a-f-]{36}$/.test(id),'financial_session_required',401);
+    const s=await authCall(()=>auth.session(sessionDigest(id)));
+    requireThat(s,'financial_session_required',401);
+    requireThat(s.year===policyYear(now(),timeZone),'reverify_for_policy_year',401);
     return s;
   }
   async function sql(text, values) {
@@ -52,27 +62,34 @@ export function createIsolatedFundingService({ database, simulator, secret, part
   }
   return {
     async start({ phone: value, eventId = null }) {
-      clean(); const normalized = phone(value);
+      const normalized = phone(value);
       requireThat(eventId === null || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventId), 'invalid_event');
       eventId = eventId === null ? null : eventId.toLowerCase();
-      const rateKey = hash(normalized), rate = attempts.get(rateKey) || { count: 0, until: now().getTime()+600000 };
-      requireThat(rate.count++ < 3, 'otp_rate_limit', 429); attempts.set(rateKey, rate);
-      const year = policyYear(now(), timeZone), tokens = fundingTokens(secret, normalized, year, eventId);
-      const id = randomUUID();
-      await simulator.startOtp(id, normalized); // Simulator discards phone; no phone is stored below.
-      challenges.set(id, { tokens, year, eventId, rateKey, tries: 0, expires: now().getTime()+300000 });
-      return { challengeId: id, expiresInSeconds: 300 };
+      const rateKey=hash(normalized),year=policyYear(now(),timeZone),tokens=fundingTokens(secret,normalized,year,eventId);
+      const id=randomUUID();
+      const created=await authCall(()=>auth.start(id,rateKey,{tokens,year,eventId}));
+      try {await bounded(()=>simulator.startOtp(id,normalized),created.sendTimeoutMilliseconds);} catch {
+        await authCall(()=>auth.sent(id,false));
+        throw new FundingError('otp_send_unavailable',503);
+      }
+      await authCall(()=>auth.sent(id,true));
+      return {challengeId:id,expiresInSeconds:Number(created.expiresInSeconds)};
     },
     async verify({ challengeId, code }) {
-      clean(); const c = challenges.get(challengeId);
-      requireThat(c && ++c.tries <= 5, 'challenge_expired', 401);
-      requireThat(await simulator.verifyOtp(challengeId, code), 'invalid_otp', 401);
-      challenges.delete(challengeId);
-      const id = randomUUID(); sessions.set(id, { ...c, expires: now().getTime()+600000 });
-      return { session: id, expiresInSeconds: 600, year: c.year };
+      requireThat(typeof challengeId==='string' && /^[0-9a-f-]{36}$/.test(challengeId),'challenge_expired',401);
+      const operation=randomUUID();
+      const claimed=await authCall(()=>auth.claim(challengeId,operation));
+      let ok;
+      try {ok=await bounded(()=>simulator.verifyOtp(challengeId,code),claimed.leaseMilliseconds);} catch {
+        await authCall(()=>auth.finish(challengeId,operation,'uncertain',null));
+        throw new FundingError('otp_verification_unavailable',503);
+      }
+      const id=randomUUID();
+      const result=await authCall(()=>auth.finish(challengeId,operation,ok?'valid':'invalid',sessionDigest(id)));
+      return {session:id,expiresInSeconds:Number(result.expiresInSeconds),year:result.year};
     },
     async limits(sessionId) {
-      const s = session(sessionId);
+      const s = await session(sessionId);
       const r = await sql(`SELECT
         (SELECT committed+reserved FROM funding_private.annual_limits WHERE policy_year=$1 AND token=$2) AS annual_used,
         (SELECT committed+reserved FROM funding_private.event_limits WHERE event_id=$3 AND token=$4) AS event_used`,
@@ -81,7 +98,7 @@ export function createIsolatedFundingService({ database, simulator, secret, part
         eventRemainingCents: s.eventId ? 10000-Number(r.rows[0].event_used || 0) : null };
     },
     async intent(sessionId, { kind, amountCents, currency = 'EUR' }) {
-      const s = session(sessionId);
+      const s = await session(sessionId);
       requireThat(currency === 'EUR' && Number.isSafeInteger(amountCents) && amountCents > 0 && amountCents <= 100000,
         'invalid_amount_or_currency');
       requireThat(kind === (s.eventId ? 'event' : 'general'), 'session_purpose_mismatch');

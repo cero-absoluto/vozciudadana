@@ -1,3 +1,5 @@
+import {createLegacyReceiptFixtureAdapter,createLegacyReceiptService} from '../apps/api/src/funding/legacyReceipt.js';
+import {legacyReceiptMigration,legacyReceiptSecret,legacyReceiptInput,legacyReceiptAdapterOptions} from './helpers/funding-legacy-receipt-fixture.mjs';
 // Run only against a fresh loopback PostgreSQL database explicitly named i4_isolated.
 // This harness never uses Supabase credentials or a production connection.
 import {createOwnerAuthorityService} from '../apps/api/src/funding/ownerAuthority.js';
@@ -615,4 +617,41 @@ if(!connection) {
   }finally{if(!committed)await f.query('ROLLBACK');f.release();a.release();}
  });
 
+
+ let receiptPool,receiptService;after(()=>receiptPool?.end());
+ test('native legacy receipt: independent ingest actor cannot assume financial or review authority',async()=>{
+  await admin.query(await readFile(legacyReceiptMigration,'utf8'));
+  await admin.query("CREATE ROLE funding_legacy_receipt_ci_login LOGIN INHERIT PASSWORD 'synthetic_receipt_ci' IN ROLE funding_legacy_receipt_ingest");
+  const u=new URL(connection);u.username='funding_legacy_receipt_ci_login';u.password='synthetic_receipt_ci';receiptPool=new pg.Pool({connectionString:u.toString(),max:24});
+  receiptService=createLegacyReceiptService({database:receiptPool,adapter:createLegacyReceiptFixtureAdapter(legacyReceiptAdapterOptions),mode:'isolated'});
+  const actor=(await receiptPool.query("SELECT current_user AS actor,rolsuper,rolbypassrls,pg_has_role(current_user,'funding_runtime','MEMBER') AS finance,pg_has_role(current_user,'funding_review','MEMBER') AS review,pg_has_role(current_user,'service_role','MEMBER') AS service FROM pg_roles WHERE rolname=current_user")).rows[0];
+  assert.deepEqual(actor,{actor:'funding_legacy_receipt_ci_login',rolsuper:false,rolbypassrls:false,finance:false,review:false,service:false});console.log('I4_NATIVE_RECEIPT_ACTOR='+JSON.stringify(actor));
+  for(const command of ['SET ROLE funding_runtime','SET ROLE funding_review','SELECT * FROM funding_private.accounts','DELETE FROM funding_legacy_receipt_private.operations'])await assert.rejects(receiptPool.query(command),e=>e.code==='42501');
+  await assert.rejects(pool.query('SELECT * FROM funding_legacy_receipt_private.operations'),e=>e.code==='42501');
+ });
+ test('native legacy receipt: twenty independent connections and adapters preserve one committed operation',async()=>{
+  const input=legacyReceiptInput('native_duplicates');const result=await Promise.all(Array.from({length:20},()=>createLegacyReceiptService({database:receiptPool,adapter:createLegacyReceiptFixtureAdapter(legacyReceiptAdapterOptions),mode:'isolated'}).receive(legacyReceiptSecret,input)));
+  assert.equal(new Set(result.map(x=>x.receiptId)).size,1);assert.equal(result.filter(x=>x.outcome==='received').length,1);assert.ok(result.every(x=>x.received&&x.allocation==='review'&&!x.fundsMoved&&!x.paymentVerified));
+  assert.equal(Number((await admin.query('SELECT count(*) AS n FROM funding_legacy_receipt_private.operations WHERE operation_ref=$1',[input.reference])).rows[0].n),1);
+ });
+ test('native legacy receipt: concurrent conflicts preserve original and one immutable conflict',async()=>{
+  const input=legacyReceiptInput('native_conflicts'),original=await receiptService.receive(legacyReceiptSecret,input),before=(await admin.query('SELECT * FROM funding_legacy_receipt_private.operations WHERE id=$1',[original.receiptId])).rows;
+  const result=await Promise.all(Array.from({length:20},()=>receiptService.receive(legacyReceiptSecret,{...input,amountCents:101})));
+  assert.equal(new Set(result.map(x=>x.conflictId)).size,1);assert.deepEqual((await admin.query('SELECT * FROM funding_legacy_receipt_private.operations WHERE id=$1',[original.receiptId])).rows,before);
+  assert.equal(Number((await admin.query('SELECT count(*) AS n FROM funding_legacy_receipt_private.conflicts WHERE operation_id=$1',[original.receiptId])).rows[0].n),1);
+ });
+ test('native legacy receipt: waiting receipt observes prior commit rather than acknowledging an uncommitted row',async()=>{
+  const input=legacyReceiptInput('native_wait'),n=createLegacyReceiptFixtureAdapter(legacyReceiptAdapterOptions).normalize(legacyReceiptSecret,input),a=await receiptPool.connect(),b=await receiptPool.connect();let committed=false;
+  const sql='SELECT funding_legacy_receipt_private.receive($1,$2,$3,$4,$5,$6,$7) AS result',args=[n.reference,n.amountCents,n.currency,n.effectiveAt,n.eventRef,n.digest,n.evidenceRef];
+  try{await a.query('BEGIN');const first=(await a.query(sql,args)).rows[0].result;const pid=(await b.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;const pending=b.query(sql,args);await observeWaiting(pid);
+   await a.query('COMMIT');committed=true;const second=(await pending).rows[0].result;assert.equal(second.outcome,'duplicate');assert.equal(second.receiptId,first.receiptId);
+  }finally{if(!committed)await a.query('ROLLBACK');a.release();b.release();}
+ });
+ test('native legacy receipt: deferred commit failure has no ACK or durable insert; lost committed response retries safely without finance changes',async()=>{
+  const state=async()=>JSON.stringify({accounts:(await admin.query('SELECT * FROM funding_private.accounts ORDER BY id')).rows,ledger:(await admin.query('SELECT * FROM funding_private.ledger_entries ORDER BY transaction_id,account_id')).rows,quotas:(await admin.query('SELECT * FROM funding_private.annual_limits ORDER BY token')).rows});const before=await state(),input=legacyReceiptInput('native_commit_failure');
+  await admin.query("CREATE FUNCTION public.native_receipt_commit_fault() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic_commit_fault';END $$;CREATE CONSTRAINT TRIGGER native_receipt_commit_fault AFTER INSERT ON funding_legacy_receipt_private.operations DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION public.native_receipt_commit_fault()");
+  try{await assert.rejects(receiptService.receive(legacyReceiptSecret,input),e=>e.code==='legacy_receipt_unavailable');assert.equal((await admin.query('SELECT id FROM funding_legacy_receipt_private.operations WHERE operation_ref=$1',[input.reference])).rows.length,0);}finally{await admin.query('DROP TRIGGER native_receipt_commit_fault ON funding_legacy_receipt_private.operations');}
+  let lose=true;const database={async connect(){const c=await receiptPool.connect();return {async query(s,a){const r=await c.query(s,a);if(s==='COMMIT'&&lose){lose=false;throw Error('synthetic_response_loss');}return r;},release(){c.release();}};}};
+  const service=createLegacyReceiptService({database,adapter:createLegacyReceiptFixtureAdapter(legacyReceiptAdapterOptions),mode:'isolated'});await assert.rejects(service.receive(legacyReceiptSecret,input),e=>e.code==='legacy_receipt_unavailable');assert.equal((await receiptService.receive(legacyReceiptSecret,input)).outcome,'duplicate');assert.equal(await state(),before);
+ });
 }

@@ -332,7 +332,9 @@ if(!connection) {
   console.log('I4_NATIVE_OFFLINE_PROVIDER_SOURCE=offline_fixture; actor=funding_ci_login; synthetic_minimum_seconds=60');
  });
  test('native provider: twenty signed replays create one ingress and one financial confirmation',async()=>{
-  const i=await providerService().intent(providerSession,{kind:'general',amountCents:1000});const proof=await providerTransport.pay(i.intentId),w=await providerTransport.webhook(proof.paymentRef);
+  const i=await providerService().intent(providerSession,{kind:'general',amountCents:1000});
+  // Native timestamps have microseconds; model payment after checkout, not a truncated creation instant.
+  await admin.query("UPDATE funding_private.fixture_temporal_clock SET t=t+interval '1 second'");const proof=await providerTransport.pay(i.intentId),w=await providerTransport.webhook(proof.paymentRef);
   const results=await Promise.all(Array.from({length:20},()=>providerAdapter().ingest(w.raw,w.signature)));
   assert.ok(results.every(r=>r.result==='confirmed'));
   assert.equal(Number((await pool.query('SELECT count(*) FROM funding_private.fixture_ingress_events WHERE payment_ref=$1',[proof.paymentRef])).rows[0].count),1);
@@ -346,7 +348,7 @@ if(!connection) {
   await admin.query("UPDATE funding_private.fixture_temporal_clock SET t='2030-12-31T23:20:00Z'");
   const w=await providerTransport.webhook(proof.paymentRef,{created:1});const results=await Promise.all(Array.from({length:20},()=>providerAdapter().ingest(w.raw,w.signature)));
   assert.ok(results.every(r=>r.result==='confirmed'));
-  const row=(await pool.query('SELECT year,committed FROM funding_private.annual_limits WHERE token=(SELECT annual_token FROM funding_private.intents WHERE id=$1)',[i.intentId])).rows[0];assert.equal(row.year,2030);assert.equal(Number(row.committed),1000);
+  const row=(await pool.query('SELECT policy_year,committed FROM funding_private.annual_limits WHERE token=(SELECT annual_token FROM funding_private.intents WHERE id=$1)',[i.intentId])).rows[0];assert.equal(row.policy_year,2030);assert.equal(Number(row.committed),1000);
   await costsClock();
  });
 

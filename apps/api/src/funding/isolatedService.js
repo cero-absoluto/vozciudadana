@@ -62,7 +62,7 @@ export function createIsolatedFundingService({ database, simulator, secret, part
     try { return await database.query(text, values); }
     catch (err) {
       const known = ['annual_limit','event_limit','event_not_open','event_not_enabled','idempotency_conflict',
-        'provider_may_still_charge','unknown_intent','pending_items','insufficient_event_funds','not_ready','funding_window_closed','reverify_for_policy_year','temporal_evidence_required'];
+        'provider_may_still_charge','unknown_intent','pending_items','insufficient_event_funds','not_ready','funding_window_closed','reverify_for_policy_year','temporal_evidence_required','fee_bound_required','operational_budget_insufficient','financial_exposure_pending','owner_decision_required','refund_source_insufficient','refund_exceeds_gross','dispute_review_required'];
       const code = known.find(code => err.message?.includes(code));
       throw new FundingError(code || 'funding_operation_failed', code ? 409 : 503);
     }
@@ -109,14 +109,14 @@ export function createIsolatedFundingService({ database, simulator, secret, part
       requireThat(currency === 'EUR' && Number.isSafeInteger(amountCents) && amountCents > 0 && amountCents <= 100000,
         'invalid_amount_or_currency');
       requireThat(kind === (s.eventId ? 'event' : 'general'), 'session_purpose_mismatch');
-      const r = await sql('SELECT funding_private.reserve_v2($1,$2,$3,$4,$5,$6) AS id',
-        [s.year,s.tokens.annual,s.tokens.event,s.eventId,amountCents,simulator.minimumCheckoutSeconds || 1]);
+      const r = await sql('SELECT funding_private.reserve_with_fee_v3($1,$2,$3,$4,$5,$6,$7,$8) AS id',
+        [s.year,s.tokens.annual,s.tokens.event,s.eventId,amountCents,simulator.minimumCheckoutSeconds || 1,simulator.feeBoundCents,simulator.feeBoundKnown]);
       const id=r.rows[0].id;
       const row=(await sql('SELECT created_at,valid_until FROM funding_private.temporal_intents WHERE intent_id=$1',[id])).rows[0];
       const expiry=new Date(row.valid_until).toISOString();
       const checkout=await simulator.checkout({intentId:id,amountCents,currency,expiresAt:expiry});
       requireThat(checkout?.expiresAt===expiry,'checkout_deadline_mismatch',503);
-      return {intentId:id,amountCents,currency,expiresAt:expiry,simulated:true,policyVersion:2};
+      return {intentId:id,amountCents,currency,expiresAt:expiry,simulated:true,policyVersion:2,financialModelVersion:3};
     },
     async webhook(event, auth) {
       requireThat(simulator.authenticate(auth),'invalid_provider_auth',401);
@@ -129,21 +129,41 @@ export function createIsolatedFundingService({ database, simulator, secret, part
         [event.eventRef,proof.paymentRef,event.intentId,event.amountCents,event.currency,proof.effectivePaidAt,proof.semantic]);
       return {result:r.rows[0].result};
     },
+    async movement(event, authorization) {
+      requireThat(simulator.authenticate(authorization),'invalid_provider_auth',401);
+      requireThat(typeof event.movementRef==='string' && event.movementRef.length>0 && event.movementRef.length<=128,'invalid_provider_reference');
+      requireThat(typeof event.kind==='string' && event.kind.length>0 && event.kind.length<=64 && Number.isSafeInteger(event.amountCents),'invalid_provider_amount');
+      const proof=await simulator.movementEvidence({movementRef:event.movementRef,intentId:event.intentId,kind:event.kind,amountCents:event.amountCents,currency:event.currency,operationRef:event.operationRef??null,relatedRef:event.relatedRef??null});
+      for(const key of ['intentId','kind','amountCents','currency','operationRef','relatedRef'])requireThat(proof[key]===(event[key]??null),'provider_evidence_mismatch',409);
+      const r=await sql('SELECT funding_private.record_provider_movement($1,$2,$3,$4,$5,$6,$7,$8) AS result',[event.movementRef,proof.intentId,proof.kind,proof.amountCents,proof.currency,proof.operationRef,proof.relatedRef,proof.effectiveAt]);
+      return {result:r.rows[0].result,simulated:true};
+    },
+    async movementStatus(authorization) {
+      requireThat(simulator.authenticate(authorization),'invalid_provider_auth',401);
+      const r=await sql(`SELECT m.currency,count(*) FILTER(WHERE a.movement_ref IS NULL) AS unallocated,
+        COALESCE(sum(m.amount) FILTER(WHERE a.movement_ref IS NULL),0) AS unallocated_amount,
+        COALESCE(-sum(m.amount) FILTER(WHERE a.movement_ref IS NULL AND m.amount<0),0) AS unallocated_debits,
+        COALESCE(sum(m.amount) FILTER(WHERE a.movement_ref IS NULL AND m.amount>0),0) AS unallocated_credits
+        FROM funding_private.provider_movements m LEFT JOIN funding_private.movement_allocations a USING(movement_ref) GROUP BY m.currency ORDER BY m.currency`,[]);
+      const blocked=(await sql('SELECT funding_private.has_pending_exposure() AS blocked',[])).rows[0].blocked;
+      return {simulated:true,cashReconciliation:'not_certified',newCommitmentsPaused:blocked,
+        movements:r.rows.map(row=>({currency:row.currency,unallocatedCount:Number(row.unallocated),unallocatedAmountCents:Number(row.unallocated_amount),unallocatedDebitsCents:Number(row.unallocated_debits),unallocatedCreditsCents:Number(row.unallocated_credits)}))};
+    },
     async summary() {
       const r = await sql(`SELECT kind,COALESCE(sum(balance),0) AS balance FROM funding_private.accounts
         WHERE kind IN ('general','event','restricted_grant') GROUP BY kind ORDER BY kind`, []);
-      return { simulated: true, accounts: r.rows.map(row=>({kind:row.kind,balanceCents:Number(row.balance)})) };
+      return { simulated: true, balanceBasis:'fund_allocations', cashReconciliation:'not_certified', accounts: r.rows.map(row=>({kind:row.kind,balanceCents:Number(row.balance)})) };
     },
   };
 }
 
-export function createPaymentSimulator({ otpCode, webhookSecret, minimumCheckoutSeconds=1, now=()=>new Date() }) {
+export function createPaymentSimulator({ otpCode, webhookSecret, minimumCheckoutSeconds=1, feeBoundCents=0, feeBoundKnown=true, now=()=>new Date() }) {
   requireThat(/^\d{6}$/.test(otpCode || '') && typeof webhookSecret === 'string' && webhookSecret.length>=32,
     'simulator_configuration_required', 503);
   requireThat(Number.isSafeInteger(minimumCheckoutSeconds) && minimumCheckoutSeconds>=1,'simulator_window_required',503);
-  const challenges = new Set(), checkouts = new Map(), paidEvents=new Map();
+  const challenges = new Set(), checkouts = new Map(), paidEvents=new Map(),movements=new Map();
   return {
-    kind: 'simulator',minimumCheckoutSeconds,
+    kind: 'simulator',minimumCheckoutSeconds,feeBoundCents,feeBoundKnown,
     async startOtp(id) { challenges.add(id); }, // Deliberately no phone argument retained.
     async verifyOtp(id, code) {
       const a=Buffer.from(String(code)),b=Buffer.from(otpCode);
@@ -164,6 +184,14 @@ export function createPaymentSimulator({ otpCode, webhookSecret, minimumCheckout
       // Authenticated mock callback represents immediate simulated payment only.
       // Delayed cases explicitly record the payment before delivering its notification.
       return this.recordPayment(event);
+    },
+    async recordMovement(event,effectiveAt=null) {
+      const proof={...event,effectiveAt:new Date(effectiveAt??await now()).toISOString()};
+      movements.set(event.movementRef,proof);return proof;
+    },
+    async movementEvidence(event) {
+      if(movements.has(event.movementRef))return movements.get(event.movementRef);
+      return this.recordMovement(event);
     },
     authenticate(value) {
       const a=Buffer.from(String(value || '')),b=Buffer.from(webhookSecret);

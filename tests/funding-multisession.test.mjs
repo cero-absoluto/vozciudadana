@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import pg from 'pg';
 import {createIsolatedFundingService,createPaymentSimulator} from '../apps/api/src/funding/isolatedService.js';
-import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration} from './helpers/funding-fixture.mjs';
+import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration} from './helpers/funding-fixture.mjs';
 const connection=process.env.I4_ISOLATED_PG_URL;
 if(!connection) {
  if(process.env.I4_REQUIRE_MULTISESSION==='1')throw new Error('Concurrency verification blocked: set I4_ISOLATED_PG_URL to a fresh loopback PostgreSQL 17 i4_isolated database');
@@ -24,6 +24,7 @@ if(!connection) {
  await admin.query(await readFile(fundingRlsMigration,'utf8'));
  await admin.query(await readFile(fundingAuthMigration,'utf8'));
  await admin.query(await readFile(fundingTemporalMigration,'utf8'));
+ await admin.query(await readFile(fundingCostsMigration,'utf8'));
  await admin.query("CREATE ROLE funding_ci_login LOGIN INHERIT PASSWORD 'i4_synthetic_funding_only' IN ROLE funding_runtime");
  const runtimeURL=new URL(connection);runtimeURL.username='funding_ci_login';runtimeURL.password='i4_synthetic_funding_only';
  pool=new pg.Pool({connectionString:runtimeURL.toString(),max:24,connectionTimeoutMillis:5000,options:'-c statement_timeout=10000 -c lock_timeout=8000'});
@@ -232,6 +233,50 @@ if(!connection) {
   if(results[1].status==='rejected')assert.match(results[1].reason.message,/pending_items/);
   assert.equal(Number((await pool.query('SELECT funding_private.settle($1) AS surplus',[e])).rows[0].surplus),800);
   assert.equal(JSON.stringify((await pool.query('SELECT * FROM public.protests WHERE id=$1',[e])).rows),parent);
+ });
+
+ // Fees/refunds use the same real restricted login; synthetic Owner decisions use admin only.
+ async function costsClock(){await admin.query('UPDATE funding_private.fixture_temporal_clock SET t=clock_timestamp()');}
+ async function costsPaid(n,amount=1000,bound=0){
+  await costsClock();const e=`a0000000-0000-0000-0000-${String(n).padStart(12,'0')}`,token=String(n).padStart(64,'9');
+  await admin.query("INSERT INTO public.protests(id,starts_at,ends_at,saldo_euros,hash_integridad) VALUES($1,clock_timestamp()-interval '1 day',clock_timestamp()+interval '1 day',0,'untouched')",[e]);
+  await pool.query("INSERT INTO funding_private.accounts(id,kind,event_id) VALUES($1,'event',$2)",['event:'+e,e]);
+  const year=(await pool.query('SELECT funding_private.temporal_context() AS c')).rows[0].c.year;
+  const id=(await pool.query('SELECT funding_private.reserve_with_fee_v3($1,$2,$2,$3,$4,1,$5,true) AS id',[year,token,e,amount,bound])).rows[0].id;
+  await pool.query("SELECT funding_private.confirm_v2($1,$1,$2,$3,'EUR',funding_private.temporal_now(),'simulator_successful_payment:v2')",['costs-payment:'+n,id,amount]);return {e,id,token};
+ }
+ test('native costs: twenty fee reservations share one operational budget without overdraft',async()=>{
+  await costsClock();const free=Number((await pool.query("SELECT funding_private.available_operational('general') AS n")).rows[0].n);assert.ok(free>1);const bound=Math.floor(free/2)+1;
+  const year=(await pool.query('SELECT funding_private.temporal_context() AS c')).rows[0].c.year;
+  const results=await Promise.allSettled(Array.from({length:20},(_,n)=>pool.query('SELECT funding_private.reserve_with_fee_v3($1,$2,NULL,NULL,100,1,$3,true) AS id',[year,String(n).padStart(64,'8'),bound])));
+  assert.equal(results.filter(r=>r.status==='fulfilled').length,1);for(const r of results.filter(r=>r.status==='rejected'))assert.match(r.reason.message,/operational_budget_insufficient/);
+  const id=results.find(r=>r.status==='fulfilled').value.rows[0].id;await pool.query('SELECT funding_private.cancel($1,true)',[id]);
+  assert.equal(Number((await pool.query("SELECT funding_private.available_operational('general') AS n")).rows[0].n),free);
+ });
+ test('native costs: twenty duplicate fee debits create one ledger transaction preserving event gross',async()=>{
+  const {e,id}=await costsPaid(1,1000,20),paid=(await pool.query('SELECT funding_private.temporal_now() AS t')).rows[0].t;
+  const results=await Promise.all(Array.from({length:20},()=>pool.query("SELECT funding_private.record_provider_movement('native-fee',$1,'processing_fee',-20,'EUR',NULL,NULL,$2) AS result",[id,paid])));
+  assert.ok(results.every(r=>r.rows[0].result==='allocated'));assert.equal(Number((await pool.query("SELECT count(*) FROM funding_private.ledger_transactions WHERE operation_key='psp-movement:native-fee'")).rows[0].count),1);
+  assert.equal(Number((await pool.query('SELECT balance FROM funding_private.accounts WHERE event_id=$1',[e])).rows[0].balance),1000);
+ });
+ test('native costs: two Owner refund holds race without consuming the same funds; cash replay keeps gross quota',async()=>{
+  const {e,id,token}=await costsPaid(2);
+  for(const op of ['native-refund-a','native-refund-b'])await admin.query("INSERT INTO funding_private.financial_review_decisions(operation_ref,action,intent_id,amount,source_account,expires_at) VALUES($1,'refund_authorize',$2,600,$3,clock_timestamp()+interval '1 day')",[op,id,'event:'+e]);
+  const results=await Promise.allSettled(['native-refund-a','native-refund-b'].map(op=>pool.query('SELECT funding_private.reserve_refund($1) AS result',[op])));
+  assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.match(results.find(r=>r.status==='rejected').reason.message,/refund_exceeds_gross|refund_source_insufficient/);
+  const op=results[0].status==='fulfilled'?'native-refund-a':'native-refund-b',paid=(await pool.query('SELECT funding_private.temporal_now() AS t')).rows[0].t;
+  const callbacks=await Promise.all(Array.from({length:20},()=>pool.query("SELECT funding_private.record_provider_movement('native-refund',$1,'refund',-600,'EUR',$2,NULL,$3) AS result",[id,op,paid])));
+  assert.ok(callbacks.every(r=>r.rows[0].result==='allocated'));assert.equal(Number((await pool.query('SELECT balance FROM funding_private.accounts WHERE event_id=$1',[e])).rows[0].balance),400);
+  assert.equal(Number((await pool.query('SELECT committed FROM funding_private.annual_limits WHERE token=$1',[token])).rows[0].committed),1000);
+ });
+ test('native costs: final settlement and forced dispute never reopen final history',async()=>{
+  const {e,id}=await costsPaid(3);await admin.query("UPDATE public.protests SET ends_at=clock_timestamp()-interval '1 second' WHERE id=$1",[e]);await pool.query('SELECT funding_private.close_event($1)',[e]);await pool.query('SELECT funding_private.settle($1)',[e]);
+  const final=JSON.stringify((await pool.query('SELECT * FROM funding_private.settlements WHERE event_id=$1',[e])).rows);
+  const callbacks=await Promise.all(Array.from({length:20},()=>pool.query("SELECT funding_private.record_provider_movement('native-final-dispute',$1,'dispute_debit',-1000,'EUR',NULL,NULL,funding_private.temporal_now()) AS result",[id])));
+  assert.ok(callbacks.every(r=>r.rows[0].result==='review'));await assert.rejects(pool.query('SELECT funding_private.reserve_with_fee_v3(2026,$1,NULL,NULL,100,1,0,true)',['7'.repeat(64)]),/financial_exposure_pending/);
+  await admin.query("INSERT INTO funding_private.financial_review_decisions(operation_ref,action,intent_id,amount,source_account,expires_at) VALUES('native-cover','cover_exposure',$1,1000,'general',clock_timestamp()+interval '1 day')",[id]);
+  assert.equal((await pool.query("SELECT funding_private.cover_provider_exposure('native-final-dispute','native-cover') AS result")).rows[0].result,'allocated');
+  assert.equal(JSON.stringify((await pool.query('SELECT * FROM funding_private.settlements WHERE event_id=$1',[e])).rows),final);
  });
 
 }

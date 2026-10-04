@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import Fastify from 'fastify';
-import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration} from './helpers/funding-fixture.mjs';
+import {fundingParentFixtureSQL,fundingRlsMigration,fundingAuthMigration,fundingTemporalMigration,fundingCostsMigration} from './helpers/funding-fixture.mjs';
 import { createIsolatedFundingService,createPaymentSimulator,fundingTokens,policyYear } from '../apps/api/src/funding/isolatedService.js';
 import { isolatedFundingRoutes } from '../apps/api/src/funding/routes.js';
 
@@ -14,6 +14,7 @@ await db.exec(await readFile(new URL('../supabase/migrations/20261003200832_fund
 await db.exec(await readFile(fundingRlsMigration,'utf8'));
  await db.exec(await readFile(fundingAuthMigration,'utf8'));
  await db.exec(await readFile(fundingTemporalMigration,'utf8'));
+ await db.exec(await readFile(fundingCostsMigration,'utf8'));
 const q=(text,args=[])=>db.query(text,args),scalar=async(text,args)=>Object.values((await q(text,args)).rows[0])[0];
 const token=n=>String(n).padStart(64,'a');
 let sequence=1;
@@ -171,7 +172,7 @@ test('UUID case variants share verified API sessions and one cumulative event li
  await q(`INSERT INTO funding_private.accounts(id,kind,event_id) VALUES($1,'event',$2)`,['event:'+lower,lower]);
  const simulator=createPaymentSimulator({otpCode:'123456',webhookSecret:'v'.repeat(32)});
  const sessionEventIds=[];
- const database={query(text,values){if(text.startsWith('SELECT funding_private.reserve_v2('))sessionEventIds.push(values[3]);return db.query(text,values);}};
+ const database={query(text,values){if(text.startsWith('SELECT funding_private.reserve_with_fee_v3('))sessionEventIds.push(values[3]);return db.query(text,values);}};
  const service=createIsolatedFundingService({database,simulator,secret:'c'.repeat(32),participationSecret:'p'.repeat(32),timeZone:'Europe/Amsterdam',mode:'isolated'});
  const app=Fastify({logger:false});await app.register(isolatedFundingRoutes,{prefix:'/api/funding',service});
  try{

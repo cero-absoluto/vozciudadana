@@ -11,5 +11,7 @@ export async function isolatedFundingRoutes(app, { service }) {
   app.post('/intents', {schema:{body:object({kind:{enum:['event','general']},amountCents:{type:'integer',minimum:1,maximum:100000},currency:{const:'EUR'}})}},invoke(req=>service.intent(session(req),req.body)));
   app.get('/limits',invoke(req=>service.limits(session(req))));
   app.get('/public-summary',invoke(()=>service.summary()));
+  app.get('/simulator/movement-status',invoke(req=>service.movementStatus(req.headers['x-simulator-auth'])));
+  app.post('/simulator/movements', {schema:{body:object({movementRef:{type:'string',minLength:1,maxLength:128},intentId:{type:'string',format:'uuid'},kind:{type:'string',minLength:1,maxLength:64},amountCents:{type:'integer'},currency:{type:'string',minLength:1,maxLength:12},operationRef:{type:['string','null'],maxLength:128},relatedRef:{type:['string','null'],maxLength:128}})}},invoke(req=>service.movement(req.body,req.headers['x-simulator-auth'])));
   app.post('/simulator/webhook', {schema:{body:object({eventRef:{type:'string',minLength:1,maxLength:128},intentId:{type:'string',format:'uuid'},amountCents:{type:'integer',minimum:1},currency:{type:'string',maxLength:3}})}},invoke(req=>service.webhook(req.body,req.headers['x-simulator-auth'])));
 }

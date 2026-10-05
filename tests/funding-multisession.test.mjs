@@ -1,3 +1,5 @@
+import {createSmsFixtureProvider,createSmsCostRehearsal} from '../apps/api/src/funding/smsCostRehearsal.js';
+import * as sms from './helpers/funding-sms-closure-fixture.mjs';
 import {createLegacyReceiptFixtureAdapter,createLegacyReceiptService} from '../apps/api/src/funding/legacyReceipt.js';
 import {legacyReceiptMigration,legacyReceiptSecret,legacyReceiptInput,legacyReceiptAdapterOptions} from './helpers/funding-legacy-receipt-fixture.mjs';
 // Run only against a fresh loopback PostgreSQL database explicitly named i4_isolated.
@@ -53,6 +55,50 @@ if(!connection) {
  const event='20000000-0000-0000-0000-000000000001',token='b'.repeat(64);
  await admin.query(`INSERT INTO public.protests(id,starts_at,ends_at,saldo_euros,hash_integridad) VALUES($1,now()-interval '1 day',now()+interval '1 day',0,'untouched')`,[event]);
  await pool.query(`INSERT INTO funding_private.accounts(id,kind,event_id) VALUES($1,'event',$2)`,['event:'+event,event]);
+ let smsExecutor,smsIngest,smsService,smsProvider;after(()=>Promise.all([smsExecutor?.end(),smsIngest?.end()]));
+ test('native SMS: restricted executor and evidence roles cannot access identities, finance membership or Owner',async()=>{
+  await admin.query(await readFile(sms.smsClosureMigration,'utf8'));await admin.query(sms.smsParticipationFixtureSQL);
+  for(const [role,parent] of [['funding_sms_executor_ci','funding_sms_executor'],['funding_sms_ingest_ci','funding_sms_evidence_ingest']])await admin.query(`CREATE ROLE ${role} LOGIN INHERIT PASSWORD 'synthetic_sms_ci_only' IN ROLE ${parent}`);
+  const make=name=>{const u=new URL(connection);u.username=name;u.password='synthetic_sms_ci_only';return new pg.Pool({connectionString:u.toString(),max:24});};smsExecutor=make('funding_sms_executor_ci');smsIngest=make('funding_sms_ingest_ci');
+  smsProvider=createSmsFixtureProvider(sms.smsProviderOptions);smsService=createSmsCostRehearsal({executorDatabase:smsExecutor,evidenceDatabase:smsIngest,provider:smsProvider,mode:'isolated'});
+  for(const p of [smsExecutor,smsIngest]){const actor=(await p.query("SELECT current_user AS actor,rolsuper,rolbypassrls,pg_has_role(current_user,'funding_runtime','MEMBER') AS finance,pg_has_role(current_user,'funding_review','MEMBER') AS review,pg_has_role(current_user,'service_role','MEMBER') AS service FROM pg_roles WHERE rolname=current_user")).rows[0];assert.equal(actor.rolsuper,false);assert.equal(actor.rolbypassrls,false);assert.equal(actor.finance,false);assert.equal(actor.review,false);assert.equal(actor.service,false);console.log('I4_NATIVE_SMS_ACTOR='+JSON.stringify(actor));
+   for(const sql of ['SET ROLE funding_runtime','SET ROLE funding_review','SELECT * FROM funding_private.annual_limits','SELECT annual_token FROM funding_private.intents','SELECT * FROM sms_participation_fixture.adhesions','UPDATE public.protests SET hash_integridad=NULL'])await assert.rejects(p.query(sql),e=>e.code==='42501');}
+  await assert.rejects(smsIngest.query('SELECT * FROM funding_private.accounts'),e=>e.code==='42501');
+ });
+ test('native SMS: twenty connections preserve one operation/hold/dispatch and one actual-price allocation',async()=>{
+  const e=await sms.seedSmsEvent(admin),input=sms.smsPrepareInput(e,'native_dispatch');const results=await Promise.all(Array.from({length:20},()=>smsService.prepare(input))),op=results[0].operationId;assert.equal(new Set(results.map(x=>x.operationId)).size,1);
+  const quota=JSON.stringify((await admin.query('SELECT * FROM funding_private.annual_limits ORDER BY token')).rows);
+  await Promise.all(Array.from({length:20},()=>smsService.dispatch(op)));assert.equal(smsProvider.calls(op),1);
+  await Promise.all(Array.from({length:20},()=>smsService.ingestEvidence(sms.smsFixtureSecret,sms.smsFact(op,'native_price'))));assert.ok((await Promise.all(Array.from({length:20},()=>smsService.project(op)))).every(x=>x==='charged'));
+  assert.equal(Number((await admin.query('SELECT balance FROM funding_private.accounts WHERE event_id=$1',[e])).rows[0].balance),95);assert.equal(JSON.stringify((await admin.query('SELECT * FROM funding_private.annual_limits ORDER BY token')).rows),quota);
+  assert.equal(Number((await admin.query('SELECT count(*) AS n FROM funding_sms_fixture_private.execution WHERE operation_id=$1 AND allocation_id IS NOT NULL',[op])).rows[0].n),1);
+ });
+ test('native SMS: concurrent conflicting evidence preserves original and one conflict without allocation',async()=>{
+  const e=await sms.seedSmsEvent(admin),op=(await smsService.prepare(sms.smsPrepareInput(e,'native_conflict'))).operationId;await smsService.dispatch(op);await smsService.ingestEvidence(sms.smsFixtureSecret,sms.smsFact(op,'native_clash'));
+  const original=(await admin.query('SELECT * FROM funding_sms_fixture_private.facts WHERE operation_id=$1 ORDER BY id',[op])).rows;
+  await Promise.all(Array.from({length:20},()=>smsService.ingestEvidence(sms.smsFixtureSecret,sms.smsFact(op,'native_clash',{amountCents:6}))));assert.equal(await smsService.project(op),'review');assert.deepEqual((await admin.query('SELECT * FROM funding_sms_fixture_private.facts WHERE operation_id=$1 ORDER BY id',[op])).rows,original);
+  assert.equal(Number((await admin.query('SELECT count(*) AS n FROM funding_sms_fixture_private.conflicts WHERE operation_id=$1',[op])).rows[0].n),1);
+ });
+ test('native SMS: closure commits ahead of waiting dispatch; no external send and held cost prevents settlement',async()=>{
+  const e=await sms.seedSmsEvent(admin),op=(await smsService.prepare(sms.smsPrepareInput(e,'native_close_first'))).operationId,a=await admin.connect(),b=await smsExecutor.connect();let committed=false;
+  try{await a.query('BEGIN');await a.query("SELECT pg_advisory_xact_lock(hashtextextended('funding:operational-budget:v3',0))");await a.query("UPDATE public.protests SET ends_at=clock_timestamp()-interval '1 second' WHERE id=$1",[e]);
+   const pid=(await b.query('SELECT pg_backend_pid() AS pid')).rows[0].pid,wait=b.query('SELECT funding_sms_fixture_private.claim($1)',[op]);const checked=assert.rejects(wait,/sms_dispatch_closed/);await observeWaiting(pid);await a.query('COMMIT');committed=true;await checked;assert.equal(smsProvider.calls(op),0);await assert.rejects(smsService.close(e,true),/sms_pending_items/);
+  }finally{if(!committed)await a.query('ROLLBACK');a.release();b.release();}
+ });
+ test('native SMS: cost projection commits before waiting settlement, balanced once and final unchanged',async()=>{
+  const e=await sms.seedSmsEvent(admin),op=(await smsService.prepare(sms.smsPrepareInput(e,'native_project_first'))).operationId;await smsService.dispatch(op);await smsService.ingestEvidence(sms.smsFixtureSecret,sms.smsFact(op,'native_settle_price'));await admin.query("UPDATE public.protests SET ends_at=clock_timestamp()-interval '1 second' WHERE id=$1",[e]);
+  const a=await smsExecutor.connect(),b=await smsExecutor.connect();let committed=false;
+  try{await a.query('BEGIN');assert.equal((await a.query('SELECT funding_sms_fixture_private.project($1) AS r',[op])).rows[0].r,'charged');const pid=(await b.query('SELECT pg_backend_pid() AS pid')).rows[0].pid,pending=b.query('SELECT funding_sms_fixture_private.close($1,true) AS r',[e]);await observeWaiting(pid);await a.query('COMMIT');committed=true;assert.equal(Number((await pending).rows[0].r.surplusCents),95);
+   assert.equal((await admin.query('SELECT hash_integridad FROM public.protests WHERE id=$1',[e])).rows[0].hash_integridad,'synthetic_final_v2');assert.equal(Number((await smsService.close(e,true)).surplusCents),95);
+  }finally{if(!committed)await a.query('ROLLBACK');a.release();b.release();}
+ });
+ test('native SMS: deferred commit fault has no ACK; lost committed claim never sends on retry',async()=>{
+  const e=await sms.seedSmsEvent(admin),op=(await smsService.prepare(sms.smsPrepareInput(e,'native_fault'))).operationId;await smsService.dispatch(op);
+  await admin.query("CREATE FUNCTION public.native_sms_fault() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic_sms_commit_fault';END $$;CREATE CONSTRAINT TRIGGER native_sms_fault AFTER INSERT ON funding_sms_fixture_private.facts DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION public.native_sms_fault()");
+  try{await assert.rejects(smsService.ingestEvidence(sms.smsFixtureSecret,sms.smsFact(op,'native_commit_fault')),e=>e.code==='sms_rehearsal_unavailable');assert.equal((await admin.query("SELECT id FROM funding_sms_fixture_private.facts WHERE reference='synthetic_sms_fact_native_commit_fault'")).rows.length,0);}finally{await admin.query('DROP TRIGGER native_sms_fault ON funding_sms_fixture_private.facts');}
+  const id=(await smsService.prepare(sms.smsPrepareInput(e,'native_lost_claim'))).operationId;let lose=true;const database={async connect(){const c=await smsExecutor.connect();return {async query(sql,args){const r=await c.query(sql,args);if(sql==='COMMIT'&&lose){lose=false;throw Error('synthetic_response_loss');}return r;},release(){c.release();}};}};
+  const provider=createSmsFixtureProvider(sms.smsProviderOptions),service=createSmsCostRehearsal({executorDatabase:database,evidenceDatabase:smsIngest,provider,mode:'isolated'});await assert.rejects(service.dispatch(id),e=>e.code==='sms_rehearsal_unavailable');assert.equal((await service.dispatch(id)).claimed,false);assert.equal(provider.calls(id),0);assert.equal(await service.project(id),'unknown');
+ });
  test('20 concurrent reservations cannot exceed cumulative event capacity',async()=>{
   const clients=await Promise.all(Array.from({length:20},()=>pool.connect()));
   try {

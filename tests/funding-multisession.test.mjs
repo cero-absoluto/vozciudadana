@@ -668,6 +668,11 @@ if(!connection) {
 
  let receiptPool,receiptService;after(()=>receiptPool?.end());
  test('native legacy receipt: independent ingest actor cannot assume financial or review authority',async()=>{
+  // Prior role suites have completed. Release their pools before this independent
+  // 20-connection suite; keep concurrency and PostgreSQL limits unchanged.
+  const completedPools=[reviewPool,cleanupPool,lifecyclePool,transitionLegacyPool,ownerEnrollment];
+  reviewPool=undefined;cleanupPool=undefined;lifecyclePool=undefined;transitionLegacyPool=undefined;ownerEnrollment=undefined;
+  await Promise.all(completedPools.filter(Boolean).map(p=>p.end()));
   await admin.query(await readFile(legacyReceiptMigration,'utf8'));
   await admin.query("CREATE ROLE funding_legacy_receipt_ci_login LOGIN INHERIT PASSWORD 'synthetic_receipt_ci' IN ROLE funding_legacy_receipt_ingest");
   const u=new URL(connection);u.username='funding_legacy_receipt_ci_login';u.password='synthetic_receipt_ci';receiptPool=new pg.Pool({connectionString:u.toString(),max:24});

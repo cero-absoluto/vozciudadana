@@ -1,4 +1,5 @@
-import { supabase } from '../services/supabase.js';
+import {routeRehearsal} from '../funding/participationRouteRehearsal.js';
+import { supabase as productionSupabase } from '../services/supabase.js';
 import { createHash } from 'crypto';
 
 // ── Configurable costs and fees (shared with protests.js — set via Railway env vars) ──
@@ -21,7 +22,9 @@ const MAX_DONATION_EUR = parseFloat(process.env.MAX_DONATION_EUR || '100');
  *
  * @param {import('fastify').FastifyInstance} app
  */
-export default async function kofiWebhookRoutes(app) {
+export default async function kofiWebhookRoutes(app,options={}) {
+  const rehearsal=routeRehearsal(options.rehearsal);
+  const supabase=rehearsal?.database??productionSupabase;
   // Ko-fi sends webhooks as application/x-www-form-urlencoded with a single
   // 'data' field containing a JSON string. Fastify needs an explicit parser
   // for this content type — without it, the server returns 415.
@@ -123,6 +126,8 @@ export default async function kofiWebhookRoutes(app) {
 
     // Fallback to env default (beta: only one protest accepts donations at a time)
     if (!protestId) protestId = process.env.KOFI_DEFAULT_PROTEST_ID || null;
+
+    if(rehearsal && await rehearsal.isScoped(protestId)) return reply.code(409).send({error:"LEGACY_FUNDING_DISABLED_FOR_SCOPE"});
 
     if (!protestId) {
       app.log.warn({ directLinkCode }, 'Ko-fi webhook: no matching protest_id found — crediting platform fund only');

@@ -11,7 +11,7 @@
     "dev:api": "npm run dev --workspace=apps/api",
     "build": "npm run build --workspace=apps/web",
     "preview": "npm run preview --workspace=apps/web",
-    "test:funding": "node --test tests/funding-isolated.test.mjs tests/funding-transition.test.mjs tests/funding-rollback.test.mjs tests/funding-rls.test.mjs tests/funding-auth.test.mjs tests/funding-temporal.test.mjs tests/funding-costs.test.mjs tests/funding-review.test.mjs tests/funding-owner-authority.test.mjs tests/funding-legacy-receipt.test.mjs tests/funding-sms-closure.test.mjs tests/funding-exact-cost.test.mjs tests/funding-sms-integration.test.mjs tests/funding-provider.test.mjs tests/funding-continuity.test.mjs tests/funding-multisession.test.mjs",
+    "test:funding": "node --test tests/funding-isolated.test.mjs tests/funding-transition.test.mjs tests/funding-rollback.test.mjs tests/funding-rls.test.mjs tests/funding-auth.test.mjs tests/funding-temporal.test.mjs tests/funding-costs.test.mjs tests/funding-review.test.mjs tests/funding-owner-authority.test.mjs tests/funding-legacy-receipt.test.mjs tests/funding-sms-closure.test.mjs tests/funding-exact-cost.test.mjs tests/funding-sms-integration.test.mjs tests/funding-provider.test.mjs tests/funding-continuity.test.mjs tests/funding-participation-routes.test.mjs tests/funding-multisession.test.mjs",
     "test:funding:qualification": "node --test tests/funding-qualification.test.mjs tests/funding-paypal-qualification.test.mjs",
     "test:funding:lifecycle": "node --test tests/funding-lifecycle.test.mjs",
     "test:funding:concurrency": "I4_REQUIRE_MULTISESSION=1 node --test tests/funding-multisession.test.mjs",

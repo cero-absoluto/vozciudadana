@@ -14,7 +14,8 @@
 //   AdhesionService:  "this authentic identity may participate here."
 
 import { createHmac } from 'crypto';
-import { supabase } from '../services/supabase.js';
+import { supabase as productionSupabase } from '../services/supabase.js';
+const supabase=productionSupabase;
 import { resolveLocationEvidence } from './locationEvidenceService.js';
 
 // ── Domain errors — the route layer maps these to HTTP responses ──────────
@@ -167,7 +168,9 @@ function identitySignalLabel(method) {
  * @param {CreateVerifiedAdhesionInput} input
  * @returns {Promise<{ id: string, created_at: string, ciudad: string|null, region: string|null, pais: string|null, adhesion_osm_id: number|null }>}
  */
-export async function createVerifiedAdhesion(input) {
+export async function createVerifiedAdhesion(input, rehearsal) {
+  if(rehearsal && (process.env.NODE_ENV==="production" || rehearsal.mode!=="isolated" || !rehearsal.database)) throw new Error("isolated_adhesion_rehearsal_required");
+  const supabase=rehearsal?.database??productionSupabase;
   const { protestId, identity, location, documentHash, institutionalMembership } = input;
 
   // Convocatoria admission policy that depends on BOTH the convocatoria and

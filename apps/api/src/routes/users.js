@@ -1,6 +1,7 @@
+import {routeRehearsal} from '../funding/participationRouteRehearsal.js';
 import { createHash, createHmac } from 'node:crypto';
-import { supabase } from '../services/supabase.js';
-import { sendOtp, verifyOtp } from '../services/twilio.js';
+import { supabase as productionSupabase } from '../services/supabase.js';
+import { sendOtp as productionSendOtp, verifyOtp as productionVerifyOtp } from '../services/twilio.js';
 import { verifyRecaptcha } from '../lib/recaptcha.js';
 import {
   signParticipationToken, generateDeviceSecret, deviceSecretMatches,
@@ -29,7 +30,11 @@ function hashIp(ip) {
 }
 
 /** @param {import('fastify').FastifyInstance} app */
-export default async function userRoutes(app) {
+export default async function userRoutes(app, options = {}) {
+  const rehearsal=routeRehearsal(options.rehearsal);
+  const supabase=rehearsal?.database??productionSupabase;
+  const sendOtp=rehearsal?.sendOtp??productionSendOtp;
+  const verifyOtp=rehearsal?.verifyOtp??productionVerifyOtp;
 
   // POST /api/users/request-otp
   app.post('/request-otp', {
@@ -44,6 +49,7 @@ export default async function userRoutes(app) {
           device_id:       { type: 'string', minLength: 8, maxLength: 128, nullable: true },
           protest_id:      { type: 'string', nullable: true },
         },
+        ...(rehearsal ? {properties: {phone: {type:'string',const:'+15005550006'},recaptcha_token:{type:'string',minLength:1},device_id:{type:'string',minLength:8},protest_id:{type:'string',format:'uuid'},request_key:{type:'string',format:'uuid'}},required:['phone','recaptcha_token','device_id','protest_id','request_key']} : {}),
         additionalProperties: false,
       },
     },
@@ -106,14 +112,23 @@ export default async function userRoutes(app) {
         device_id:   device_id || null,
         ip_hash,
         protest_id:  protest_id || null,
-        status:      'sent',
+        status:      rehearsal ? 'prepared' : 'sent',
         requested_at: new Date().toISOString(),
       });
 
     if (error) throw error;
 
     // ── 6. Send SMS ───────────────────────────────────────────────────────
-    await sendOtp(phone);
+    let result;
+    try{result=await sendOtp(phone, {...req.body});}catch(error){
+      if(!rehearsal)throw error;
+      await supabase.from('otp_requests').update({status:'review'}).eq('phone_hash',phone_hash).eq('device_id',device_id).eq('protest_id',protest_id).eq('status','prepared');
+      return reply.code(503).send({error:'SMS_VERIFICATION_UNAVAILABLE',code:'SMS_VERIFICATION_UNAVAILABLE'});
+    }
+    if(rehearsal){
+      if(result.sent){const {error:markError}=await supabase.from('otp_requests').update({status:'sent'}).eq('phone_hash',phone_hash).eq('device_id',device_id).eq('protest_id',protest_id).eq('status','prepared');if(markError)throw markError;}
+      return result;
+    }
     return { sent: true };
   });
 
@@ -139,6 +154,7 @@ export default async function userRoutes(app) {
           phone:        { type: 'string', minLength: 8, maxLength: 16, pattern: '^\\+[1-9]\\d{7,14}$' },
           otp:          { type: 'string', minLength: 6, maxLength: 6, pattern: '^[0-9]{6}$' },
           device_id:    { type: 'string', minLength: 8, maxLength: 128 },
+          ...(rehearsal ? {protest_id:{type:'string',format:'uuid'},operation_id:{type:'string',format:'uuid'}} : {}),
           country_code: { type: 'string', minLength: 2, maxLength: 2, pattern: '^[A-Z]{2}$', nullable: true },
         },
         additionalProperties: false,
@@ -147,7 +163,7 @@ export default async function userRoutes(app) {
   }, async (req, reply) => {
     const { phone, otp, device_id, country_code } = req.body;
 
-    const approved = await verifyOtp(phone, otp);
+    const approved = await verifyOtp(phone, otp, {...req.body});
     if (!approved) {
       // Mark OTP as expired on failure
       await supabase

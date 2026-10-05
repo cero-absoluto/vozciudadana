@@ -39,3 +39,5 @@ export async function registerSmsIntegrationCandidate(app,options={}){
   app.post(path,async(req,reply)=>{try{return await handlers[handler](req.body);}catch(e){return reply.code(e instanceof FundingError?e.statusCode:503).send({error:'integration_request_failed'});}});
  }
 }
+
+export const isSmsIntegrationCandidate = value => candidates.has(value);

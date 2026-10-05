@@ -1,4 +1,5 @@
-import { supabase } from '../services/supabase.js';
+import {routeRehearsal} from '../funding/participationRouteRehearsal.js';
+import { supabase as productionSupabase } from '../services/supabase.js';
 import { buildEvidentialScope } from '../lib/evidentialScope.js';
 import { evaluateSource, BLOCKED_DOMAINS } from '../lib/sourceCheck.js';
 import { verifyRecaptcha } from '../lib/recaptcha.js';
@@ -344,7 +345,9 @@ const PLATFORM_FEE_PCT  = parseFloat(process.env.PLATFORM_FEE_PERCENT || '10') /
 const MAX_DONATION_EUR  = parseFloat(process.env.MAX_DONATION_EUR   || '10');
 
 /** @param {import('fastify').FastifyInstance} app */
-export default async function protestRoutes(app) {
+export default async function protestRoutes(app, options = {}) {
+  const rehearsal=routeRehearsal(options.rehearsal);
+  const supabase=rehearsal?.database??productionSupabase;
   // GET /api/protests — list active protests (optionally filter by scope/country)
   app.get('/', {
     schema: {
@@ -633,7 +636,7 @@ export default async function protestRoutes(app) {
         location: { latitude: gps_lat ?? null, longitude: gps_lng ?? null, accuracyMeters: gps_accuracy ?? null, ip, language: idioma },
         documentHash: doc_hash ?? null,
         institutionalMembership: null,
-      });
+      }, rehearsal ? {mode:"isolated", database:supabase} : undefined);
     } catch (err) {
       if (err instanceof AlreadyJoinedError) return reply.code(409).send({ error: err.code, reason: err.message });
       if (err instanceof ProtestNotFoundError) return reply.notFound(err.message);
@@ -644,7 +647,7 @@ export default async function protestRoutes(app) {
     }
 
     // Descontar saldo por adhesion — solo si se envió SMS real (sms_sent !== false)
-    if (protest.saldo_euros !== null && protest.saldo_euros > 0 && sms_sent !== false) {
+    if (!(rehearsal && await rehearsal.isScoped(req.params.id)) && protest.saldo_euros !== null && protest.saldo_euros > 0 && sms_sent !== false) {
       await supabase.from('protests')
         .update({ saldo_euros: Math.max(0, protest.saldo_euros - SMS_COST_EUR) })
         .eq('id', req.params.id);
@@ -992,6 +995,7 @@ export default async function protestRoutes(app) {
     },
   }, async (req, reply) => {
     const { importe, mensaje, admin_secret } = req.body;
+    if(rehearsal && await rehearsal.isScoped(req.params.id)) return reply.code(409).send({error:"LEGACY_FUNDING_DISABLED_FOR_SCOPE"});
 
     if (admin_secret !== process.env.ADMIN_SECRET) {
       return reply.status(401).send({ error: 'No autorizado' });

@@ -108,3 +108,54 @@ New local regressions cover legacy adoption without rewriting ledger, purpose/ve
 
 ### Contract for future real Owner authentication (design only)
 Real activation must identify the accountable human/issuer, require strong independently verified credentials and current server-side authority/revocation for each action, bind request/evidence/payment/amount/source/expiry, and audit recovery/revocation without a hidden override. The donor or PSP bearer and editable user metadata cannot confer Owner authority. Issuing a decision and applying it remain separate privileges with independent financial recheck. No actual identity provider, enrollment, credential issuance or recovery operation is activated here.
+
+## Participation routes rehearsal (Owner gate 2026-10-05)
+
+`participationRouteRehearsal.js` is a branded, disposable-only adapter for the
+existing users/protests/Ko-fi route plugins. `server.js` never passes it, and
+production rejects injected adapters. It requires the intercepted Twilio
+candidate, synthetic destination, server-selected exposure bound and a private
+scope lookup. It does not enable a production transport or a production flag.
+
+The real request route retains reCAPTCHA/cooldown/rate-limit/nullifier admission
+before reservation and dispatch. A caller's request key is domain-bound by the
+server to event/device/telephone; retries reuse the durable operation claim.
+One process serializes unresolved attempts per binding. Another process or
+restart still relies on the underlying durable same-key claim, but the private
+verification lookup is intentionally ephemeral: no automatic recovery or resend
+is promised. Cross-process different-key admission needs a reviewed durable
+binding before production. `prepared`/`review` OTP states are harness states,
+not an approved modification of the live OTP schema/cron.
+
+The actual token signer, device check, eligibility service and SQL adhesion
+function run in the test harness. Scoped joins suppress the legacy SMS charge
+regardless of `sms_sent`; they cannot mint a token from this flag. Manual and
+Ko-fi scoped legacy writes are rejected before financial operations. Unknown
+webhook handling is not silently ACKed or classified as a donation; production
+needs the existing qualified inbox and its separately approved transition.
+
+The CLI-created migration `20261005114925_funding_participation_scope_rehearsal.sql`
+requires the disposable parent-fixture marker and deliberately refuses a normal
+production DB. It modifies a copy of the existing SQL admission function using
+an exact guard with drift rejection. Institutional admission no longer depends
+on a legacy balance for enrolled fixture scopes; closure, method validity,
+uniqueness and institutional membership remain in that same authority. Scope
+membership is append-only. Fences reject legacy balance changes, status-closed
+transfers and scoped legacy donation/movement writes. They do not constitute
+containment of a compromised privileged actor or fence every unscoped general
+fund write. They do not implement a public production participation closure.
+
+Rollback in the disposable environment is disposal of that DB. A real transition
+must pause new dispatch, retain evidence/holds, drain or review pending operations,
+and preserve fences until all competing writers are excluded. Never rollback by
+reenabling legacy financial writers over new scopes or dropping real ledgers.
+The synthetic migration must not be used as a production installation plan.
+
+The new HTTP/SQL tests intercept all network calls, simulate Google responses,
+and use a limited Supabase-shaped fixture for OTP/device/cooldown lookups while
+executing the actual adhesion SQL with `service_role` and its RLS constraints.
+They verify routing/authority composition, not real PostgREST, Google, Twilio,
+account pricing, legal retention or native PostgreSQL concurrency. Existing
+institutional OTP consumption semantics are not altered or newly homologated.
+The neutral UI message reuses `auth.verificationCannotContinue` for the new SMS
+unavailable code. Full UI request/operation binding is not activated.

@@ -380,7 +380,9 @@ async function sendSMS() {
     otpVisible.value = true;
     startWebOtpListener();
   } catch (err) {
-    if (err.status === 429 || err.message?.includes('429') || err.code === 'otp_rate_limited') {
+    if(err.code === 'SMS_VERIFICATION_UNAVAILABLE') {
+      ui.showToast(t('auth.verificationCannotContinue'));
+    } else if (err.status === 429 || err.message?.includes('429') || err.code === 'otp_rate_limited') {
       ui.showToast(t('auth.otpRateLimited'));
     } else {
       ui.showToast(t('auth.sendError'));

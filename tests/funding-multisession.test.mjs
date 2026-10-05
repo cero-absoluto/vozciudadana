@@ -93,11 +93,13 @@ if(!connection) {
   }finally{if(!committed)await a.query('ROLLBACK');a.release();b.release();}
  });
  test('native SMS: deferred commit fault has no ACK; lost committed claim never sends on retry',async()=>{
+  try{
   const e=await sms.seedSmsEvent(admin),op=(await smsService.prepare(sms.smsPrepareInput(e,'native_fault'))).operationId;await smsService.dispatch(op);
   await admin.query("CREATE FUNCTION public.native_sms_fault() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic_sms_commit_fault';END $$;CREATE CONSTRAINT TRIGGER native_sms_fault AFTER INSERT ON funding_sms_fixture_private.facts DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION public.native_sms_fault()");
   try{await assert.rejects(smsService.ingestEvidence(sms.smsFixtureSecret,sms.smsFact(op,'native_commit_fault')),e=>e.code==='sms_rehearsal_unavailable');assert.equal((await admin.query("SELECT id FROM funding_sms_fixture_private.facts WHERE reference='synthetic_sms_fact_native_commit_fault'")).rows.length,0);}finally{await admin.query('DROP TRIGGER native_sms_fault ON funding_sms_fixture_private.facts');}
   const id=(await smsService.prepare(sms.smsPrepareInput(e,'native_lost_claim'))).operationId;let lose=true;const database={async connect(){const c=await smsExecutor.connect();return {async query(sql,args){const r=await c.query(sql,args);if(sql==='COMMIT'&&lose){lose=false;throw Error('synthetic_response_loss');}return r;},release(){c.release();}};}};
   const provider=createSmsFixtureProvider(sms.smsProviderOptions),service=createSmsCostRehearsal({executorDatabase:database,evidenceDatabase:smsIngest,provider,mode:'isolated'});await assert.rejects(service.dispatch(id),e=>e.code==='sms_rehearsal_unavailable');assert.equal((await service.dispatch(id)).claimed,false);assert.equal(provider.calls(id),0);assert.equal(await service.project(id),'unknown');
+  }finally{const pools=[smsExecutor,smsIngest];smsExecutor=undefined;smsIngest=undefined;await Promise.all(pools.map(p=>p.end()));}
  });
  test('20 concurrent reservations cannot exceed cumulative event capacity',async()=>{
   const clients=await Promise.all(Array.from({length:20},()=>pool.connect()));

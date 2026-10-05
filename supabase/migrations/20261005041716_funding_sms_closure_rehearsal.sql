@@ -55,6 +55,8 @@ GRANT SELECT,UPDATE ON funding_private.accounts,funding_private.cost_reservation
 GRANT SELECT,INSERT ON funding_private.ledger_transactions,funding_private.ledger_entries,funding_private.settlements TO funding_sms_executor;
 GRANT SELECT ON funding_private.fee_reservations,funding_private.refund_reservations,funding_private.provider_movements,funding_private.movement_allocations TO funding_sms_executor;
 GRANT SELECT(id,event_id,state) ON funding_private.intents TO funding_sms_executor;
+GRANT SELECT(intent_id,result) ON funding_private.provider_applications TO funding_sms_executor;
+CREATE POLICY sms_lifecycle_guard_read ON funding_private.provider_applications FOR SELECT TO funding_sms_executor USING(true);
 DO $$ DECLARE tab text; BEGIN
  FOREACH tab IN ARRAY ARRAY['accounts','cost_reservations','ledger_transactions','ledger_entries','settlements','fee_reservations','refund_reservations','provider_movements','movement_allocations','intents'] LOOP
  EXECUTE format('CREATE POLICY sms_core_access ON funding_private.%I TO funding_sms_executor USING(true) WITH CHECK(true)',tab);

@@ -7,7 +7,8 @@ import * as f from './helpers/funding-fixture.mjs';
 import * as s from './helpers/funding-sms-closure-fixture.mjs';
 import {createSmsFixtureProvider,createSmsCostRehearsal} from '../apps/api/src/funding/smsCostRehearsal.js';
 const db=new PGlite();after(()=>db.close());await db.exec(f.fundingParentFixtureSQL);
-for(const m of ['fundingCoreMigration','fundingRlsMigration','fundingAuthMigration','fundingTemporalMigration','fundingCostsMigration','fundingReviewMigration'])await db.exec(await readFile(f[m],'utf8'));
+for(const m of ['fundingCoreMigration','fundingRlsMigration','fundingAuthMigration','fundingTemporalMigration','fundingCostsMigration','fundingReviewMigration','fundingProviderMigration','fundingContinuityMigration','fundingRetentionMigration','fundingLifecycleMigration','fundingLifecycleReplayMigration'])await db.exec(await readFile(f[m],'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/20261004183459_funding_owner_authority_contract.sql',import.meta.url),'utf8'));await db.exec(await readFile(new URL('../supabase/migrations/20261004201818_funding_legacy_receipt_journal.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(s.smsClosureMigration,'utf8'));await db.exec(s.smsParticipationFixtureSQL);
 const q=(x,a=[])=>db.query(x,a),admin={query:q};let tail=Promise.resolve(),failBefore=false,failAfter=false;
 function database(role){return {async connect(){let release;const previous=tail;tail=new Promise(r=>release=r);await previous;await db.exec('SET ROLE '+role);return {async query(sql,args){if(sql==='COMMIT'&&failBefore){failBefore=false;throw Error('synthetic_before_commit');}const r=await q(sql,args);if(sql==='COMMIT'&&failAfter){failAfter=false;throw Error('synthetic_response_loss');}return r;},release(){db.exec('RESET ROLE').then(release);}};}};}

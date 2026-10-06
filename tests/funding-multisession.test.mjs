@@ -194,7 +194,7 @@ if(!connection) {
    const pending=assert.rejects(composeRoute(durableIntegrated,database).sendOtp('+15005550006',input));await observeWaiting(pid);
    await c.query("UPDATE public.protests SET ends_at=clock_timestamp()-interval '1 second' WHERE id=$1",[e]);await c.query('COMMIT');await pending;
    assert.equal(Number((await admin.query('SELECT count(*) n FROM funding_sms_fixture_private.operations WHERE event_id=$1',[e])).rows[0].n),0);
-  }finally{await c.query('ROLLBACK');c.release();waiter.release();}
+  }finally{await c.query('ROLLBACK');c.release();waiter.release();const completed=[routePool,lookupPool];routePool=undefined;lookupPool=undefined;await Promise.all(completed.map(p=>p.end()));}
  });
  test('native integrated SMS: closure prevents dispatch and late price evidence cannot settle or rewrite final',async()=>{
   try{const e=await sms.seedSmsEvent(admin),op=(await integrated.candidate.prepare(integration.integrationInput(e,'native_late'))).operationId;await integrated.candidate.dispatch(op);await admin.query("UPDATE public.protests SET ends_at=clock_timestamp()-interval '1 second' WHERE id=$1",[e]);await integrated.candidate.close(e);await integrated.candidate.collect(op);await assert.rejects(integrated.candidate.close(e,true),/integration_settlement_blocked/);assert.equal((await admin.query('SELECT hash_integridad,saldo_euros FROM public.protests WHERE id=$1',[e])).rows[0].hash_integridad,'synthetic_final_v2');

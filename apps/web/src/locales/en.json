@@ -839,6 +839,7 @@
     "ipGeoProxy": "Voice Protest may use the IP address received by its backend server to estimate country, city and region through an external IP geolocation provider. The raw IP address is not stored. Only the approximate result may be used as a geographic reliability signal."
   },
   "funding": {
+    "temporaryChannelNotice": "Temporary channel: Ko-fi → personal PayPal. The Stichting has not yet been incorporated. The new system controls are not active on this channel, and compliance with the cumulative limits has not been established.",
     "title": "Funding & Independence Policy",
     "updated": "Last updated: June 2026",
     "principleTitle": "Our founding principle",
@@ -884,11 +885,11 @@
     "surplusTitle": "Unused verification funds",
     "surplusBody": "When a protest closes with unused verification funds, the remaining balance may be transferred to the platform sustainability fund and used exclusively for infrastructure, verification systems, security audits and platform maintenance.",
     "allocationTitle": "How donations are allocated",
-    "allocationBody": "Contributions may be divided between protest verification resources and the long-term sustainability of Voice Protest. The allocation model is publicly documented and may evolve as the project matures. Donations made from a specific event's screen are automatically assigned to that event's verification balance. Donations made directly through Ko-fi without a reference to a specific event are credited to the platform sustainability fund.",
+    "allocationBody": "The approved model restricts event contributions to verification/SMS while the event is active. General donations are a separate sustainability stream. Grants form a third stream. This model has not yet been activated on the temporary channel.",
     "sustainabilityTitle": "Platform sustainability fund",
     "sustainabilityBody": "The sustainability fund exists to preserve the long-term independence of Voice Protest. It may be used for hosting, security, verification systems, audits and future maintenance of the platform.",
-    "limitTitle": "Per-donation limit",
-    "limitBody": "To preserve the independence and participatory nature of the project, individual contributions are currently limited to €100 per donation. The purpose is that protests are funded collectively by many participants, not promoted by a single large donor. If a payment above this limit is received, only €100 is registered as a computable contribution. Any excess is held for manual review and is not automatically credited to the protest balance or the platform fund.",
+    "limitTitle": "Cumulative limits of the approved model",
+    "limitBody": "The approved model sets cumulative caps of €100 per verified telephone identity and event, and €1,000 per calendar year across event contributions and general donations. These are not per-transaction caps. Enforcement on the temporary channel has not been established.",
     "corporateNote": "Voice Protest is funded primarily through small individual contributions. It does not seek funding from companies, political parties, public administrations or organisations seeking to influence the governance of the project."
   },
   "evidence": {

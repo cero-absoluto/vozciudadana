@@ -159,3 +159,13 @@ account pricing, legal retention or native PostgreSQL concurrency. Existing
 institutional OTP consumption semantics are not altered or newly homologated.
 The neutral UI message reuses `auth.verificationCannotContinue` for the new SMS
 unavailable code. Full UI request/operation binding is not activated.
+
+
+## Owner-authorized durable follow-up — 2026-10-06
+The current isolated route factory requires a registered durable route store and
+a candidate with an encrypted lookup vault. Per-process Maps are no longer the
+route authority. See DURABLE_INSTALLATION_REVIEW.md for lifecycle, role boundaries,
+legacy coexistence, preflight, draft SQL, exact manifest and rollback. No production
+installer is supplied; normal DBs reject the fixture-guarded draft. The Owner keeps
+Ko-fi/personal PayPal and defers new PSP homologation until the Stichting.
+Native PG17 additions must actually run before their claims are verified.

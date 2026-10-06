@@ -839,6 +839,7 @@
     "ipGeoProxy": "Voice Protest puede usar la dirección IP recibida por su servidor backend para estimar país, ciudad y región a través de un proveedor externo de geolocalización por IP. La dirección IP en bruto no se almacena. Solo el resultado aproximado puede usarse como señal de fiabilidad geográfica."
   },
   "funding": {
+    "temporaryChannelNotice": "Canal provisional: Ko-fi → PayPal personal. La Stichting aún no está constituida. Los controles del nuevo sistema no están activos en este canal y su cumplimiento de los límites acumulados no está acreditado.",
     "title": "Política de Financiación e Independencia",
     "updated": "Última actualización: junio de 2026",
     "principleTitle": "Nuestro principio fundacional",
@@ -884,11 +885,11 @@
     "surplusTitle": "Fondos de verificación no utilizados",
     "surplusBody": "Cuando una protesta cierra con fondos de verificación no utilizados, el saldo restante puede transferirse al fondo de sostenibilidad de la plataforma y usarse exclusivamente para infraestructura, sistemas de verificación, auditorías de seguridad y mantenimiento de la plataforma.",
     "allocationTitle": "Cómo se asignan las donaciones",
-    "allocationBody": "Las contribuciones pueden dividirse entre los recursos de verificación de la protesta y la sostenibilidad a largo plazo de Voice Protest. El modelo de asignación está documentado públicamente y puede evolucionar a medida que el proyecto madure. Las donaciones realizadas desde la pantalla de un evento específico se asignan automáticamente al saldo de verificación de ese evento. Las donaciones realizadas directamente a través de Ko-fi sin referencia a un evento específico se acreditan al fondo de sostenibilidad de la plataforma.",
+    "allocationBody": "El modelo aprobado destina las aportaciones a convocatorias exclusivamente a su verificación/SMS mientras están activas. Las donaciones generales son un flujo separado para sostenibilidad. Los grants constituyen un tercer flujo. Este modelo aún no está activado en el canal provisional.",
     "sustainabilityTitle": "Fondo de sostenibilidad de la plataforma",
     "sustainabilityBody": "El fondo de sostenibilidad existe para preservar la independencia a largo plazo de Voice Protest. Puede usarse para alojamiento, seguridad, sistemas de verificación, auditorías y mantenimiento futuro de la plataforma.",
-    "limitTitle": "Límite por donación",
-    "limitBody": "Para preservar la independencia y el carácter participativo del proyecto, las contribuciones individuales están actualmente limitadas a 100€ por donación. El objetivo es que las protestas se financien colectivamente por muchos participantes, no que las promueva un único gran donante. Si se recibe un pago por encima de este límite, solo se registran 100€ como contribución computable. El exceso queda en revisión manual y no se acredita automáticamente al saldo de la protesta ni al fondo de la plataforma.",
+    "limitTitle": "Límites acumulados del modelo aprobado",
+    "limitBody": "El modelo aprobado establece un máximo acumulado de 100 € por identidad telefónica verificada y convocatoria, y 1.000 € por año natural sumando aportaciones a convocatorias y donaciones generales. No es un límite por transacción. Su aplicación en el canal provisional no está acreditada.",
     "corporateNote": "Voice Protest se financia principalmente mediante pequeñas contribuciones individuales. No busca financiación de empresas, partidos políticos, administraciones públicas ni organizaciones que busquen influir en la gobernanza del proyecto."
   },
   "evidence": {

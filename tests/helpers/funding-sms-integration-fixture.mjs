@@ -15,7 +15,7 @@ export function sdkResponder({prices=['0.005','0.005'],status='pending',fault=nu
  };
 }
 export function buildIntegration(databases,options={}){
- const adapter=createBlockedTwilioAdapter({mode:'isolated',referenceSecret,respond:options.respond??sdkResponder(options)});
+ const adapter=createBlockedTwilioAdapter({mode:'isolated',referenceSecret,respond:options.respond??sdkResponder(options),lookupVault:options.lookupVault});
  const candidate=createSmsIntegrationCandidate({mode:'isolated',adapter,bridgeDatabase:databases.bridgeDatabase,executorDatabase:databases.executorDatabase,evidenceDatabase:databases.evidenceDatabase,ingestDatabase:databases.ingestDatabase,calculatorDatabase:databases.calculatorDatabase,smsOptions:smsProviderOptions,exactOptions:exactCostOptions});return {adapter,candidate};
 }
 export const integrationInput=(eventId,key)=>smsPrepareInput(eventId,'bridge_'+key);

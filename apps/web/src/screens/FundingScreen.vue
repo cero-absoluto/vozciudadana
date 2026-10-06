@@ -8,6 +8,10 @@
         <div style="font-size:14px;color:var(--text2)">{{ $t('funding.updated') }}</div>
       </div>
 
+      <p role="status" style="padding:14px 16px;border:1px solid var(--border);border-radius:12px;color:var(--text2);line-height:1.6">
+        {{ $t('funding.temporaryChannelNotice') }}
+      </p>
+
       <!-- Founding principle -->
       <div style="background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.2);border-radius:12px;padding:14px 16px;margin-bottom:20px">
         <div style="font-size:15px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">{{ $t('funding.principleTitle') }}</div>

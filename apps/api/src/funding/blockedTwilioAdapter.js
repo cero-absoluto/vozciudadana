@@ -2,16 +2,21 @@ import twilio from 'twilio';
 import {createHmac} from 'node:crypto';
 import {canonicalCostDecimal} from './exactCostComponents.js';
 import {FundingError} from './isolatedService.js';
+import {isPrivateLookupVault} from './privateLookupVault.js';
 const check=(v,c)=>{if(!v)throw new FundingError(c,409);};
 const guard=mode=>check(mode==='isolated'&&process.env.NODE_ENV!=='production','isolated_twilio_required');
 const sid=(v,p)=>typeof v==='string'&&new RegExp('^'+p+'[a-f0-9]{32}$','i').test(v);
 const uuid=v=>typeof v==='string'&&/^[a-f0-9-]{36}$/.test(v);
 const adapters=new WeakSet();
+const durableAdapters=new WeakSet();
 export const isBlockedTwilioAdapter=v=>adapters.has(v);
+export const hasPrivateLookupVault=v=>durableAdapters.has(v);
 // The actual installed SDK is used, but its HTTP client has no network implementation.
-export function createBlockedTwilioAdapter({mode,respond,referenceSecret,maxPages=3}){
+export function createBlockedTwilioAdapter({mode,respond,referenceSecret,maxPages=3,lookupVault}){
  guard(mode);check(typeof respond==='function'&&typeof referenceSecret==='string'&&referenceSecret.length>=32&&Number.isSafeInteger(maxPages)&&maxPages>0&&maxPages<=10,'invalid_blocked_transport');
  const serviceSid='VA'+'a'.repeat(32),lookups=new Map(),calls=new Map();
+ if(lookupVault!==undefined)check(isPrivateLookupVault(lookupVault),'private_lookup_vault_required');
+ const lookup=id=>lookupVault?lookupVault.get(id):lookups.get(id);
  const ref=(kind,value)=>'synthetic_component_'+createHmac('sha256',referenceSecret).update(kind+':'+value).digest('hex');
  function client(operationId){return twilio('AC'+'a'.repeat(32),'synthetic_sdk_password_only',{autoRetry:false,logLevel:'silent',httpClient:{async request(r){
   const u=new URL(r.uri);check(u.origin==='https://verify.twilio.com'&&((r.method==='post'&&[(`/v2/Services/${serviceSid}/Verifications`),(`/v2/Services/${serviceSid}/VerificationCheck`)].includes(u.pathname))||(r.method==='get'&&u.pathname==='/v2/Attempts')),'blocked_transport_target');
@@ -29,14 +34,14 @@ export function createBlockedTwilioAdapter({mode,respond,referenceSecret,maxPage
    const r=await client(operationId).verify.v2.services(serviceSid).verifications.create({to:'+15005550006',channel:'sms'});
    check(sid(r.sid,'VE')&&r.serviceSid===serviceSid&&['pending','approved'].includes(r.status),'invalid_provider_binding');
    // Lookup is ephemeral and private; a recomposed adapter must not resend to recover it.
-   lookups.set(operationId,r.sid);return {state:'accepted'};
+   if(lookupVault)await lookupVault.put(operationId,r.sid);else lookups.set(operationId,r.sid);return {state:'accepted'};
   });},
   async check(operationId,code){guard(mode);check(code==='000000','synthetic_code_required');return safe(async()=>{
-   const id=lookups.get(operationId);check(id,'lookup_unavailable');const r=await client(operationId).verify.v2.services(serviceSid).verificationChecks.create({verificationSid:id,code});
+   const id=await lookup(operationId);check(id,'lookup_unavailable');const r=await client(operationId).verify.v2.services(serviceSid).verificationChecks.create({verificationSid:id,code});
    check(r.sid===id&&r.serviceSid===serviceSid&&['pending','approved','canceled'].includes(r.status),'invalid_provider_binding');return {approved:r.status==='approved'};
   });},
   async collect(operationId){guard(mode);return safe(async()=>{
-   const id=lookups.get(operationId);check(id,'lookup_unavailable');let page=await client(operationId).verify.v2.verificationAttempts.page({verificationSid:id,pageSize:50}),pages=0;const result=[];
+   const id=await lookup(operationId);check(id,'lookup_unavailable');let page=await client(operationId).verify.v2.verificationAttempts.page({verificationSid:id,pageSize:50}),pages=0;const result=[];
    while(page){check(++pages<=maxPages&&Array.isArray(page.instances)&&page.instances.length<=50,'pagination_bound');for(const r of page.instances){
     check(sid(r.sid,'VL')&&r.verificationSid===id&&r.serviceSid===serviceSid&&r.channel==='sms','invalid_attempt_binding');
     const price=r.price;let value=null,currency=null;if(price!=null){check(typeof price==='object'&&typeof price.currency==='string'&&/^[A-Z]{3}$/.test(price.currency),'invalid_price_currency');value=canonicalCostDecimal(price.value);currency=price.currency;}
@@ -49,5 +54,5 @@ export function createBlockedTwilioAdapter({mode,respond,referenceSecret,maxPage
    return result;
   });}
  };
- adapters.add(adapter);return Object.freeze(adapter);
+ adapters.add(adapter);if(lookupVault)durableAdapters.add(adapter);return Object.freeze(adapter);
 }

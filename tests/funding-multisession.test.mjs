@@ -1,3 +1,6 @@
+import {createDurableRouteStore} from '../apps/api/src/funding/durableRouteStore.js';
+import {createPrivateLookupVault} from '../apps/api/src/funding/privateLookupVault.js';
+import {createParticipationRouteRehearsal} from '../apps/api/src/funding/participationRouteRehearsal.js';
 import * as integration from './helpers/funding-sms-integration-fixture.mjs';
 import {createExactCostFixture,createExactCostService} from '../apps/api/src/funding/exactCostComponents.js';
 import * as exact from './helpers/funding-exact-cost-fixture.mjs';
@@ -153,6 +156,45 @@ if(!connection) {
   const e=await sms.seedSmsEvent(admin),input=integration.integrationInput(e,'native_bridge_fault');await admin.query("CREATE FUNCTION public.native_bridge_fault() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic_bridge_fault';END $$;CREATE CONSTRAINT TRIGGER native_bridge_fault AFTER INSERT ON funding_sms_bridge_private.bindings DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION public.native_bridge_fault()");
   const before=JSON.stringify(integrated.adapter.counts());try{await assert.rejects(integrated.candidate.prepare(input),/integration_binding_unavailable/);assert.equal(JSON.stringify(integrated.adapter.counts()),before);}finally{await admin.query('DROP TRIGGER native_bridge_fault ON funding_sms_bridge_private.bindings');}
   const op=(await integrated.candidate.prepare(input)).operationId;let lose=true;const executorDatabase={async connect(){const c=await integrated.executorDatabase.connect();return {async query(sql,args){const r=await c.query(sql,args);if(sql==='COMMIT'&&lose){lose=false;throw Error('synthetic_lost_claim');}return r;},release(){c.release();}};}};const next=integration.buildIntegration({...integrated,executorDatabase});await assert.rejects(next.candidate.dispatch(op),/sms_rehearsal_unavailable/);assert.equal((await next.candidate.dispatch(op)).claimed,false);assert.deepEqual(next.adapter.counts(),{});assert.equal((await next.candidate.inspect(op)).dispatchState,'unknown');
+ });
+
+ let routePool,lookupPool,durableIntegrated,composeRoute;after(()=>Promise.all([routePool?.end(),lookupPool?.end()]));
+ test('native durable routes: two actors and recomposed provider preserve one exposure and encrypted lookup',async()=>{
+  await admin.query(await readFile(new URL('../apps/api/src/funding/sql/durable-route-candidate.sql',import.meta.url),'utf8'));
+  for(const [name,parent] of [['route_ci','funding_route_runtime'],['lookup_ci','funding_lookup_runtime']])await admin.query(`CREATE ROLE ${name} LOGIN INHERIT PASSWORD 'synthetic_durable_ci_only' IN ROLE ${parent}`);
+  const make=name=>{const u=new URL(connection);u.username=name;u.password='synthetic_durable_ci_only';return new pg.Pool({connectionString:u.toString(),max:24});};routePool=make('route_ci');lookupPool=make('lookup_ci');
+  const vault=()=>createPrivateLookupVault({mode:'isolated',database:lookupPool,key:Buffer.alloc(32,7)});
+  durableIntegrated=integration.buildIntegration(integrated,{lookupVault:vault()});
+  composeRoute=(built,routeDatabase=routePool)=>createParticipationRouteRehearsal({candidate:built.candidate,database:{},boundCents:20,secret:'route-only-secret-'.repeat(4),store:createDurableRouteStore({mode:'isolated',database:routeDatabase}),scope:async()=>true});
+  const e=await sms.seedSmsEvent(admin),routeA=composeRoute(durableIntegrated),routeB=composeRoute(durableIntegrated),input={protest_id:e,device_id:'synthetic_native_device',request_key:randomUUID()};
+  const all=await Promise.allSettled(Array.from({length:20},(_,n)=>(n%2?routeA:routeB).sendOtp('+15005550006',input)));
+  const successes=all.filter(r=>r.status==='fulfilled');assert.ok(successes.length>0);assert.equal(successes.filter(r=>r.value.sent).length,1);
+  assert.equal(Number((await admin.query('SELECT count(*) n FROM funding_sms_fixture_private.operations WHERE event_id=$1',[e])).rows[0].n),1);
+  const id=successes[0].value.operation_id,next=integration.buildIntegration(integrated,{lookupVault:vault()}),restarted=composeRoute(next);
+  assert.equal(await restarted.verifyOtp('+15005550006','000000',{...input,operation_id:id}),true);
+  assert.equal((await restarted.sendOtp('+15005550006',input)).sent,false);assert.equal(Object.keys(next.adapter.counts()).some(k=>k.endsWith('/Verifications')),false);
+  await assert.rejects(restarted.sendOtp('+15005550006',{...input,request_key:randomUUID()}));
+  assert.equal(JSON.stringify((await admin.query('SELECT * FROM funding_lookup_private.references')).rows).includes(integration.providerSid('VE',id)),false);
+  for(const [pool,sql] of [[routePool,'UPDATE public.protests SET id=id'],[routePool,'SELECT * FROM funding_lookup_private.references'],[lookupPool,'SELECT * FROM funding_private.annual_limits'],[lookupPool,'SELECT * FROM funding_route_private.bindings']])await assert.rejects(pool.query(sql));
+ });
+ test('native durable route: uncertain binding commit blocks send and expired vault purges independently',async()=>{
+  const e=await sms.seedSmsEvent(admin),route=composeRoute(durableIntegrated),input={protest_id:e,device_id:'native_uncertain',request_key:randomUUID()};
+  await admin.query("CREATE FUNCTION public.route_deferred_fault() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN RAISE EXCEPTION 'synthetic_route_fault';END$$;CREATE CONSTRAINT TRIGGER route_deferred_fault AFTER UPDATE ON funding_route_private.bindings DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION public.route_deferred_fault()");
+  const before=JSON.stringify(durableIntegrated.adapter.counts());try{await assert.rejects(route.sendOtp('+15005550006',input));}finally{await admin.query('DROP TRIGGER route_deferred_fault ON funding_route_private.bindings');}
+  await assert.rejects(composeRoute(durableIntegrated).sendOtp('+15005550006',input));assert.equal(JSON.stringify(durableIntegrated.adapter.counts()),before);
+  const count=Number((await admin.query('SELECT count(*) n FROM funding_lookup_private.references')).rows[0].n);assert.ok(count>0);
+  await admin.query("UPDATE funding_lookup_private.references SET created_at=statement_timestamp()-interval '31 days',expires_at=statement_timestamp()-interval '1 day'");
+  assert.equal(Number((await admin.query('SELECT funding_lookup_private.purge_expired() n')).rows[0].n),count);
+ });
+ test('native durable route: parent cutoff observed before claim prevents any new exposure',async()=>{
+  const e=await sms.seedSmsEvent(admin),c=await admin.connect(),waiter=await routePool.connect(),input={protest_id:e,device_id:'native_cutoff',request_key:randomUUID()};
+  try{await c.query('BEGIN');await c.query('SELECT id FROM public.protests WHERE id=$1 FOR UPDATE',[e]);
+   const pid=(await waiter.query('SELECT pg_backend_pid() pid')).rows[0].pid;
+   const database={async connect(){return {query:(...args)=>waiter.query(...args),release(){}};}};
+   const pending=assert.rejects(composeRoute(durableIntegrated,database).sendOtp('+15005550006',input));await observeWaiting(pid);
+   await c.query("UPDATE public.protests SET ends_at=clock_timestamp()-interval '1 second' WHERE id=$1",[e]);await c.query('COMMIT');await pending;
+   assert.equal(Number((await admin.query('SELECT count(*) n FROM funding_sms_fixture_private.operations WHERE event_id=$1',[e])).rows[0].n),0);
+  }finally{await c.query('ROLLBACK');c.release();waiter.release();}
  });
  test('native integrated SMS: closure prevents dispatch and late price evidence cannot settle or rewrite final',async()=>{
   try{const e=await sms.seedSmsEvent(admin),op=(await integrated.candidate.prepare(integration.integrationInput(e,'native_late'))).operationId;await integrated.candidate.dispatch(op);await admin.query("UPDATE public.protests SET ends_at=clock_timestamp()-interval '1 second' WHERE id=$1",[e]);await integrated.candidate.close(e);await integrated.candidate.collect(op);await assert.rejects(integrated.candidate.close(e,true),/integration_settlement_blocked/);assert.equal((await admin.query('SELECT hash_integridad,saldo_euros FROM public.protests WHERE id=$1',[e])).rows[0].hash_integridad,'synthetic_final_v2');

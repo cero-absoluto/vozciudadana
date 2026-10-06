@@ -839,6 +839,7 @@
     "ipGeoProxy": "Voice Protest peut utiliser l'adresse IP reçue par son serveur backend pour estimer le pays, la ville et la région."
   },
   "funding": {
+    "temporaryChannelNotice": "Canal provisoire : Ko-fi → compte PayPal personnel. La Stichting n’est pas encore constituée. Les contrôles du nouveau système ne sont pas actifs sur ce canal et le respect des plafonds cumulés n’est pas établi.",
     "title": "Politique de Financement et d'Indépendance",
     "updated": "Dernière mise à jour : juin 2026",
     "principleTitle": "Notre principe fondateur",
@@ -884,11 +885,11 @@
     "surplusTitle": "Fonds de vérification non utilisés",
     "surplusBody": "Lorsqu'une protestation se clôture avec des fonds de vérification non utilisés, le solde restant peut être transféré au fonds de durabilité de la plateforme.",
     "allocationTitle": "Comment les dons sont alloués",
-    "allocationBody": "Les contributions peuvent être réparties entre les ressources de vérification de la protestation et la durabilité à long terme de Voice Protest.",
+    "allocationBody": "Le modèle approuvé réserve les contributions à un événement à sa vérification/SMS pendant sa période active. Les dons généraux constituent un flux distinct pour la pérennité. Les subventions forment un troisième flux. Ce modèle n’est pas encore activé sur le canal provisoire.",
     "sustainabilityTitle": "Fonds de durabilité de la plateforme",
     "sustainabilityBody": "Le fonds de durabilité existe pour préserver l'indépendance à long terme de Voice Protest.",
-    "limitTitle": "Limite par don",
-    "limitBody": "Pour préserver l'indépendance et le caractère participatif du projet, les contributions individuelles sont actuellement limitées à 100€ par don.",
+    "limitTitle": "Plafonds cumulés du modèle approuvé",
+    "limitBody": "Le modèle approuvé fixe des plafonds cumulés de 100 € par identité téléphonique vérifiée et événement, et de 1 000 € par année civile pour les contributions aux événements et les dons généraux. Il ne s’agit pas de plafonds par transaction. Leur application au canal provisoire n’est pas établie.",
     "corporateNote": "Voice Protest est principalement financé par de petites contributions individuelles."
   },
   "evidence": {

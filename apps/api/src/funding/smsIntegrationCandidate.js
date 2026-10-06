@@ -1,9 +1,10 @@
 import {createSmsCostRehearsal,createSmsFixtureProvider} from './smsCostRehearsal.js';
 import {createExactCostService,createExactCostFixture} from './exactCostComponents.js';
-import {isBlockedTwilioAdapter} from './blockedTwilioAdapter.js';
+import {isBlockedTwilioAdapter,hasPrivateLookupVault} from './blockedTwilioAdapter.js';
 import {FundingError} from './isolatedService.js';
 const check=(v,c,s=409)=>{if(!v)throw new FundingError(c,s);};
 const candidates=new WeakSet();
+const durableCandidates=new WeakSet();
 export function createSmsIntegrationCandidate({mode,adapter,bridgeDatabase,executorDatabase,evidenceDatabase,ingestDatabase,calculatorDatabase,smsOptions,exactOptions}){
  check(mode==='isolated'&&process.env.NODE_ENV!=='production'&&isBlockedTwilioAdapter(adapter),'isolated_integration_required',503);
  check([smsOptions.secret,exactOptions.secret,exactOptions.proofSecret,exactOptions.fundingSecret,exactOptions.ownerSecret,exactOptions.participationSecret].every(k=>k!==adapter.referenceSecret),'distinct_reference_secret_required',503);
@@ -19,7 +20,7 @@ export function createSmsIntegrationCandidate({mode,adapter,bridgeDatabase,execu
   async inspect(id){const b=await bridge('inspect',[id]);const cost=await costs.inspect(b.exact_operation_id);return {operationId:id,dispatchState:await sms.project(id),cost:{totals:cost.totals,components:cost.components,status:cost.status==='review'?'review':'pending_evidence'},feeBasis:'unknown',settlementBlocked:true,fundsMoved:false,simulated:true};},
   async close(eventId,settle=false){check(settle===false,'integration_settlement_blocked');return sms.close(eventId,false);}
  };
- candidates.add(candidate);return Object.freeze(candidate);
+ candidates.add(candidate);if(hasPrivateLookupVault(adapter))durableCandidates.add(candidate);return Object.freeze(candidate);
 }
 // Private handler composition, not mounted by server.js or production route modules.
 export function createSmsIntegrationHandlers({enabled=false,candidate,legacy,participation}){
@@ -41,3 +42,4 @@ export async function registerSmsIntegrationCandidate(app,options={}){
 }
 
 export const isSmsIntegrationCandidate = value => candidates.has(value);
+export const isDurableSmsIntegrationCandidate=value=>durableCandidates.has(value);

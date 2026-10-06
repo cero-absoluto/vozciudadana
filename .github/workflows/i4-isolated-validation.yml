@@ -42,3 +42,33 @@ jobs:
         run: npm run test:funding:qualification
       - name: Durable provider lifecycle regressions
         run: npm run test:funding:lifecycle
+
+  installation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    if: github.ref == 'refs/heads/i4-validation-20261003'
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: i4_installation
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: i4_synthetic_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d i4_installation"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.19.0
+      - run: npm ci
+      - name: Native inert installation and guarded rollback
+        run: node --test --test-concurrency=1 tests/funding-inert-installation.test.mjs
+        env:
+          I4_INSTALLATION_PG_URL: postgresql://postgres:i4_synthetic_only@127.0.0.1:5432/i4_installation

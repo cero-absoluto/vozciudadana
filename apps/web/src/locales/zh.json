@@ -376,6 +376,7 @@
     "toastProtestNotFound": "找不到该号召。请返回首页后重试。",
     "toast": "✓ 经验证参与已登记",
     "toastNational": "无法加入。此抗议仅面向与{country}国家范围有联系的经验证参与者。",
+    "toastNationalNoCountry": "无法加入。此抗议仅面向与其国家范围有联系的经验证参与者。",
     "notiOn": "🔔 通知已启用",
     "notiOff": "🔔 关闭时通知我",
     "gpsReinforceTitle": "还没有分享您的位置？",

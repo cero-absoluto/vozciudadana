@@ -376,6 +376,7 @@
     "toastProtestNotFound": "No se pudo encontrar la convocatoria. Vuelve al inicio e inténtalo de nuevo.",
     "toast": "✓ Adhesión verificada registrada",
     "toastNational": "No puedes unirte. Esta protesta es solo para participantes verificados vinculados al ámbito nacional de {country}.",
+    "toastNationalNoCountry": "No puedes unirte. Esta protesta es solo para participantes verificados vinculados a su ámbito nacional.",
     "notiOn": "🔔 Notificaciones activadas",
     "notiOff": "🔔 Notificarme cuando cierre",
     "gpsReinforceTitle": "¿Aún no compartiste tu ubicación?",

@@ -23,6 +23,7 @@ export const JOIN_REJECTION_KIND = Object.freeze({
 
 const KEY = Object.freeze({
   national: 'verify.toastNational',
+  national_no_country: 'verify.toastNationalNoCountry',
   already: 'verify.toastAlready',
   no_funds: 'verify.toastSinSaldo',
   verification_required: 'verify.toastVerificationRequired',
@@ -76,4 +77,23 @@ export function joinRejectionPath(rejection, protestId) {
     return `/informe/${encodeURIComponent(String(protestId))}`;
   }
   return '/';
+}
+
+/**
+ * Message key + interpolation params for a classification.
+ * verify.toastNational needs {country}: use the convocatoria's country name when
+ * there is one, otherwise a complete variant that does not mention a country.
+ * Presentation only: it never changes whether the person may join.
+ * @param {{ kind: string, toastKey: string }} rejection
+ * @param {unknown} countryName  display name of the convocatoria's country, if known
+ * @returns {{ key: string, params: Record<string,string> }}
+ */
+export function joinRejectionToast(rejection, countryName) {
+  if (rejection.kind === 'national') {
+    const name = typeof countryName === 'string' ? countryName.trim() : '';
+    return name
+      ? { key: KEY.national, params: { country: name } }
+      : { key: KEY.national_no_country, params: {} };
+  }
+  return { key: rejection.toastKey, params: {} };
 }

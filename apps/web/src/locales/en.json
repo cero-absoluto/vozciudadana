@@ -376,6 +376,7 @@
     "toastProtestNotFound": "The convocatoria could not be found. Go back to the home screen and try again.",
     "toast": "✓ Verified adhesion registered",
     "toastNational": "Cannot join. This protest is only for verified participants connected to the national scope of {country}.",
+    "toastNationalNoCountry": "Cannot join. This protest is only for verified participants connected to its national scope.",
     "notiOn": "🔔 Notifications enabled",
     "notiOff": "🔔 Notify me when it closes",
     "gpsReinforceTitle": "Haven't shared your location yet?",

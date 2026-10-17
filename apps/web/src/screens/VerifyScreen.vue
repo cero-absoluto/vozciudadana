@@ -60,6 +60,7 @@ import { useProtestsStore } from '@/stores/protests.js';
 import { useDeviceStore }   from '@/stores/device.js';
 import { useUiStore }       from '@/stores/ui.js';
 import { useI18n } from 'vue-i18n';
+import { classifyJoinRejection, joinRejectionPath } from '@/lib/joinRejection.js';
 
 const { t } = useI18n();
 
@@ -146,6 +147,16 @@ onMounted(async () => {
 const target = lastId 
   ? protests.protests.find(p => String(p.id) === lastId)
   : protests.protests.find(p => !p.joined && protests.canJoin(p).ok);
+  if (!target) {
+    // No convocatoria to join (list empty, load failed, or the id in
+    // vc_last_joined is not in the loaded list). Nothing was sent to the
+    // backend, so nothing is confirmed: end the flow here, before any
+    // success state or post-success effect. The message does not claim the
+    // convocatoria closed (it may simply have failed to load). No retry.
+    ui.showToast(t('verify.toastProtestNotFound'));
+    router.push('/');
+    return;
+  }
   if (target) {
     try {
       const participationToken = sessionStorage.getItem('vc_participation_token');
@@ -179,23 +190,14 @@ const target = lastId
   showGpsReinforce.value = !hadGpsAtJoin.value && !!gpsUpdateToken.value;
 });
     } catch (e) {
-      if (e.code === 'NATIONAL_ONLY') {
-        ui.showToast(t('verify.toastNational'));
-        router.push('/');
-        return;
-      }
-      if (e.status === 409 || e.message?.includes('409') || e.message?.includes('already')) {
-        ui.showToast(t('verify.toastAlready'));
-        router.push('/');
-        return;
-      }
-      if (e.status === 402 || e.message?.includes('402') || e.message?.includes('SALDO')) {
-        ui.showToast(t('verify.toastSinSaldo'));
-        router.push('/');
-        return;
-      }
-      ui.showToast(t('verify.toastError'));
-      router.push('/');
+      // Message + destination come from lib/joinRejection.js: fixed translated
+      // messages only (never server text). NATIONAL_ONLY, 409 and 402 behave as
+      // before; VERIFICATION_REQUIRED goes back to /auth (vc_last_joined and the
+      // other vc_* keys are left untouched, so the flow resumes on the same
+      // convocatoria) and PROTEST_CLOSED goes to its public report.
+      const rejection = classifyJoinRejection(e);
+      ui.showToast(t(rejection.toastKey));
+      router.push(joinRejectionPath(rejection, target.id));
       return;
     }
     protests.joinProtest(target.id);

@@ -61,6 +61,8 @@
   },
   "home": {
     "filterAll": "Todos",
+    "loadFailed": "No se pudieron cargar los eventos. Comprueba tu conexión e inténtalo de nuevo.",
+    "retry": "Reintentar",
     "filterNational": "🏛️ Nacional",
     "filterRegional": "🌐 Regional",
     "filterGlobal": "🌍 Global",

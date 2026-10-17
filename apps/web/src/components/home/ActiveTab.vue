@@ -1,6 +1,7 @@
 <template>
   <div>
-    <div v-if="!protests.length" style="padding:20px 14px;text-align:center">
+    <!-- A failed load is not an empty list: the failure notice (with retry) lives in HomeScreen. -->
+    <div v-if="!protests.length && !store.error" style="padding:20px 14px;text-align:center">
       <div style="font-size:22px;margin-bottom:8px">🌍</div>
       <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:4px">{{ $t('active.empty') }}</div>
       <div style="font-size:10px;color:var(--text3);line-height:1.6">{{ $t('active.emptyDesc') }}</div>

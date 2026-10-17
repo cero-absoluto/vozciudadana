@@ -61,6 +61,8 @@
   },
   "home": {
     "filterAll": "All",
+    "loadFailed": "Events could not be loaded. Check your connection and try again.",
+    "retry": "Try again",
     "filterNational": "🏛️ National",
     "filterRegional": "🌐 Regional",
     "filterGlobal": "🌍 Global",

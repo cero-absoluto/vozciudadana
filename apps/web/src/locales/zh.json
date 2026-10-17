@@ -63,6 +63,7 @@
     "filterAll": "全部",
     "loadFailed": "无法加载活动。请检查网络连接后重试。",
     "retry": "重试",
+    "loadingEvents": "正在加载…",
     "filterNational": "🏛️ 全国",
     "filterRegional": "🌐 地区",
     "filterGlobal": "🌍 全球",

@@ -60,9 +60,10 @@ import { useProtestsStore } from '@/stores/protests.js';
 import { useDeviceStore }   from '@/stores/device.js';
 import { useUiStore }       from '@/stores/ui.js';
 import { useI18n } from 'vue-i18n';
-import { classifyJoinRejection, joinRejectionPath } from '@/lib/joinRejection.js';
+import { classifyJoinRejection, joinRejectionPath, joinRejectionToast } from '@/lib/joinRejection.js';
+import { localizedCountry } from '@/constants.js';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const router   = useRouter();
 const protests = useProtestsStore();
@@ -196,7 +197,11 @@ const target = lastId
       // other vc_* keys are left untouched, so the flow resumes on the same
       // convocatoria) and PROTEST_CLOSED goes to its public report.
       const rejection = classifyJoinRejection(e);
-      ui.showToast(t(rejection.toastKey));
+      // NATIONAL_ONLY needs the country: localized name of the convocatoria's country if
+      // known, else its stored name, else a variant of the message without a country.
+      const countryName = target.country ? localizedCountry(target.country, locale.value) : target.countryName;
+      const toast = joinRejectionToast(rejection, countryName);
+      ui.showToast(t(toast.key, toast.params));
       router.push(joinRejectionPath(rejection, target.id));
       return;
     }

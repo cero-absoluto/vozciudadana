@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createI18n } from 'vue-i18n';
-import { classifyJoinRejection, joinRejectionPath, JOIN_REJECTION_KIND } from '../apps/web/src/lib/joinRejection.js';
+import { classifyJoinRejection, joinRejectionPath, joinRejectionToast, JOIN_REJECTION_KIND } from '../apps/web/src/lib/joinRejection.js';
 
 const L = ['es', 'en', 'fr', 'zh'];
 const loc = Object.fromEntries(L.map(l => [l, JSON.parse(fs.readFileSync(new URL(`../apps/web/src/locales/${l}.json`, import.meta.url), 'utf8'))]));
@@ -78,7 +78,7 @@ test('generic: fixed translated key; server text is never returned', () => {
 
 test('locales: the four new messages exist in es/en/fr/zh, non-empty, no placeholders, and the old keys are untouched', () => {
   for (const l of L) {
-    for (const k of ['toastVerificationRequired', 'toastClosed', 'toastErrorGeneric', 'toastProtestNotFound']) {
+    for (const k of ['toastVerificationRequired', 'toastClosed', 'toastErrorGeneric', 'toastProtestNotFound', 'toastNationalNoCountry']) {
       const v = loc[l].verify[k];
       assert.equal(typeof v, 'string', `${l}.${k}`); assert.ok(v.trim().length > 15, `${l}.${k} too short`);
       assert.ok(!/[{}]/.test(v), `${l}.${k} must not contain placeholders`);
@@ -95,9 +95,37 @@ test('rendered with vue-i18n in every language: complete messages, never ending 
     const i18n = createI18n({ legacy: false, locale: l, messages: { [l]: loc[l] } });
     for (const kind of Object.values(JOIN_REJECTION_KIND)) {
       const key = classifyJoinRejection(kind === 'generic' ? new Error('x') : { national: BACKEND.national, already: BACKEND.already, no_funds: BACKEND.noFunds, verification_required: BACKEND.verification, closed: BACKEND.closed }[kind]).toastKey;
-      if (kind === 'national') continue; // verify.toastNational has a {country} placeholder that the unchanged call never fills (see report)
+      if (kind === 'national') continue; // verify.toastNational has a {country} placeholder: covered by the dedicated national test below
       const out = i18n.global.t(key);
       assert.ok(out.trim().length > 15, `${l} ${key}`); assert.ok(!/[:：]\s*$/.test(out), `${l} ${key} ends with empty detail: "${out}"`);
     }
+  }
+});
+
+test('NATIONAL_ONLY toast: country name when known, complete variant without country otherwise; other kinds untouched', () => {
+  const nat = classifyJoinRejection(BACKEND.national);
+  assert.deepEqual(joinRejectionToast(nat, 'España'), { key: 'verify.toastNational', params: { country: 'España' } });
+  assert.deepEqual(joinRejectionToast(nat, '  Spain '), { key: 'verify.toastNational', params: { country: 'Spain' } });
+  for (const missing of [undefined, null, '', '   ', 42, {}, []]) {
+    assert.deepEqual(joinRejectionToast(nat, missing), { key: 'verify.toastNationalNoCountry', params: {} }, String(missing));
+  }
+  // admission decision/destination unchanged: still kind=national, key verify.toastNational, back to '/'
+  assert.equal(nat.kind, 'national'); assert.equal(nat.toastKey, 'verify.toastNational'); assert.equal(joinRejectionPath(nat, 'P1'), '/');
+  for (const e of [BACKEND.already, BACKEND.noFunds, BACKEND.verification, BACKEND.closed, new Error('x')]) {
+    const r = classifyJoinRejection(e); assert.deepEqual(joinRejectionToast(r, 'España'), { key: r.toastKey, params: {} });
+  }
+});
+
+test('NATIONAL_ONLY rendered in es/en/fr/zh: with country (no empty "de ." ending, no placeholder) and without country (complete)', () => {
+  const countries = { es: 'España', en: 'Spain', fr: 'Espagne', zh: '西班牙' };
+  const nat = classifyJoinRejection(BACKEND.national);
+  for (const l of L) {
+    const i18n = createI18n({ legacy: false, locale: l, messages: { [l]: loc[l] } });
+    const withC = joinRejectionToast(nat, countries[l]); const out1 = i18n.global.t(withC.key, withC.params);
+    assert.ok(out1.includes(countries[l]), `${l}: ${out1}`); assert.ok(!/[{}]/.test(out1), `${l}: ${out1}`); assert.ok(!/\s[.。]$/.test(out1), `${l} empty ending: ${out1}`);
+    const noC = joinRejectionToast(nat, undefined); const out2 = i18n.global.t(noC.key, noC.params);
+    assert.ok(out2.trim().length > 15, `${l}: ${out2}`); assert.ok(!/[{}]/.test(out2), `${l} placeholder: ${out2}`);
+    assert.ok(!/\s[.。]$/.test(out2) && !/(\bde|\bof|的)\s*[.。]$/.test(out2), `${l} ends with empty country: ${out2}`);
+    assert.notEqual(out1, out2);
   }
 });

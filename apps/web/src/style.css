@@ -142,7 +142,6 @@ a:hover{opacity:.8}
   .mstep{font-size:12px !important;color:var(--text) !important}
   .mn{width:18px;height:18px;font-size:9px}
 }
-}
 .screen{display:none;flex-direction:column;flex:1;overflow:hidden;animation:fadeUp .3s ease}
 #s-home{overflow-y:auto!important}
 .screen.active{display:flex}

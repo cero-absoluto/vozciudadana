@@ -175,11 +175,10 @@ export const useProtestsStore = defineStore('protests', () => {
       const keptClosed = protests.value.filter(p => p.timer <= 0 && !freshIds.has(p.id));
       protests.value = [...fresh, ...keptClosed];
     } catch (err) {
+      // A failed load is an error state, not an empty list: keep whatever real
+      // data is already in memory, never substitute fictitious data, and let
+      // the UI show a translated message with a manual retry (shown by HomeScreen).
       error.value = err.message;
-      // Fall back to demo data so the UI stays usable offline
-      if (!protests.value.length) {
-        protests.value = FALLBACK_PROTESTS.map(p => ({ ...p }));
-      }
     } finally {
       loading.value = false;
     }

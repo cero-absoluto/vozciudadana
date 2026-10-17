@@ -61,6 +61,8 @@
   },
   "home": {
     "filterAll": "全部",
+    "loadFailed": "无法加载活动。请检查网络连接后重试。",
+    "retry": "重试",
     "filterNational": "🏛️ 全国",
     "filterRegional": "🌐 地区",
     "filterGlobal": "🌍 全球",

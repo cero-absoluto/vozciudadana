@@ -10,6 +10,16 @@
            ya se pide en su momento (AuthScreen), con el argumento real
            (pertenencia + que no lo tachen de manipulado), no como un
            porcentaje abstracto sin ninguna decisión asociada. -->
+      <!-- A failed load is NOT an empty state: say so and offer a manual retry
+           (no automatic retries). Fixed translated text only; the raw error is never shown.
+           Shown here, not in ActiveTab, because the tab panel is hidden until a filter is chosen. -->
+      <div v-if="protests.error" role="alert" id="load-failed" style="padding:12px 14px;text-align:center;border:.5px solid var(--border2);border-radius:var(--r);margin:0 0 8px">
+        <div style="font-size:12px;color:var(--text);line-height:1.6;margin-bottom:8px">{{ $t('home.loadFailed') }}</div>
+        <button @click="protests.loadProtests()" :disabled="protests.loading"
+          style="padding:7px 14px;background:var(--accent);border:none;border-radius:var(--r);color:white;font-size:11px;cursor:pointer">
+          {{ $t('home.retry') }}
+        </button>
+      </div>
       <div class="device-bar">
         <div class="dev-info">
           <div class="dev-country"><span class="dev-flag">{{ deviceFlag }}</span> {{ displayCountryName }}{{ device.regionLabel ? ' · ' + device.regionLabel : '' }}</div>

@@ -63,6 +63,7 @@
     "filterAll": "Todos",
     "loadFailed": "No se pudieron cargar los eventos. Comprueba tu conexión e inténtalo de nuevo.",
     "retry": "Reintentar",
+    "loadingEvents": "Cargando…",
     "filterNational": "🏛️ Nacional",
     "filterRegional": "🌐 Regional",
     "filterGlobal": "🌍 Global",

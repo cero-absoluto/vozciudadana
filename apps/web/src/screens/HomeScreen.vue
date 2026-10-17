@@ -14,8 +14,8 @@
            (no automatic retries). Fixed translated text only; the raw error is never shown.
            Shown here, not in ActiveTab, because the tab panel is hidden until a filter is chosen. -->
       <div v-if="protests.error" role="alert" id="load-failed" style="padding:12px 14px;text-align:center;border:.5px solid var(--border2);border-radius:var(--r);margin:0 0 8px">
-        <div style="font-size:12px;color:var(--text);line-height:1.6;margin-bottom:8px">{{ $t('home.loadFailed') }}</div>
-        <button @click="protests.loadProtests()" :disabled="protests.loading"
+        <div style="font-size:12px;color:var(--text);line-height:1.6;margin-bottom:8px">{{ protests.loading ? $t('home.loadingEvents') : $t('home.loadFailed') }}</div>
+        <button @click="retryLoad" :disabled="protests.loading" :aria-busy="protests.loading"
           style="padding:7px 14px;background:var(--accent);border:none;border-radius:var(--r);color:white;font-size:11px;cursor:pointer">
           {{ $t('home.retry') }}
         </button>
@@ -110,6 +110,14 @@ const device   = useDeviceStore();
 const { locale } = useI18n({ useScope: 'global' });
 
 const tab = ref('active');
+
+// Manual retry. The guard also covers clicks dispatched before Vue re-renders the
+// disabled button (loadProtests sets loading synchronously), so a slow response
+// can never start parallel loads from this button.
+function retryLoad() {
+  if (protests.loading) return;
+  protests.loadProtests();
+}
 const showMapOverlay = ref(!localStorage.getItem('vc_map_intro'));
 const timerWidth = ref(100);
 let timerInterval = null;

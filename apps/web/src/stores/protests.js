@@ -20,6 +20,7 @@ function normalizeProtest(p) {
     count:       p.count ?? 0,
     heat:        p.heat ?? 5,
     timer:       Math.max(0, Math.floor((endsAt - Date.now()) / 1000)),
+    endsAtMs:    Number.isFinite(endsAt) ? endsAt : null,
     color:       p.dominio_email ? INST_COLOR : (SCOPE_COLOR[p.scope] ?? '#7C6FFF'),
     cities:      p.cities_count ?? 0,
     desc:        p.description,
@@ -250,7 +251,11 @@ export const useProtestsStore = defineStore('protests', () => {
   function tickTimers() {
     protests.value.forEach(p => {
       if (p.timer > 0) {
-        p.timer--;
+        // Re-derive from ends_at so a throttled/suspended tab cannot keep
+        // the countdown (and the join button) alive past the real closure.
+        p.timer = p.endsAtMs != null
+          ? Math.max(0, Math.floor((p.endsAtMs - Date.now()) / 1000))
+          : p.timer - 1;
       }
     });
   }

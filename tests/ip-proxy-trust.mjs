@@ -144,7 +144,7 @@ test('B4 con un borde que REEMPLAZA (lo que afirma el moderador de Railway) la c
   });
 });
 
-test('B5 LÍMITE DECLARADO: si NADIE reescribe la cabecera (passthrough) la app no puede distinguir; la corrección no lo arregla y no lo pretende', async () => {
+test('B5 LÍMITE DECLARADO: si un proxy INTERNO no reescribe la cabecera (passthrough) la app no puede distinguir; la corrección no lo arregla y no lo pretende', async () => {
   const { fastifyTrustProxy } = await import('../apps/api/src/lib/proxyTrust.js');
   await withStack({ trustProxy: fastifyTrustProxy() }, 'passthrough', async (px) => {
     await ipinfo(px, U(1), '8.8.8.8');
@@ -165,6 +165,35 @@ test('C1 ningún sitio lee ya x-forwarded-for a mano y server.js usa la configur
 test('C2 TRUST_PROXY_HOPS: por defecto 1; valores válidos 0..5; inválidos abortan el arranque', async () => {
   const { trustProxyHops, fastifyTrustProxy } = await import('../apps/api/src/lib/proxyTrust.js');
   assert.equal(trustProxyHops({}), 1); assert.equal(trustProxyHops({ TRUST_PROXY_HOPS: '' }), 1);
-  assert.equal(trustProxyHops({ TRUST_PROXY_HOPS: '2' }), 2); assert.equal(fastifyTrustProxy({ TRUST_PROXY_HOPS: '0' }), false); assert.equal(fastifyTrustProxy({ TRUST_PROXY_HOPS: '1' }), 1);
+  assert.equal(trustProxyHops({ TRUST_PROXY_HOPS: '2' }), 2); assert.equal(fastifyTrustProxy({ TRUST_PROXY_HOPS: '0' }), false); assert.equal(typeof fastifyTrustProxy({ TRUST_PROXY_HOPS: '1' }), 'function', 'nunca la forma numérica (GHSA-3m5p-2c4r-xxw2)');
   for (const bad of ['-1', '6', '1.5', 'true', 'abc', '1e1']) assert.throws(() => trustProxyHops({ TRUST_PROXY_HOPS: bad }), /TRUST_PROXY_HOPS/, bad);
+});
+
+// ── Autenticación del proxy (Codex P1): no basta contar saltos ───────────────
+async function echoIp(trustProxy, remoteAddress, xff) {
+  const app = Fastify({ trustProxy });
+  app.get('/ip', async (req) => ({ ip: req.ip }));
+  await app.ready();
+  const r = await app.inject({ method: 'GET', url: '/ip', remoteAddress, headers: xff ? { 'x-forwarded-for': xff } : {} });
+  await app.close(); return r.json().ip;
+}
+test('D1 un llamador con dirección PÚBLICA que salta el proxy no se cree: su X-Forwarded-For se ignora y req.ip es su dirección', async () => {
+  const { fastifyTrustProxy } = await import('../apps/api/src/lib/proxyTrust.js');
+  assert.equal(await echoIp(fastifyTrustProxy(), '8.8.8.8', '1.2.3.4'), '8.8.8.8');
+  assert.equal(await echoIp(fastifyTrustProxy(), '203.0.113.9', '1.2.3.4, 5.6.7.8'), '203.0.113.9');
+  assert.equal(await echoIp(fastifyTrustProxy(), '2001:db8::5', '1.2.3.4'), '2001:db8::5');
+});
+test('D2 un proxy INTERNO (CGNAT/privado/loopback) sí se cree, solo 1 salto: se usa la entrada que ÉL añadió (la derecha), no la que antepuso el cliente', async () => {
+  const { fastifyTrustProxy } = await import('../apps/api/src/lib/proxyTrust.js');
+  for (const peer of ['100.64.1.2', '10.0.0.7', '172.20.1.1', '192.168.5.5', '127.0.0.1', 'fd12::9']) {
+    assert.equal(await echoIp(fastifyTrustProxy(), peer, '6.6.6.6, 9.9.9.9'), '9.9.9.9', peer);
+  }
+  assert.equal(await echoIp(fastifyTrustProxy({ TRUST_PROXY_HOPS: '2' }), '100.64.1.2', '6.6.6.6, 9.9.9.9, 100.64.7.7'), '9.9.9.9', '2 saltos: la entrada interna se salta');
+  assert.equal(await echoIp(fastifyTrustProxy({ TRUST_PROXY_HOPS: '2' }), '100.64.1.2', '6.6.6.6, 8.8.4.4, 100.64.7.7'), '8.8.4.4');
+  assert.equal(await echoIp(fastifyTrustProxy({ TRUST_PROXY_HOPS: '0' }), '100.64.1.2', '9.9.9.9'), '100.64.1.2', '0 saltos: no se confía en nadie');
+});
+test('D3 isInternalAddress: solo privadas/CGNAT/loopback/enlace local/ULA; públicas, mal formadas y no-cadenas son falsas', async () => {
+  const { isInternalAddress } = await import('../apps/api/src/lib/proxyTrust.js');
+  for (const a of ['127.0.0.1', '::1', '10.1.2.3', '172.16.5.5', '172.31.255.255', '192.168.1.1', '100.64.0.9', '100.127.255.255', '169.254.1.1', '::ffff:100.64.1.2', 'fd12::1', 'fe80::1']) assert.equal(isInternalAddress(a), true, a);
+  for (const a of ['172.32.0.1', '100.128.0.1', '100.63.255.255', '8.8.8.8', '::ffff:8.8.8.8', '2001:db8::1', 'abc', '', '1.2.3', '999.1.1.1', undefined, null, 5, {}]) assert.equal(isInternalAddress(a), false, String(a));
 });

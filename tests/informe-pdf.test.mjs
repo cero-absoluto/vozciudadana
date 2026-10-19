@@ -243,3 +243,25 @@ test('source has no raw invisible/line-separator characters (they must be escape
     assert.ok(!/[\u200B-\u200F\u2028\u2029\u202A-\u202E\u2060-\u2064\uFE00-\uFE0F\u20E3]/u.test(src), f);
   }
 });
+
+test('language is frozen for the whole generation: switching the UI language while the font loads does not mix languages', async () => {
+  const i18n = createI18n({ legacy: false, locale: 'zh', fallbackLocale: 'en', messages: loc });
+  const frozen = mod.freezeTranslator(i18n.global.t, 'zh');
+  let release; const gate = new Promise(r => { release = r; });
+  const pending = mod.buildInformePdf({ data: FIXTURES.zh.data, protestId: 'x', abuseLabel: FIXTURES.zh.abuse, locale: 'zh', t: frozen, integrity: NO_INTEGRITY,
+    loadFont: async () => { await gate; return asArrayBuffer(fontBuf); } });
+  i18n.global.locale.value = 'en';           // the user clicks EN in the top bar while the font is downloading
+  release();
+  const r = await pending;
+  const all = r.drawn.join('\n');
+  assert.ok(all.includes(loc.zh.informe.pdf.generated) && all.includes(loc.zh.informe.pdf.footer.slice(0, 12)));
+  for (const w of ['Generated', 'Recipient', 'Page 1', 'Verification chain', 'Humanity signal']) assert.ok(!all.includes(w), w);
+  assert.ok(all.includes('2026年7月31日'), 'date stays in the frozen language');
+  // control: an unfrozen translator is exactly what mixed languages
+  const i18n2 = createI18n({ legacy: false, locale: 'zh', fallbackLocale: 'en', messages: loc });
+  const mixedPending = mod.buildInformePdf({ data: FIXTURES.zh.data, protestId: 'x', abuseLabel: FIXTURES.zh.abuse, locale: 'zh', t: i18n2.global.t, integrity: NO_INTEGRITY,
+    loadFont: async () => { await gate; return asArrayBuffer(fontBuf); } });
+  i18n2.global.locale.value = 'en';
+  const m = await mixedPending;
+  assert.ok(m.drawn.join('\n').includes('Generated'), 'control shows the original defect');
+});

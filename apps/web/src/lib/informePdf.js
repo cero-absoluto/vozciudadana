@@ -24,6 +24,15 @@ export function formatPdfDateTime(iso, locale) {
   }) + ' UTC';
 }
 
+/**
+ * A translator pinned to `locale`. The PDF is built after an await (the font may be downloading), and
+ * the user can switch the interface language in the meantime: everything in one PDF must stay in the
+ * language that was selected when the button was pressed.
+ */
+export function freezeTranslator(t, locale) {
+  return (key, params) => t(key, params ?? {}, { locale });
+}
+
 /** The font needed by this PDF could not be loaded or registered; nothing was generated. */
 export class PdfFontError extends Error {
   constructor(cause) { super('PDF font unavailable'); this.name = 'PdfFontError'; this.cause = cause; }

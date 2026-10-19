@@ -871,7 +871,7 @@ import { ref, computed, onMounted } from 'vue';
 import { hasIntegrityDiscrepancy, verifyIntegrityPayload } from '@/lib/integrityVerification.js';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
-import { buildInformePdf, dateLocaleTag, PdfFontError } from '@/lib/informePdf.js';
+import { buildInformePdf, dateLocaleTag, freezeTranslator, PdfFontError } from '@/lib/informePdf.js';
 import { localizedCountry } from '@/constants.js';
 
 const route = useRoute();
@@ -1013,6 +1013,9 @@ async function downloadPDF() {
   if (!d || pdfBusy.value) return;
   pdfBusy.value = true;
   pdfError.value = '';
+  // Everything below is read now, before any await, so a language switch while the font is
+  // downloading cannot mix languages inside one PDF.
+  const lang = locale.value;
   try {
     const { doc, fileName } = await buildInformePdf({
       data: d,
@@ -1024,8 +1027,8 @@ async function downloadPDF() {
       },
       protestId: route.params.id,
       abuseLabel: tipoAbusoLabel.value,
-      locale: locale.value,
-      t,
+      locale: lang,
+      t: freezeTranslator(t, lang),
     });
     doc.save(fileName);
   } catch (err) {

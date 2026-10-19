@@ -97,26 +97,19 @@ export default async function userRoutes(app) {
       }
     }
 
-    // ── 4. Nullifier check — before sending SMS ─────────────────────────
-    // If protest_id provided, check if this number already adhered.
-    // Returns neutral 200 {sent:false} — does not reveal the reason,
-    // preventing enumeration attacks on participation status.
-    if (protest_id && phone_hash) {
-      const nullifierCheck = createHmac('sha256', process.env.NULLIFIER_SECRET || 'dev-secret')
-        .update(phone_hash + protest_id)
-        .digest('hex');
-      const { data: existingNullifier } = await supabase
-        .from('adhesions')
-        .select('id')
-        .eq('protest_id', protest_id)
-        .eq('nullifier', nullifierCheck)
-        .is('deleted_at', null)
-        .is('anonymized_at', null)
-        .maybeSingle();
-      if (existingNullifier) {
-        return reply.code(200).send({ sent: false });
-      }
-    }
+    // ── 4. No per-number participation check before the SMS ────────────────
+    // This step used to look up `HMAC(phone_hash + protest_id)` in adhesions and
+    // answer a distinguishable `{ sent: false }` for numbers that had already
+    // adhered. Two problems: (a) the value never matched what /join stores
+    // (AdhesionService.computeNullifier prefixes 'v1:phone_otp:' and separates
+    // fields), so the check was dead since the AdhesionService refactor; and
+    // (b) making it match would turn this endpoint into an oracle: anyone who
+    // holds a phone number and a protest id (both client-supplied) could learn
+    // whether that number took part. The response and the SMS are therefore the
+    // same for every number; duplicates are rejected at /join by the unique
+    // (protest_id, nullifier) index, and a returning device is handled by the
+    // device_secret / locks flow. Cost: an already-adhered number on another
+    // device still receives an SMS. See docs/proposals/ for the alternatives.
 
     // ── 5. Log OTP request ────────────────────────────────────────────────
     const { error } = await supabase

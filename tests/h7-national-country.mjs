@@ -134,11 +134,11 @@ test('5. H7: un dispositivo ya verificado con país declarado falso vuelve a ent
   assert.equal(r.statusCode, 201, 'las verificaciones ya existentes arrastran el valor declarado');
 });
 
-test('6. H7: el país sigue a la última declaración del mismo device_id (upsert por id)', async () => {
+test('6. H7: el país sigue a la última declaración del mismo device_id (upsert por id), distinta de la primera', async () => {
   await verify(PHONE_ES, 'device-x-0001', 'ES');
-  await verify(PHONE_FR, 'device-x-0001', 'ES'); // mismo dispositivo, otro número
-  const row = db.devices.get('device-x-0001');
-  assert.equal(row.country_code, 'ES');
+  assert.equal(db.devices.get('device-x-0001').country_code, 'ES');
+  await verify(PHONE_FR, 'device-x-0001', 'FR'); // mismo dispositivo, otro número y otra declaración
+  assert.equal(db.devices.get('device-x-0001').country_code, 'FR', 'queda almacenada la segunda declaración');
 });
 
 test('7. límite de la prueba: sin country_code declarado, el dispositivo queda con país nulo y /join lo rechaza', async () => {

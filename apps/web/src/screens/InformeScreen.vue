@@ -61,6 +61,8 @@
             <div class="ir-hero-label">{{ $t('informe.heroLabel', { country: localizedCountryName }) }}</div>
           </template>
 
+          <p class="ir-limits">{{ $t('informe.limitsNote') }}</p>
+
           <div class="ir-hero-demand">{{ data.protest.demands }}</div>
         </div>
 
@@ -132,7 +134,7 @@
 
           <!-- Distribución geográfica general -->
           <div v-if="hasGeoData" style="margin-top:20px">
-            <div class="ir-caption" style="font-style:italic;opacity:.75;margin-bottom:10px">{{ $t('informe.geoIpCaveat') }}</div>
+            <div class="ir-caption" style="font-style:italic;opacity:.75;margin-bottom:10px">{{ $t('informe.geoIpCaveat') }} {{ $t('informe.placeNamesNote') }}</div>
             <div v-if="Object.keys(data.distribucion_regiones).length" style="margin-bottom:12px">
               <div class="ir-caption" style="margin-bottom:8px">{{ $t('informe.geoByRegion') }}</div>
               <div class="ir-tags">
@@ -331,9 +333,10 @@
         </div>
 
         <!-- ══ ACCIONES ═══════════════════════════════════════════════ -->
+        <p v-if="pdfError" class="ir-pdf-error" role="alert">{{ pdfError }}</p>
         <div class="ir-actions">
           <button class="btn-primary ir-btn-back" @click="$router.back()">{{ $t('informe.back') }}</button>
-          <button class="btn-primary ir-btn-pdf" @click="downloadPDF">{{ $t('informe.downloadPdf') }}</button>
+          <button class="btn-primary ir-btn-pdf" :disabled="pdfBusy" @click="downloadPDF">{{ $t('informe.downloadPdf') }}</button>
           <button class="ir-btn-embed" @click="showEmbed=true">{{ $t('informe.embedBtn') }}</button>
         </div>
 
@@ -813,6 +816,8 @@
 }
 
 .ir-btn-back { flex: 1; padding: 14px; font-size: 17px; }
+.ir-limits { margin: 16px 0 4px; padding: 10px 14px; text-align: left; border-left: 3px solid var(--accent2); background: rgba(255,255,255,.04); font-size: 13px; line-height: 1.5; color: var(--text2); }
+.ir-pdf-error { margin: 0 0 10px; padding: 10px 14px; border-left: 3px solid var(--accent3); background: rgba(255,255,255,.04); font-size: 13px; line-height: 1.5; color: var(--text); }
 .ir-btn-pdf  { flex: 1; padding: 14px; font-size: 17px; background: var(--accent2); color: #000; }
 .ir-btn-embed {
   padding: 14px 16px;
@@ -866,7 +871,7 @@ import { ref, computed, onMounted } from 'vue';
 import { hasIntegrityDiscrepancy, verifyIntegrityPayload } from '@/lib/integrityVerification.js';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
-import { jsPDF } from 'jspdf';
+import { buildInformePdf, dateLocaleTag, freezeTranslator, PdfFontError } from '@/lib/informePdf.js';
 import { localizedCountry } from '@/constants.js';
 
 const route = useRoute();
@@ -974,12 +979,12 @@ onMounted(async () => {
 
 function formatDate(iso) {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(dateLocaleTag(locale.value), { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 function formatDateTime(iso) {
   if (!iso) return '—';
-  return new Date(iso).toLocaleString('es-ES', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleString(dateLocaleTag(locale.value), { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
 }
 
 function pct(count) {
@@ -1000,139 +1005,37 @@ function maxPct(count) {
   return max > 0 ? Math.round((count / max) * 100) : 0;
 }
 
-function downloadPDF() {
+const pdfBusy = ref(false);
+const pdfError = ref('');
+
+async function downloadPDF() {
   const d = data.value;
-  if (!d) return;
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const W = 210; const M = 18; const CW = W - M * 2;
-  let y = 0;
-  function nl(h = 7) { y += h; }
-  function line() { doc.setDrawColor(76,255,164); doc.setLineWidth(0.3); doc.line(M, y, W-M, y); nl(6); }
-  function h2(txt) { doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(76,255,164); doc.text(txt, M, y); nl(8); }
-  function body(txt) { doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(220,218,240); doc.splitTextToSize(txt, CW).forEach(l => { if (y > 265) { doc.addPage(); setPageBg(); y = 22; } doc.text(l, M, y); nl(7); }); }
-  function kv(k, v) {
-    const label = k + ':';
-    const val = String(v);
-    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(76,255,164);
-    const labelW = doc.getTextWidth(label);
-    if (labelW > 44) {
-      doc.text(label, M, y); nl(5);
-      doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(240,238,255);
-      const lines = doc.splitTextToSize(val, CW - 8);
-      lines.forEach(l => { if (y > 265) { doc.addPage(); setPageBg(); y = 22; } doc.text(l, M + 8, y); nl(6); });
-    } else {
-      doc.text(label, M, y);
-      doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(240,238,255);
-      doc.text(doc.splitTextToSize(val, CW - 48)[0], M + 48, y); nl(7);
-    }
+  if (!d || pdfBusy.value) return;
+  pdfBusy.value = true;
+  pdfError.value = '';
+  // Everything below is read now, before any await, so a language switch while the font is
+  // downloading cannot mix languages inside one PDF.
+  const lang = locale.value;
+  try {
+    const { doc, fileName } = await buildInformePdf({
+      data: d,
+      integrity: {
+        hasSnapshotV2: hasSnapshotV2.value,
+        snapshot: integrityData.value,
+        discrepancy: integrityDiscrepancy.value,
+        unavailable: integrityUnavailable.value || integrityLoading.value,
+      },
+      protestId: route.params.id,
+      abuseLabel: tipoAbusoLabel.value,
+      locale: lang,
+      t: freezeTranslator(t, lang),
+    });
+    doc.save(fileName);
+  } catch (err) {
+    // No document is downloaded; the user can press the button again.
+    pdfError.value = err instanceof PdfFontError ? t('informe.pdfErrorFont') : t('informe.pdfErrorGeneric');
+  } finally {
+    pdfBusy.value = false;
   }
-  function setPageBg() { doc.setFillColor(12,11,20); doc.rect(0,0,210,297,'F'); }
-
-  setPageBg(); y = 20;
-  doc.setFillColor(30,27,50); doc.rect(0,10,210,30,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(76,255,164); doc.text('VOICE PROTEST — INFORME PÚBLICO VERIFICADO', M, 18);
-  doc.setFontSize(8); doc.setTextColor(180,178,200); doc.text('www.voiceprotest.org', M, 24);
-  doc.setFontSize(8); doc.setTextColor(140,138,170); doc.text('Generado: ' + new Date().toISOString(), M, 30);
-  y = 46;
-
-  doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(255,255,255);
-  doc.splitTextToSize(d.protest.title, CW).forEach(l => { doc.text(l, M, y); nl(8); });
-  nl(2); line();
-
-  h2('1. DESTINATARIO');
-  kv('Institución', d.protest.focal_point || '—');
-  kv('País', d.protest.country_name || '—');
-  nl(2); line();
-
-  h2('2. CONVOCATORIA');
-  kv('Inicio', d.protest.starts_at ? new Date(d.protest.starts_at).toLocaleDateString('es-ES') : '—');
-  kv('Cierre', d.protest.ends_at ? new Date(d.protest.ends_at).toLocaleDateString('es-ES') : '—');
-  kv('Tipo de abuso', tipoAbusoLabel.value);
-  if (d.protest.fuente_url) {
-    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(76,255,164);
-    doc.text('Fuente:', M, y);
-    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(100,160,255);
-    const urlLines = doc.splitTextToSize(d.protest.fuente_url, CW - 48);
-    urlLines.forEach((l, i) => { doc.text(l, i === 0 ? M+48 : M+4, y); nl(5); });
-    nl(2);
-  }
-  if (d.protest.demands) { nl(1); body('Demandas: ' + d.protest.demands); }
-  nl(2); line();
-
-  h2('3. RESULTADOS');
-  if ((d.protest.scope === 'local' || d.protest.scope === 'regional') && d.desglose_geografico_local) {
-    const territorio = d.protest.convocatoria_ciudad_nombre || '—';
-    kv('GPS verificado en ' + territorio, d.desglose_geografico_local.gps_local + ' participantes');
-    if (d.desglose_geografico_local.gps_nacional > 0) kv('Participantes nacionales adicionales', d.desglose_geografico_local.gps_nacional);
-    if (d.desglose_geografico_local.internacionales > 0) kv('Participantes internacionales', d.desglose_geografico_local.internacionales);
-    kv('Total adhesiones verificadas', d.total_adhesiones);
-  } else if (d.protest.dominio_email) {
-    kv('Miembros verificados de ' + d.protest.dominio_email, d.total_adhesiones);
-  } else {
-    kv('Adhesiones verificadas', d.total_adhesiones);
-    kv('Países distintos', d.paises_distintos);
-  }
-  if (d.ciudades_distintas > 0) kv('Ciudades distintas', d.ciudades_distintas);
-  kv('Primera adhesión', d.primera_adhesion ? new Date(d.primera_adhesion).toLocaleString('es-ES') : '—');
-  kv('Última adhesión', d.ultima_adhesion ? new Date(d.ultima_adhesion).toLocaleString('es-ES') : '—');
-  nl(2); line();
-
-  h2('4. DISTRIBUCIÓN GEOGRÁFICA');
-  if (d.desglose_geografico_local) {
-    const dg = d.desglose_geografico_local;
-    body('Verificación territorial (' + (dg.municipio || dg.scope) + '):');
-    if (dg.gps_local > 0) body('  GPS confirmado dentro del territorio: ' + dg.gps_local);
-    if (dg.nacionales_sin_gps > 0) body('  Participantes nacionales sin GPS: ' + dg.nacionales_sin_gps);
-    if (dg.internacionales > 0) body('  Participantes internacionales: ' + dg.internacionales);
-    nl(1);
-  }
-  if ((d.distribucion_regiones && Object.keys(d.distribucion_regiones).length) || d.distribucion_ciudades?.length) {
-    doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(140,140,140);
-    const caveatLines = doc.splitTextToSize(t('informe.geoIpCaveat'), CW);
-    caveatLines.forEach(l => { doc.text(l, M, y); nl(4); });
-    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(60,60,60);
-    nl(1);
-  }
-  if (d.distribucion_regiones && Object.keys(d.distribucion_regiones).length) {
-    body('Por región:');
-    Object.entries(d.distribucion_regiones).forEach(([r,c]) => body('  ' + r + ': ' + c));
-  }
-  if (d.distribucion_ciudades?.length) body('Ciudades: ' + d.distribucion_ciudades.slice(0,15).join(' · '));
-  nl(2); line();
-
-  h2('5. ' + t('informe.chainTitle').toUpperCase());
-  body('1. reCAPTCHA v3 — ' + t('informe.chain1'));
-  body('2. SMS/Email OTP — ' + t('informe.chain2'));
-  body('3. HMAC-SHA256 — ' + t('informe.chain3'));
-  body('4. ' + t('informe.chain4Title') + ' — ' + t('informe.chain4'));
-  nl(2); line();
-
-  h2('6. SELLO DE INTEGRIDAD');
-  kv('ID de convocatoria', route.params.id);
-  kv('Código fuente', 'github.com/cero-absoluto/vozciudadana (AGPL 3.0)');
-  kv('Generado', new Date().toISOString());
-  if (d.protest.hash_integridad) {
-    nl(1); body(t('informe.recordedHashLabel', { version: d.protest.integrity_version || 1 }));
-    doc.setFont('courier','normal'); doc.setFontSize(9); doc.setTextColor(76,255,164);
-    doc.splitTextToSize(d.protest.hash_integridad, CW).forEach(l => { doc.text(l, M, y); nl(4); });
-    if (hasSnapshotV2.value) {
-      nl(2); body(t('informe.snapshotHashLabel', { version: integrityData.value.integrity_version }));
-      doc.setFont('courier','normal'); doc.setFontSize(9);
-      doc.splitTextToSize(integrityData.value.integrity_hash, CW).forEach(l => { doc.text(l, M, y); nl(4); });
-    }
-    if (integrityDiscrepancy.value) { nl(2); body(t('informe.historicalDiscrepancy')); }
-    if (integrityUnavailable.value || integrityLoading.value) { nl(2); body(t('informe.verifyUnavailable')); }
-  }
-
-  const totalPages = doc.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    doc.setFillColor(20,18,35); doc.rect(0,285,210,12,'F');
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(140,138,170);
-    doc.text('Voice Protest — Plataforma de protesta ciudadana verificada — AGPL 3.0', M, 291);
-    doc.text('Página ' + i + ' de ' + totalPages, W-M, 291, {align:'right'});
-  }
-
-  doc.save('voiceprotest-informe-' + d.protest.title.replace(/[^a-z0-9]/gi,'-').toLowerCase().slice(0,40) + '.pdf');
 }
 </script>

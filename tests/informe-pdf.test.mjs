@@ -93,7 +93,7 @@ test('font loads only when needed: chinese UI or chinese/Polish/Cyrillic content
   const zh = await build(FIXTURES.zh); assert.equal(zh.usedEmbeddedFont, true); assert.equal(fontLoads, 1);
   const a = await build(CONTENT_CASES.esUiChineseContent); assert.equal(a.usedEmbeddedFont, true, 'content decides, not UI language');
   const b = await build(CONTENT_CASES.esUiPolishCyrillic); assert.equal(b.usedEmbeddedFont, true);
-  assert.ok(b.drawn.join('\n').includes('Київ'), 'Cyrillic drawn');
+  assert.ok(b.drawn.join('\n').includes('Київ') && b.drawn.join('\n').includes('Việt Nam') && b.drawn.join('\n').includes('Łódź'), 'Cyrillic, Vietnamese and Polish drawn');
   const c = await build(CONTENT_CASES.esLatinOnly); assert.equal(c.usedEmbeddedFont, false);
 });
 

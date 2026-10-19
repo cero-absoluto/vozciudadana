@@ -78,7 +78,7 @@ export const FIXTURES = {
 export const CONTENT_CASES = {
   esUiChineseContent: { ui: 'es', data: FIXTURES.zh.data, abuse: 'Opacidad o falta de rendición de cuentas' },
   esUiPolishCyrillic: { ui: 'es', abuse: 'Opacidad', data: { ...FIXTURES.es.data, protest: { ...FIXTURES.es.data.protest,
-    title: 'Zażółć gęślą jaźń: Київ та Москва — Łódź, Gdańsk, Český Krumlov',
+    title: 'Zażółć gęślą jaźń: Київ та Москва — Łódź, Gdańsk, Český Krumlov, Việt Nam',
     focal_point: 'Мэрия Киева и Gmina Łódź', country_name: 'Україна',
   }, distribucion_regiones: { 'Київська область': 5, 'Łódzkie': 3 }, distribucion_ciudades: ['Київ', 'Łódź'] } },
   esUiUnsupported: { ui: 'es', abuse: 'Opacidad', data: { ...FIXTURES.es.data, protest: { ...FIXTURES.es.data.protest,

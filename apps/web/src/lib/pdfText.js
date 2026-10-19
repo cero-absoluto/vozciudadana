@@ -16,14 +16,14 @@ export function isWinAnsi(cp) {
 }
 
 /**
- * Coarse ranges the bundled font is meant to cover (Latin Extended-A, Greek,
- * Cyrillic, punctuation, CJK, kana, full-width forms). Used only to decide
+ * Coarse ranges the bundled font is meant to cover (Latin Extended-A/B and
+ * Additional (Vietnamese), Greek, Cyrillic, punctuation, CJK, kana, full-width forms). Used only to decide
  * whether downloading the font is worthwhile; the exact coverage is read from
  * the font itself once it is loaded.
  */
 export function inEmbeddedFontRanges(cp) {
-  return (cp >= 0x100 && cp <= 0x17f) || (cp >= 0x370 && cp <= 0x4ff)
-    || (cp >= 0x2010 && cp <= 0x203a) || (cp >= 0x20ac && cp <= 0x20ac)
+  return (cp >= 0x100 && cp <= 0x24f) || (cp >= 0x1e00 && cp <= 0x1eff) || (cp >= 0x370 && cp <= 0x52f)
+    || (cp >= 0x2010 && cp <= 0x203a) || cp === 0x20ac || cp === 0x2116 || cp === 0x2122
     || (cp >= 0x2190 && cp <= 0x2193) || (cp >= 0x3000 && cp <= 0x30ff)
     || (cp >= 0x3400 && cp <= 0x9fff) || (cp >= 0xff01 && cp <= 0xffe5);
 }

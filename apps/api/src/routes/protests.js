@@ -7,6 +7,7 @@ import { notifyIndexNow } from '../lib/indexNow.js';
 import {
   createVerifiedAdhesion, AlreadyJoinedError, ProtestNotFoundError,
   ProtestClosedError, BalanceExhaustedError, NationalCountryMismatchError,
+  NationalReverificationRequiredError, NationalSharedCallingCodeError, NationalCountryUnresolvedError,
 } from '../lib/adhesionService.js';
 
 const VALID_SCOPES    = ['national', 'regional', 'local', 'global'];
@@ -597,7 +598,7 @@ export default async function protestRoutes(app) {
     // at some point" — this check proves "and that is still true right now."
     const { data: device } = await supabase
       .from('devices')
-      .select('id, phone_hash, verified_at, country_code')
+      .select('id, phone_hash, verified_at, numbering_country, numbering_resolution')
       .eq('id', device_id)
       .maybeSingle();
     if (!device || device.phone_hash !== phone_hash || !device.verified_at) {
@@ -627,7 +628,7 @@ export default async function protestRoutes(app) {
           subjectHash: phone_hash,
           method: 'phone_otp',
           deviceId: device_id,
-          countryCode: device.country_code,
+          numbering: { country: device.numbering_country ?? null, resolution: device.numbering_resolution ?? null },
           institutionalDomain: null,
         },
         location: { latitude: gps_lat ?? null, longitude: gps_lng ?? null, accuracyMeters: gps_accuracy ?? null, ip, language: idioma },
@@ -640,6 +641,9 @@ export default async function protestRoutes(app) {
       if (err instanceof ProtestClosedError) return reply.code(410).send({ error: err.code, reason: err.message });
       if (err instanceof BalanceExhaustedError) return reply.status(402).send({ code: 'SALDO_AGOTADO', error: err.message });
       if (err instanceof NationalCountryMismatchError) return reply.status(403).send({ code: err.code, error: err.message });
+      if (err instanceof NationalReverificationRequiredError || err instanceof NationalSharedCallingCodeError || err instanceof NationalCountryUnresolvedError) {
+        return reply.status(403).send({ code: err.code, error: err.message });
+      }
       throw err;
     }
 

@@ -40,6 +40,20 @@ export class NationalCountryMismatchError extends AdhesionError {
   constructor() { super('NATIONAL_ONLY', 'protests country does not match device country'); }
 }
 
+// ── National eligibility errors (H7) ────────────────────────────────────────
+// None of these says or implies that the person belongs to another country:
+// they report that the country of the verified NUMBER could not be established
+// (or must be established again), never a conclusion about the person.
+export class NationalReverificationRequiredError extends AdhesionError {
+  constructor() { super('NATIONAL_REVERIFICATION_REQUIRED', 'This national convocatoria requires a fresh phone verification to establish the country of your number.'); }
+}
+export class NationalSharedCallingCodeError extends AdhesionError {
+  constructor() { super('NATIONAL_COUNTRY_SHARED_CODE', 'The country of this number could not be established with certainty: its calling code is shared by several countries and the numbering data do not single one out. This does not mean the number belongs to another country.'); }
+}
+export class NationalCountryUnresolvedError extends AdhesionError {
+  constructor() { super('NATIONAL_COUNTRY_UNRESOLVED', 'The country of this number could not be established. This does not mean the number belongs to another country.'); }
+}
+
 // ── Institutional OTP errors (VP-SEC-008 Despliegue B, 24 July 2026) ──────
 export class OtpNotFoundError extends AdhesionError {
   constructor() { super('OTP_NOT_FOUND', 'Código incorrecto o caducado'); }
@@ -128,7 +142,7 @@ export async function verifyInstitutionalOtpAndCreateAdhesion({ emailHash, prote
  * @property {string} subjectHash        HMAC of the verified identity (phone hash, email hash, eID subject, etc.)
  * @property {VerificationMethod} method
  * @property {string|null} deviceId
- * @property {string|null} countryCode   Device/SIM country, for national-scope matching
+ * @property {{ resolution: string|null, country: string|null }|null} numbering  Server-derived numbering-plan country of the verified phone (H7); null = no reliable provenance
  * @property {string|null} institutionalDomain
  *
  * @typedef {Object} LocationEvidenceInput
@@ -182,10 +196,18 @@ export async function createVerifiedAdhesion(input) {
 
   if (protestErr || !protest) throw new ProtestNotFoundError();
 
+  // National eligibility (H7): the country comes from the server-side
+  // derivation of the number the OTP provider verified (lib/numberingCountry.js),
+  // stored with the device at verification time. A country DECLARED by the
+  // client never grants eligibility. Numbers whose country cannot be
+  // established with the approved criterion are not registered as national
+  // adhesions; other scopes and verification methods are not affected.
   if (protest.scope === 'national' && protest.country && identity.method === 'phone_otp') {
-    if (!identity.countryCode || identity.countryCode !== protest.country) {
-      throw new NationalCountryMismatchError();
-    }
+    const n = identity.numbering;
+    if (!n || !n.resolution) throw new NationalReverificationRequiredError();
+    if (n.resolution === 'shared_calling_code') throw new NationalSharedCallingCodeError();
+    if ((n.resolution !== 'resolved_unshared' && n.resolution !== 'resolved_shared_unique') || !n.country) throw new NationalCountryUnresolvedError();
+    if (n.country !== protest.country) throw new NationalCountryMismatchError();
   }
 
   if (identity.method === 'institutional_email_otp' && protest.dominio_email &&

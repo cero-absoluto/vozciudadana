@@ -9,14 +9,18 @@ export function makeApi({ token, apiUrl = 'https://api.github.com', fetchImpl = 
     if (!res.ok) throw new Error(`GitHub API ${method} ${path} -> ${res.status}`);
     return res.status === 204 ? null : res.json();
   };
+  // Sigue las páginas hasta una página corta (sin tope práctico). El techo (100 páginas = 10 000 elementos) NO trunca en
+  // silencio: lanza error, así que quien llama falla cerrado (por ejemplo, el publicador no empuja) en vez de decidir con
+  // datos incompletos, como una orden `stop` reciente que quedara fuera de la lista.
+  const MAX_PAGES = 100;
   const paginate = async (path) => {
     const out = [];
-    for (let page = 1; page <= 10; page++) {
+    for (let page = 1; page <= MAX_PAGES; page++) {
       const chunk = await request('GET', `${path}${path.includes('?') ? '&' : '?'}per_page=100&page=${page}`);
       out.push(...chunk);
-      if (chunk.length < 100) break;
+      if (chunk.length < 100) return out;
     }
-    return out;
+    throw new Error(`GitHub API GET ${path}: más de ${MAX_PAGES * 100} elementos; resultado incompleto rechazado`);
   };
   return { request, paginate };
 }

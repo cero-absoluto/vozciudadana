@@ -205,8 +205,10 @@ jobs:
 
   publish:
     needs: [decide, claude, patch, verify]
-    # `vars` se evalúa al arrancar ESTE job (tras el modelo y las pruebas): el interruptor se vuelve a consultar aquí.
-    if: always() && needs.decide.outputs.action == 'run_claude' && vars.AGENT_HANDOFF_ENABLED == 'true'
+    # Se ejecuta SIEMPRE que `decide` lanzó una ronda, aunque el interruptor se haya apagado: `vars` se evalúa al arrancar ESTE
+    # job (tras el modelo y las pruebas) y se pasa al publicador, que sin interruptor NO empuja y deja el estado en STOPPED
+    # (reanudable con `/handoff enable`) en vez de dejar la ronda colgada en CORRECTING.
+    if: always() && needs.decide.outputs.action == 'run_claude'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

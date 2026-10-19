@@ -9,6 +9,7 @@ import { spawnSync } from 'node:child_process';
 import { decide, decideAfterClaude, mayPublish, ownerStopped, pickState, validatePatch, encodeState, decodeState, precheck, STATUS } from '../automation/coordination/controller.mjs';
 import { collectFacts, main as gatherMain, loadPolicy } from '../automation/coordination/gather.mjs';
 import crypto from 'node:crypto';
+import { makeApi } from '../automation/coordination/github.mjs';
 import { publishRound as realPublishRound, applyPatchAndPush, buildPatchFromTree, sha256 } from '../automation/coordination/publish.mjs';
 // Por defecto las pruebas simulan un job `patch` y un job `verify` correctos sobre ESE parche; cada prueba puede sobrescribirlo.
 const publishRound = (o) => realPublishRound({ patchStatus: { ok: true }, verifyResult: 'success', expectedPatchSha256: sha256(o.patch), ...o });
@@ -376,7 +377,7 @@ test('S3 parada del Owner publicada mientras la ronda corre (sin ejecutar otro g
     assert.equal(sh(dir, '--git-dir=origin.git', 'rev-parse', 'refs/heads/feature/x'), head, `${mode}: remoto intacto`);
     assert.equal(sh(`${dir}/work`, 'rev-parse', 'HEAD'), head);
     assert.ok(!g.comments.some((c) => c.body === '@codex review'));
-    if (mode === 'stop') { assert.equal(r.outcome, 'stopped'); assert.equal(stateOf(g).status, STATUS.STOPPED); } else assert.equal(r.outcome, 'stale');
+    assert.equal(r.outcome, 'stopped'); assert.equal(stateOf(g).status, STATUS.STOPPED, `${mode}: estado terminal reanudable, no CORRECTING colgado`);
   }
   // enable posterior a un stop vuelve a valer; un stop de un impostor no cuenta
   const f = baseFacts({ ownerCommands: [{ id: 5, cmd: 'stop', author: OWNER }, { id: 6, cmd: 'enable', author: OWNER }] }); assert.equal(ownerStopped(f, policy), false);
@@ -405,7 +406,9 @@ test('W7 el job del modelo no tiene shell, git ni red, ni carga config del PR; p
   assert.match(verify, /npm ci --ignore-scripts/); assert.doesNotMatch(verify, /npm install|npm i /); assert.match(verify, /node-version: 22/); assert.match(verify, /node --experimental-test-module-mocks --test/);
   assert.ok(verify.indexOf('check-patch') < verify.indexOf('npm ci') && verify.indexOf('npm ci') < verify.indexOf('git apply') && verify.indexOf('git apply') < verify.indexOf('--test'));
   assert.match(publish, /needs: \[decide, claude, patch, verify\]/); assert.match(publish, /VERIFY_RESULT: \$\{\{ needs\.verify\.result \}\}/);
-  assert.match(publish, /EXPECTED_PATCH_SHA256: \$\{\{ needs\.patch\.outputs\.sha256 \}\}/); assert.match(publish, /vars\.AGENT_HANDOFF_ENABLED == 'true'/);
+  assert.match(publish, /EXPECTED_PATCH_SHA256: \$\{\{ needs\.patch\.outputs\.sha256 \}\}/);
+  assert.match(publish, /if: always\(\) && needs\.decide\.outputs\.action == 'run_claude'\n/); assert.doesNotMatch(publish.split('runs-on')[0], /vars\./, 'publish corre aunque el interruptor se apague (para persistir STOPPED)');
+  assert.match(publish, /AGENT_HANDOFF_ENABLED: \$\{\{ vars\.AGENT_HANDOFF_ENABLED \}\}/);
 });
 test('I5 integridad: si las pruebas del PR reemplazan el parche por OTRO cambio permitido, no se publica; sin huella o con huella inválida tampoco', async () => {
   const A = 'diff --git a/apps/web/src/a.js b/apps/web/src/a.js\n--- a/apps/web/src/a.js\n+++ b/apps/web/src/a.js\n@@ -1 +1 @@\n-export const a = 1;\n+export const a = 2;\n';
@@ -435,4 +438,61 @@ test('X1 el CLI check-patch/build-patch: huella correcta pasa; fichero alterado 
   const run = (sha) => spawnSync(process.execPath, ['automation/coordination/publish.mjs', 'check-patch'], { env: { ...process.env, PATCH_PATH: f, EXPECTED_SHA256: sha }, encoding: 'utf8' }).status;
   assert.equal(run(sha256('abc\n')), 0); assert.equal(run(sha256('abd\n')), 1); assert.equal(run(''), 1);
   fs.writeFileSync(f, 'abd\n'); assert.equal(run(sha256('abc\n')), 1);
+});
+
+// ── Ronda adicional (autorizada por el Owner): paginación completa e interruptor apagado ─────────────────
+/** API cuya `paginate` es la REAL (makeApi) sobre un `fetch` falso que pagina de verdad a 100 por página. */
+function pagedApi(g) {
+  const fetchImpl = async (url, init = {}) => {
+    const u = new URL(url); const method = init.method ?? 'GET'; const q = (k) => Number(u.searchParams.get(k));
+    const rc = /reviews\/(\d+)\/comments$/.exec(u.pathname);
+    const list = u.pathname.endsWith('/issues/7/comments') ? g.comments : u.pathname.endsWith('/pulls/7/reviews') ? g.reviews : rc ? g.reviews.find((r) => r.id === Number(rc[1])).comments : null;
+    if (method === 'GET' && list) { g.calls.push(`GET ${u.pathname}?page=${q('page')}`); const page = list.slice((q('page') - 1) * q('per_page'), q('page') * q('per_page')); return { ok: true, status: 200, json: async () => page }; }
+    const body = init.body ? JSON.parse(init.body) : undefined; const data = await g.api.request(method, u.pathname, body);
+    return { ok: true, status: data === null ? 204 : 200, json: async () => data };
+  };
+  return makeApi({ token: 't', fetchImpl });
+}
+test('PG1 paginación: se leen TODAS las páginas; un stop tras >1000 comentarios impide el push', async () => {
+  const { dir, sh, head } = gitRepo(); const g = fakeGithub({ head });
+  await step(g, cmdEvent(OWNER)); g.addReview(CODEX, head, [g.finding('apps/web/src/a.js', 1, 'x')]); await step(g, codexEvent());
+  for (let i = 0; i < 1249; i++) g.addComment({ login: 'ruido', id: 5000 + i, type: 'User' }, `c${i}`);
+  g.addComment(OWNER, '/handoff stop'); assert.ok(g.comments.length > 1250);
+  const A = 'diff --git a/apps/web/src/a.js b/apps/web/src/a.js\n--- a/apps/web/src/a.js\n+++ b/apps/web/src/a.js\n@@ -1 +1 @@\n-export const a = 1;\n+export const a = 2;\n';
+  g.calls.length = 0; const api = pagedApi(g);
+  const r = await publishRound({ api, policy, repository: REPO, number: 7, round: 1, claudeResult: 'success', patch: A, repoDir: `${dir}/work`, switchEnabled: 'true' });
+  assert.equal(r.outcome, 'stopped'); assert.equal(sh(dir, '--git-dir=origin.git', 'rev-parse', 'refs/heads/feature/x'), head);
+  assert.ok(g.calls.some((c) => c.endsWith('/comments?page=13')), 'llegó a la página 13 (1,2 mil+ comentarios)');
+  assert.equal((await api.paginate(`/repos/${REPO}/issues/7/comments`)).length, g.comments.length);
+});
+test('PG2 paginación: página justa de 100, vacío, y un techo que NO trunca en silencio (error → el publicador no empuja)', async () => {
+  const mk = (n) => ({ ok: true, status: 200, json: async () => Array.from({ length: n }, (_, i) => ({ i })) });
+  const paged = (total) => makeApi({ token: 't', fetchImpl: async (url) => { const u = new URL(url); const page = Number(u.searchParams.get('page')); return mk(Math.max(0, Math.min(100, total - (page - 1) * 100))); } });
+  assert.equal((await paged(0).paginate('/x')).length, 0); assert.equal((await paged(100).paginate('/x')).length, 100); assert.equal((await paged(1234).paginate('/x')).length, 1234);
+  assert.equal((await paged(9999).paginate('/x')).length, 9999);
+  await assert.rejects(() => paged(10001).paginate('/x'), /incompleto rechazado/);
+  const { dir, sh, head } = gitRepo(); const g = fakeGithub({ head }); await step(g, cmdEvent(OWNER)); g.addReview(CODEX, head, [g.finding('apps/web/src/a.js', 1, 'x')]); await step(g, codexEvent());
+  const broken = { request: g.api.request, paginate: async () => { throw new Error('incompleto rechazado'); } };
+  const A = 'diff --git a/apps/web/src/a.js b/apps/web/src/a.js\n--- a/apps/web/src/a.js\n+++ b/apps/web/src/a.js\n@@ -1 +1 @@\n-export const a = 1;\n+export const a = 2;\n';
+  await assert.rejects(() => publishRound({ api: broken, policy, repository: REPO, number: 7, round: 1, claudeResult: 'success', patch: A, repoDir: `${dir}/work`, switchEnabled: 'true' }), /incompleto/);
+  assert.equal(sh(dir, '--git-dir=origin.git', 'rev-parse', 'refs/heads/feature/x'), head, 'datos incompletos: nunca se empuja');
+});
+test('SW1 interruptor apagado tras empezar la ronda: sin push, estado STOPPED persistido (no CORRECTING colgado) y reanudable con /handoff enable', async () => {
+  const { dir, sh, head } = gitRepo(); const g = fakeGithub({ head });
+  await step(g, cmdEvent(OWNER)); g.addReview(CODEX, head, [g.finding('apps/web/src/a.js', 1, 'x')]);
+  assert.equal((await step(g, codexEvent())).outputs.action, 'run_claude'); assert.equal(stateOf(g).rounds, 1);
+  const A = 'diff --git a/apps/web/src/a.js b/apps/web/src/a.js\n--- a/apps/web/src/a.js\n+++ b/apps/web/src/a.js\n@@ -1 +1 @@\n-export const a = 1;\n+export const a = 2;\n';
+  for (const sw of ['false', '', undefined]) { // variable apagada, vacía o ausente
+    const gg = fakeGithub({ head }); await step(gg, cmdEvent(OWNER)); gg.addReview(CODEX, head, [gg.finding('apps/web/src/a.js', 1, 'x')]); await step(gg, codexEvent());
+    const rr = await publishRound({ api: gg.api, policy, repository: REPO, number: 7, round: 1, claudeResult: 'success', patch: A, repoDir: `${dir}/work`, switchEnabled: sw });
+    assert.equal(rr.outcome, 'stopped'); assert.equal(stateOf(gg).status, STATUS.STOPPED); assert.match(stateOf(gg).reason, /switch off/);
+  }
+  const r = await publishRound({ api: g.api, policy, repository: REPO, number: 7, round: 1, claudeResult: 'success', patch: A, repoDir: `${dir}/work`, switchEnabled: 'false' });
+  assert.equal(r.outcome, 'stopped'); assert.equal(stateOf(g).status, STATUS.STOPPED); assert.equal(stateOf(g).rounds, 1, 'la ronda gastada se conserva');
+  assert.equal(sh(dir, '--git-dir=origin.git', 'rev-parse', 'refs/heads/feature/x'), head); assert.ok(!g.comments.some((c) => c.body === '@codex review'));
+  assert.ok(g.comments.some((c) => /interruptor global se apagó/.test(c.body)));
+  // se reactiva: /handoff enable reanuda; una reseña nueva con hallazgos lanza la ronda 2 (no queda ignorada como correction_in_progress)
+  const re = await step(g, cmdEvent(OWNER)); assert.equal(stateOf(g).status, STATUS.AWAITING_REVIEW); assert.equal(re.outputs.action, 'notify');
+  g.addReview(CODEX, head, [g.finding('apps/web/src/a.js', 2, 'otro')]);
+  const nx = await step(g, codexEvent()); assert.equal(nx.outputs.action, 'run_claude'); assert.equal(nx.outputs.round, '2');
 });

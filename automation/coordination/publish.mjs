@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { decideAfterClaude, mayPublish, ownerStopped, pickState, validatePatch, STATUS } from './controller.mjs';
-import { collectFacts, persistState, loadPolicy, blockedNotice, NOTICE_STOPPED } from './gather.mjs';
+import { collectFacts, persistState, loadPolicy, blockedNotice, NOTICE_STOPPED, NOTICE_SWITCH_OFF } from './gather.mjs';
 import { makeApi } from './github.mjs';
 
 const git = (dir, args, env) => spawnSync('git', ['-C', dir, ...args], { encoding: 'utf8', env: { ...process.env, ...env, GIT_TERMINAL_PROMPT: '0' } });
@@ -79,11 +79,16 @@ export async function publishRound({ api, policy, repository, number, round, cla
   const facts = await collectFacts({ api, policy, repository, event: { issue: { number, pull_request: {} } }, switchEnabled, force: true });
   const { state, commentId } = pickState(facts.stateComments, policy);
   let outcome; let newHead;
-  // Parada del Owner publicada mientras la ronda corría (aunque su ejecución siga en cola): se respeta antes de cualquier push.
-  if (facts.pr && state && state !== 'corrupt' && state.status === STATUS.CORRECTING && ownerStopped(facts, policy)) {
-    await persistState({ api, repository, number, commentId, state: { ...state, status: STATUS.STOPPED, reason: 'stopped by owner during correction' } });
-    await api.request('POST', `/repos/${repository}/issues/${number}/comments`, { body: NOTICE_STOPPED });
-    return { outcome: 'stopped', next: { action: { type: 'none', reason: 'stopped_by_owner' } } };
+  // Parada del Owner publicada mientras la ronda corría (aunque su ejecución siga en cola), o interruptor global apagado
+  // tras empezar: se respeta antes de cualquier push y se deja un estado terminal reanudable (STOPPED; `/handoff enable`
+  // lo reactiva), nunca CORRECTING colgado.
+  if (facts.pr && state && state !== 'corrupt' && state.status === STATUS.CORRECTING && state.rounds === round) {
+    const byOwner = ownerStopped(facts, policy);
+    if (byOwner || facts.switch.enabled !== true) {
+      await persistState({ api, repository, number, commentId, state: { ...state, status: STATUS.STOPPED, reason: byOwner ? 'stopped by owner during correction' : 'aborted: global switch off during correction' } });
+      await api.request('POST', `/repos/${repository}/issues/${number}/comments`, { body: byOwner ? NOTICE_STOPPED : NOTICE_SWITCH_OFF });
+      return { outcome: 'stopped', next: { action: { type: 'none', reason: byOwner ? 'stopped_by_owner' : 'switch_off' } } };
+    }
   }
   if (!facts.pr || !mayPublish(state, facts, policy, round)) outcome = 'stale';
   else if (claudeResult !== 'success') outcome = claudeResult === 'cancelled' ? 'timeout' : 'failure';

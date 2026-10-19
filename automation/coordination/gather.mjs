@@ -63,6 +63,7 @@ export async function persistState({ api, repository, number, commentId, state }
   else await api.request('POST', `/repos/${repository}/issues/${number}/comments`, { body });
 }
 
+export const NOTICE_SWITCH_OFF = 'Relevo automático detenido: el interruptor global se apagó durante la corrección. No se empuja ningún cambio; `/handoff enable` del Owner lo reanuda cuando el interruptor vuelva a estar activo.';
 export const NOTICE_STOPPED = 'Relevo automático detenido por el Owner durante la corrección. No se empuja ningún cambio.';
 const NOTICE = {
   enabled: 'Relevo automático habilitado para este PR por el Owner. Esperando revisión de Codex sobre el HEAD actual.',

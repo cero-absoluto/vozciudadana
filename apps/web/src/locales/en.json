@@ -572,7 +572,7 @@
     "sectionGeo": "Geographic evidence",
     "sectionQuality": "Evidence quality, based on device signals",
     "qualityIntro": "Each adhesion combines the signals available at the moment of joining — GPS location, SMS-verified phone number, country detected by connection. The more that coincide, the stronger the evidence for that participation.",
-    "limitsNote": "This report attests to verified participant adhesions; it does not attest to the accuracy of the demands or to representativeness of the wider population.",
+    "limitsNote": "This report presents the participation records and verification evidence available for this convocation. It does not establish the truth of its claims or demands, nor that its participants are representative of the population.",
     "placeNamesNote": "City and region names are shown as recorded by the location source, so they may appear in different languages.",
     "pdf": {
       "docTitle": "VOICE PROTEST — VERIFIED PUBLIC REPORT",

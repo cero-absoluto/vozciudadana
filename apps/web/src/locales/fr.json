@@ -572,7 +572,7 @@
     "sectionGeo": "Preuve géographique",
     "sectionQuality": "Qualité de la preuve selon les signaux de l'appareil",
     "qualityIntro": "Chaque adhésion combine les signaux disponibles au moment de participer — localisation GPS, numéro vérifié par SMS, pays détecté par connexion. Plus ils coïncident, plus la preuve de cette participation est solide.",
-    "limitsNote": "Ce rapport atteste des adhésions vérifiées de participants ; il n'atteste ni la véracité des revendications ni la représentativité de la population.",
+    "limitsNote": "Ce rapport présente les registres de participation et les éléments de vérification disponibles pour cette mobilisation. Il ne démontre ni la véracité de ses affirmations ou revendications, ni que ses participants soient représentatifs de la population.",
     "placeNamesNote": "Les noms de villes et de régions sont affichés tels qu'enregistrés par la source de localisation ; ils peuvent donc apparaître dans différentes langues.",
     "pdf": {
       "docTitle": "VOICE PROTEST — RAPPORT PUBLIC VÉRIFIÉ",

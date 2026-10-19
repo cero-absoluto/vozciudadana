@@ -45,7 +45,7 @@ test('locale files: informe.pdf.* and the two notes exist with the same keys and
     }
     for (const k of ['limitsNote', 'placeNamesNote']) assert.ok(loc[l].informe[k]?.trim(), `${l}.${k}`);
   }
-  assert.equal(loc.es.informe.limitsNote, 'Este informe acredita adhesiones verificadas de participantes; no acredita la veracidad de las demandas ni la representatividad respecto de la población.');
+  assert.equal(loc.es.informe.limitsNote, 'Este informe presenta los registros de participación y las evidencias de verificación disponibles para esta convocatoria. No demuestra la veracidad de sus afirmaciones o demandas, ni que sus participantes sean representativos de la población.');
 });
 
 test('font file: covers common simplified + traditional Chinese, Cyrillic, Latin-Extended; cmap parses', () => {
@@ -182,5 +182,38 @@ test('default loader: after a failure the retry bypasses caches (fresh URL, cach
     assert.equal(calls[1].opts.cache, 'reload');
     await mod.buildInformePdf({ data: FIXTURES.zh.data, protestId: 'x', abuseLabel: 'a', locale: 'zh', t: tFor('zh'), integrity: NO_INTEGRITY });
     assert.equal(calls.length, 2, 'cached after success');
+  } finally { globalThis.fetch = realFetch; }
+});
+
+// ── Font registration failures (the bytes arrive, but jsPDF cannot use them) ──────────────────
+function zeroTable(tag) {
+  const b = Buffer.from(fontBuf); const n = b.readUInt16BE(4);
+  for (let i = 0; i < n; i++) {
+    const r = 12 + i * 16;
+    if (b.toString('latin1', r, r + 4) === tag) { b.fill(0, b.readUInt32BE(r + 8), b.readUInt32BE(r + 8) + b.readUInt32BE(r + 12)); return asArrayBuffer(b); }
+  }
+  throw new Error('table not found ' + tag);
+}
+
+test('font registration failure (hhea / hmtx / name tables unusable): PdfFontError from the registration step, no document', async () => {
+  for (const tag of ['hhea', 'hmtx', 'name']) {
+    const bad = zeroTable(tag);
+    assert.ok(txt.coverageFromTtf(bad).size >= 1000, `${tag}: bytes pass the coverage check, so this reaches registration`);
+    const origError = console.error; console.error = () => {};
+    try { await noDoc(FIXTURES.zh, async () => bad); } finally { console.error = origError; }
+  }
+});
+
+test('default loader verifies the font checksum: constant matches the shipped file; any altered copy is rejected, even if jsPDF could parse it', async () => {
+  const { createHash } = await import('node:crypto');
+  assert.equal(mod.FONT_SHA256, createHash('sha256').update(fontBuf).digest('hex'));
+  await mod.assertFontIntegrity(asArrayBuffer(fontBuf));
+  const flipped = Buffer.from(fontBuf); flipped[Math.floor(flipped.length / 2)] ^= 0xff;
+  await assert.rejects(() => mod.assertFontIntegrity(asArrayBuffer(flipped)), /checksum/);
+  // zeroed glyf: jsPDF would build a PDF with blank glyphs; the checksum stops it before that.
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(Buffer.from(zeroTable('glyf')));
+  try {
+    await assert.rejects(() => mod.buildInformePdf({ data: FIXTURES.zh.data, protestId: 'x', abuseLabel: 'a', locale: 'zh', t: tFor('zh'), integrity: NO_INTEGRITY }), (e) => e.name === 'PdfFontError');
   } finally { globalThis.fetch = realFetch; }
 });

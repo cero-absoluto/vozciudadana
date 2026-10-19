@@ -7,6 +7,8 @@ import { makeDrawable, needsEmbeddedFont, coverageFromTtf, wrapText, isWinAnsi }
 
 const DATE_LOCALES = { es: 'es-ES', en: 'en-GB', fr: 'fr-FR', zh: 'zh-CN' };
 export const FONT_FILE = 'fonts/pdf-sans-subset.ttf';
+/** SHA-256 of the bundled font; a copy that differs (partial, corrupt, stale cache) is rejected. */
+export const FONT_SHA256 = '865b564e4a78d202ea772025dc603656e676c233832bb9910afd319fafc2c2f0';
 
 export function dateLocaleTag(locale) {
   return DATE_LOCALES[String(locale || '').slice(0, 2)] || 'en-GB';
@@ -37,8 +39,19 @@ export async function fetchEmbeddedFont() {
   const retry = fontFailures > 0;
   const res = await fetch(`${import.meta.env.BASE_URL}${FONT_FILE}${retry ? `?r=${Date.now()}` : ''}`, retry ? { cache: 'reload' } : undefined);
   if (!res.ok) throw new Error('font unavailable');
-  fontCache = await res.arrayBuffer();
+  const buffer = await res.arrayBuffer();
+  await assertFontIntegrity(buffer);
+  fontCache = buffer;
   return fontCache;
+}
+
+/** Throws unless the downloaded bytes are exactly the bundled font (skipped where Web Crypto is unavailable). */
+export async function assertFontIntegrity(buffer) {
+  const subtle = globalThis.crypto?.subtle;
+  if (!subtle) return;
+  const digest = new Uint8Array(await subtle.digest('SHA-256', buffer));
+  const hex = Array.from(digest, b => b.toString(16).padStart(2, '0')).join('');
+  if (hex !== FONT_SHA256) throw new Error('font checksum mismatch');
 }
 
 function toBase64(buffer) {

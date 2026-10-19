@@ -5,20 +5,22 @@
     "license": "MIT",
     "metadata": "max"
   },
-  "examples": "ejemplos móviles sintéticos de la biblioteca",
-  "countries_with_example": 245,
-  "table_source": {
+  "test_set": {
+    "description": "ejemplos móviles sintéticos publicados por la biblioteca; los porcentajes describen ESTE conjunto, no precisión universal",
+    "countries_with_example": 245
+  },
+  "table_source_A": {
     "rows": 66,
     "calling_codes": 64,
     "counts": {
       "unmapped": 148,
-      "unique_correct": 63,
-      "unique_wrong": 9,
-      "ambiguous_contains": 3,
-      "ambiguous_misses": 22
+      "unique_same_iso": 63,
+      "unique_other_iso": 9,
+      "multiple_in_table_contains": 3,
+      "multiple_in_table_misses": 22
     },
-    "unmapped_pct": 60.4,
-    "unique_wrong": [
+    "unmapped_pct_of_test_set": 60.4,
+    "unique_other_iso": [
       "AX->FI",
       "CC->AU",
       "CX->AU",
@@ -29,7 +31,7 @@
       "SJ->NO",
       "VA->IT"
     ],
-    "ambiguous": [
+    "multiple_in_table": [
       "CA~US/CA/DO",
       "DO~US/CA/DO",
       "US~US/CA/DO",
@@ -57,30 +59,79 @@
       "VI~US/CA/DO"
     ]
   },
-  "versioned_metadata_source": {
+  "library_raw_output_B": {
     "counts": {
-      "correct": 236,
-      "undefined": 0,
-      "wrong": 9
+      "returned_same_iso": 236,
+      "returned_other_iso": 9,
+      "no_result": 0
     },
-    "correct_pct": 96.3,
-    "undefined": [],
-    "wrong": [
-      "AX->FI",
-      "BL->GP",
-      "CC->AU",
-      "CX->AU",
-      "EH->MA",
-      "IM->GB",
-      "MF->GP",
-      "SJ->NO",
-      "VA->IT"
-    ]
+    "returned_same_iso_pct_of_test_set": 96.3,
+    "returned_other_iso": [
+      {
+        "example_country": "AX",
+        "returned": "FI",
+        "same_example_number_as_returned": true
+      },
+      {
+        "example_country": "BL",
+        "returned": "GP",
+        "same_example_number_as_returned": true
+      },
+      {
+        "example_country": "CC",
+        "returned": "AU",
+        "same_example_number_as_returned": true
+      },
+      {
+        "example_country": "CX",
+        "returned": "AU",
+        "same_example_number_as_returned": true
+      },
+      {
+        "example_country": "EH",
+        "returned": "MA",
+        "same_example_number_as_returned": true
+      },
+      {
+        "example_country": "IM",
+        "returned": "GB",
+        "same_example_number_as_returned": false
+      },
+      {
+        "example_country": "MF",
+        "returned": "GP",
+        "same_example_number_as_returned": true
+      },
+      {
+        "example_country": "SJ",
+        "returned": "NO",
+        "same_example_number_as_returned": false
+      },
+      {
+        "example_country": "VA",
+        "returned": "IT",
+        "same_example_number_as_returned": true
+      }
+    ],
+    "getPossibleCountries_size_distribution": {
+      "1": 245
+    },
+    "note": "La biblioteca no expone un conjunto de candidatos ni un estado ambiguo: devuelve un ISO o ninguno."
   },
-  "calling_codes_shared_in_full_plan": {
-    "codes": 12,
-    "countries_in_them": 51,
-    "largest": [
+  "additional_classification_shared_calling_code": {
+    "source": "metadatos de la biblioteca (getCountries + getCountryCallingCode); indicio a nivel de plan, no medida de ambigüedad",
+    "calling_codes_shared": 12,
+    "countries_in_shared_codes": 51,
+    "cross_tab_with_raw_output": {
+      "unshared_same": 194,
+      "unshared_other": 0,
+      "unshared_none": 0,
+      "shared_same": 42,
+      "shared_other": 9,
+      "shared_none": 0
+    },
+    "every_other_iso_case_is_in_a_shared_code": true,
+    "largest_shared": [
       {
         "calling_code": "1",
         "countries": 25

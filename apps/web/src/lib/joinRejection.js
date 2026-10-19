@@ -18,6 +18,9 @@ export const JOIN_REJECTION_KIND = Object.freeze({
   NO_FUNDS: 'no_funds',
   VERIFICATION_REQUIRED: 'verification_required',
   CLOSED: 'closed',
+  NATIONAL_SHARED_CODE: 'national_shared_code',
+  NATIONAL_UNRESOLVED: 'national_unresolved',
+  NATIONAL_REVERIFICATION: 'national_reverification',
   GENERIC: 'generic',
 });
 
@@ -28,6 +31,9 @@ const KEY = Object.freeze({
   no_funds: 'verify.toastSinSaldo',
   verification_required: 'verify.toastVerificationRequired',
   closed: 'verify.toastClosed',
+  national_shared_code: 'verify.toastNationalSharedCode',
+  national_unresolved: 'verify.toastNationalUnresolved',
+  national_reverification: 'verify.toastNationalReverification',
   generic: 'verify.toastErrorGeneric',
 });
 
@@ -43,11 +49,25 @@ function identifier(err) {
 
 /**
  * @param {unknown} err  error thrown by api.joinProtest()
- * @returns {{ kind: string, toastKey: string, destination: 'home'|'auth'|'informe' }}
+ * @returns {{ kind: string, toastKey: string, destination: 'home'|'auth'|'informe', forceOtp?: boolean }}
  */
 export function classifyJoinRejection(err) {
   const status = err?.status;
   const message = typeof err?.message === 'string' ? err.message : undefined;
+
+  // --- server-derived national country (H7). Exact codes only; checked before the
+  // loose 409/402 predicates. None of these says the person belongs to another country. ---
+  if (err?.code === 'NATIONAL_COUNTRY_SHARED_CODE') {
+    return { kind: 'national_shared_code', toastKey: KEY.national_shared_code, destination: 'home' };
+  }
+  if (err?.code === 'NATIONAL_COUNTRY_UNRESOLVED') {
+    return { kind: 'national_unresolved', toastKey: KEY.national_unresolved, destination: 'home' };
+  }
+  if (err?.code === 'NATIONAL_REVERIFICATION_REQUIRED') {
+    // forceOtp: the device has no provenance, so the secret-based re-auth must be
+    // skipped once and a fresh OTP requested (otherwise /auth would loop back here).
+    return { kind: 'national_reverification', toastKey: KEY.national_reverification, destination: 'auth', forceOtp: true };
+  }
 
   // --- unchanged from VerifyScreen.vue (predicates copied verbatim) ---
   if (err?.code === 'NATIONAL_ONLY') {

@@ -17,6 +17,9 @@ const BACKEND = {
   already:      E(409, { error: 'ALREADY_JOINED', reason: 'You have already joined this convocatoria — one verified adhesion per person, per event.' }),
   noFunds:      E(402, { code: 'SALDO_AGOTADO', error: 'Esta convocatoria no tiene saldo. Apóyala con una donación.' }),
   national:     E(403, { code: 'NATIONAL_ONLY', error: 'protests country does not match device country' }),
+  shared:       E(403, { code: 'NATIONAL_COUNTRY_SHARED_CODE', error: 'The country of this number cannot be established from its calling code, which several countries share. This does not mean the number belongs to another country.' }),
+  unresolved:   E(403, { code: 'NATIONAL_COUNTRY_UNRESOLVED', error: 'The country of this number could not be established. This does not mean the number belongs to another country.' }),
+  reverify:     E(403, { code: 'NATIONAL_REVERIFICATION_REQUIRED', error: 'This national convocatoria requires a fresh phone verification to establish the country of your number.' }),
 };
 
 // The ORIGINAL decision of VerifyScreen.vue (before this change), kept here as an oracle.
@@ -94,7 +97,7 @@ test('rendered with vue-i18n in every language: complete messages, never ending 
   for (const l of L) {
     const i18n = createI18n({ legacy: false, locale: l, messages: { [l]: loc[l] } });
     for (const kind of Object.values(JOIN_REJECTION_KIND)) {
-      const key = classifyJoinRejection(kind === 'generic' ? new Error('x') : { national: BACKEND.national, already: BACKEND.already, no_funds: BACKEND.noFunds, verification_required: BACKEND.verification, closed: BACKEND.closed }[kind]).toastKey;
+      const key = classifyJoinRejection(kind === 'generic' ? new Error('x') : { national: BACKEND.national, already: BACKEND.already, no_funds: BACKEND.noFunds, verification_required: BACKEND.verification, closed: BACKEND.closed, national_shared_code: BACKEND.shared, national_unresolved: BACKEND.unresolved, national_reverification: BACKEND.reverify }[kind]).toastKey;
       if (kind === 'national') continue; // verify.toastNational has a {country} placeholder: covered by the dedicated national test below
       const out = i18n.global.t(key);
       assert.ok(out.trim().length > 15, `${l} ${key}`); assert.ok(!/[:：]\s*$/.test(out), `${l} ${key} ends with empty detail: "${out}"`);
@@ -129,3 +132,29 @@ test('NATIONAL_ONLY rendered in es/en/fr/zh: with country (no empty "de ." endin
     assert.notEqual(out1, out2);
   }
 });
+
+test('H7 derived-country codes: own kinds, fixed keys, never server text, never "other country" wording', () => {
+  const cases = [[BACKEND.shared, 'national_shared_code', 'verify.toastNationalSharedCode', 'home'],
+    [BACKEND.unresolved, 'national_unresolved', 'verify.toastNationalUnresolved', 'home'],
+    [BACKEND.reverify, 'national_reverification', 'verify.toastNationalReverification', 'auth']];
+  for (const [e, kind, key, dest] of cases) {
+    const r = classifyJoinRejection(e);
+    assert.equal(r.kind, kind); assert.equal(r.toastKey, key); assert.equal(r.destination, dest);
+    assert.ok(!JSON.stringify(r).includes(e.message), 'server text must not appear');
+    assert.deepEqual(joinRejectionToast(r, 'España'), { key, params: {} });
+  }
+  // only the reverification asks AuthScreen to skip the device-secret fast path
+  assert.equal(classifyJoinRejection(BACKEND.reverify).forceOtp, true);
+  for (const e of [BACKEND.shared, BACKEND.unresolved, BACKEND.national, BACKEND.already]) assert.ok(!classifyJoinRejection(e).forceOtp);
+  // the exact code is required (a status alone or a lookalike code is generic/unchanged)
+  assert.equal(classifyJoinRejection(E(403, { code: 'NATIONAL_COUNTRY_SHARED_CODE_X' })).kind, 'generic');
+  assert.equal(classifyJoinRejection(E(403, {})).kind, 'generic');
+  for (const l of L) for (const k of ['toastNationalSharedCode', 'toastNationalUnresolved']) {
+    assert.ok(loc[l].verify[k].length > 30, `${l}.${k}`); assert.ok(!/[{}]/.test(loc[l].verify[k]));
+  }
+  // the two "cannot resolve" messages explicitly deny that the number is from another country
+  assert.match(loc.es.verify.toastNationalSharedCode, /no significa que tu número sea de otro país/);
+  assert.match(loc.es.verify.toastNationalUnresolved, /no significa que tu número sea de otro país/);
+  assert.match(loc.en.verify.toastNationalUnresolved, /does not mean your number belongs to another country/);
+});
+

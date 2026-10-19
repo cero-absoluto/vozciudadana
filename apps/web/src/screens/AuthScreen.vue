@@ -187,6 +187,7 @@
 
 <script setup>
 import { useProtestsStore } from '@/stores/protests.js';
+import { shouldSkipFastPath, clearForceOtp, preSmsRejectionKey } from '@/lib/nationalPreCheck.js';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUiStore } from '@/stores/ui.js';
@@ -348,7 +349,10 @@ async function sendSMS() {
   // (a genuinely new device, or one verified before this fix existed),
   // there is nothing to re-authenticate with, so this fast path is skipped
   // entirely and a fresh OTP is requested below, same as for a new device.
-  const deviceSecret = device.getDeviceSecret();
+  // vc_force_otp: set when a national join was rejected because this device has no
+  // numbering provenance; the fast path would just loop back, so use a fresh OTP.
+  const forceOtp = shouldSkipFastPath(sessionStorage);
+  const deviceSecret = forceOtp ? null : device.getDeviceSecret();
   if (deviceSecret) {
     try {
       const existingDevice = await api.fetchDeviceLocks(device.getDeviceId(), deviceSecret);
@@ -380,7 +384,12 @@ async function sendSMS() {
     otpVisible.value = true;
     startWebOtpListener();
   } catch (err) {
-    if (err.status === 429 || err.message?.includes('429') || err.code === 'otp_rate_limited') {
+    const preSms = preSmsRejectionKey(err);
+    if (preSms) {
+      // National convocatoria and the country of this number cannot be established:
+      // no SMS was sent. Says nothing about participation or about another country.
+      ui.showToast(t(preSms));
+    } else if (err.status === 429 || err.message?.includes('429') || err.code === 'otp_rate_limited') {
       ui.showToast(t('auth.otpRateLimited'));
     } else {
       ui.showToast(t('auth.sendError'));
@@ -449,6 +458,7 @@ async function verifyOTP() {
     sessionStorage.setItem('vc_participation_token', res.participation_token);
     sessionStorage.setItem('vc_device_id',  res.device_id || deviceId);
     sessionStorage.setItem('vc_sms_sent', 'true');
+    clearForceOtp(sessionStorage);
     if (res.device_secret) {
       device.setDeviceSecret(res.device_secret);
     }

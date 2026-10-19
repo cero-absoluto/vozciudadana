@@ -56,7 +56,7 @@ export default async function userRoutes(app) {
     await verifyRecaptcha(recaptcha_token, 'request_otp', req, reply);
 
     const phone_hash = hashPhone(phone);
-    const ip_hash    = hashIp(req.ip || req.headers['x-forwarded-for']);
+    const ip_hash    = hashIp(req.ip);
 
     // ── 2. Check progressive cooldown for this device ──────────────────────
     if (device_id) {

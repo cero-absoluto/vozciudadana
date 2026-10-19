@@ -1,7 +1,7 @@
 // Cliente real detrás de un proxy — reproducción LOCAL y SINTÉTICA (sin red, sin producción, sin SMS, sin Railway).
 // Run: node --experimental-test-module-mocks --test tests/ip-proxy-trust.mjs
 //
-// ESTADO: reproducción SOBRE EL CÓDIGO ACTUAL (antes de cualquier corrección); estas pruebas pasan demostrando el defecto.
+// La demostración del defecto sobre el código anterior queda en el commit previo de esta rama (A1, B1, B2, B4 pasan allí).
 // Hipótesis: (H-A) sin `trustProxy`, `req.ip` es la dirección del proxy: todos los usuarios comparten la clave de
 // @fastify/rate-limit y el `ip_hash` que usa check_otp_rate_limit; (H-B) varios sitios leen `x-forwarded-for[0]`, que
 // controla el cliente si el proxy añade en vez de reemplazar.
@@ -95,12 +95,10 @@ async function withStack(fastifyOpts, mode, fn) {
   const api = await startApi(fastifyOpts); const proxy = await startProxy(api.server.address().port, mode);
   try { return await fn(proxy.address().port); } finally { proxy.close(); await api.close(); }
 }
-const ipinfo = (px, ip, xff) => call(px, ip, { path: '/api/ipinfo', headers: xff ? { 'x-forwarded-for': xff } : {} });
-const ipapiTarget = () => rec.fetchUrls.find(u => u.startsWith('https://ipapi.co/'));
 test.beforeEach(() => { rec.ipHashes.length = 0; rec.fetchUrls.length = 0; rec.sms = 0; db.devices.clear(); });
 
 // ── H-A ─────────────────────────────────────────────────────────────────────
-test('A1 DEFECTO (configuración actual, sin trustProxy): 6 usuarios distintos, 1 petición cada uno -> el 6.º recibe 429 y todos comparten un único ip_hash', async () => {
+test('A1 Sin trustProxy (la configuración ANTERIOR a esta corrección; sigue siendo lo que ocurre si se desactiva con TRUST_PROXY_HOPS=0): 6 usuarios distintos, 1 petición cada uno -> el 6.º recibe 429 y todos comparten un único ip_hash', async () => {
   await withStack({}, 'overwrite', async (px) => {
     const res = [];
     for (let i = 1; i <= 6; i++) res.push((await reqOtp(px, U(i), i, `device-user-000${i}`)).status);
@@ -109,32 +107,64 @@ test('A1 DEFECTO (configuración actual, sin trustProxy): 6 usuarios distintos, 
   });
 });
 
-test('B1 DEFECTO (configuración actual): con un borde que AÑADE, el primer valor de X-Forwarded-For lo elige el cliente y llega al servicio de geolocalización', async () => {
-  await withStack({}, 'append', async (px) => {
+test('A2 CORRECCIÓN (trustProxy = 1 salto): cada usuario tiene su propio límite y su propio ip_hash; el abuso de UN usuario sigue limitado', async () => {
+  const { fastifyTrustProxy } = await import('../apps/api/src/lib/proxyTrust.js');
+  await withStack({ trustProxy: fastifyTrustProxy() }, 'overwrite', async (px) => {
+    const res = [];
+    for (let i = 1; i <= 6; i++) res.push((await reqOtp(px, U(i), i, `device-user-000${i}`)).status);
+    assert.deepEqual(res, [200, 200, 200, 200, 200, 200]);
+    assert.equal(new Set(rec.ipHashes).size, 6, 'un ip_hash por usuario');
+    const same = []; for (let k = 0; k < 6; k++) same.push((await reqOtp(px, U(9), 20 + k, `device-abuser-00${k}`)).status);
+    assert.deepEqual(same, [200, 200, 200, 200, 200, 429], 'el mismo usuario agota SU límite (5/5 min)');
+  });
+});
+
+// ── H-B ─────────────────────────────────────────────────────────────────────
+const ipinfo = (px, ip, xff) => call(px, ip, { path: '/api/ipinfo', headers: xff ? { 'x-forwarded-for': xff } : {} });
+const ipapiTarget = () => rec.fetchUrls.find(u => u.startsWith('https://ipapi.co/'));
+
+test('B3 CORRECCIÓN: con 1 salto de confianza el valor que se usa es la IP que añadió el proxy, no lo que el cliente antepuso (ipinfo y /join)', async () => {
+  const { fastifyTrustProxy } = await import('../apps/api/src/lib/proxyTrust.js');
+  await withStack({ trustProxy: fastifyTrustProxy() }, 'append', async (px) => {
     await ipinfo(px, U(1), '8.8.8.8');
-    assert.equal(ipapiTarget(), 'https://ipapi.co/8.8.8.8/json/', 'el cliente decide la IP que se geolocaliza');
+    assert.equal(ipapiTarget(), `https://ipapi.co/${U(1)}/json/`);
+    const v = await call(px, U(1), { method: 'POST', path: '/api/users/verify-otp', body: { phone: '+34600000001', otp: '123456', device_id: 'device-join-0002' } });
     rec.fetchUrls.length = 0;
-    await ipinfo(px, U(1), '1.2.3.4/../../x?q=');
-    assert.match(ipapiTarget(), /1\.2\.3\.4\/\.\.\/\.\.\/x\?q=/, 'sin validar: el valor del cliente entra en la ruta de la URL saliente');
+    await call(px, U(1), { method: 'POST', path: `/api/protests/${GLOBAL_PROTEST}/join`, headers: { 'x-forwarded-for': '203.0.113.77' }, body: { participation_token: v.json.participation_token, recaptcha_token: 'dev' } });
+    assert.equal(ipapiTarget(), `https://ipapi.co/${U(1)}/json/`);
   });
 });
 
-test('B2 /join: con un borde que AÑADE, la IP que se geolocaliza (y de la que sale la señal «IP country» de fiabilidad) la elige el cliente (configuración actual)', async () => {
-  await withStack({}, 'append', async (px) => {
-    const v = await call(px, U(1), { method: 'POST', path: '/api/users/verify-otp', body: { phone: '+34600000001', otp: '123456', device_id: 'device-join-0001' } });
-    assert.equal(v.status, 200);
-    rec.fetchUrls.length = 0;
-    const j = await call(px, U(1), { method: 'POST', path: `/api/protests/${GLOBAL_PROTEST}/join`, headers: { 'x-forwarded-for': '203.0.113.77' }, body: { participation_token: v.json.participation_token, recaptcha_token: 'dev' } });
-    assert.equal(j.status, 201);
-    assert.equal(ipapiTarget(), 'https://ipapi.co/203.0.113.77/json/');
-  });
-});
-
-test('B4 con un borde que REEMPLAZA (lo que afirma el moderador de Railway) la cabecera no es suplantable en la configuración actual', async () => {
-  await withStack({}, 'overwrite', async (px) => {
+test('B4 con un borde que REEMPLAZA (lo que afirma el moderador de Railway) la corrección tampoco es suplantable y usa la IP del cliente', async () => {
+  const { fastifyTrustProxy } = await import('../apps/api/src/lib/proxyTrust.js');
+  await withStack({ trustProxy: fastifyTrustProxy() }, 'overwrite', async (px) => {
     rec.fetchUrls.length = 0;
     await ipinfo(px, U(2), '8.8.8.8');
     assert.equal(ipapiTarget(), `https://ipapi.co/${U(2)}/json/`);
   });
 });
 
+test('B5 LÍMITE DECLARADO: si NADIE reescribe la cabecera (passthrough) la app no puede distinguir; la corrección no lo arregla y no lo pretende', async () => {
+  const { fastifyTrustProxy } = await import('../apps/api/src/lib/proxyTrust.js');
+  await withStack({ trustProxy: fastifyTrustProxy() }, 'passthrough', async (px) => {
+    await ipinfo(px, U(1), '8.8.8.8');
+    assert.equal(ipapiTarget(), 'https://ipapi.co/8.8.8.8/json/', 'borde que no escribe nada = frontera de confianza inexistente (decisión de infraestructura, no de aplicación)');
+  });
+});
+
+// ── Cableado y configuración ────────────────────────────────────────────────
+test('C1 ningún sitio lee ya x-forwarded-for a mano y server.js usa la configuración común', () => {
+  for (const f of ['routes/users.js', 'routes/institucional.js', 'routes/geocode.js', 'routes/protests.js']) {
+    const src = fs.readFileSync(new URL(`../apps/api/src/${f}`, import.meta.url), 'utf8');
+    assert.doesNotMatch(src.replace(/\/\/.*$/gm, ''), /x-forwarded-for/i, f);
+  }
+  const server = fs.readFileSync(new URL('../apps/api/src/server.js', import.meta.url), 'utf8');
+  assert.match(server, /trustProxy:\s*fastifyTrustProxy\(\)/);
+});
+
+test('C2 TRUST_PROXY_HOPS: por defecto 1; valores válidos 0..5; inválidos abortan el arranque', async () => {
+  const { trustProxyHops, fastifyTrustProxy } = await import('../apps/api/src/lib/proxyTrust.js');
+  assert.equal(trustProxyHops({}), 1); assert.equal(trustProxyHops({ TRUST_PROXY_HOPS: '' }), 1);
+  assert.equal(trustProxyHops({ TRUST_PROXY_HOPS: '2' }), 2); assert.equal(fastifyTrustProxy({ TRUST_PROXY_HOPS: '0' }), false); assert.equal(fastifyTrustProxy({ TRUST_PROXY_HOPS: '1' }), 1);
+  for (const bad of ['-1', '6', '1.5', 'true', 'abc', '1e1']) assert.throws(() => trustProxyHops({ TRUST_PROXY_HOPS: bad }), /TRUST_PROXY_HOPS/, bad);
+});

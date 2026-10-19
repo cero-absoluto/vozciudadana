@@ -125,8 +125,7 @@ export async function ipinfoRoutes(app) {
   app.get('/', {
     config: { rateLimit: { max: 60, timeWindow: '1 minute' } },
   }, async (req, reply) => {
-    const forwarded = req.headers['x-forwarded-for'];
-    const ip = forwarded ? forwarded.split(',')[0].trim() : req.ip;
+    const ip = req.ip;
     try {
       const res = await fetch(`https://ipapi.co/${ip}/json/`, {
         headers: { 'User-Agent': 'VoiceProtest/1.0 (voiceprotest.org)' },

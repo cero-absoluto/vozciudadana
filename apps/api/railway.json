@@ -1,7 +1,8 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "NIXPACKS",
+    "buildCommand": "node scripts/check-build-env.mjs && npm ci --omit=dev"
   },
   "deploy": {
     "startCommand": "node src/server.js",

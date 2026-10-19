@@ -377,7 +377,7 @@
     "toast": "✓ Verified adhesion registered",
     "toastNational": "Cannot join. This protest is only for verified participants connected to the national scope of {country}.",
     "toastNationalNoCountry": "Cannot join. This protest is only for verified participants connected to its national scope.",
-    "toastNationalSharedCode": "We could not check the country of your number because its prefix is shared by several countries. This does not mean your number belongs to another country. You can still take part in global convocatorias.",
+    "toastNationalSharedCode": "We could not confirm the country of your number: its prefix is shared by several countries and the numbering data cannot single one out with certainty. This does not mean your number belongs to another country. You can still take part in global convocatorias.",
     "toastNationalUnresolved": "We could not determine the country of your number. This does not mean your number belongs to another country. You can still take part in global convocatorias.",
     "toastNationalReverification": "To join this national convocatoria we need to verify your phone again, just once. We are taking you to verification.",
     "notiOn": "🔔 Notifications enabled",

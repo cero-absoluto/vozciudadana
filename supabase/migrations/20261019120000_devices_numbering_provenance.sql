@@ -10,9 +10,14 @@
 -- WHAT THIS DOES: adds three nullable columns to `devices`, written by the
 -- server at OTP verification time from the verified number:
 --   numbering_country       ISO 3166-1 alpha-2, only when resolution is
---                           'resolved_unshared'; NULL otherwise
---   numbering_resolution    'resolved_unshared' | 'shared_calling_code' | 'no_result'
---   numbering_meta_version  which metadata produced the derivation
+--                           'resolved_unshared' or 'resolved_shared_unique'; NULL otherwise
+--   numbering_resolution    'resolved_unshared' | 'resolved_shared_unique'
+--                           | 'shared_calling_code' | 'no_result'
+--   numbering_meta_version  which metadata AND which criterion (R-N2) produced it
+-- ('resolved_shared_unique' = shared calling code, but exactly one country's
+-- metadata validates the full number; added in the R-N2 revision. This file has
+-- not been applied anywhere, so it is edited in place rather than adding a second
+-- migration; the constraint is dropped and re-created so a re-run also upgrades.)
 -- It identifies the NUMBERING PLAN of the number: not nationality, residence,
 -- location or the real country of SIM registration.
 --
@@ -34,26 +39,20 @@ alter table devices
   add column if not exists numbering_resolution    text,
   add column if not exists numbering_meta_version  text;
 
-do $$
-begin
-  if not exists (
-    select 1 from pg_constraint where conname = 'devices_numbering_provenance_coherent'
-  ) then
-    alter table devices add constraint devices_numbering_provenance_coherent check (
-      -- no provenance at all (legacy rows) …
-      (numbering_resolution is null and numbering_country is null and numbering_meta_version is null)
-      or
-      -- … or a complete, coherent derivation
-      (numbering_resolution is not null
-        and numbering_resolution in ('resolved_unshared', 'shared_calling_code', 'no_result')
-        and numbering_meta_version is not null
-        and ((numbering_resolution = 'resolved_unshared' and numbering_country is not null)
-          or (numbering_resolution <> 'resolved_unshared' and numbering_country is null)))
-    );
-  end if;
-end $$;
+alter table devices drop constraint if exists devices_numbering_provenance_coherent;
+alter table devices add constraint devices_numbering_provenance_coherent check (
+  -- no provenance at all (legacy rows) …
+  (numbering_resolution is null and numbering_country is null and numbering_meta_version is null)
+  or
+  -- … or a complete, coherent derivation
+  (numbering_resolution is not null
+    and numbering_resolution in ('resolved_unshared', 'resolved_shared_unique', 'shared_calling_code', 'no_result')
+    and numbering_meta_version is not null
+    and ((numbering_resolution in ('resolved_unshared', 'resolved_shared_unique') and numbering_country is not null)
+      or (numbering_resolution not in ('resolved_unshared', 'resolved_shared_unique') and numbering_country is null)))
+);
 
 comment on column devices.numbering_country is
-  'Numbering-plan country of the OTP-verified number, server-derived; only when numbering_resolution = resolved_unshared. Not nationality, residence or location.';
+  'Numbering-plan country of the OTP-verified number, server-derived; only when numbering_resolution is resolved_unshared or resolved_shared_unique. Not nationality, residence or location.';
 comment on column devices.numbering_resolution is
-  'resolved_unshared | shared_calling_code | no_result. NULL = no reliable provenance (legacy row).';
+  'resolved_unshared | resolved_shared_unique | shared_calling_code | no_result. NULL = no reliable provenance (legacy row).';

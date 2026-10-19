@@ -187,7 +187,7 @@
 
 <script setup>
 import { useProtestsStore } from '@/stores/protests.js';
-import { shouldSkipFastPath, clearForceOtp, sharedCodeBlocksNational } from '@/lib/nationalPreCheck.js';
+import { shouldSkipFastPath, clearForceOtp, preSmsRejectionKey } from '@/lib/nationalPreCheck.js';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUiStore } from '@/stores/ui.js';
@@ -334,17 +334,6 @@ async function sendSMS() {
       sending.value = false;
       return;
     }
-    // A calling code shared by several countries can never resolve a national
-    // adhesion, so tell the person BEFORE any SMS is requested. Independent of
-    // whether the number has participated; the server still decides admission.
-    if (protest?.country && sharedCodeBlocksNational({
-      scope: protestScope, protestCountry: protest.country, dialCode: dialCode.value,
-      localDigits: phone.value.replace(/\D/g, ''),
-    })) {
-      ui.showToast(t('verify.toastNationalSharedCode'));
-      sending.value = false;
-      return;
-    }
   }
 
   // GPS para local/regional — ahora se pide aquí, justo tras pulsar el botón,
@@ -395,7 +384,12 @@ async function sendSMS() {
     otpVisible.value = true;
     startWebOtpListener();
   } catch (err) {
-    if (err.status === 429 || err.message?.includes('429') || err.code === 'otp_rate_limited') {
+    const preSms = preSmsRejectionKey(err);
+    if (preSms) {
+      // National convocatoria and the country of this number cannot be established:
+      // no SMS was sent. Says nothing about participation or about another country.
+      ui.showToast(t(preSms));
+    } else if (err.status === 429 || err.message?.includes('429') || err.code === 'otp_rate_limited') {
       ui.showToast(t('auth.otpRateLimited'));
     } else {
       ui.showToast(t('auth.sendError'));

@@ -24,20 +24,28 @@ const PROTESTS = {
   [P(5)]: { id: P(5), scope: 'local', country: 'ES', convocatoria_osm_id: 1, convocatoria_ciudad_nombre: 'X' },
   [P(6)]: { id: P(6), scope: 'regional', country: 'ES', convocatoria_osm_id: 2, convocatoria_ciudad_nombre: 'Y' },
   [P(7)]: { id: P(7), scope: 'national', country: 'US' },
+  [P(8)]: { id: P(8), scope: 'national', country: 'IT' },
+  [P(9)]: { id: P(9), scope: 'national', country: 'GB' },
 };
-const NAT_ES = P(1), NAT_CA = P(2), NAT_UY = P(3), GLOBAL = P(4), LOCAL = P(5), REGIONAL = P(6), NAT_US = P(7);
+const NAT_ES = P(1), NAT_CA = P(2), NAT_UY = P(3), GLOBAL = P(4), LOCAL = P(5), REGIONAL = P(6), NAT_US = P(7), NAT_IT = P(8), NAT_GB = P(9);
 
-const PH = { ES: '+34600000001', FR: '+33600000002', FR2: '+33600000003', CA: '+14165550123', US: '+12015550123', UY: '+59899123456', NONE: '+99912345678' };
+const PH = { ES: '+34600000001', FR: '+33600000002', FR2: '+33600000003', CA: '+14165550123', US: '+12015550123', UY: '+59899123456', NONE: '+99912345678',
+  // plan compartido, rango que los metadatos asignan a UN territorio
+  GB: '+447400123456', JE: '+447797712345', VA: '+3906698212345',
+  // plan compartido, rango validado por varios territorios (R-N2 lo deja sin resolver)
+  IT_MOBILE: '+393123456789', TOLLFREE: '+18002345678', NO_MOBILE: '+4791234567' };
 const OTP = '123456';
 const hashPhone = (p) => createHmac('sha256', process.env.PHONE_HASH_SECRET).update(p).digest('hex');
 
 const db = { devices: new Map(), adhesions: [] };
-const calls = { verifyOtp: 0 };
+const calls = { verifyOtp: 0, sendOtp: 0, adhesionReads: 0, otpLog: 0 };
 const protestFor = (id) => (PROTESTS[id] ? { saldo_euros: null, convocatoria_osm_id: null, convocatoria_ciudad_nombre: null, ...PROTESTS[id] } : null);
 
 function exec(st) {
   const { table, op, filters, payload } = st;
   let data = null; let error = null;
+  if (table === 'adhesions' && op === 'select') calls.adhesionReads++;
+  if (table === 'otp_requests' && op === 'insert') calls.otpLog++;
   if (table === 'devices') {
     const find = () => [...db.devices.values()].find(d => Object.entries(filters).every(([k, v]) => d[k] === v)) ?? null;
     if (op === 'upsert') { db.devices.set(payload.id, { ...(db.devices.get(payload.id) ?? {}), ...payload }); data = db.devices.get(payload.id); }
@@ -60,12 +68,14 @@ const from = (table) => {
   return b;
 };
 const rpc = async (name, args) => {
+  if (name === 'get_otp_cooldown') return { data: 0, error: null };
+  if (name === 'check_otp_rate_limit') return { data: { allowed: true }, error: null };
   if (name === 'create_verified_adhesion') { db.adhesions.push(args); return { data: { id: 'adh-1', created_at: '2026-01-01T00:00:00Z', ciudad: null, region: null, pais: null, adhesion_osm_id: null }, error: null }; }
   return { data: null, error: null };
 };
 mock.module('../apps/api/src/services/supabase.js', { namedExports: { supabase: { from, rpc } } });
 mock.module('../apps/api/src/services/twilio.js', { namedExports: {
-  sendOtp: async () => {},
+  sendOtp: async () => { calls.sendOtp++; },
   verifyOtp: async (_p, code) => { calls.verifyOtp++; return code === OTP; },
 } });
 globalThis.fetch = async () => { throw new Error('no network in tests'); };
@@ -93,7 +103,7 @@ function legacyDevice(id, phone, declared) { // verificado ANTES de la derivaci�
   return secret;
 }
 
-test.beforeEach(() => { db.devices.clear(); db.adhesions.length = 0; calls.verifyOtp = 0; });
+test.beforeEach(() => { db.devices.clear(); db.adhesions.length = 0; calls.verifyOtp = 0; calls.sendOtp = 0; calls.adhesionReads = 0; calls.otpLog = 0; });
 
 test('1. número ES entra en la nacional de España aunque declare otro país o ninguno (la declaración no concede ni quita)', async () => {
   for (const [i, declared] of ['FR', null, 'ES'].entries()) {
@@ -102,7 +112,7 @@ test('1. número ES entra en la nacional de España aunque declare otro país o 
     const row = db.devices.get(`device-es-000${i}`);
     assert.equal(row.numbering_country, 'ES');
     assert.equal(row.numbering_resolution, 'resolved_unshared');
-    assert.match(row.numbering_meta_version, /^libphonenumber-js@1\.12\.10\/max$/);
+    assert.match(row.numbering_meta_version, /^libphonenumber-js@1\.12\.10\/max;R-N2$/);
     const r = await join(NAT_ES, v.participation_token);
     assert.equal(r.statusCode, 201, `declarado=${declared}`);
     assert.equal(db.adhesions.length, 1);
@@ -127,10 +137,30 @@ test('3. la fuente es la numeración, no la tabla country_codes: número UY (fue
   assert.equal((await join(NAT_UY, v.participation_token)).statusCode, 201);
 });
 
-test('4. código compartido (+1): no se registra adhesión nacional, con un código propio y un mensaje que no atribuye otro país', async () => {
-  for (const [phone, protest, declared] of [[PH.CA, NAT_CA, 'CA'], [PH.US, NAT_US, 'US'], [PH.US, NAT_CA, 'CA']]) {
-    const v = body(await verify(phone, `device-${phone}`, declared));
-    const row = db.devices.get(`device-${phone}`);
+test('4. plan compartido, número IDENTIFICABLE: se resuelve con el número completo y se compara con la convocatoria (la declaración no cuenta)', async () => {
+  // [número, declarado, convocatoria, estado esperado, código esperado]
+  const cases = [
+    [PH.CA, 'US', NAT_CA, 201], [PH.CA, 'CA', NAT_CA, 201], [PH.US, 'CA', NAT_US, 201], [PH.US, 'US', NAT_US, 201],
+    [PH.GB, 'IT', NAT_GB, 201], [PH.VA, 'IT', NAT_GB, 403, 'NATIONAL_ONLY'],   // VA no es IT ni GB: se compara el país resuelto
+    [PH.CA, 'US', NAT_US, 403, 'NATIONAL_ONLY'], [PH.US, 'CA', NAT_CA, 403, 'NATIONAL_ONLY'], // +1 de otro país: derivado ≠ convocatoria
+    [PH.JE, 'GB', NAT_GB, 403, 'NATIONAL_ONLY'],                                // Jersey resuelto a JE, no a GB
+  ];
+  for (const [phone, declared, protest, status, code] of cases) {
+    const id = `device-${phone.slice(1)}-${protest.slice(-1)}`;
+    const v = body(await verify(phone, id, declared));
+    assert.equal(db.devices.get(id).numbering_resolution, 'resolved_shared_unique', phone);
+    assert.ok(db.devices.get(id).numbering_country, phone);
+    const r = await join(protest, v.participation_token);
+    assert.equal(r.statusCode, status, `${phone} declara ${declared} en ${PROTESTS[protest].country}`);
+    if (code) assert.equal(body(r).code, code);
+    db.devices.clear();
+  }
+});
+
+test('4b. plan compartido, rango ambiguo: no se registra adhesión nacional, con código propio y sin atribuir otro país, declare lo que declare', async () => {
+  for (const [phone, protest, declared] of [[PH.IT_MOBILE, NAT_IT, 'IT'], [PH.IT_MOBILE, NAT_IT, 'VA'], [PH.IT_MOBILE, NAT_ES, 'ES'], [PH.TOLLFREE, NAT_US, 'US'], [PH.TOLLFREE, NAT_CA, 'CA'], [PH.NO_MOBILE, NAT_ES, 'ES']]) {
+    const v = body(await verify(phone, `device-${phone.slice(1)}-${declared}`, declared));
+    const row = db.devices.get(`device-${phone.slice(1)}-${declared}`);
     assert.equal(row.numbering_resolution, 'shared_calling_code');
     assert.equal(row.numbering_country, null, 'no se atribuye país derivado');
     const r = await join(protest, v.participation_token);
@@ -143,8 +173,8 @@ test('4. código compartido (+1): no se registra adhesión nacional, con un cód
   assert.equal(db.adhesions.length, 0);
 });
 
-test('5. código compartido y número sin resolver son resultados DISTINTOS (no se equiparan)', async () => {
-  const a = body(await verify(PH.US, 'device-shared-1', 'US'));
+test('5. rango ambiguo de plan compartido y número sin resolver son resultados DISTINTOS (no se equiparan)', async () => {
+  const a = body(await verify(PH.IT_MOBILE, 'device-shared-1', 'IT'));
   const b = body(await verify(PH.NONE, 'device-none-0001', 'ES'));
   assert.equal(db.devices.get('device-shared-1').numbering_resolution, 'shared_calling_code');
   assert.equal(db.devices.get('device-none-0001').numbering_resolution, 'no_result');
@@ -155,14 +185,41 @@ test('5. código compartido y número sin resolver son resultados DISTINTOS (no 
   assert.match(body(rb).error, /does not mean the number belongs to another country/);
 });
 
-test('6. global, local y regional no cambian: FR, +1 y sin resolver siguen pudiendo adherirse', async () => {
-  for (const phone of [PH.FR, PH.US, PH.NONE]) {
-    const v = body(await verify(phone, `device-${phone}`, 'ES'));
+test('6. global, local y regional no cambian: FR, rango ambiguo y sin resolver siguen pudiendo adherirse', async () => {
+  for (const phone of [PH.FR, PH.IT_MOBILE, PH.TOLLFREE, PH.NONE]) {
+    const v = body(await verify(phone, `device-${phone.slice(1)}`, 'ES'));
     for (const protest of [GLOBAL, LOCAL, REGIONAL]) {
       const r = await join(protest, v.participation_token);
       assert.equal(r.statusCode, 201, `${phone} en ${PROTESTS[protest].scope}`);
     }
     db.devices.clear();
+  }
+});
+
+test('6b. FR→ES sigue bloqueado y el cliente no decide: número FR declarando ES, IT, GB o VA nunca entra en una nacional ajena', async () => {
+  for (const declared of ['ES', 'IT', 'GB', 'VA', 'FR']) {
+    const v = body(await verify(PH.FR, `device-fr-d-${declared}`, declared));
+    for (const protest of [NAT_ES, NAT_IT, NAT_GB]) assert.equal(body(await join(protest, v.participation_token)).code, 'NATIONAL_ONLY', `declara ${declared}`);
+    db.devices.clear();
+  }
+  assert.equal(db.adhesions.length, 0);
+});
+
+test('6c. aviso ANTES del SMS (request-otp): país no establecido en convocatoria nacional => 403 sin SMS, sin registro y sin consultar participación', async () => {
+  const req = (phone, protest) => app.inject({ method: 'POST', url: '/api/users/request-otp',
+    payload: { phone, recaptcha_token: 'dev', device_id: 'device-presms-1', ...(protest ? { protest_id: protest } : {}) } });
+  for (const [phone, protest, code] of [[PH.IT_MOBILE, NAT_IT, 'NATIONAL_COUNTRY_SHARED_CODE'], [PH.TOLLFREE, NAT_US, 'NATIONAL_COUNTRY_SHARED_CODE'], [PH.NONE, NAT_ES, 'NATIONAL_COUNTRY_UNRESOLVED']]) {
+    const r = await req(phone, protest);
+    assert.equal(r.statusCode, 403); assert.equal(body(r).code, code);
+    assert.match(body(r).error, /does not mean the number belongs to another country/);
+  }
+  assert.equal(calls.sendOtp, 0, 'ningún SMS'); assert.equal(calls.otpLog, 0, 'nada registrado'); assert.equal(calls.adhesionReads, 0, 'no consulta participación: no revela nada de ella');
+  // siguen enviándose: resuelto (incluso plan compartido), distinto país (decide /join), global, sin convocatoria, convocatoria desconocida
+  for (const [phone, protest] of [[PH.ES, NAT_ES], [PH.CA, NAT_CA], [PH.GB, NAT_GB], [PH.FR, NAT_ES], [PH.IT_MOBILE, GLOBAL], [PH.NONE, LOCAL], [PH.IT_MOBILE, null], [PH.IT_MOBILE, P(99)]]) {
+    const before = calls.sendOtp;
+    const r = await req(phone, protest);
+    assert.equal(r.statusCode, 200, `${phone} ${protest}`); assert.equal(body(r).sent, true);
+    assert.equal(calls.sendOtp, before + 1);
   }
 });
 

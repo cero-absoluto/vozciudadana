@@ -377,7 +377,7 @@
     "toast": "✓ Adhésion vérifiée enregistrée",
     "toastNational": "Vous ne pouvez pas rejoindre cette manifestation. Elle est réservée aux participants vérifiés liés au périmètre national suivant : {country}.",
     "toastNationalNoCountry": "Vous ne pouvez pas rejoindre. Cette protestation est réservée aux participants vérifiés liés à son périmètre national.",
-    "toastNationalSharedCode": "Nous n'avons pas pu vérifier le pays de votre numéro, car son indicatif est partagé par plusieurs pays. Cela ne signifie pas que votre numéro appartient à un autre pays. Vous pouvez participer aux convocatorias globales.",
+    "toastNationalSharedCode": "Nous n'avons pas pu confirmer le pays de votre numéro : son indicatif est partagé par plusieurs pays et les données de numérotation ne permettent pas d'en distinguer un avec certitude. Cela ne signifie pas que votre numéro appartient à un autre pays. Vous pouvez participer aux convocatorias globales.",
     "toastNationalUnresolved": "Nous n'avons pas pu déterminer le pays de votre numéro. Cela ne signifie pas que votre numéro appartient à un autre pays. Vous pouvez participer aux convocatorias globales.",
     "toastNationalReverification": "Pour rejoindre cette convocatoria nationale, nous devons vérifier à nouveau votre téléphone, une seule fois. Nous vous redirigeons vers la vérification.",
     "notiOn": "🔔 Notifications activées",

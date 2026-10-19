@@ -48,7 +48,7 @@ export class NationalReverificationRequiredError extends AdhesionError {
   constructor() { super('NATIONAL_REVERIFICATION_REQUIRED', 'This national convocatoria requires a fresh phone verification to establish the country of your number.'); }
 }
 export class NationalSharedCallingCodeError extends AdhesionError {
-  constructor() { super('NATIONAL_COUNTRY_SHARED_CODE', 'The country of this number cannot be established from its calling code, which several countries share. This does not mean the number belongs to another country.'); }
+  constructor() { super('NATIONAL_COUNTRY_SHARED_CODE', 'The country of this number could not be established with certainty: its calling code is shared by several countries and the numbering data do not single one out. This does not mean the number belongs to another country.'); }
 }
 export class NationalCountryUnresolvedError extends AdhesionError {
   constructor() { super('NATIONAL_COUNTRY_UNRESOLVED', 'The country of this number could not be established. This does not mean the number belongs to another country.'); }
@@ -206,7 +206,7 @@ export async function createVerifiedAdhesion(input) {
     const n = identity.numbering;
     if (!n || !n.resolution) throw new NationalReverificationRequiredError();
     if (n.resolution === 'shared_calling_code') throw new NationalSharedCallingCodeError();
-    if (n.resolution !== 'resolved_unshared' || !n.country) throw new NationalCountryUnresolvedError();
+    if ((n.resolution !== 'resolved_unshared' && n.resolution !== 'resolved_shared_unique') || !n.country) throw new NationalCountryUnresolvedError();
     if (n.country !== protest.country) throw new NationalCountryMismatchError();
   }
 

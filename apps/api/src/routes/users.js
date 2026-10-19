@@ -2,7 +2,8 @@ import { createHash, createHmac } from 'node:crypto';
 import { supabase } from '../services/supabase.js';
 import { sendOtp, verifyOtp } from '../services/twilio.js';
 import { verifyRecaptcha } from '../lib/recaptcha.js';
-import { deriveNumberingCountry } from '../lib/numberingCountry.js';
+import { deriveNumberingCountry, NUMBERING_RESOLUTION } from '../lib/numberingCountry.js';
+import { NationalSharedCallingCodeError, NationalCountryUnresolvedError } from '../lib/adhesionService.js';
 import {
   signParticipationToken, generateDeviceSecret, deviceSecretMatches,
 } from '../lib/participationToken.js';
@@ -76,6 +77,24 @@ export default async function userRoutes(app) {
     if (!limitCheck?.allowed) {
       req.log.warn({ reason: limitCheck?.reason }, 'OTP rate limit exceeded');
       return reply.code(429).send({ error: 'RATE_LIMITED', code: 'otp_rate_limited' });
+    }
+
+    // ── 3b. National convocatoria whose country cannot be established ──────
+    // A fresh SMS cannot change what the numbering data say about this number, so
+    // tell the person BEFORE any SMS is sent. Depends only on the number and the
+    // convocatoria's country (never on participation, so it reveals nothing about
+    // it); no SMS is sent and nothing is logged. /join still decides admission.
+    if (protest_id) {
+      const { data: target } = await supabase
+        .from('protests').select('scope, country').eq('id', protest_id).maybeSingle();
+      if (target?.scope === 'national' && target.country) {
+        const n = deriveNumberingCountry(phone);
+        if (n.resolution !== NUMBERING_RESOLUTION.RESOLVED_UNSHARED && n.resolution !== NUMBERING_RESOLUTION.RESOLVED_SHARED_UNIQUE) {
+          const err = n.resolution === NUMBERING_RESOLUTION.SHARED_CALLING_CODE
+            ? new NationalSharedCallingCodeError() : new NationalCountryUnresolvedError();
+          return reply.code(403).send({ code: err.code, error: err.message });
+        }
+      }
     }
 
     // ── 4. Nullifier check — before sending SMS ─────────────────────────

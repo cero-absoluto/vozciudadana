@@ -47,6 +47,7 @@ test('acepta derivaciones coherentes', async () => {
   await ins('ok-1', 'DE', 'resolved_unshared', 'libphonenumber-js@1.12.10/max');
   await ins('ok-2', null, 'shared_calling_code', 'libphonenumber-js@1.12.10/max');
   await ins('ok-3', null, 'no_result', 'libphonenumber-js@1.12.10/max');
+  await ins('ok-5', 'CA', 'resolved_shared_unique', 'libphonenumber-js@1.12.10/max;R-N2'); // código compartido, un único país
   await ins('ok-4', 'UY', 'resolved_unshared', 'libphonenumber-js@1.12.10/max'); // UY no está en country_codes: sin FK
 });
 
@@ -56,10 +57,21 @@ test('rechaza derivaciones incoherentes', async () => {
   await assert.rejects(ins('bad-3', 'FR', 'no_result', 'v'), /devices_numbering_provenance_coherent/);
   await assert.rejects(ins('bad-4', 'FR', 'resolved_unshared', null), /devices_numbering_provenance_coherent/);
   await assert.rejects(ins('bad-5', 'FR', null, 'v'), /devices_numbering_provenance_coherent/);
+  await assert.rejects(ins('bad-7', null, 'resolved_shared_unique', 'v'), /devices_numbering_provenance_coherent/); // resuelto sin país
+  await assert.rejects(ins('bad-8', 'CA', 'resolved_shared_unique', null), /devices_numbering_provenance_coherent/);
   await assert.rejects(ins('bad-6', null, 'country_by_declaration', 'v'), /devices_numbering_provenance_coherent/);
 });
 
 test('el contenido de adhesiones/nullifiers no existe en esta migración (solo la tabla devices cambia)', () => {
   assert.ok(!/adhesions|nullifier|integrity|hash_integridad/i.test(migration.replace(/--.*$/gm, '')), 'el SQL ejecutable no menciona adhesiones, nullifiers ni integridad');
   assert.ok(!/\bupdate\b|\bdelete\b|\binsert\b/i.test(migration.replace(/--.*$/gm, '')), 'sin backfill ni cambios de datos');
+});
+
+test('re-ejecutar la migración (con la restricción ya creada, también la versión anterior de 3 valores) la deja con los 4 valores', async () => {
+  await db.exec("delete from devices where numbering_resolution = 'resolved_shared_unique'"); // filas del nuevo valor no caben en la restricción antigua
+  await db.exec(`alter table devices drop constraint devices_numbering_provenance_coherent;
+    alter table devices add constraint devices_numbering_provenance_coherent check (numbering_resolution is null or numbering_resolution in ('resolved_unshared','shared_calling_code','no_result'));`);
+  await db.exec(await readFile(new URL('../supabase/migrations/20261019120000_devices_numbering_provenance.sql', import.meta.url), 'utf8'));
+  await ins('ok-6', 'GB', 'resolved_shared_unique', 'libphonenumber-js@1.12.10/max;R-N2');
+  await assert.rejects(ins('bad-9', null, 'resolved_shared_unique', 'v'), /devices_numbering_provenance_coherent/);
 });

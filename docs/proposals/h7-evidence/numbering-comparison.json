@@ -1,0 +1,106 @@
+{
+  "library": {
+    "name": "libphonenumber-js",
+    "version": "1.12.10",
+    "license": "MIT",
+    "metadata": "max"
+  },
+  "examples": "ejemplos móviles sintéticos de la biblioteca",
+  "countries_with_example": 245,
+  "table_source": {
+    "rows": 66,
+    "calling_codes": 64,
+    "counts": {
+      "unmapped": 148,
+      "unique_correct": 63,
+      "unique_wrong": 9,
+      "ambiguous_contains": 3,
+      "ambiguous_misses": 22
+    },
+    "unmapped_pct": 60.4,
+    "unique_wrong": [
+      "AX->FI",
+      "CC->AU",
+      "CX->AU",
+      "GG->GB",
+      "IM->GB",
+      "JE->GB",
+      "KZ->RU",
+      "SJ->NO",
+      "VA->IT"
+    ],
+    "ambiguous": [
+      "CA~US/CA/DO",
+      "DO~US/CA/DO",
+      "US~US/CA/DO",
+      "AG~US/CA/DO",
+      "AI~US/CA/DO",
+      "AS~US/CA/DO",
+      "BB~US/CA/DO",
+      "BM~US/CA/DO",
+      "BS~US/CA/DO",
+      "DM~US/CA/DO",
+      "GD~US/CA/DO",
+      "GU~US/CA/DO",
+      "JM~US/CA/DO",
+      "KN~US/CA/DO",
+      "KY~US/CA/DO",
+      "LC~US/CA/DO",
+      "MP~US/CA/DO",
+      "MS~US/CA/DO",
+      "PR~US/CA/DO",
+      "SX~US/CA/DO",
+      "TC~US/CA/DO",
+      "TT~US/CA/DO",
+      "VC~US/CA/DO",
+      "VG~US/CA/DO",
+      "VI~US/CA/DO"
+    ]
+  },
+  "versioned_metadata_source": {
+    "counts": {
+      "correct": 236,
+      "undefined": 0,
+      "wrong": 9
+    },
+    "correct_pct": 96.3,
+    "undefined": [],
+    "wrong": [
+      "AX->FI",
+      "BL->GP",
+      "CC->AU",
+      "CX->AU",
+      "EH->MA",
+      "IM->GB",
+      "MF->GP",
+      "SJ->NO",
+      "VA->IT"
+    ]
+  },
+  "calling_codes_shared_in_full_plan": {
+    "codes": 12,
+    "countries_in_them": 51,
+    "largest": [
+      {
+        "calling_code": "1",
+        "countries": 25
+      },
+      {
+        "calling_code": "44",
+        "countries": 4
+      },
+      {
+        "calling_code": "61",
+        "countries": 3
+      },
+      {
+        "calling_code": "590",
+        "countries": 3
+      },
+      {
+        "calling_code": "7",
+        "countries": 2
+      }
+    ]
+  }
+}

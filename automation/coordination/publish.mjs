@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { decideAfterClaude, mayPublish, ownerStopped, pickState, validatePatch, STATUS } from './controller.mjs';
 import { collectFacts, persistState, loadPolicy, blockedNotice, NOTICE_STOPPED } from './gather.mjs';
 import { makeApi } from './github.mjs';
@@ -71,7 +72,10 @@ export function buildPatchFromTree({ repoDir, treeDir, policy }) {
   return v.ok ? { ok: true, patch: d.stdout, paths: v.paths } : { ok: false, reason: v.reason, path: v.path };
 }
 
-export async function publishRound({ api, policy, repository, number, round, claudeResult, verifyResult = 'success', patch, repoDir, pushEnv = {}, requestReview = true, switchEnabled = process.env.AGENT_HANDOFF_ENABLED }) {
+export const sha256 = (text) => crypto.createHash('sha256').update(text ?? '').digest('hex');
+
+/** Cierra con fail-closed: sin `patchStatus` ni huella esperada no se publica nada. */
+export async function publishRound({ api, policy, repository, number, round, claudeResult, verifyResult = 'missing', patchStatus = { ok: false, reason: 'missing' }, expectedPatchSha256 = null, patch, repoDir, pushEnv = {}, requestReview = true, switchEnabled = process.env.AGENT_HANDOFF_ENABLED }) {
   const facts = await collectFacts({ api, policy, repository, event: { issue: { number, pull_request: {} } }, switchEnabled, force: true });
   const { state, commentId } = pickState(facts.stateComments, policy);
   let outcome; let newHead;
@@ -83,7 +87,11 @@ export async function publishRound({ api, policy, repository, number, round, cla
   }
   if (!facts.pr || !mayPublish(state, facts, policy, round)) outcome = 'stale';
   else if (claudeResult !== 'success') outcome = claudeResult === 'cancelled' ? 'timeout' : 'failure';
+  else if (!patchStatus?.ok) outcome = patchStatus?.reason === 'empty_patch' ? 'no_changes' : 'rejected_patch';
   else if (verifyResult !== 'success') outcome = 'verification_failed';
+  // Integridad: el parche que se publica debe ser EXACTAMENTE el que construyó el job de confianza (y que `verify` probó),
+  // no uno que el código del PR haya podido reescribir mientras se ejecutaban sus pruebas.
+  else if (!/^[0-9a-f]{64}$/.test(expectedPatchSha256 ?? '') || sha256(patch) !== expectedPatchSha256) outcome = 'patch_integrity';
   else {
     const v = validatePatch(patch ?? '', policy);
     if (!v.ok) outcome = v.reason === 'empty_patch' ? 'no_changes' : 'rejected_patch';
@@ -103,15 +111,21 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1] && pro
   const e = process.env;
   const r = buildPatchFromTree({ repoDir: e.REPO_DIR, treeDir: e.TREE_DIR, policy: loadPolicy() });
   if (r.ok) fs.writeFileSync(e.PATCH_OUT, r.patch);
-  console.log(JSON.stringify({ ok: r.ok, reason: r.reason ?? null, paths: r.paths ?? null }));
-  process.exit(r.ok ? 0 : 1);
+  const out = { ok: r.ok, reason: r.reason ?? '', sha256: r.ok ? sha256(r.patch) : '' };
+  if (e.GITHUB_OUTPUT) fs.appendFileSync(e.GITHUB_OUTPUT, Object.entries(out).map(([k, v]) => `${k}=${String(v).replace(/[\r\n]/g, ' ')}\n`).join(''));
+  console.log(JSON.stringify({ ...out, paths: r.paths ?? null }));
+} else if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1] && process.argv[2] === 'check-patch') {
+  const e = process.env;
+  const ok = fs.existsSync(e.PATCH_PATH ?? '') && sha256(fs.readFileSync(e.PATCH_PATH, 'utf8')) === e.EXPECTED_SHA256 && /^[0-9a-f]{64}$/.test(e.EXPECTED_SHA256 ?? '');
+  console.log(JSON.stringify({ patch_integrity: ok })); process.exit(ok ? 0 : 1);
 } else if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const e = process.env;
   const token = e.GITHUB_TOKEN;
   const auth = Buffer.from(`x-access-token:${token}`).toString('base64');
   publishRound({
     api: makeApi({ token }), policy: loadPolicy(), repository: e.GITHUB_REPOSITORY, number: Number(e.PR_NUMBER), round: Number(e.ROUND),
-    claudeResult: e.CLAUDE_RESULT, verifyResult: e.VERIFY_RESULT ?? 'missing', patch: fs.existsSync(e.PATCH_PATH ?? '') ? fs.readFileSync(e.PATCH_PATH, 'utf8') : '', repoDir: e.REPO_DIR,
+    claudeResult: e.CLAUDE_RESULT, verifyResult: e.VERIFY_RESULT ?? 'missing',
+    patchStatus: { ok: e.PATCH_OK === 'true', reason: e.PATCH_REASON ?? '' }, expectedPatchSha256: e.EXPECTED_PATCH_SHA256 ?? null, patch: fs.existsSync(e.PATCH_PATH ?? '') ? fs.readFileSync(e.PATCH_PATH, 'utf8') : '', repoDir: e.REPO_DIR,
     pushEnv: { GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'http.https://github.com/.extraheader', GIT_CONFIG_VALUE_0: `AUTHORIZATION: basic ${auth}` },
   }).then((r) => console.log(JSON.stringify({ outcome: r.outcome, action: r.next.action.type }))).catch((err) => { console.error(`publish: ${err.message}`); process.exit(1); });
 }

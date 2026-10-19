@@ -8,7 +8,10 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { decide, decideAfterClaude, mayPublish, ownerStopped, pickState, validatePatch, encodeState, decodeState, precheck, STATUS } from '../automation/coordination/controller.mjs';
 import { collectFacts, main as gatherMain, loadPolicy } from '../automation/coordination/gather.mjs';
-import { publishRound, applyPatchAndPush, buildPatchFromTree } from '../automation/coordination/publish.mjs';
+import crypto from 'node:crypto';
+import { publishRound as realPublishRound, applyPatchAndPush, buildPatchFromTree, sha256 } from '../automation/coordination/publish.mjs';
+// Por defecto las pruebas simulan un job `patch` y un job `verify` correctos sobre ESE parche; cada prueba puede sobrescribirlo.
+const publishRound = (o) => realPublishRound({ patchStatus: { ok: true }, verifyResult: 'success', expectedPatchSha256: sha256(o.patch), ...o });
 
 const policy = loadPolicy();
 const REPO = policy.repository;
@@ -272,13 +275,13 @@ test('W2 workflow: sin pull_request_target ni pull_request_review ni schedule; s
 test('W3 todas las acciones externas fijadas a SHA completo; sin tags móviles', () => {
   const uses = [...code.matchAll(/uses:\s*(\S+)/g)].map((m) => m[1]); assert.ok(uses.length >= 7);
   for (const u of uses) assert.match(u, /^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/, u);
-  assert.deepEqual([...new Set(uses.map((u) => u.split('@')[0]))].sort(), ['actions/checkout', 'actions/download-artifact', 'actions/upload-artifact', 'anthropics/claude-code-action']);
+  assert.deepEqual([...new Set(uses.map((u) => u.split('@')[0]))].sort(), ['actions/checkout', 'actions/download-artifact', 'actions/setup-node', 'actions/upload-artifact', 'anthropics/claude-code-action']);
 });
 test('W4 permisos mínimos: workflow {} y por job; el job del modelo sin escritura; solo el publicador escribe contenido', () => {
   assert.match(code, /^permissions: \{\}$/m);
-  const jobs = Object.fromEntries([...code.matchAll(/^  (decide|claude|verify|publish):\n([\s\S]*?)(?=^  \w+:\n|(?![\s\S]))/gm)].map((m) => [m[1], m[2]]));
-  assert.deepEqual(Object.keys(jobs).sort(), ['claude', 'decide', 'publish', 'verify']);
-  assert.doesNotMatch(jobs.claude, /write/); assert.doesNotMatch(jobs.verify, /write/); assert.doesNotMatch(jobs.verify, /secrets\./); assert.doesNotMatch(jobs.decide, /contents: write/); assert.match(jobs.publish, /contents: write/);
+  const jobs = Object.fromEntries([...code.matchAll(/^  (decide|claude|patch|verify|publish):\n([\s\S]*?)(?=^  \w+:\n|(?![\s\S]))/gm)].map((m) => [m[1], m[2]]));
+  assert.deepEqual(Object.keys(jobs).sort(), ['claude', 'decide', 'patch', 'publish', 'verify']);
+  assert.doesNotMatch(jobs.claude, /write/); assert.doesNotMatch(jobs.verify, /write/); assert.doesNotMatch(jobs.patch, /write/); assert.doesNotMatch(jobs.verify, /secrets\./); assert.doesNotMatch(jobs.decide, /contents: write/); assert.match(jobs.publish, /contents: write/);
   for (const j of Object.values(jobs)) assert.match(j, /timeout-minutes: \d+/);
   assert.doesNotMatch(code, /id-token/);
 });
@@ -296,7 +299,7 @@ test('W6 confianza del controlador: decide y publish toman código de la rama po
   assert.match(code, /group: agent-handoff-pr-\$\{\{ github\.event\.issue\.number \}\}\n\s+cancel-in-progress: false/);
   assert.match(code, /github\.event\.comment\.user\.id == 199175422/); assert.equal(policy.auditor.id, 199175422);
   assert.match(code, /vars\.AGENT_HANDOFF_ENABLED == 'true'/);
-  assert.doesNotMatch(code, /run: .*(npm|pnpm|yarn|npx)/);
+  assert.deepEqual([...code.matchAll(/run: .*(npm|pnpm|yarn|npx).*/g)].map((m) => m[0]), ['run: npm ci --ignore-scripts --no-audit --no-fund'], 'solo verify instala, con lockfile congelado y sin scripts');
 });
 
 // ── Defensas redundantes (cada capa se prueba por separado) ─────────────────────────────────────────────
@@ -389,13 +392,47 @@ test('V1 pruebas del job verify fallidas u omitidas → BLOCKED y sin push', asy
     assert.equal(r.outcome, 'verification_failed'); assert.equal(stateOf(g).status, STATUS.BLOCKED); assert.equal(sh(dir, '--git-dir=origin.git', 'rev-parse', 'refs/heads/feature/x'), head);
   }
 });
-test('W7 el job del modelo no tiene shell ni git ni red; las pruebas y el parche van en un job posterior sin credenciales; publish espera a verify', () => {
-  const claude = /^  claude:\n([\s\S]*?)(?=^  verify:)/m.exec(code)[1]; const verify = /^  verify:\n([\s\S]*?)(?=^  publish:)/m.exec(code)[1]; const publish = /^  publish:\n([\s\S]*)/m.exec(code)[1];
+test('W7 el job del modelo no tiene shell, git ni red, ni carga config del PR; parche en job de confianza; pruebas en job sin credenciales ni subida; publish exige huella', () => {
+  const sec = (n, next) => new RegExp(`^  ${n}:\\n([\\s\\S]*?)(?=^  ${next}:|(?![\\s\\S]))`, 'm').exec(code)[1];
+  const claude = sec('claude', 'patch'); const patch = sec('patch', 'verify'); const verify = sec('verify', 'publish'); const publish = /^  publish:\n([\s\S]*)/m.exec(code)[1];
   assert.doesNotMatch(claude.replace(/--disallowedTools "[^"]*"/, ''), /Bash|WebFetch|WebSearch/); assert.match(claude, /--disallowedTools "Bash,WebFetch,WebSearch/);
-  assert.doesNotMatch(claude, /^\s+run:/m, 'ningún run en el job del modelo');
-  assert.doesNotMatch(claude, /git diff|node --test/);
-  assert.match(claude, /Edit\(apps\/web\/src\/\*\*\),Edit\(tests\/\*\*\)/);
-  assert.match(verify, /node --experimental-test-module-mocks --test/); assert.match(verify, /publish\.mjs build-patch/);
-  assert.doesNotMatch(verify, /secrets\.|CLAUDE_CODE/);
-  assert.match(publish, /needs: \[decide, claude, verify\]/); assert.match(publish, /VERIFY_RESULT: \$\{\{ needs\.verify\.result \}\}/); assert.match(publish, /vars\.AGENT_HANDOFF_ENABLED == 'true'/);
+  assert.doesNotMatch(claude, /^\s+run:/m, 'ningún run en el job del modelo'); assert.doesNotMatch(claude, /git diff|node --test/);
+  assert.match(claude, /--allowedTools "Read,Glob,Grep,Edit\(apps\/web\/src\/\*\*\),Edit\(tests\/\*\*\)"/); assert.doesNotMatch(claude, /Write\(/, 'las reglas Write(ruta) no se evalúan: solo Edit(ruta)');
+  assert.match(claude, /--setting-sources user --strict-mcp-config --disable-slash-commands/);
+  assert.match(patch, /publish\.mjs build-patch/); assert.match(patch, /sha256: \$\{\{ steps\.build\.outputs\.sha256 \}\}/); assert.doesNotMatch(patch, /npm|node --test|secrets\./);
+  assert.doesNotMatch(verify, /secrets\.|CLAUDE_CODE/); assert.doesNotMatch(verify, /upload-artifact/, 'verify (código del PR) no puede subir ni reemplazar artefactos');
+  assert.match(verify, /publish\.mjs check-patch/); assert.match(verify, /EXPECTED_SHA256: \$\{\{ needs\.patch\.outputs\.sha256 \}\}/);
+  assert.match(verify, /npm ci --ignore-scripts/); assert.doesNotMatch(verify, /npm install|npm i /); assert.match(verify, /node-version: 22/); assert.match(verify, /node --experimental-test-module-mocks --test/);
+  assert.ok(verify.indexOf('check-patch') < verify.indexOf('npm ci') && verify.indexOf('npm ci') < verify.indexOf('git apply') && verify.indexOf('git apply') < verify.indexOf('--test'));
+  assert.match(publish, /needs: \[decide, claude, patch, verify\]/); assert.match(publish, /VERIFY_RESULT: \$\{\{ needs\.verify\.result \}\}/);
+  assert.match(publish, /EXPECTED_PATCH_SHA256: \$\{\{ needs\.patch\.outputs\.sha256 \}\}/); assert.match(publish, /vars\.AGENT_HANDOFF_ENABLED == 'true'/);
+});
+test('I5 integridad: si las pruebas del PR reemplazan el parche por OTRO cambio permitido, no se publica; sin huella o con huella inválida tampoco', async () => {
+  const A = 'diff --git a/apps/web/src/a.js b/apps/web/src/a.js\n--- a/apps/web/src/a.js\n+++ b/apps/web/src/a.js\n@@ -1 +1 @@\n-export const a = 1;\n+export const a = 2;\n';
+  const B = A.replace('a = 2', 'a = 666');
+  assert.equal(validatePatch(B, policy).ok, true, 'el parche sustituto es válido por rutas: solo la huella lo detiene');
+  for (const [label, patch, expectedPatchSha256] of [['sustituido', B, sha256(A)], ['sin huella', A, null], ['huella corrupta', A, 'zz'], ['huella vacía', A, '']]) {
+    const { dir, sh, head } = gitRepo(); const g = fakeGithub({ head });
+    await step(g, cmdEvent(OWNER)); g.addReview(CODEX, head, [g.finding('apps/web/src/a.js', 1, 'x')]); await step(g, codexEvent());
+    const r = await publishRound({ api: g.api, policy, repository: REPO, number: 7, round: 1, claudeResult: 'success', patch, expectedPatchSha256, repoDir: `${dir}/work`, switchEnabled: 'true' });
+    assert.equal(r.outcome, 'patch_integrity', label); assert.equal(stateOf(g).status, STATUS.BLOCKED);
+    assert.equal(sh(dir, '--git-dir=origin.git', 'rev-parse', 'refs/heads/feature/x'), head, `${label}: remoto intacto`);
+  }
+  // patch job rechazó o no hubo cambios, y valores por defecto: fail-closed
+  for (const [patchStatus, outcome] of [[{ ok: false, reason: 'empty_patch' }, 'no_changes'], [{ ok: false, reason: 'denied_path' }, 'rejected_patch'], [undefined, 'rejected_patch']]) {
+    const { dir, head } = gitRepo(); const g = fakeGithub({ head }); await step(g, cmdEvent(OWNER)); g.addReview(CODEX, head, [g.finding('apps/web/src/a.js', 1, 'x')]); await step(g, codexEvent());
+    const r = await realPublishRound({ api: g.api, policy, repository: REPO, number: 7, round: 1, claudeResult: 'success', verifyResult: 'success', patchStatus, expectedPatchSha256: sha256(A), patch: A, repoDir: `${dir}/work`, switchEnabled: 'true' });
+    assert.equal(r.outcome, outcome);
+  }
+  const { dir, head } = gitRepo(); const g = fakeGithub({ head }); await step(g, cmdEvent(OWNER)); g.addReview(CODEX, head, [g.finding('apps/web/src/a.js', 1, 'x')]); await step(g, codexEvent());
+  assert.equal((await realPublishRound({ api: g.api, policy, repository: REPO, number: 7, round: 1, claudeResult: 'success', patch: A, repoDir: `${dir}/work`, switchEnabled: 'true' })).outcome, 'rejected_patch', 'sin parámetros del job patch: fail-closed');
+  // camino feliz de referencia: la huella coincide → se publica
+  const ok = gitRepo(); const g2 = fakeGithub({ head: ok.head }); await step(g2, cmdEvent(OWNER)); g2.addReview(CODEX, ok.head, [g2.finding('apps/web/src/a.js', 1, 'x')]); await step(g2, codexEvent());
+  assert.equal((await publishRound({ api: g2.api, policy, repository: REPO, number: 7, round: 1, claudeResult: 'success', patch: A, repoDir: `${ok.dir}/work`, switchEnabled: 'true' })).outcome, 'pushed');
+});
+test('X1 el CLI check-patch/build-patch: huella correcta pasa; fichero alterado o huella ajena fallan (proceso real)', () => {
+  const dir = tmp(); const f = `${dir}/p.patch`; fs.writeFileSync(f, 'abc\n');
+  const run = (sha) => spawnSync(process.execPath, ['automation/coordination/publish.mjs', 'check-patch'], { env: { ...process.env, PATCH_PATH: f, EXPECTED_SHA256: sha }, encoding: 'utf8' }).status;
+  assert.equal(run(sha256('abc\n')), 0); assert.equal(run(sha256('abd\n')), 1); assert.equal(run(''), 1);
+  fs.writeFileSync(f, 'abd\n'); assert.equal(run(sha256('abc\n')), 1);
 });

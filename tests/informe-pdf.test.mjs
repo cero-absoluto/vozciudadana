@@ -217,3 +217,29 @@ test('default loader verifies the font checksum: constant matches the shipped fi
     await assert.rejects(() => mod.buildInformePdf({ data: FIXTURES.zh.data, protestId: 'x', abuseLabel: 'a', locale: 'zh', t: tFor('zh'), integrity: NO_INTEGRITY }), (e) => e.name === 'PdfFontError');
   } finally { globalThis.fetch = realFetch; }
 });
+
+test('emoji removed from user content is reported (notice shown); the emoji carried by locale strings is not', async () => {
+  const onlyEmoji = { ui: 'es', abuse: 'Opacidad', data: { ...FIXTURES.es.data, protest: { ...FIXTURES.es.data.protest, title: 'Manifestación por la plaza 🔥' } } };
+  const r = await build(onlyEmoji);
+  assert.equal(r.usedEmbeddedFont, false, 'otherwise WinAnsi content');
+  assert.equal(r.replaced, true);
+  assert.ok(r.drawn.join('\n').includes(loc.es.informe.pdf.unsupportedChars));
+  assert.ok(!r.drawn.join('\n').includes('🔥'));
+  // emoji in demands / focal point / regions are content too
+  for (const field of ['demands', 'focal_point']) {
+    const c = { ...onlyEmoji, data: { ...onlyEmoji.data, protest: { ...FIXTURES.es.data.protest, [field]: 'Texto ✊ con puño' } } };
+    assert.equal((await build(c)).replaced, true, field);
+  }
+  for (const l of L) assert.equal((await build(FIXTURES[l])).replaced, false, `${l}: 🔒 in chainTitle must not trigger the notice`);
+  const mk = txt.makeDrawable('Hola 🔥', txt.isWinAnsi);
+  assert.equal(mk.replaced, false, 'default: stripping alone is not flagged');
+  assert.equal(txt.makeDrawable('Hola 🔥', txt.isWinAnsi, { flagStripped: true }).replaced, true);
+  assert.equal(txt.makeDrawable('Ok\u200d\ufe0f ©', txt.isWinAnsi, { flagStripped: true }).replaced, false, 'invisible marks and © are not visible losses');
+});
+
+test('source has no raw invisible/line-separator characters (they must be escapes)', () => {
+  for (const f of ['pdfText.js', 'informePdf.js']) {
+    const src = fs.readFileSync(new URL(`../apps/web/src/lib/${f}`, import.meta.url), 'utf8');
+    assert.ok(!/[\u200B-\u200F\u2028\u2029\u202A-\u202E\u2060-\u2064\uFE00-\uFE0F\u20E3]/u.test(src), f);
+  }
+});

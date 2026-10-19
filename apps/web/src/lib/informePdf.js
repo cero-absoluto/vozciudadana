@@ -132,7 +132,7 @@ export async function buildInformePdf({ data: d, integrity, protestId, abuseLabe
   // `ui` strings come from the locale files; `content` strings are user data. Any visible
   // character replaced by "?" in either is reported in the PDF.
   const ui = (s) => { const r = makeDrawable(s, covers); if (r.replaced) replaced = true; return r.text; };
-  const content = (s) => { const r = makeDrawable(s, covers); if (r.replaced) replaced = true; return r.text; };
+  const content = (s) => { const r = makeDrawable(s, covers, { flagStripped: true }); if (r.replaced) replaced = true; return r.text; };
 
   function setFont(style) {
     if (font) doc.setFont('PdfSans', 'normal'); // single weight bundled; emphasis comes from size and colour

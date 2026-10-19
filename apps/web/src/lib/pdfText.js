@@ -28,18 +28,29 @@ export function inEmbeddedFontRanges(cp) {
     || (cp >= 0x3400 && cp <= 0x9fff) || (cp >= 0xff01 && cp <= 0xffe5);
 }
 
-const INVISIBLE_RE = /[​-‏‪-‮⁠-⁤︀-️⃣\u{E0100}-\u{E01EF}\u{E0020}-\u{E007F}]/gu;
+const INVISIBLE_RE = /[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFE00-\uFE0F\u20E3\u{E0100}-\u{E01EF}\u{E0020}-\u{E007F}]/gu;
 const PICTO_RE = /[\p{Extended_Pictographic}\p{Emoji_Presentation}]/gu;
 const CONTROL_RE = /[\p{Cc}\u2028\u2029]/gu;
 
-/** NFC-normalise, drop emoji/invisible marks, turn control characters into spaces. */
-export function stripUndrawable(input) {
+/**
+ * NFC-normalise, drop emoji/invisible marks, turn control characters into spaces.
+ * `removedVisible` is true when a visible character (emoji/pictograph) was dropped,
+ * so callers can report it instead of silently changing user content.
+ */
+export function stripUndrawableInfo(input) {
+  let removedVisible = false;
   let s = String(input ?? '').normalize('NFC');
   s = s.replace(CONTROL_RE, ' ').replace(INVISIBLE_RE, '');
   // Keep © ® ™ and other WinAnsi characters that Unicode also tags as pictographic.
-  s = s.replace(PICTO_RE, (ch) => (ch.length === 1 && isWinAnsi(ch.codePointAt(0)) ? ch : ''));
-  return s.replace(/ {2,}/g, ' ').trim();
+  s = s.replace(PICTO_RE, (ch) => {
+    if (ch.length === 1 && isWinAnsi(ch.codePointAt(0))) return ch;
+    removedVisible = true;
+    return '';
+  });
+  return { text: s.replace(/ {2,}/g, ' ').trim(), removedVisible };
 }
+
+export function stripUndrawable(input) { return stripUndrawableInfo(input).text; }
 
 /** Does any text need the embedded font (as opposed to the built-in ones)? */
 export function needsEmbeddedFont(texts) {
@@ -55,12 +66,15 @@ export function needsEmbeddedFont(texts) {
 /**
  * Make `text` drawable. `covers(cp)` says which code points the active font
  * can draw. Returns the cleaned text and whether visible characters had to be
- * replaced by "?" (so the PDF can say so instead of hiding it).
+ * replaced by "?" (so the PDF can say so instead of hiding it). With
+ * `flagStripped` an emoji removed from the text also counts as a visible change
+ * (used for user content; the emoji that locale strings carry on purpose do not).
  */
-export function makeDrawable(text, covers) {
-  let replaced = false;
+export function makeDrawable(text, covers, { flagStripped = false } = {}) {
+  const info = stripUndrawableInfo(text);
+  let replaced = flagStripped && info.removedVisible;
   let out = '';
-  for (const ch of stripUndrawable(text)) {
+  for (const ch of info.text) {
     const cp = ch.codePointAt(0);
     if (covers(cp)) out += ch;
     else { out += '?'; replaced = true; }

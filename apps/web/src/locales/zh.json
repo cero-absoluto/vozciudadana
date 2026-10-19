@@ -610,7 +610,9 @@
       "footer": "Voice Protest — 经验证的公民抗议平台 — AGPL 3.0",
       "page": "第 {i} 页，共 {n} 页",
       "unsupportedChars": "内容中的部分字符无法在此 PDF 中显示；请查看报告的网页版本。"
-    }
+    },
+    "pdfErrorFont": "无法生成 PDF，因为未能加载所需字体。未下载任何文档。请检查网络连接后重试。",
+    "pdfErrorGeneric": "无法生成 PDF。未下载任何文档。请重试。"
   },
   "invite": {
     "loading": "验证邀请中...",

@@ -22,11 +22,20 @@ export function formatPdfDateTime(iso, locale) {
   }) + ' UTC';
 }
 
+/** The font needed by this PDF could not be loaded or registered; nothing was generated. */
+export class PdfFontError extends Error {
+  constructor(cause) { super('PDF font unavailable'); this.name = 'PdfFontError'; this.cause = cause; }
+}
+
 let fontCache = null;
+let fontFailures = 0; // consecutive failures; after one, the next attempt bypasses every cache
 /** Default browser loader: fetched only when a PDF actually needs it. */
 export async function fetchEmbeddedFont() {
   if (fontCache) return fontCache;
-  const res = await fetch(`${import.meta.env.BASE_URL}${FONT_FILE}`);
+  // The app's service worker caches successful same-origin GETs; after a failure we force a fresh
+  // copy so a corrupt cached response cannot make every retry fail.
+  const retry = fontFailures > 0;
+  const res = await fetch(`${import.meta.env.BASE_URL}${FONT_FILE}${retry ? `?r=${Date.now()}` : ''}`, retry ? { cache: 'reload' } : undefined);
   if (!res.ok) throw new Error('font unavailable');
   fontCache = await res.arrayBuffer();
   return fontCache;
@@ -77,30 +86,39 @@ export async function buildInformePdf({ data: d, integrity, protestId, abuseLabe
     ...regions.map(([r]) => r), ...cities,
   ].filter(Boolean);
 
+  // The embedded font is required whenever the labels or the content need it. If it cannot be
+  // loaded or registered we do NOT produce a degraded PDF (its own notices would be unreadable
+  // too): the caller shows a translated error and the user can retry.
   let font = null; // { buffer, covered }
-  let fontError = false;
   if (needsEmbeddedFont([...uiStrings, ...contentStrings])) {
     try {
       const buffer = await loadFont();
-      font = { buffer, covered: coverageFromTtf(buffer) };
-    } catch { fontError = true; }
+      const covered = coverageFromTtf(buffer);
+      if (covered.size < 1000) throw new Error('font file invalid');
+      font = { buffer, covered };
+    } catch (cause) { fontFailures++; fontCache = null; throw new PdfFontError(cause); }
   }
   const covers = font ? (cp) => font.covered.has(cp) : isWinAnsi;
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
   if (font) {
-    doc.addFileToVFS('pdf-sans-subset.ttf', toBase64(font.buffer));
-    doc.addFont('pdf-sans-subset.ttf', 'PdfSans', 'normal', 400, 'Identity-H');
+    try {
+      doc.addFileToVFS('pdf-sans-subset.ttf', toBase64(font.buffer));
+      doc.addFont('pdf-sans-subset.ttf', 'PdfSans', 'normal', 400, 'Identity-H');
+      doc.setFont('PdfSans', 'normal');
+      if (!(doc.getTextWidth('A') > 0) || !(doc.getTextWidth('中') > 0)) throw new Error('font not usable');
+    } catch (cause) { fontFailures++; fontCache = null; throw new PdfFontError(cause); }
+    fontFailures = 0;
   }
 
   const drawn = [];
-  let replaced = fontError && contentStrings.some(s => needsEmbeddedFont([s]));
+  let replaced = false;
   const W = 210; const M = 18; const CW = W - M * 2;
   let y = 0;
 
-  // `ui` strings come from the locale files; `content` strings are user data
-  // (their replacement is reported in the PDF).
-  const ui = (s) => makeDrawable(s, covers).text;
+  // `ui` strings come from the locale files; `content` strings are user data. Any visible
+  // character replaced by "?" in either is reported in the PDF.
+  const ui = (s) => { const r = makeDrawable(s, covers); if (r.replaced) replaced = true; return r.text; };
   const content = (s) => { const r = makeDrawable(s, covers); if (r.replaced) replaced = true; return r.text; };
 
   function setFont(style) {

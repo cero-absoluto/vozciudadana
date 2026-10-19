@@ -333,6 +333,7 @@
         </div>
 
         <!-- ══ ACCIONES ═══════════════════════════════════════════════ -->
+        <p v-if="pdfError" class="ir-pdf-error" role="alert">{{ pdfError }}</p>
         <div class="ir-actions">
           <button class="btn-primary ir-btn-back" @click="$router.back()">{{ $t('informe.back') }}</button>
           <button class="btn-primary ir-btn-pdf" :disabled="pdfBusy" @click="downloadPDF">{{ $t('informe.downloadPdf') }}</button>
@@ -816,6 +817,7 @@
 
 .ir-btn-back { flex: 1; padding: 14px; font-size: 17px; }
 .ir-limits { margin: 16px 0 4px; padding: 10px 14px; text-align: left; border-left: 3px solid var(--accent2); background: rgba(255,255,255,.04); font-size: 13px; line-height: 1.5; color: var(--text2); }
+.ir-pdf-error { margin: 0 0 10px; padding: 10px 14px; border-left: 3px solid var(--accent3); background: rgba(255,255,255,.04); font-size: 13px; line-height: 1.5; color: var(--text); }
 .ir-btn-pdf  { flex: 1; padding: 14px; font-size: 17px; background: var(--accent2); color: #000; }
 .ir-btn-embed {
   padding: 14px 16px;
@@ -869,7 +871,7 @@ import { ref, computed, onMounted } from 'vue';
 import { hasIntegrityDiscrepancy, verifyIntegrityPayload } from '@/lib/integrityVerification.js';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
-import { buildInformePdf, dateLocaleTag } from '@/lib/informePdf.js';
+import { buildInformePdf, dateLocaleTag, PdfFontError } from '@/lib/informePdf.js';
 import { localizedCountry } from '@/constants.js';
 
 const route = useRoute();
@@ -1004,11 +1006,13 @@ function maxPct(count) {
 }
 
 const pdfBusy = ref(false);
+const pdfError = ref('');
 
 async function downloadPDF() {
   const d = data.value;
   if (!d || pdfBusy.value) return;
   pdfBusy.value = true;
+  pdfError.value = '';
   try {
     const { doc, fileName } = await buildInformePdf({
       data: d,
@@ -1024,6 +1028,9 @@ async function downloadPDF() {
       t,
     });
     doc.save(fileName);
+  } catch (err) {
+    // No document is downloaded; the user can press the button again.
+    pdfError.value = err instanceof PdfFontError ? t('informe.pdfErrorFont') : t('informe.pdfErrorGeneric');
   } finally {
     pdfBusy.value = false;
   }

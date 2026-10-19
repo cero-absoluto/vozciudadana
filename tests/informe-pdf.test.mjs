@@ -108,13 +108,48 @@ test('unsupported scripts and emoji in content: replaced by "?" (never garbage) 
   assert.ok(!ok.drawn.join('\n').includes(loc.es.informe.pdf.unsupportedChars));
 });
 
-test('font failure: falls back to built-in fonts, no crash, and reports the replaced characters', async () => {
-  const t = tFor('zh');
-  const r = await mod.buildInformePdf({ data: FIXTURES.zh.data, protestId: 'x', abuseLabel: FIXTURES.zh.abuse, locale: 'zh', t,
-    loadFont: async () => { throw new Error('offline'); },
-    integrity: { hasSnapshotV2: false, snapshot: null, discrepancy: false, unavailable: false } });
+const NO_INTEGRITY = { hasSnapshotV2: false, snapshot: null, discrepancy: false, unavailable: false };
+const attempt = (c, loader) => mod.buildInformePdf({ data: c.data, protestId: 'x', abuseLabel: c.abuse, locale: c.ui, t: tFor(c.ui), loadFont: loader, integrity: NO_INTEGRITY });
+const noDoc = async (c, loader) => { let doc = null; await assert.rejects(async () => { doc = await attempt(c, loader); }, (e) => e.name === 'PdfFontError'); assert.equal(doc, null); };
+
+test('font required but unavailable: PdfFontError, no document (zh UI + Latin content, zh content, es UI + Chinese content)', async () => {
+  const offline = async () => { throw new Error('offline'); };
+  const zhLatin = { ui: 'zh', abuse: FIXTURES.es.abuse, data: { ...FIXTURES.en.data, protest: { ...FIXTURES.en.data.protest } } };
+  await noDoc(zhLatin, offline);              // labels need the font even though the content is Latin
+  await noDoc(FIXTURES.zh, offline);
+  await noDoc(CONTENT_CASES.esUiChineseContent, offline);
+});
+
+test('font required but corrupt / empty / not a font: PdfFontError, no document', async () => {
+  await noDoc(FIXTURES.zh, async () => new ArrayBuffer(10));
+  await noDoc(FIXTURES.zh, async () => asArrayBuffer(Buffer.from('not a font at all'.repeat(200))));
+  const truncated = asArrayBuffer(fontBuf).slice(0, 4000);
+  await noDoc(FIXTURES.zh, async () => truncated);
+});
+
+test('retry after a failed font load works and does not poison later PDFs', async () => {
+  let n = 0;
+  const flaky = async () => { if (n++ === 0) throw new Error('offline'); return asArrayBuffer(fontBuf); };
+  await noDoc(FIXTURES.zh, flaky);
+  const ok = await attempt(FIXTURES.zh, flaky);
+  assert.equal(ok.usedEmbeddedFont, true);
+  assert.equal(ok.replaced, false);
+  assert.ok(ok.drawn.join('\n').includes('成都'));
+});
+
+test('font not needed: a failing loader is never called and the PDF is produced', async () => {
+  let called = 0;
+  const r = await attempt(FIXTURES.es, async () => { called++; throw new Error('x'); });
+  assert.equal(called, 0);
   assert.equal(r.usedEmbeddedFont, false);
-  assert.equal(r.replaced, true);
+});
+
+test('labels are fully covered in every language (no "?" from the UI itself): replaced is false for the four fixtures', async () => {
+  for (const l of L) { const r = await build(FIXTURES[l]); assert.equal(r.replaced, false, l); }
+});
+
+test('screen error messages exist in the four languages and are plain translated text', () => {
+  for (const l of L) for (const k of ['pdfErrorFont', 'pdfErrorGeneric']) { assert.ok(loc[l].informe[k]?.trim().length > 20, `${l}.${k}`); assert.ok(!/\?{3,}/.test(loc[l].informe[k])); }
 });
 
 test('dates: UTC with explicit zone, localised; same instant in every language', () => {
@@ -130,4 +165,22 @@ test('file name: Latin titles keep the old slug; titles without Latin letters fa
   assert.match(es.fileName, /^voiceprotest-informe-recinto-ferial-en-las-llamas--los-vecino\.pdf$/);
   const zh = await build(FIXTURES.zh);
   assert.equal(zh.fileName, 'voiceprotest-informe-9774b676.pdf');
+});
+
+test('default loader: after a failure the retry bypasses caches (fresh URL, cache: reload); a good copy is then cached', async () => {
+  const calls = [];
+  const realFetch = globalThis.fetch;
+  let n = 0;
+  globalThis.fetch = async (url, opts) => { calls.push({ url: String(url), opts }); return n++ === 0 ? new Response(Buffer.from('garbage'.repeat(500))) : new Response(fontBuf); };
+  try {
+    await assert.rejects(() => mod.buildInformePdf({ data: FIXTURES.zh.data, protestId: 'x', abuseLabel: 'a', locale: 'zh', t: tFor('zh'), integrity: NO_INTEGRITY }), (e) => e.name === 'PdfFontError');
+    const ok = await mod.buildInformePdf({ data: FIXTURES.zh.data, protestId: 'x', abuseLabel: 'a', locale: 'zh', t: tFor('zh'), integrity: NO_INTEGRITY });
+    assert.equal(ok.usedEmbeddedFont, true);
+    assert.equal(calls.length, 2);
+    assert.ok(!calls[0].url.includes('?r=') && calls[0].opts === undefined);
+    assert.match(calls[1].url, /fonts\/pdf-sans-subset\.ttf\?r=\d+$/);
+    assert.equal(calls[1].opts.cache, 'reload');
+    await mod.buildInformePdf({ data: FIXTURES.zh.data, protestId: 'x', abuseLabel: 'a', locale: 'zh', t: tFor('zh'), integrity: NO_INTEGRITY });
+    assert.equal(calls.length, 2, 'cached after success');
+  } finally { globalThis.fetch = realFetch; }
 });

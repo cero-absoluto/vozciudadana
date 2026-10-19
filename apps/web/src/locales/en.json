@@ -610,7 +610,9 @@
       "footer": "Voice Protest — Verified citizen protest platform — AGPL 3.0",
       "page": "Page {i} of {n}",
       "unsupportedChars": "Some characters in the content cannot be displayed in this PDF; see the web version of the report."
-    }
+    },
+    "pdfErrorFont": "The PDF could not be generated because the required font could not be loaded. No document was downloaded. Check your connection and try again.",
+    "pdfErrorGeneric": "The PDF could not be generated. No document was downloaded. Please try again."
   },
   "invite": {
     "loading": "Validating invitation...",

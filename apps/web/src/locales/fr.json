@@ -610,7 +610,9 @@
       "footer": "Voice Protest — Plateforme de protestation citoyenne vérifiée — AGPL 3.0",
       "page": "Page {i} sur {n}",
       "unsupportedChars": "Certains caractères du contenu ne peuvent pas être affichés dans ce PDF ; consultez la version web du rapport."
-    }
+    },
+    "pdfErrorFont": "Le PDF n'a pas pu être généré, car la police nécessaire n'a pas pu être chargée. Aucun document n'a été téléchargé. Vérifiez votre connexion et réessayez.",
+    "pdfErrorGeneric": "Le PDF n'a pas pu être généré. Aucun document n'a été téléchargé. Veuillez réessayer."
   },
   "invite": {
     "loading": "Validation de l'invitation...",

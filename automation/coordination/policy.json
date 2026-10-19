@@ -1,0 +1,12 @@
+{
+  "repository": "cero-absoluto/vozciudadana",
+  "defaultBranch": "main",
+  "owners": [{ "login": "cero-absoluto", "id": 280877387, "type": "User" }],
+  "auditor": { "login": "chatgpt-codex-connector[bot]", "id": 199175422, "type": "Bot", "appId": 1144995 },
+  "stateWriter": { "login": "github-actions[bot]", "id": 41898282, "type": "Bot" },
+  "commands": { "enable": "/handoff enable", "stop": "/handoff stop" },
+  "maxRounds": 2,
+  "limits": { "maxPatchBytes": 200000, "maxFindings": 20, "maxFindingChars": 2000, "maxHandled": 60 },
+  "allowPaths": ["apps/web/src/", "tests/"],
+  "denyPaths": [".github/", "automation/", "apps/api/", "supabase/", "scripts/", "docs/", "package.json", "package-lock.json", "apps/web/package.json", "apps/web/vite.config", "skills-lock.json"]
+}

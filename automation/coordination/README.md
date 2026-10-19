@@ -1,0 +1,61 @@
+# Relevo automático Claude ⇄ Codex — PREPARADO, NO ACTIVADO (#37)
+
+Estado: candidato inerte. **No hay workflow activo** (`.github/workflows/` solo contiene `deploy.yml`), ni secretos, ni gasto. Tampoco se afirma coordinación operativa: falta una demostración *live* sin transporte de mensajes.
+Base: `main` = `7b888ed01683a52c2ae9beb0dbc3b5e5ba071ae8`. Reutiliza de #23 (sin fusionarla): revisión obsoleta rechazada, máximo dos correcciones, parada en OWNER_REVIEW, sin merge. Añade identidad real, SHA de HEAD, deduplicación y estado persistente. #23 sigue siendo borrador; su `protocol.py` no se incorpora (el controlador está en JS para correr en el runner sin dependencias).
+
+## Qué hace
+1. El Owner habilita **un PR** comentando `/handoff enable` (solo él; ver contrato).
+2. Codex revisa el HEAD (reseña con hallazgos, o recibo "Didn't find any major issues").
+3. Hallazgos en el HEAD actual → job `claude` corrige (sin permisos de escritura) → el publicador de confianza valida el parche, lo aplica y empuja **solo la rama del PR** → se pide revisión del SHA nuevo.
+4. Sin hallazgos → `OWNER_REVIEW`. Dos rondas con hallazgos pendientes, error, parche rechazado, push rechazado o cualquier anomalía → `BLOCKED` con razón. Nunca merge ni despliegue.
+
+Piezas: `controller.mjs` (decisión pura), `gather.mjs` (hechos de la API + estado; job `decide`), `publish.mjs` (validación/aplicación/push; job `publish`), `policy.json` (identidades y límites), `candidate/agent-handoff.yml` (workflow inerte).
+
+## Contrato de disparo y cómo se cumple
+| Requisito | Mecanismo (código) |
+|---|---|
+| Solo PR habilitados por el Owner; validar quién habilita | Orden exacta `/handoff enable` en la primera línea; actor con **id, login, tipo `User` y permiso admin/write** (API de colaboradores); una etiqueta no habilita nada |
+| Solo ramas del repositorio; sin forks/ambiguas/cerradas | `precheck`: repo, `head.repo == base.repo == policy.repository`, base = rama por defecto, PR abierto y no fusionado, SHA de 40 hex, `headRef` seguro (sin `..`, `-` inicial, espacios) |
+| Auditor real | Autor con id `199175422`, tipo `Bot`, login `chatgpt-codex-connector[bot]`; recibos además con `performed_via_github_app.id == 1144995`. Texto de otro usuario o un emoji (👍/👀) **no** son revisión |
+| SHA de revisión = HEAD | Reseña: `commit_id == head`. Recibo: prefijo de `**Reviewed commit:**` ⊂ head. Además el estado exige `state.head == head` |
+| Acción de Claude: control de bot **y** de acceso | Verificado en el código de la acción (v1.0.242; la validación es idéntica en v1.0.253): (1) *actor humano*: un actor no `User` debe estar en `allowed_bots` (nombre exacto, sin `[bot]`, minúsculas); aquí `chatgpt-codex-connector`, nunca `'*'`; (2) *acceso de escritura*: la acción da por válido cualquier actor con sufijo `[bot]` — **no filtra bots**; el filtro real es `decide` (id, tipo, app, PR habilitado). Sin `allowed_non_write_users` |
+| Eventos de GitHub App vs `GITHUB_TOKEN` | Los eventos creados con `GITHUB_TOKEN` no inician workflows; los de una GitHub App sí. Codex es una App (observado: comentarios con `performed_via_github_app`, creados **y editados**): se escucha `issue_comment [created, edited]`. Los push del publicador (con `GITHUB_TOKEN`) no lanzan workflows, y no hace falta |
+| Rondas máximo 2, contador persistente, deduplicación | Estado en un comentario del PR escrito por `github-actions[bot]` (autor verificado; los comentarios de otros con el marcador se ignoran); `rounds` sube al lanzar; ids de reseña/recibo ya tratados se guardan; el controlador recalcula desde la API: eventos duplicados/antiguos/perdidos no consumen rondas |
+| Concurrencia 1 por PR, timeout, parada | `concurrency` por PR sin cancelar; `timeout-minutes` por job; `/handoff stop` (Owner) y variable `AGENT_HANDOFF_ENABLED` (interruptor global, ausente = apagado); el publicador revalida estado e interruptor justo antes de empujar |
+| Sin hallazgos no se inventa defecto | → `OWNER_REVIEW` (prueba F2) |
+
+## Nueva revisión tras el push: NO verificado
+No se asume que un comentario de un bot despierte a Codex. Evidencia: aquí `@codex review` publicado por el usuario del Owner (vía la App de Claude) sí lo activó, también sobre PR en borrador (#31, #32). Nada prueba lo mismo para `github-actions[bot]`/`claude[bot]`. El publicador pide la revisión con ese comentario y el estado queda en `AWAITING_REVIEW`; si Codex no responde, **no hay bucle ni consumo** y el estado es visible. Alternativas a decidir en el piloto live: la opción *Automatic review* de Codex (ajuste de cuenta; la documentación no aclara si actúa en borrador ni en cada push) o un comentario manual del Owner (en ese caso el piloto no cumple "sin copiar mensajes").
+
+## Aislamiento de credenciales (las instrucciones del prompt no bastan)
+| Job | Código que ejecuta | Credenciales | Permisos |
+|---|---|---|---|
+| `decide` | rama por defecto (de confianza); nunca el PR | solo `GITHUB_TOKEN` | contents read, issues write, pull-requests read |
+| `claude` | el modelo sobre el checkout del SHA verificado | token del modelo **solo en el paso de la acción**; `github_token` de solo lectura | contents/pull-requests/issues **read**; sin `id-token` |
+| `publish` | rama por defecto + parche validado; no ejecuta código del PR | `GITHUB_TOKEN` con contents write (sin modelo) | contents write, issues write, pull-requests read |
+El modelo no recibe nunca un token de escritura; el parche viaja como artefacto y lo valida `validatePatch` (lista permitida `apps/web/src/`, `tests/`; denegadas `.github/`, `automation/`, `apps/api/`, `supabase/`, `docs/`, dependencias; sin binarios, symlinks, bit ejecutable, renombrados; ≤200 kB). `workflow` en `issue_comment` se toma de la rama por defecto; no se usa `pull_request_target` ni `pull_request_review` (este último toma el workflow del PR). Acciones fijadas a SHA completo (checkout v6.0.3, upload-artifact v7.0.2, download-artifact v8.0.2, claude-code-action v1.0.242).
+**Riesgo residual (no resuelto):** el paso del modelo ejecuta `node --test` sobre código del PR con el token del modelo en el entorno del proceso padre; mitigaciones: `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` (documentado, a verificar en el piloto), herramientas mínimas, sin red declarada y sin escritura. Una instrucción inyectada en un hallazgo o en el código podría intentar exfiltrar ese token por red: un runner estándar de GitHub no restringe la salida. Quitar `Bash(node --test:*)` elimina la ejecución de código del PR a costa de no probar. Decisión del Owner.
+
+## Autenticación y coste (nada creado ni leído)
+- Placeholders: `CLAUDE_CODE_OAUTH_TOKEN` (suscripción; se genera con `claude setup-token` y queda atado a la suscripción de quien lo ejecuta) o `ANTHROPIC_API_KEY` (facturación por API; línea alternativa comentada en el workflow). La App de Claude instalada **no prueba** que haya credencial disponible en Actions.
+- Consumo: minutos de Actions (repositorio público; se espera runner estándar sin coste según la documentación de GitHub, **no verificado**) y uso del modelo (suscripción: límites del plan; API: tokens). Cota técnica por PR: ≤2 ejecuciones del modelo (rondas) × 20 min × `--max-turns 15`, más ≤1 job `decide` de 5 min por comentario relevante.
+- `timeout-minutes` y `--max-turns` **no son un límite monetario**. No se ha impuesto ni se afirma ningún tope en euros ni coste cero. Un límite de gasto del lado del proveedor (consola de API / límites del plan) debe comprobarse en la cuenta; si no existe, hay que decirlo antes de activar.
+
+## Pasos de cuenta para activar (los hace el Owner tras auditar; yo no genero tokens ni cambio permisos)
+1. Elegir autenticación y crear el secreto en *Settings → Secrets and variables → Actions* (`CLAUDE_CODE_OAUTH_TOKEN` o `ANTHROPIC_API_KEY`); en el workflow, usar la línea correspondiente.
+2. Comprobar *Settings → Actions → General*: permisos de workflow por defecto = solo lectura; "Allow GitHub Actions to create and approve pull requests" desactivado.
+3. Proteger `main` (sin push directo, revisión obligatoria): el código solo empuja la rama verificada del PR, pero `contents: write` no lo impide por sí solo.
+4. Confirmar en Codex el ajuste de revisión (*Automatic review* / disparador) y el usuario/App esperados (`chatgpt-codex-connector`, id del bot y de la App en `policy.json`).
+5. Autorizar copiar `candidate/agent-handoff.yml` a `.github/workflows/agent-handoff.yml` (PR aparte), crear la variable `AGENT_HANDOFF_ENABLED=true` solo cuando se quiera ejecutar.
+6. Piloto live con un PR **sintético** habilitado con `/handoff enable`; criterio de aceptación: reseña con hallazgo → corrección empujada → nueva reseña → OWNER_REVIEW, sin copiar mensajes.
+
+## Lo que NO se puede probar aquí
+Ejecución real del workflow en Actions; entrega de eventos de Codex y su edición; que Codex responda a un comentario de bot; el id de `github-actions[bot]` (41898282, de memoria); `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB`; `push` desde un checkout superficial; disponibilidad/cuota de credenciales y minutos; formato futuro del recibo de Codex (el controlador depende de `codex-review-receipt:v1`, `codex-code-review-finding:v1` y de "Didn't find any major issues"; si cambian, falla cerrado: sin acción).
+
+## Pruebas offline
+```sh
+node --experimental-test-module-mocks --test tests/agent-handoff.test.mjs   # 25 pruebas; también entran en `node --test`
+```
+Cubren: hallazgo → corrección (push real a un remoto git local) → nueva revisión → OWNER_REVIEW; sin hallazgos; SHA antiguo, HEAD ajeno, emoji y eventos irrelevantes (cero llamadas a la API); impostores (login parecido, id/tipo/app distintos, estado falsificado/corrupto); fork, PR cerrada, base y referencias ambiguas; duplicados e idempotencia; dos rondas/errores/parche rechazado/push rechazado → BLOCKED; parada e interruptor; validación de parches; análisis estático del workflow (acciones fijadas, permisos, un solo secreto en el paso del modelo, sin `pull_request_target`/`allowed_bots: '*'`). No invocan modelos ni la red. Mutaciones comprobadas: quitar el SHA de HEAD, el límite de rondas, el permiso del Owner, el id del auditor, la deduplicación, el rechazo de forks o la lista de rutas denegadas hace fallar al menos una prueba.
+
+Fuentes leídas: code.claude.com/docs/en/github-actions; código y `docs/security.md` de anthropics/claude-code-action (SHA 6c69018 y 5eb090f); learn.chatgpt.com/docs/third-party/github.

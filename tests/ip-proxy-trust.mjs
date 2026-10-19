@@ -1,7 +1,8 @@
 // Cliente real detrás de un proxy — reproducción LOCAL y SINTÉTICA (sin red, sin producción, sin SMS, sin Railway).
 // Run: node --experimental-test-module-mocks --test tests/ip-proxy-trust.mjs
 //
-// La demostración del defecto sobre el código anterior queda en el commit previo de esta rama (A1, B1, B2, B4 pasan allí).
+// La demostración del defecto sobre el código anterior queda en el commit ad73539 de esta rama (A1, B1, B2, B4 pasan allí).
+// Fuente de la IP: X-Real-IP (única cabecera de IP de cliente que documenta Railway) solo si el par TCP es interno; si no, el par.
 // Hipótesis: (H-A) sin `trustProxy`, `req.ip` es la dirección del proxy: todos los usuarios comparten la clave de
 // @fastify/rate-limit y el `ip_hash` que usa check_otp_rate_limit; (H-B) varios sitios leen `x-forwarded-for[0]`, que
 // controla el cliente si el proxy añade en vez de reemplazar.
@@ -19,7 +20,7 @@ process.env.PARTICIPATION_TOKEN_SECRET = 'test-token-secret';
 process.env.DEVICE_SECRET_PEPPER = 'test-pepper';
 process.env.SUPABASE_URL = 'http://supabase.invalid';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test';
-delete process.env.RECAPTCHA_SECRET; delete process.env.NODE_ENV; delete process.env.TRUST_PROXY_HOPS;
+delete process.env.RECAPTCHA_SECRET; delete process.env.NODE_ENV; delete process.env.CLIENT_IP_SOURCE;
 
 const GLOBAL_PROTEST = '33333333-3333-4333-8333-000000000001';
 const rec = { ipHashes: [], fetchUrls: [], sms: 0 };
@@ -56,25 +57,27 @@ const { default: userRoutes } = await import('../apps/api/src/routes/users.js');
 const { default: protestRoutes } = await import('../apps/api/src/routes/protests.js');
 const { ipinfoRoutes } = await import('../apps/api/src/routes/geocode.js');
 
-// Misma composición que server.js (rate-limit global + rutas reales). `fastifyOpts` es lo único que cambia.
-async function startApi(fastifyOpts) {
-  const app = Fastify(fastifyOpts);
+// Misma composición que server.js (decorador req.clientIp + rate-limit global con la misma clave + rutas reales).
+const { registerClientIp } = await import('../apps/api/src/lib/proxyTrust.js');
+async function startApi(env = {}) {
+  const app = Fastify();
+  registerClientIp(app, env);
   await app.register(sensible);
-  await app.register(rateLimit, { global: true, max: 120, timeWindow: '1 minute' });
+  await app.register(rateLimit, { global: true, max: 120, timeWindow: '1 minute', keyGenerator: (req) => req.clientIp });
   await app.register(userRoutes, { prefix: '/api/users' });
   await app.register(protestRoutes, { prefix: '/api/protests' });
   await app.register(ipinfoRoutes, { prefix: '/api/ipinfo' });
   await app.listen({ port: 0, host: '127.0.0.1' });
   return app;
 }
-// Proxy local que imita al borde. mode: 'overwrite' (sustituye XFF/X-Real-IP por la IP del cliente),
-// 'append' (añade la IP del cliente a la derecha de lo que el cliente envió), 'passthrough' (no toca nada).
+// Proxy local que imita al borde. mode: 'overwrite' (sustituye XFF y X-Real-IP por la IP del cliente),
+// 'xff-only' (solo escribe XFF añadiendo a la derecha; no toca X-Real-IP), 'passthrough' (no toca nada).
 function startProxy(apiPort, mode) {
   const srv = http.createServer((creq, cres) => {
     const client = creq.socket.remoteAddress.replace('::ffff:', '');
     const h = { ...creq.headers };
     if (mode === 'overwrite') { h['x-forwarded-for'] = client; h['x-real-ip'] = client; }
-    if (mode === 'append') h['x-forwarded-for'] = h['x-forwarded-for'] ? `${h['x-forwarded-for']}, ${client}` : client;
+    if (mode === 'xff-only') h['x-forwarded-for'] = h['x-forwarded-for'] ? `${h['x-forwarded-for']}, ${client}` : client;
     const up = http.request({ host: '127.0.0.1', port: apiPort, path: creq.url, method: creq.method, headers: h }, (ures) => { cres.writeHead(ures.statusCode, ures.headers); ures.pipe(cres); });
     creq.pipe(up);
   });
@@ -91,25 +94,24 @@ function call(proxyPort, userIp, { method = 'GET', path, headers = {}, body }) {
 }
 const U = (n) => `127.0.0.${n + 1}`;
 const reqOtp = (px, ip, n, deviceId) => call(px, ip, { method: 'POST', path: '/api/users/request-otp', body: { phone: `+3460000${String(n).padStart(4, '0')}`, recaptcha_token: 'dev', device_id: deviceId } });
-async function withStack(fastifyOpts, mode, fn) {
-  const api = await startApi(fastifyOpts); const proxy = await startProxy(api.server.address().port, mode);
+async function withStack(env, mode, fn) {
+  const api = await startApi(env); const proxy = await startProxy(api.server.address().port, mode);
   try { return await fn(proxy.address().port); } finally { proxy.close(); await api.close(); }
 }
 test.beforeEach(() => { rec.ipHashes.length = 0; rec.fetchUrls.length = 0; rec.sms = 0; db.devices.clear(); });
 
-// ── H-A ─────────────────────────────────────────────────────────────────────
-test('A1 Sin trustProxy (la configuración ANTERIOR a esta corrección; sigue siendo lo que ocurre si se desactiva con TRUST_PROXY_HOPS=0): 6 usuarios distintos, 1 petición cada uno -> el 6.º recibe 429 y todos comparten un único ip_hash', async () => {
-  await withStack({}, 'overwrite', async (px) => {
+// ── H-A: límites compartidos ────────────────────────────────────────────────
+test('A1 Con CLIENT_IP_SOURCE=peer (equivale a la situación ANTERIOR: se ignoran las cabeceras): 6 usuarios distintos -> el 6.º recibe 429 y todos comparten un único ip_hash', async () => {
+  await withStack({ CLIENT_IP_SOURCE: 'peer' }, 'overwrite', async (px) => {
     const res = [];
     for (let i = 1; i <= 6; i++) res.push((await reqOtp(px, U(i), i, `device-user-000${i}`)).status);
     assert.deepEqual(res, [200, 200, 200, 200, 200, 429], 'el límite de 5/5 min de la ruta se agota con 5 PERSONAS distintas');
-    assert.equal(new Set(rec.ipHashes).size, 1, 'check_otp_rate_limit recibe el mismo ip_hash para todos (límite SQL de 10/hora compartido por todo el servicio)');
+    assert.equal(new Set(rec.ipHashes).size, 1, 'check_otp_rate_limit recibe el mismo ip_hash para todos');
   });
 });
 
-test('A2 CORRECCIÓN (trustProxy = 1 salto): cada usuario tiene su propio límite y su propio ip_hash; el abuso de UN usuario sigue limitado', async () => {
-  const { fastifyTrustProxy } = await import('../apps/api/src/lib/proxyTrust.js');
-  await withStack({ trustProxy: fastifyTrustProxy() }, 'overwrite', async (px) => {
+test('A2 CORRECCIÓN (X-Real-IP de un par interno): cada usuario tiene su propio límite y su propio ip_hash; el abuso de UN usuario sigue limitado', async () => {
+  await withStack({}, 'overwrite', async (px) => {
     const res = [];
     for (let i = 1; i <= 6; i++) res.push((await reqOtp(px, U(i), i, `device-user-000${i}`)).status);
     assert.deepEqual(res, [200, 200, 200, 200, 200, 200]);
@@ -119,78 +121,88 @@ test('A2 CORRECCIÓN (trustProxy = 1 salto): cada usuario tiene su propio límit
   });
 });
 
-// ── H-B ─────────────────────────────────────────────────────────────────────
-const ipinfo = (px, ip, xff) => call(px, ip, { path: '/api/ipinfo', headers: xff ? { 'x-forwarded-for': xff } : {} });
+// ── H-B: suplantación ───────────────────────────────────────────────────────
+const ipinfo = (px, ip, headers = {}) => call(px, ip, { path: '/api/ipinfo', headers });
 const ipapiTarget = () => rec.fetchUrls.find(u => u.startsWith('https://ipapi.co/'));
 
-test('B3 CORRECCIÓN: con 1 salto de confianza el valor que se usa es la IP que añadió el proxy, no lo que el cliente antepuso (ipinfo y /join)', async () => {
-  const { fastifyTrustProxy } = await import('../apps/api/src/lib/proxyTrust.js');
-  await withStack({ trustProxy: fastifyTrustProxy() }, 'append', async (px) => {
-    await ipinfo(px, U(1), '8.8.8.8');
+test('B3 Con un borde que REEMPLAZA X-Real-IP, lo que el cliente escriba en X-Real-IP / X-Forwarded-For no cuenta (ipinfo y /join)', async () => {
+  await withStack({}, 'overwrite', async (px) => {
+    await ipinfo(px, U(1), { 'x-forwarded-for': '8.8.8.8', 'x-real-ip': '8.8.4.4' });
     assert.equal(ipapiTarget(), `https://ipapi.co/${U(1)}/json/`);
     const v = await call(px, U(1), { method: 'POST', path: '/api/users/verify-otp', body: { phone: '+34600000001', otp: '123456', device_id: 'device-join-0002' } });
     rec.fetchUrls.length = 0;
-    await call(px, U(1), { method: 'POST', path: `/api/protests/${GLOBAL_PROTEST}/join`, headers: { 'x-forwarded-for': '203.0.113.77' }, body: { participation_token: v.json.participation_token, recaptcha_token: 'dev' } });
+    await call(px, U(1), { method: 'POST', path: `/api/protests/${GLOBAL_PROTEST}/join`, headers: { 'x-forwarded-for': '203.0.113.77', 'x-real-ip': '203.0.113.78' }, body: { participation_token: v.json.participation_token, recaptcha_token: 'dev' } });
     assert.equal(ipapiTarget(), `https://ipapi.co/${U(1)}/json/`);
   });
 });
 
-test('B4 con un borde que REEMPLAZA (lo que afirma el moderador de Railway) la corrección tampoco es suplantable y usa la IP del cliente', async () => {
-  const { fastifyTrustProxy } = await import('../apps/api/src/lib/proxyTrust.js');
-  await withStack({ trustProxy: fastifyTrustProxy() }, 'overwrite', async (px) => {
-    rec.fetchUrls.length = 0;
-    await ipinfo(px, U(2), '8.8.8.8');
-    assert.equal(ipapiTarget(), `https://ipapi.co/${U(2)}/json/`);
+test('B4 X-Forwarded-For nunca se lee: un borde que solo añade a XFF deja la dirección del par; el XFF del cliente no se usa', async () => {
+  await withStack({}, 'xff-only', async (px) => {
+    await ipinfo(px, U(2), { 'x-forwarded-for': '8.8.8.8' });
+    assert.equal(ipapiTarget(), 'https://ipapi.co/127.0.0.1/json/', 'par (proxy), no 8.8.8.8 ni la IP del cliente: sin X-Real-IP se falla cerrado');
   });
 });
 
-test('B5 LÍMITE DECLARADO: si un proxy INTERNO no reescribe la cabecera (passthrough) la app no puede distinguir; la corrección no lo arregla y no lo pretende', async () => {
-  const { fastifyTrustProxy } = await import('../apps/api/src/lib/proxyTrust.js');
-  await withStack({ trustProxy: fastifyTrustProxy() }, 'passthrough', async (px) => {
-    await ipinfo(px, U(1), '8.8.8.8');
-    assert.equal(ipapiTarget(), 'https://ipapi.co/8.8.8.8/json/', 'borde que no escribe nada = frontera de confianza inexistente (decisión de infraestructura, no de aplicación)');
+test('B5 LÍMITE DECLARADO: si el borde NO reemplaza un X-Real-IP enviado por el cliente (Railway no lo garantiza), el cliente elige su clientIp; la corrección no lo arregla y no lo pretende', async () => {
+  await withStack({}, 'passthrough', async (px) => {
+    await ipinfo(px, U(1), { 'x-real-ip': '8.8.8.8' });
+    assert.equal(ipapiTarget(), 'https://ipapi.co/8.8.8.8/json/');
+  });
+  rec.fetchUrls.length = 0;
+  await withStack({ CLIENT_IP_SOURCE: 'peer' }, 'passthrough', async (px) => {
+    await ipinfo(px, U(1), { 'x-real-ip': '8.8.8.8' });
+    assert.equal(ipapiTarget(), 'https://ipapi.co/127.0.0.1/json/', 'CLIENT_IP_SOURCE=peer anula la falsificación (a costa de compartir límites)');
   });
 });
 
 // ── Cableado y configuración ────────────────────────────────────────────────
-test('C1 ningún sitio lee ya x-forwarded-for a mano y server.js usa la configuración común', () => {
+test('C1 ningún sitio lee cabeceras de IP a mano; server.js usa req.clientIp, sin trustProxy, y el rate-limit usa la misma clave', () => {
   for (const f of ['routes/users.js', 'routes/institucional.js', 'routes/geocode.js', 'routes/protests.js']) {
-    const src = fs.readFileSync(new URL(`../apps/api/src/${f}`, import.meta.url), 'utf8');
-    assert.doesNotMatch(src.replace(/\/\/.*$/gm, ''), /x-forwarded-for/i, f);
+    const src = fs.readFileSync(new URL(`../apps/api/src/${f}`, import.meta.url), 'utf8').replace(/\/\/.*$/gm, '');
+    assert.doesNotMatch(src, /x-forwarded-for|x-real-ip/i, f);
+    assert.doesNotMatch(src, /req\.ip\b/, f);
   }
-  const server = fs.readFileSync(new URL('../apps/api/src/server.js', import.meta.url), 'utf8');
-  assert.match(server, /trustProxy:\s*fastifyTrustProxy\(\)/);
+  const server = fs.readFileSync(new URL('../apps/api/src/server.js', import.meta.url), 'utf8').replace(/\/\/.*$/gm, '');
+  assert.match(server, /registerClientIp\(app\)/);
+  assert.match(server, /keyGenerator:\s*\(req\)\s*=>\s*req\.clientIp/);
+  assert.doesNotMatch(server, /trustProxy/);
 });
 
-test('C2 TRUST_PROXY_HOPS: por defecto 1; valores válidos 0..5; inválidos abortan el arranque', async () => {
-  const { trustProxyHops, fastifyTrustProxy } = await import('../apps/api/src/lib/proxyTrust.js');
-  assert.equal(trustProxyHops({}), 1); assert.equal(trustProxyHops({ TRUST_PROXY_HOPS: '' }), 1);
-  assert.equal(trustProxyHops({ TRUST_PROXY_HOPS: '2' }), 2); assert.equal(fastifyTrustProxy({ TRUST_PROXY_HOPS: '0' }), false); assert.equal(typeof fastifyTrustProxy({ TRUST_PROXY_HOPS: '1' }), 'function', 'nunca la forma numérica (GHSA-3m5p-2c4r-xxw2)');
-  for (const bad of ['-1', '6', '1.5', 'true', 'abc', '1e1']) assert.throws(() => trustProxyHops({ TRUST_PROXY_HOPS: bad }), /TRUST_PROXY_HOPS/, bad);
+test('C2 CLIENT_IP_SOURCE: por defecto x-real-ip; peer válido; cualquier otro valor aborta el arranque', async () => {
+  const { clientIpSource } = await import('../apps/api/src/lib/proxyTrust.js');
+  assert.equal(clientIpSource({}), 'x-real-ip'); assert.equal(clientIpSource({ CLIENT_IP_SOURCE: '' }), 'x-real-ip');
+  assert.equal(clientIpSource({ CLIENT_IP_SOURCE: 'peer' }), 'peer');
+  for (const bad of ['xff', 'X-Real-IP', 'true', '1', 'x-forwarded-for']) assert.throws(() => clientIpSource({ CLIENT_IP_SOURCE: bad }), /CLIENT_IP_SOURCE/, bad);
 });
 
-// ── Autenticación del proxy (Codex P1): no basta contar saltos ───────────────
-async function echoIp(trustProxy, remoteAddress, xff) {
-  const app = Fastify({ trustProxy });
-  app.get('/ip', async (req) => ({ ip: req.ip }));
+// ── Resolución pura: el par debe ser interno, la cabecera exactamente una IP válida ──
+test('D1 un par PÚBLICO no se cree: X-Real-IP se ignora y clientIp es su dirección', async () => {
+  const { resolveClientIp } = await import('../apps/api/src/lib/proxyTrust.js');
+  for (const peer of ['8.8.8.8', '203.0.113.9', '2001:db8::5', '::ffff:8.8.8.8']) assert.equal(resolveClientIp({ peer, realIp: '1.2.3.4' }), peer.replace('::ffff:', ''), peer);
+});
+test('D2 un par INTERNO (CGNAT/privado/loopback) con X-Real-IP válida: se usa; ausente, repetida, mal formada o con lista: se falla cerrado al par', async () => {
+  const { resolveClientIp } = await import('../apps/api/src/lib/proxyTrust.js');
+  for (const peer of ['100.64.1.2', '10.0.0.7', '172.20.1.1', '192.168.5.5', '127.0.0.1', 'fd12::9', '::ffff:100.64.1.2']) {
+    assert.equal(resolveClientIp({ peer, realIp: '9.9.9.9' }), '9.9.9.9', peer);
+    assert.equal(resolveClientIp({ peer, realIp: '2001:db8::9' }), '2001:db8::9', peer);
+  }
+  const peer = '100.64.1.2';
+  for (const bad of [undefined, ['9.9.9.9', '8.8.8.8'], '9.9.9.9, 8.8.8.8', 'abc', '', ' ', '999.1.1.1', '9.9.9.9:80']) {
+    assert.equal(resolveClientIp({ peer, realIp: bad }), peer, JSON.stringify(bad));
+  }
+  assert.equal(resolveClientIp({ peer, realIp: '9.9.9.9' }, 'peer'), peer, 'source=peer ignora la cabecera');
+  assert.equal(resolveClientIp({ peer: undefined, realIp: '9.9.9.9' }), undefined);
+});
+test('D2b integración: req.clientIp sobre un servidor Fastify real (inject) sigue la misma regla y trustProxy no interviene', async () => {
+  const app = Fastify({ trustProxy: true }); // aunque alguien lo activara, clientIp no lee XFF
+  registerClientIp(app);
+  app.get('/ip', async (req) => ({ ip: req.clientIp }));
   await app.ready();
-  const r = await app.inject({ method: 'GET', url: '/ip', remoteAddress, headers: xff ? { 'x-forwarded-for': xff } : {} });
-  await app.close(); return r.json().ip;
-}
-test('D1 un llamador con dirección PÚBLICA que salta el proxy no se cree: su X-Forwarded-For se ignora y req.ip es su dirección', async () => {
-  const { fastifyTrustProxy } = await import('../apps/api/src/lib/proxyTrust.js');
-  assert.equal(await echoIp(fastifyTrustProxy(), '8.8.8.8', '1.2.3.4'), '8.8.8.8');
-  assert.equal(await echoIp(fastifyTrustProxy(), '203.0.113.9', '1.2.3.4, 5.6.7.8'), '203.0.113.9');
-  assert.equal(await echoIp(fastifyTrustProxy(), '2001:db8::5', '1.2.3.4'), '2001:db8::5');
-});
-test('D2 un proxy INTERNO (CGNAT/privado/loopback) sí se cree, solo 1 salto: se usa la entrada que ÉL añadió (la derecha), no la que antepuso el cliente', async () => {
-  const { fastifyTrustProxy } = await import('../apps/api/src/lib/proxyTrust.js');
-  for (const peer of ['100.64.1.2', '10.0.0.7', '172.20.1.1', '192.168.5.5', '127.0.0.1', 'fd12::9']) {
-    assert.equal(await echoIp(fastifyTrustProxy(), peer, '6.6.6.6, 9.9.9.9'), '9.9.9.9', peer);
-  }
-  assert.equal(await echoIp(fastifyTrustProxy({ TRUST_PROXY_HOPS: '2' }), '100.64.1.2', '6.6.6.6, 9.9.9.9, 100.64.7.7'), '9.9.9.9', '2 saltos: la entrada interna se salta');
-  assert.equal(await echoIp(fastifyTrustProxy({ TRUST_PROXY_HOPS: '2' }), '100.64.1.2', '6.6.6.6, 8.8.4.4, 100.64.7.7'), '8.8.4.4');
-  assert.equal(await echoIp(fastifyTrustProxy({ TRUST_PROXY_HOPS: '0' }), '100.64.1.2', '9.9.9.9'), '100.64.1.2', '0 saltos: no se confía en nadie');
+  const get = async (remoteAddress, headers) => (await app.inject({ method: 'GET', url: '/ip', remoteAddress, headers })).json().ip;
+  assert.equal(await get('100.64.1.2', { 'x-real-ip': '9.9.9.9', 'x-forwarded-for': '1.1.1.1' }), '9.9.9.9');
+  assert.equal(await get('100.64.1.2', { 'x-forwarded-for': '1.1.1.1' }), '100.64.1.2');
+  assert.equal(await get('8.8.8.8', { 'x-real-ip': '9.9.9.9' }), '8.8.8.8');
+  await app.close();
 });
 test('D3 isInternalAddress: solo privadas/CGNAT/loopback/enlace local/ULA; públicas, mal formadas y no-cadenas son falsas', async () => {
   const { isInternalAddress } = await import('../apps/api/src/lib/proxyTrust.js');

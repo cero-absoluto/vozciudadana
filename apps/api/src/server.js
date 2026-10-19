@@ -4,7 +4,7 @@ import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
-import { fastifyTrustProxy } from './lib/proxyTrust.js';
+import { registerClientIp } from './lib/proxyTrust.js';
 
 import protestRoutes    from './routes/protests.js';
 import institucionalRoutes from './routes/institucional.js';
@@ -36,9 +36,9 @@ if (process.env.NODE_ENV === 'production') {
 const app = Fastify({
   logger: true,
   bodyLimit: 65_536, // 64 KB max request body
-  // Client IP behind Railway's edge: see lib/proxyTrust.js (default 1 hop).
-  trustProxy: fastifyTrustProxy(),
 });
+// Client IP behind Railway's edge: `req.clientIp`, see lib/proxyTrust.js (trustProxy stays off).
+registerClientIp(app);
 
 await app.register(helmet);
 // ── CORS (VP-SEC-006 fix, 23 July 2026) ─────────────────────────────────────
@@ -69,6 +69,7 @@ await app.register(rateLimit, {
   global: true,
   max: 120,
   timeWindow: '1 minute',
+  keyGenerator: (req) => req.clientIp,
 });
 
 // Centralized error handler — log internals, return a safe message to clients

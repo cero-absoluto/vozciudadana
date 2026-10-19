@@ -142,7 +142,7 @@ export default async function institucionalRoutes(app) {
 
     // 3. Hash del email (HMAC — ver hashEmail)
     const emailHash = hashEmail(email);
-    const ipHash = hashIp(req.ip);
+    const ipHash = hashIp(req.clientIp);
 
     // 4. Rate limiting (VP-SEC-013 fix — atomic, multi-dimensional, race-free;
     // replaces the SELECT-then-UPDATE/INSERT counter this used to be, which
@@ -232,7 +232,7 @@ export default async function institucionalRoutes(app) {
 
     const emailHash = hashEmail(email);
     const submittedOtpHash = hashOtp(protest_id, emailHash, otp);
-    const ip = req.ip;
+    const ip = req.clientIp;
     const idioma = req.headers['accept-language']?.split(',')[0] || null;
 
     // Membership validity: 31 August of the current academic year — unchanged

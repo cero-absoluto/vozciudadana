@@ -2,6 +2,7 @@ import { createHash, createHmac } from 'node:crypto';
 import { supabase } from '../services/supabase.js';
 import { sendOtp, verifyOtp } from '../services/twilio.js';
 import { verifyRecaptcha } from '../lib/recaptcha.js';
+import { deriveNumberingCountry } from '../lib/numberingCountry.js';
 import {
   signParticipationToken, generateDeviceSecret, deviceSecretMatches,
 } from '../lib/participationToken.js';
@@ -160,6 +161,17 @@ export default async function userRoutes(app) {
 
     const phone_hash = hashPhone(phone);
 
+    // H7: the country used for national eligibility is derived HERE, from the
+    // number that was just verified — never from the client-declared
+    // `country_code`, which is kept only as informational data. See
+    // lib/numberingCountry.js for what this does (and does not) identify.
+    const numbering = deriveNumberingCountry(phone);
+    const numberingColumns = {
+      numbering_country:      numbering.country,
+      numbering_resolution:   numbering.resolution,
+      numbering_meta_version: numbering.metaVersion,
+    };
+
     // Mark OTP as completed
     await supabase
       .from('otp_requests')
@@ -173,6 +185,8 @@ export default async function userRoutes(app) {
     // regardless of which device row is canonical for this phone_hash), but
     // no device_secret is minted here: this device_id did not create that
     // row, so it cannot vouch for it going forward — see the comment below.
+    // H7: this fresh verification is also what gives a legacy row (verified
+    // before the derivation existed, no reliable provenance) its provenance.
     const { data: existing } = await supabase
       .from('devices')
       .select('id')
@@ -180,6 +194,11 @@ export default async function userRoutes(app) {
       .maybeSingle();
 
     if (existing) {
+      const { error: provErr } = await supabase
+        .from('devices')
+        .update(numberingColumns)
+        .eq('id', existing.id);
+      if (provErr) throw provErr;
       const participation_token = signParticipationToken({ device_id: existing.id, phone_hash, purpose: 'join_protest' });
       return { verified: true, device_id: existing.id, participation_token };
     }
@@ -191,6 +210,7 @@ export default async function userRoutes(app) {
       .upsert({
         id: device_id, phone_hash, verified_at: new Date().toISOString(), user_agent,
         country_code: country_code ?? null, device_secret_hash,
+        ...numberingColumns,
       })
       .select()
       .single();

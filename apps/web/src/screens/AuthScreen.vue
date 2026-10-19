@@ -348,7 +348,10 @@ async function sendSMS() {
   // (a genuinely new device, or one verified before this fix existed),
   // there is nothing to re-authenticate with, so this fast path is skipped
   // entirely and a fresh OTP is requested below, same as for a new device.
-  const deviceSecret = device.getDeviceSecret();
+  // vc_force_otp: set when a national join was rejected because this device has no
+  // numbering provenance; the fast path would just loop back, so use a fresh OTP.
+  const forceOtp = sessionStorage.getItem('vc_force_otp') === '1';
+  const deviceSecret = forceOtp ? null : device.getDeviceSecret();
   if (deviceSecret) {
     try {
       const existingDevice = await api.fetchDeviceLocks(device.getDeviceId(), deviceSecret);
@@ -449,6 +452,7 @@ async function verifyOTP() {
     sessionStorage.setItem('vc_participation_token', res.participation_token);
     sessionStorage.setItem('vc_device_id',  res.device_id || deviceId);
     sessionStorage.setItem('vc_sms_sent', 'true');
+    sessionStorage.removeItem('vc_force_otp');
     if (res.device_secret) {
       device.setDeviceSecret(res.device_secret);
     }

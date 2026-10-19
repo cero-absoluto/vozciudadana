@@ -197,6 +197,9 @@ const target = lastId
       // other vc_* keys are left untouched, so the flow resumes on the same
       // convocatoria) and PROTEST_CLOSED goes to its public report.
       const rejection = classifyJoinRejection(e);
+      // Device without numbering provenance: ask AuthScreen to skip the device-secret
+      // fast path once and send a fresh OTP (cleared there after a successful OTP).
+      if (rejection.forceOtp) sessionStorage.setItem('vc_force_otp', '1');
       // NATIONAL_ONLY needs the country: localized name of the convocatoria's country if
       // known, else its stored name, else a variant of the message without a country.
       const countryName = target.country ? localizedCountry(target.country, locale.value) : target.countryName;

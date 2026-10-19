@@ -1,7 +1,9 @@
 // Diagnóstico temporal de cabeceras de proxy. Sin dependencias, sin variables,
 // sin base de datos, sin registro de peticiones. Nunca devuelve IPs ni cabeceras:
 // solo clase del peer, longitud de X-Forwarded-For y booleanos frente a un
-// marcador sintético que envía quien prueba.
+// marcador sintético y una referencia (la IP de salida del cliente de prueba,
+// cabecera X-Probe-Ref) que envía quien prueba; de la referencia solo se
+// conserva un booleano de comparación, nunca se devuelve ni se registra.
 import http from 'node:http';
 import net from 'node:net';
 
@@ -27,6 +29,24 @@ export function peerClass(address) {
   return 'public';
 }
 
+const INTERNAL = new Set(['loopback', 'cgnat', 'private', 'link_local']);
+// Clasificación prudente. Un salto solo se da por justificado con exactamente una
+// entrada, peer interno y coincidencia con la IP de salida conocida del cliente.
+// Cero entradas nunca es éxito; varias entradas se informan sin dar un salto por
+// justificado (un borde que añade al final puede ser compatible con #31, pero lo
+// decide una persona).
+export function classify({ peer, length, refPresent, lastIsRef }) {
+  let classification;
+  if (length === 0) classification = 'header_absent_or_removed';
+  else if (!refPresent) classification = 'reference_missing';
+  else if (length === 1) classification = lastIsRef ? 'single_entry_matches_client' : 'single_entry_not_client';
+  else classification = 'chain_observed';
+  return {
+    classification,
+    oneHopJustified: INTERNAL.has(peer) && length === 1 && refPresent && lastIsRef,
+  };
+}
+
 const MARKER = /^[0-9a-fA-F.:]{3,45}$/;
 const MAX_REQUESTS = 300;
 
@@ -47,12 +67,19 @@ export function createProbe({ maxRequests = MAX_REQUESTS } = {}) {
     const entries = (Array.isArray(raw) ? raw.join(',') : raw ?? '')
       .split(',').map((s) => s.trim()).filter(Boolean);
     const realIp = req.headers['x-real-ip'];
-    send(200, {
-      peerClass: peerClass(req.socket.remoteAddress),
+    const refRaw = req.headers['x-probe-ref'];
+    const ref = typeof refRaw === 'string' && MARKER.test(refRaw.trim()) ? refRaw.trim() : null;
+    const last = entries.length ? entries[entries.length - 1] : null;
+    const lastIsRef = ref !== null && last === ref;
+    const peer = peerClass(req.socket.remoteAddress);
+    send(200, { ...classify({ peer, length: entries.length, refPresent: ref !== null, lastIsRef }),
+      peerClass: peer,
       xffLength: entries.length,
       xffFirstIsMarker: entries[0] === m,
-      xffLastIsMarker: entries.length > 0 && entries[entries.length - 1] === m,
+      xffLastIsMarker: last === m,
       xffContainsMarker: entries.includes(m),
+      refPresent: ref !== null,
+      xffLastIsClientRef: lastIsRef,
       xRealIpPresent: realIp !== undefined,
       xRealIpIsMarker: realIp === m,
       xRailwayEdgePresent: req.headers['x-railway-edge'] !== undefined,

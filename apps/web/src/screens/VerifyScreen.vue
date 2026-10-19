@@ -60,6 +60,7 @@ import { useProtestsStore } from '@/stores/protests.js';
 import { useDeviceStore }   from '@/stores/device.js';
 import { useUiStore }       from '@/stores/ui.js';
 import { useI18n } from 'vue-i18n';
+import { markForceOtp } from '@/lib/nationalPreCheck.js';
 import { classifyJoinRejection, joinRejectionPath, joinRejectionToast } from '@/lib/joinRejection.js';
 import { localizedCountry } from '@/constants.js';
 
@@ -199,7 +200,7 @@ const target = lastId
       const rejection = classifyJoinRejection(e);
       // Device without numbering provenance: ask AuthScreen to skip the device-secret
       // fast path once and send a fresh OTP (cleared there after a successful OTP).
-      if (rejection.forceOtp) sessionStorage.setItem('vc_force_otp', '1');
+      if (rejection.forceOtp) markForceOtp(sessionStorage);
       // NATIONAL_ONLY needs the country: localized name of the convocatoria's country if
       // known, else its stored name, else a variant of the message without a country.
       const countryName = target.country ? localizedCountry(target.country, locale.value) : target.countryName;

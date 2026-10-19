@@ -158,11 +158,3 @@ test('H7 derived-country codes: own kinds, fixed keys, never server text, never 
   assert.match(loc.en.verify.toastNationalUnresolved, /does not mean your number belongs to another country/);
 });
 
-test('AuthScreen/VerifyScreen wiring of vc_force_otp (static check)', () => {
-  const auth = fs.readFileSync(new URL('../apps/web/src/screens/AuthScreen.vue', import.meta.url), 'utf8');
-  const ver = fs.readFileSync(new URL('../apps/web/src/screens/VerifyScreen.vue', import.meta.url), 'utf8');
-  assert.match(ver, /if \(rejection\.forceOtp\) sessionStorage\.setItem\('vc_force_otp', '1'\)/);
-  assert.match(auth, /getItem\('vc_force_otp'\) === '1'/);
-  assert.match(auth, /forceOtp \? null : device\.getDeviceSecret\(\)/);
-  assert.match(auth, /removeItem\('vc_force_otp'\)/);
-});

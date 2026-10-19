@@ -3,8 +3,9 @@
 import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { decideAfterClaude, mayPublish, pickState, validatePatch } from './controller.mjs';
-import { collectFacts, persistState, loadPolicy, blockedNotice } from './gather.mjs';
+import path from 'node:path';
+import { decideAfterClaude, mayPublish, ownerStopped, pickState, validatePatch, STATUS } from './controller.mjs';
+import { collectFacts, persistState, loadPolicy, blockedNotice, NOTICE_STOPPED } from './gather.mjs';
 import { makeApi } from './github.mjs';
 
 const git = (dir, args, env) => spawnSync('git', ['-C', dir, ...args], { encoding: 'utf8', env: { ...process.env, ...env, GIT_TERMINAL_PROMPT: '0' } });
@@ -29,12 +30,60 @@ export function applyPatchAndPush({ repoDir, headSha, headRef, patch, round, rem
   return { ok: true, newHead };
 }
 
-export async function publishRound({ api, policy, repository, number, round, claudeResult, patch, repoDir, pushEnv = {}, requestReview = true, switchEnabled = process.env.AGENT_HANDOFF_ENABLED }) {
+/** Recorre un árbol (sin seguir symlinks, sin `.git` en la raíz). Devuelve rutas relativas o null si hay symlinks/ficheros especiales. */
+function walkTree(root) {
+  const out = [];
+  const rec = (dir, rel) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (!rel && e.name === '.git') continue;
+      const r = rel ? `${rel}/${e.name}` : e.name;
+      if (e.isSymbolicLink()) return false;
+      if (e.isDirectory()) { if (rec(path.join(dir, e.name), r) === false) return false; } else if (e.isFile()) out.push(r); else return false;
+    }
+    return true;
+  };
+  return rec(root, '') === false ? null : out;
+}
+
+/**
+ * Construye el parche con CÓDIGO DE CONFIANZA a partir de la copia de trabajo que dejó el modelo (artefacto de datos),
+ * sin ejecutar git dentro del directorio del modelo: se copia sobre un checkout limpio del HEAD y se hace `git add -A`
+ * (incluye ficheros nuevos) con configuración neutra. Valida con las listas de rutas. Solo lee/escribe repoDir.
+ */
+export function buildPatchFromTree({ repoDir, treeDir, policy }) {
+  const g = (...a) => spawnSync('git', ['-C', repoDir, '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath=/dev/null', '-c', 'core.fileMode=false', '-c', 'core.autocrlf=false', '-c', 'core.attributesFile=/dev/null', ...a],
+    { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, GIT_TERMINAL_PROMPT: '0', GIT_CONFIG_NOSYSTEM: '1' } });
+  const files = walkTree(treeDir);
+  if (!files) return { ok: false, reason: 'symlink_or_special_in_tree' };
+  const wanted = new Set(files);
+  const tracked = g('ls-files', '-z');
+  if (tracked.status !== 0) return { ok: false, reason: 'ls_files_failed' };
+  for (const f of tracked.stdout.split('\0').filter(Boolean)) if (!wanted.has(f)) fs.rmSync(path.join(repoDir, f), { force: true });
+  for (const f of files) {
+    const src = path.join(treeDir, f); const dst = path.join(repoDir, f);
+    if (fs.existsSync(dst) && fs.lstatSync(dst).isFile() && fs.readFileSync(dst).equals(fs.readFileSync(src))) continue;
+    fs.mkdirSync(path.dirname(dst), { recursive: true }); fs.copyFileSync(src, dst);
+  }
+  if (g('add', '-A').status !== 0) return { ok: false, reason: 'add_failed' };
+  const d = g('diff', '--cached', '--binary', '--no-ext-diff', '--no-textconv', '--no-renames', 'HEAD');
+  if (d.status !== 0) return { ok: false, reason: 'diff_failed' };
+  const v = validatePatch(d.stdout, policy);
+  return v.ok ? { ok: true, patch: d.stdout, paths: v.paths } : { ok: false, reason: v.reason, path: v.path };
+}
+
+export async function publishRound({ api, policy, repository, number, round, claudeResult, verifyResult = 'success', patch, repoDir, pushEnv = {}, requestReview = true, switchEnabled = process.env.AGENT_HANDOFF_ENABLED }) {
   const facts = await collectFacts({ api, policy, repository, event: { issue: { number, pull_request: {} } }, switchEnabled, force: true });
   const { state, commentId } = pickState(facts.stateComments, policy);
   let outcome; let newHead;
+  // Parada del Owner publicada mientras la ronda corría (aunque su ejecución siga en cola): se respeta antes de cualquier push.
+  if (facts.pr && state && state !== 'corrupt' && state.status === STATUS.CORRECTING && ownerStopped(facts, policy)) {
+    await persistState({ api, repository, number, commentId, state: { ...state, status: STATUS.STOPPED, reason: 'stopped by owner during correction' } });
+    await api.request('POST', `/repos/${repository}/issues/${number}/comments`, { body: NOTICE_STOPPED });
+    return { outcome: 'stopped', next: { action: { type: 'none', reason: 'stopped_by_owner' } } };
+  }
   if (!facts.pr || !mayPublish(state, facts, policy, round)) outcome = 'stale';
   else if (claudeResult !== 'success') outcome = claudeResult === 'cancelled' ? 'timeout' : 'failure';
+  else if (verifyResult !== 'success') outcome = 'verification_failed';
   else {
     const v = validatePatch(patch ?? '', policy);
     if (!v.ok) outcome = v.reason === 'empty_patch' ? 'no_changes' : 'rejected_patch';
@@ -50,13 +99,19 @@ export async function publishRound({ api, policy, repository, number, round, cla
   return { outcome, next };
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1] && process.argv[2] === 'build-patch') {
+  const e = process.env;
+  const r = buildPatchFromTree({ repoDir: e.REPO_DIR, treeDir: e.TREE_DIR, policy: loadPolicy() });
+  if (r.ok) fs.writeFileSync(e.PATCH_OUT, r.patch);
+  console.log(JSON.stringify({ ok: r.ok, reason: r.reason ?? null, paths: r.paths ?? null }));
+  process.exit(r.ok ? 0 : 1);
+} else if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const e = process.env;
   const token = e.GITHUB_TOKEN;
   const auth = Buffer.from(`x-access-token:${token}`).toString('base64');
   publishRound({
     api: makeApi({ token }), policy: loadPolicy(), repository: e.GITHUB_REPOSITORY, number: Number(e.PR_NUMBER), round: Number(e.ROUND),
-    claudeResult: e.CLAUDE_RESULT, patch: fs.existsSync(e.PATCH_PATH ?? '') ? fs.readFileSync(e.PATCH_PATH, 'utf8') : '', repoDir: e.REPO_DIR,
+    claudeResult: e.CLAUDE_RESULT, verifyResult: e.VERIFY_RESULT ?? 'missing', patch: fs.existsSync(e.PATCH_PATH ?? '') ? fs.readFileSync(e.PATCH_PATH, 'utf8') : '', repoDir: e.REPO_DIR,
     pushEnv: { GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'http.https://github.com/.extraheader', GIT_CONFIG_VALUE_0: `AUTHORIZATION: basic ${auth}` },
   }).then((r) => console.log(JSON.stringify({ outcome: r.outcome, action: r.next.action.type }))).catch((err) => { console.error(`publish: ${err.message}`); process.exit(1); });
 }

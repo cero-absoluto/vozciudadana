@@ -34,6 +34,10 @@ export async function collectFacts({ api, policy, repository, event, switchEnabl
     headRepo: pr.head?.repo?.full_name ?? null, baseRepo: pr.base?.repo?.full_name ?? null, baseRef: pr.base?.ref, isFork: !!pr.head?.repo?.fork && pr.head.repo.full_name !== repository,
   };
   const comments = await api.paginate(`/repos/${repository}/issues/${number}/comments`);
+  // Órdenes del Owner ya publicadas (incluidas las que aún esperan en la cola de concurrencia): solo identidad y orden exacta.
+  const cmdOf = (c) => { const l = String(c.body ?? '').split('\n')[0].trim(); return l === policy.commands.stop ? 'stop' : l === policy.commands.enable ? 'enable' : null; };
+  base.ownerCommands = comments.filter((c) => cmdOf(c) && policy.owners.some((o) => o.id === c.user?.id))
+    .map((c) => ({ id: c.id, cmd: cmdOf(c), author: user(c.user) }));
   base.stateComments = comments.filter((c) => (c.body ?? '').includes(STATE_MARKER))
     .map((c) => ({ id: c.id, authorId: c.user?.id, authorType: c.user?.type, authorLogin: c.user?.login, body: c.body }));
   base.auditor.receipts = comments.filter((c) => (c.body ?? '').includes(RECEIPT_MARKER))
@@ -59,6 +63,7 @@ export async function persistState({ api, repository, number, commentId, state }
   else await api.request('POST', `/repos/${repository}/issues/${number}/comments`, { body });
 }
 
+export const NOTICE_STOPPED = 'Relevo automático detenido por el Owner durante la corrección. No se empuja ningún cambio.';
 const NOTICE = {
   enabled: 'Relevo automático habilitado para este PR por el Owner. Esperando revisión de Codex sobre el HEAD actual.',
   rebaselined: 'Relevo automático: HEAD reajustado por el Owner. Esperando revisión de Codex sobre el HEAD actual.',

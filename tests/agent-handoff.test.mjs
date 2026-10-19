@@ -6,9 +6,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { decide, decideAfterClaude, mayPublish, pickState, validatePatch, encodeState, decodeState, precheck, STATUS } from '../automation/coordination/controller.mjs';
+import { decide, decideAfterClaude, mayPublish, ownerStopped, pickState, validatePatch, encodeState, decodeState, precheck, STATUS } from '../automation/coordination/controller.mjs';
 import { collectFacts, main as gatherMain, loadPolicy } from '../automation/coordination/gather.mjs';
-import { publishRound, applyPatchAndPush } from '../automation/coordination/publish.mjs';
+import { publishRound, applyPatchAndPush, buildPatchFromTree } from '../automation/coordination/publish.mjs';
 
 const policy = loadPolicy();
 const REPO = policy.repository;
@@ -276,9 +276,9 @@ test('W3 todas las acciones externas fijadas a SHA completo; sin tags móviles',
 });
 test('W4 permisos mínimos: workflow {} y por job; el job del modelo sin escritura; solo el publicador escribe contenido', () => {
   assert.match(code, /^permissions: \{\}$/m);
-  const jobs = Object.fromEntries([...code.matchAll(/^  (decide|claude|publish):\n([\s\S]*?)(?=^  \w+:\n|(?![\s\S]))/gm)].map((m) => [m[1], m[2]]));
-  assert.deepEqual(Object.keys(jobs).sort(), ['claude', 'decide', 'publish']);
-  assert.doesNotMatch(jobs.claude, /write/); assert.doesNotMatch(jobs.decide, /contents: write/); assert.match(jobs.publish, /contents: write/);
+  const jobs = Object.fromEntries([...code.matchAll(/^  (decide|claude|verify|publish):\n([\s\S]*?)(?=^  \w+:\n|(?![\s\S]))/gm)].map((m) => [m[1], m[2]]));
+  assert.deepEqual(Object.keys(jobs).sort(), ['claude', 'decide', 'publish', 'verify']);
+  assert.doesNotMatch(jobs.claude, /write/); assert.doesNotMatch(jobs.verify, /write/); assert.doesNotMatch(jobs.verify, /secrets\./); assert.doesNotMatch(jobs.decide, /contents: write/); assert.match(jobs.publish, /contents: write/);
   for (const j of Object.values(jobs)) assert.match(j, /timeout-minutes: \d+/);
   assert.doesNotMatch(code, /id-token/);
 });
@@ -315,4 +315,87 @@ test('R2 el rechazo de forks no depende de una sola comprobación; la denegació
   const wide = { ...policy, allowPaths: ['apps/'], denyPaths: ['apps/api/'] };
   assert.equal(validatePatch(mkPatch('apps/web/src/x.js'), wide).ok, true);
   assert.equal(validatePatch(mkPatch('apps/api/src/server.js'), wide).reason, 'denied_path');
+});
+
+// ── Ronda de corrección #1 de la auditoría de #38 ────────────────────────────────────────────────────────
+function gitRepo() {
+  const dir = tmp();
+  const sh = (cwd, ...a) => { const r = spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...a], { cwd, encoding: 'utf8' }); assert.equal(r.status, 0, r.stderr); return r.stdout.trim(); };
+  sh(dir, 'init', '-q', '--bare', 'origin.git'); fs.mkdirSync(`${dir}/work`); sh(`${dir}/work`, 'init', '-q', '-b', 'feature/x'); sh(`${dir}/work`, 'remote', 'add', 'origin', `${dir}/origin.git`);
+  fs.mkdirSync(`${dir}/work/apps/web/src`, { recursive: true }); fs.mkdirSync(`${dir}/work/.github`, { recursive: true });
+  fs.writeFileSync(`${dir}/work/apps/web/src/a.js`, 'export const a = 1;\n'); fs.writeFileSync(`${dir}/work/.nvmrc`, '22\n'); fs.writeFileSync(`${dir}/work/.github/x.yml`, 'a: 1\n');
+  sh(`${dir}/work`, 'add', '.'); sh(`${dir}/work`, 'commit', '-q', '-m', 'base'); sh(`${dir}/work`, 'push', '-q', 'origin', 'feature/x');
+  return { dir, sh, head: sh(`${dir}/work`, 'rev-parse', 'HEAD') };
+}
+const copyTree = (from, to) => { fs.cpSync(from, to, { recursive: true, filter: (f) => !f.endsWith('/.git') && !f.includes('/.git/') }); };
+
+test('B1 parche desde la copia de trabajo del modelo: incluye ficheros NUEVOS permitidos, borrados y cambios; ignora .git del modelo y modos', () => {
+  const { dir, head } = gitRepo(); const tree = `${dir}/tree`; copyTree(`${dir}/work`, tree);
+  fs.writeFileSync(`${tree}/apps/web/src/a.js`, 'export const a = 2;\n');
+  fs.writeFileSync(`${tree}/apps/web/src/new.js`, 'export const n = 1;\n'); fs.mkdirSync(`${tree}/tests`, { recursive: true }); fs.writeFileSync(`${tree}/tests/new.test.mjs`, 'x\n');
+  const r = buildPatchFromTree({ repoDir: `${dir}/work`, treeDir: tree, policy });
+  assert.equal(r.ok, true, JSON.stringify(r)); assert.deepEqual(r.paths, ['apps/web/src/a.js', 'apps/web/src/new.js', 'tests/new.test.mjs']);
+  assert.match(r.patch, /new file mode 100644/);
+  // el parche resultante se publica de verdad en un clon limpio y conserva el fichero nuevo en el commit final
+  const clean = `${dir}/clean`; spawnSync('git', ['clone', '-q', '-b', 'feature/x', `${dir}/origin.git`, clean]);
+  const out = applyPatchAndPush({ repoDir: clean, headSha: head, headRef: 'feature/x', patch: r.patch, round: 1 });
+  assert.equal(out.ok, true); assert.equal(fs.readFileSync(`${clean}/apps/web/src/new.js`, 'utf8'), 'export const n = 1;\n');
+  assert.match(spawnSync('git', ['-C', clean, 'show', '--stat', '--format=', 'HEAD'], { encoding: 'utf8' }).stdout, /new\.js/);
+});
+test('B2 ficheros nuevos/borrados/symlinks fuera de la lista, .github o automation, y symlinks en el árbol → rechazo', () => {
+  for (const [rel, content] of [['.github/workflows/x.yml', 'on: push\n'], ['automation/new.mjs', 'x\n'], ['README.md', 'x\n'], ['apps/api/x.js', 'x\n'], ['.nvmrc', '18\n']]) {
+    const { dir } = gitRepo(); const tree = `${dir}/tree`; copyTree(`${dir}/work`, tree); fs.mkdirSync(path.dirname(`${tree}/${rel}`), { recursive: true }); fs.writeFileSync(`${tree}/${rel}`, content);
+    assert.equal(buildPatchFromTree({ repoDir: `${dir}/work`, treeDir: tree, policy }).ok, false, rel);
+  }
+  { const { dir } = gitRepo(); const tree = `${dir}/tree`; copyTree(`${dir}/work`, tree); fs.rmSync(`${tree}/.github/x.yml`);
+    assert.equal(buildPatchFromTree({ repoDir: `${dir}/work`, treeDir: tree, policy }).reason, 'denied_path', 'borrar un fichero protegido también se rechaza'); }
+  { const { dir } = gitRepo(); const tree = `${dir}/tree`; copyTree(`${dir}/work`, tree); fs.symlinkSync('/etc/passwd', `${tree}/apps/web/src/link.js`);
+    assert.equal(buildPatchFromTree({ repoDir: `${dir}/work`, treeDir: tree, policy }).reason, 'symlink_or_special_in_tree'); }
+  { const { dir } = gitRepo(); const tree = `${dir}/tree`; copyTree(`${dir}/work`, tree);
+    assert.equal(buildPatchFromTree({ repoDir: `${dir}/work`, treeDir: tree, policy }).reason, 'empty_patch', 'sin cambios no hay parche'); }
+});
+test('B3 un .git/config o un .gitattributes malicioso del modelo no ejecuta nada al construir el parche', () => {
+  const { dir } = gitRepo(); const tree = `${dir}/tree`; copyTree(`${dir}/work`, tree); fs.mkdirSync(`${tree}/.git`);
+  const mark = `${dir}/PWNED`;
+  fs.writeFileSync(`${tree}/.git/config`, `[core]\n\tfsmonitor = touch ${mark}\n[diff "x"]\n\ttextconv = touch ${mark}\n`);
+  fs.writeFileSync(`${tree}/.gitattributes`, '* diff=x\n'); fs.writeFileSync(`${tree}/apps/web/src/a.js`, 'export const a = 3;\n');
+  buildPatchFromTree({ repoDir: `${dir}/work`, treeDir: tree, policy });
+  assert.equal(fs.existsSync(mark), false);
+});
+test('S3 parada del Owner publicada mientras la ronda corre (sin ejecutar otro gather): ningún push; apagado del interruptor tras empezar: tampoco', async () => {
+  for (const mode of ['stop', 'switch']) {
+    const { dir, sh, head } = gitRepo(); const g = fakeGithub({ head });
+    await step(g, cmdEvent(OWNER)); g.addReview(CODEX, head, [g.finding('apps/web/src/a.js', 1, 'x')]);
+    assert.equal((await step(g, codexEvent())).outputs.action, 'run_claude'); assert.equal(stateOf(g).status, STATUS.CORRECTING);
+    if (mode === 'stop') g.addComment(OWNER, '/handoff stop'); // comentario real; su ejecución sigue en cola y NO se procesa
+    const patch = 'diff --git a/apps/web/src/a.js b/apps/web/src/a.js\n--- a/apps/web/src/a.js\n+++ b/apps/web/src/a.js\n@@ -1 +1 @@\n-export const a = 1;\n+export const a = 2;\n';
+    const r = await publishRound({ api: g.api, policy, repository: REPO, number: 7, round: 1, claudeResult: 'success', patch, repoDir: `${dir}/work`, switchEnabled: mode === 'switch' ? 'false' : 'true' });
+    assert.equal(sh(dir, '--git-dir=origin.git', 'rev-parse', 'refs/heads/feature/x'), head, `${mode}: remoto intacto`);
+    assert.equal(sh(`${dir}/work`, 'rev-parse', 'HEAD'), head);
+    assert.ok(!g.comments.some((c) => c.body === '@codex review'));
+    if (mode === 'stop') { assert.equal(r.outcome, 'stopped'); assert.equal(stateOf(g).status, STATUS.STOPPED); } else assert.equal(r.outcome, 'stale');
+  }
+  // enable posterior a un stop vuelve a valer; un stop de un impostor no cuenta
+  const f = baseFacts({ ownerCommands: [{ id: 5, cmd: 'stop', author: OWNER }, { id: 6, cmd: 'enable', author: OWNER }] }); assert.equal(ownerStopped(f, policy), false);
+  assert.equal(ownerStopped(baseFacts({ ownerCommands: [{ id: 7, cmd: 'stop', author: { login: 'cero-absoIuto', id: 1, type: 'User' } }] }), policy), false);
+  assert.equal(ownerStopped(baseFacts({ ownerCommands: [{ id: 7, cmd: 'stop', author: OWNER }] }), policy), true);
+});
+test('V1 pruebas del job verify fallidas u omitidas → BLOCKED y sin push', async () => {
+  for (const verifyResult of ['failure', 'skipped', 'cancelled', 'missing']) {
+    const { dir, sh, head } = gitRepo(); const g = fakeGithub({ head });
+    await step(g, cmdEvent(OWNER)); g.addReview(CODEX, head, [g.finding('apps/web/src/a.js', 1, 'x')]); await step(g, codexEvent());
+    const patch = 'diff --git a/apps/web/src/a.js b/apps/web/src/a.js\n--- a/apps/web/src/a.js\n+++ b/apps/web/src/a.js\n@@ -1 +1 @@\n-export const a = 1;\n+export const a = 2;\n';
+    const r = await publishRound({ api: g.api, policy, repository: REPO, number: 7, round: 1, claudeResult: 'success', verifyResult, patch, repoDir: `${dir}/work`, switchEnabled: 'true' });
+    assert.equal(r.outcome, 'verification_failed'); assert.equal(stateOf(g).status, STATUS.BLOCKED); assert.equal(sh(dir, '--git-dir=origin.git', 'rev-parse', 'refs/heads/feature/x'), head);
+  }
+});
+test('W7 el job del modelo no tiene shell ni git ni red; las pruebas y el parche van en un job posterior sin credenciales; publish espera a verify', () => {
+  const claude = /^  claude:\n([\s\S]*?)(?=^  verify:)/m.exec(code)[1]; const verify = /^  verify:\n([\s\S]*?)(?=^  publish:)/m.exec(code)[1]; const publish = /^  publish:\n([\s\S]*)/m.exec(code)[1];
+  assert.doesNotMatch(claude.replace(/--disallowedTools "[^"]*"/, ''), /Bash|WebFetch|WebSearch/); assert.match(claude, /--disallowedTools "Bash,WebFetch,WebSearch/);
+  assert.doesNotMatch(claude, /^\s+run:/m, 'ningún run en el job del modelo');
+  assert.doesNotMatch(claude, /git diff|node --test/);
+  assert.match(claude, /Edit\(apps\/web\/src\/\*\*\),Edit\(tests\/\*\*\)/);
+  assert.match(verify, /node --experimental-test-module-mocks --test/); assert.match(verify, /publish\.mjs build-patch/);
+  assert.doesNotMatch(verify, /secrets\.|CLAUDE_CODE/);
+  assert.match(publish, /needs: \[decide, claude, verify\]/); assert.match(publish, /VERIFY_RESULT: \$\{\{ needs\.verify\.result \}\}/); assert.match(publish, /vars\.AGENT_HANDOFF_ENABLED == 'true'/);
 });

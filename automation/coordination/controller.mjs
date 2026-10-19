@@ -144,9 +144,17 @@ export function decideAfterClaude(state, result, policy) {
 }
 
 /** El publicador pregunta justo antes de empujar: parada o interruptor global lo impiden aunque Claude ya haya corrido. */
+/** La última orden del Owner (por id de comentario, identidad exacta de la política) es `stop`: se ve aunque su ejecución siga en cola. */
+export function ownerStopped(facts, policy) {
+  const cmds = (facts.ownerCommands ?? []).filter((c) => c && Number.isInteger(c.id) && (c.cmd === 'stop' || c.cmd === 'enable'))
+    .filter((c) => c.author && c.author.type === 'User' && policy.owners.some((o) => o.id === c.author.id && o.login === c.author.login && o.type === c.author.type));
+  if (!cmds.length) return false;
+  return cmds.reduce((a, b) => (b.id > a.id ? b : a)).cmd === 'stop';
+}
 export function mayPublish(state, facts, policy, round) {
   if (precheck(facts, policy)) return false;
   if (facts.switch?.enabled !== true) return false;
+  if (ownerStopped(facts, policy)) return false;
   return !!state && typeof state === 'object' && state.status === STATUS.CORRECTING && state.rounds === round && state.head === facts.pr.headSha;
 }
 

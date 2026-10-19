@@ -12,6 +12,13 @@
 | Criterio | R-N2 (`NUMBERING_META_VERSION` = `libphonenumber-js@1.12.10/max;R-N2`) |
 
 **Antes de fusionar (paso 2), comprobar que lo que se fusiona es exactamente lo auditado:**
+Las comprobaciones locales (esta sección y §3) se hacen **sobre el código auditado, no sobre la rama de este documento**, que no contiene la migración ni esos tests:
+```bash
+git fetch origin local/h7-derive-national-country
+git worktree add --detach ../h7-pinned f4533d7084fc399d28d3a53b593565a38875dbf9 && cd ../h7-pinned && npm ci
+git rev-parse HEAD                     # debe ser f4533d7084fc399d28d3a53b593565a38875dbf9
+```
+y, desde ese directorio:
 ```bash
 gh api repos/cero-absoluto/vozciudadana/pulls/29 --jq '.head.sha'      # debe ser f4533d7084fc399d28d3a53b593565a38875dbf9
 gh api repos/cero-absoluto/vozciudadana/branches/main --jq '.commit.sha' # debe ser 27e3746… (la base auditada)
@@ -30,6 +37,7 @@ Si el *head* de la PR **o** `main` han cambiado, **parar**: el commit auditado y
 5. **Copia de seguridad:** confirmar que existe punto de restauración de la base (copia/PITR) antes de la migración. No verificable desde el repo.
 
 ## 3. Comprobaciones previas (locales, sin producción, sin SMS)
+Ejecutar desde el *worktree* desacoplado en `f4533d7` (§1), no desde otra rama.
 
 ```bash
 node --test tests/*.test.mjs                                         # 57/57

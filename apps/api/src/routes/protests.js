@@ -617,7 +617,7 @@ export default async function protestRoutes(app) {
       .maybeSingle();
     if (protestErr || !protest) return reply.notFound('Protest not found');
 
-    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
+    const ip = req.clientIp;
     const idioma = req.headers['accept-language']?.split(',')[0] || null;
 
     let data;

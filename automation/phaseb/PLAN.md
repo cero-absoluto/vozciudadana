@@ -10,7 +10,7 @@ Se pueden dar por separado: A sin B, B sin A (imposible sin respuesta), ni A ni 
 ## Qué se sabe y qué NO (no medido: solo puede medirse en vivo)
 - Evidencia ya observada en este repo: Codex (usuario Bot id 199175422, App 1144995) publica el recibo como `issue_comment` (marcador `codex-review-receipt:v1`, «Reviewed commit»), reviews (`pull_request_review`, `commit_id`) y una reacción; su App está suscrita a `issue_comment` y `pull_request_review`. En lo observado, siempre respondió a comentarios de usuarios, **nunca a uno de un bot**.
 - Documentado por GitHub (no verificado aquí): los eventos creados con `GITHUB_TOKEN` no inician workflows (salvo dispatch). Eso afecta a la entrega *hacia Actions* solo si el autor fuese `GITHUB_TOKEN`; los eventos de Codex los crea una App.
-- **No medido:** (1) si Codex atiende menciones de un bot; (2) si sus eventos disparan el receptor; (3) si `issues: write` basta para comentar en una PR con el token automático. No se afirma entrega ni coordinación operativa antes del resultado.
+- **No medido:** (1) si Codex atiende menciones de un bot; (2) si sus eventos disparan el receptor; (3) si `pull-requests: write` basta para comentar en una PR con el token automático. No se afirma entrega ni coordinación operativa antes del resultado.
 
 ## Mecanismo (`automation/phaseb/phaseb.mjs`)
 - **plan/send** (`phase-b-send.yml`, manual, solo `main`): la PR debe ser del Owner, abierta, rama `phaseb/*`, mismo repo, base `main`, cabeza = `expected_head_sha` y **un único fichero añadido** `automation/phaseb-synthetic/probe.txt`; sin comentarios previos de Codex, sin `@codex` previo ni petición previa; sin re-ejecuciones. `send` revalida y publica **una** petición con marcador `phaseb-request:v1 sha=… run=…`. **Sin reintentos**: ante 4xx/5xx/red no repite (el 5xx queda «desconocido» para comprobar a mano). Registra id, hora y autor real del comentario.
@@ -22,7 +22,7 @@ Se pueden dar por separado: A sin B, B sin A (imposible sin respuesta), ni A ni 
 Rama `phaseb/synthetic-probe` desde `main`, PR borrador del Owner, un fichero `automation/phaseb-synthetic/probe.txt` con una línea inocua, head exacto fijado en `expected_head_sha`, **sin merge**; se cierra al terminar.
 
 ## Permisos
-Global `permissions: {}`. `precheck` y `receive`/`observe`: `contents`, `issues`, `pull-requests` = read. `send`: `contents: read` + `pull-requests: read` (revalida la PR antes de publicar) + **`issues: write`** (único job que escribe). Sin `contents: write`, secretos, `id-token`, credencial de Claude ni `pull_request_target`. Tiempo máximo 5 min por job. Limitación: en `pull_request_review` GitHub toma el fichero del workflow de la PR; por eso la PR solo puede contener el fichero inocuo (el emisor lo exige y el receptor lo reverifica).
+Global `permissions: {}`. `precheck` y `receive`/`observe`: `contents`, `issues`, `pull-requests` = read. `send`: `contents: read` + `issues: read` + **`pull-requests: write`** (revalida la PR y publica el comentario; único job que escribe). Sin `contents: write`, secretos, `id-token`, credencial de Claude ni `pull_request_target`. Tiempo máximo 5 min por job. Limitación: en `pull_request_review` GitHub toma el fichero del workflow de la PR; por eso la PR solo puede contener el fichero inocuo (el emisor lo exige y el receptor lo reverifica).
 
 ## Activación (cada paso requiere autorización expresa del Owner)
 1. Incorporar a `.github/workflows/` copias idénticas de los dos candidatos (PR del auditor). 2. Crear la PR sintética y fijar su head. 3. Definir la variable `PHASEB_PR` con su número. 4. Disparar `phase-b-send` (`main`, `pr_number`, `expected_head_sha`). 5. Esperar hasta 30 min sin repetir. 6. Disparar `phase-b-receive` en modo observe. 7. El auditor lee los registros y concluye con la matriz A/B.
@@ -30,3 +30,6 @@ Global `permissions: {}`. `precheck` y `receive`/`observe`: `contents`, `issues`
 
 ## Retirada / parada
 Borrar `PHASEB_PR` (el receptor deja de coincidir al instante) → deshabilitar o borrar ambos workflows → cerrar sin fusionar la PR sintética y borrar su rama. Los artefactos caducan a los 7 y 14 días. Si falla algo: parar, sin repetir.
+
+## Cambio autorizado para implementación en #46, aún NO activado
+Solo send cambia de Issues:write a PullRequests:write; el permiso PR permite más que comentar y no se limita técnicamente a la PR piloto. El script mantiene un solo POST. Los runs 39386622818 y 39389285739 fallaron con la alternativa anterior; el segundo conservó «Resource not accessible by integration». El nuevo permiso es una hipótesis, no una solución probada. La implementación y auditoría están autorizadas; merge, instalación y otra ejecución NO. No cambiar ajustes globales, credenciales ni #38.

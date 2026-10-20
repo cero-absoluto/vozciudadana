@@ -1,6 +1,6 @@
 # CANDIDATO — INERTE. No está en .github/workflows/, así que no se ejecuta. Instalarlo requiere autorización expresa del Owner; ver ../PLAN.md.
 # Fase B, emisor: publica UNA petición `@codex review` como github-actions[bot] sobre la PR sintética indicada, con el GITHUB_TOKEN automático.
-# Sin token ni modelo de Claude, sin inferencia, sin checkout de la PR (se lee `main`), sin contents:write. `issues: write` SOLO en el job `send`.
+# Sin token ni modelo de Claude, sin inferencia, sin checkout de la PR (se lee `main`), sin contents:write. `pull-requests: write` SOLO en el job `send`.
 name: phase-b-send
 on:
   workflow_dispatch:
@@ -51,8 +51,8 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: read
-      issues: write
-      pull-requests: read
+      issues: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:

@@ -5,14 +5,15 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { decideAfterClaude, mayPublish, ownerStopped, pickState, validatePatch, STATUS } from './controller.mjs';
+import { decideAfterClaude, mayPublish, ownerStopped, pickState, validatePatch, checkPaths, STATUS } from './controller.mjs';
 import { collectFacts, persistState, loadPolicy, blockedNotice, NOTICE_STOPPED, NOTICE_SWITCH_OFF } from './gather.mjs';
 import { makeApi } from './github.mjs';
 
 const git = (dir, args, env) => spawnSync('git', ['-C', dir, ...args], { encoding: 'utf8', env: { ...process.env, ...env, GIT_TERMINAL_PROMPT: '0' } });
 
 /** Aplica el parche sobre `headSha` y empuja a `headRef` sin forzar. Devuelve { ok, newHead } o { ok:false, reason }. */
-export function applyPatchAndPush({ repoDir, headSha, headRef, patch, round, remote = 'origin', env = {} }) {
+export function applyPatchAndPush({ repoDir, headSha, headRef, patch, round, policy, remote = 'origin', env = {} }) {
+  if (!policy) return { ok: false, reason: 'policy_required' }; // fail-closed: sin política no se aplica nada
   const run = (...a) => git(repoDir, a, env);
   if (run('cat-file', '-e', `${headSha}^{commit}`).status !== 0) return { ok: false, reason: 'head_not_fetched' };
   if (run('checkout', '-q', '--detach', headSha).status !== 0) return { ok: false, reason: 'checkout_failed' };
@@ -22,6 +23,12 @@ export function applyPatchAndPush({ repoDir, headSha, headRef, patch, round, rem
     if (run('apply', '--check', '--index', '--whitespace=nowarn', patchFile).status !== 0) return { ok: false, reason: 'patch_does_not_apply' };
     if (run('apply', '--index', '--whitespace=nowarn', patchFile).status !== 0) return { ok: false, reason: 'patch_apply_failed' };
   } finally { fs.rmSync(patchFile, { force: true }); }
+  // Segunda capa (verdad de terreno): las rutas que git ha modificado DE VERDAD en el índice deben cumplir la política, aunque el
+  // analizador del parche hubiera aprobado otra cosa. Si no, se deshace y no se confirma ni empuja nada.
+  const changed = run('diff', '--cached', '--name-only', '-z', '--no-renames', 'HEAD');
+  const files = changed.status === 0 ? changed.stdout.split('\0').filter(Boolean) : [];
+  const verdict = checkPaths(files, policy);
+  if (!verdict.ok) { run('reset', '-q', '--hard', headSha); run('clean', '-fdq'); return { ok: false, reason: 'applied_paths_outside_policy' }; }
   const msg = `agent-handoff: correction round ${round} of Codex findings\n\nApplied by the trusted publisher from a validated patch; no merge, no deployment.`;
   const c = run('-c', 'user.name=agent-handoff[bot]', '-c', 'user.email=agent-handoff@users.noreply.github.com', '-c', 'core.hooksPath=/dev/null', 'commit', '-q', '--no-verify', '-m', msg);
   if (c.status !== 0) return { ok: false, reason: 'commit_failed' };
@@ -101,7 +108,7 @@ export async function publishRound({ api, policy, repository, number, round, cla
     const v = validatePatch(patch ?? '', policy);
     if (!v.ok) outcome = v.reason === 'empty_patch' ? 'no_changes' : 'rejected_patch';
     else {
-      const r = applyPatchAndPush({ repoDir, headSha: facts.pr.headSha, headRef: facts.pr.headRef, patch, round, env: pushEnv });
+      const r = applyPatchAndPush({ repoDir, headSha: facts.pr.headSha, headRef: facts.pr.headRef, patch, round, policy, env: pushEnv });
       if (r.ok) { outcome = 'pushed'; newHead = r.newHead; } else outcome = r.reason;
     }
   }

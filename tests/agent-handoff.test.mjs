@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { decide, decideAfterClaude, mayPublish, ownerStopped, pickState, validatePatch, encodeState, decodeState, precheck, STATUS } from '../automation/coordination/controller.mjs';
+import { checkPaths, decide, decideAfterClaude, mayPublish, ownerStopped, pickState, validatePatch, encodeState, decodeState, precheck, STATUS } from '../automation/coordination/controller.mjs';
 import { collectFacts, main as gatherMain, loadPolicy } from '../automation/coordination/gather.mjs';
 import crypto from 'node:crypto';
 import { makeApi } from '../automation/coordination/github.mjs';
@@ -146,7 +146,7 @@ test('F5 push rechazado (la rama avanzó) → BLOCKED; no se fuerza', () => {
   sh(`${dir}/w`, ...c, 'add', '.'); sh(`${dir}/w`, ...c, 'commit', '-q', '-m', 'b'); const head = sh(`${dir}/w`, 'rev-parse', 'HEAD'); sh(`${dir}/w`, 'push', '-q', 'origin', 'f');
   fs.writeFileSync(`${dir}/w/tests/b.js`, '2\n'); sh(`${dir}/w`, ...c, 'add', '.'); sh(`${dir}/w`, ...c, 'commit', '-q', '-m', 'other'); sh(`${dir}/w`, 'push', '-q', 'origin', 'f');
   const patch = 'diff --git a/tests/a.js b/tests/a.js\n--- a/tests/a.js\n+++ b/tests/a.js\n@@ -1 +1 @@\n-1\n+3\n';
-  const r = applyPatchAndPush({ repoDir: `${dir}/w`, headSha: head, headRef: 'f', patch, round: 1 });
+  const r = applyPatchAndPush({ repoDir: `${dir}/w`, headSha: head, headRef: 'f', patch, round: 1, policy });
   assert.deepEqual([r.ok, r.reason], [false, 'push_rejected']);
 });
 
@@ -342,7 +342,7 @@ test('B1 parche desde la copia de trabajo del modelo: incluye ficheros NUEVOS pe
   assert.match(r.patch, /new file mode 100644/);
   // el parche resultante se publica de verdad en un clon limpio y conserva el fichero nuevo en el commit final
   const clean = `${dir}/clean`; spawnSync('git', ['clone', '-q', '-b', 'feature/x', `${dir}/origin.git`, clean]);
-  const out = applyPatchAndPush({ repoDir: clean, headSha: head, headRef: 'feature/x', patch: r.patch, round: 1 });
+  const out = applyPatchAndPush({ repoDir: clean, headSha: head, headRef: 'feature/x', patch: r.patch, round: 1, policy });
   assert.equal(out.ok, true); assert.equal(fs.readFileSync(`${clean}/apps/web/src/new.js`, 'utf8'), 'export const n = 1;\n');
   assert.match(spawnSync('git', ['-C', clean, 'show', '--stat', '--format=', 'HEAD'], { encoding: 'utf8' }).stdout, /new\.js/);
 });
@@ -495,4 +495,68 @@ test('SW1 interruptor apagado tras empezar la ronda: sin push, estado STOPPED pe
   const re = await step(g, cmdEvent(OWNER)); assert.equal(stateOf(g).status, STATUS.AWAITING_REVIEW); assert.equal(re.outputs.action, 'notify');
   g.addReview(CODEX, head, [g.finding('apps/web/src/a.js', 2, 'otro')]);
   const nx = await step(g, codexEvent()); assert.equal(nx.outputs.action, 'run_claude'); assert.equal(nx.outputs.round, '2');
+});
+
+// ── Corrección del hallazgo compartido (#39/#38): rutas de cabecera entrecomilladas y decoys ─────────────────
+function evilRepo() {
+  const g = gitRepo(); fs.writeFileSync(`${g.dir}/work/.github/evil.yml`, 'on: push\n'); fs.mkdirSync(`${g.dir}/work/.github/workflows`, { recursive: true });
+  fs.writeFileSync(`${g.dir}/work/.github/workflows/evil.yml`, 'on: push\n');
+  g.sh(`${g.dir}/work`, 'add', '.'); g.sh(`${g.dir}/work`, 'commit', '-q', '-m', 'evil'); g.sh(`${g.dir}/work`, 'push', '-q', 'origin', 'feature/x');
+  return { ...g, head: g.sh(`${g.dir}/work`, 'rev-parse', 'HEAD') };
+}
+const QUOTED = 'diff --git a/apps/web/src/a.js b/apps/web/src/a.js\n--- "a/.github/workflows/evil.yml"\n+++ "b/.github/workflows/evil.yml"\n@@ -1 +1 @@\n-on: push\n+on: pull_request_target\n';
+test('Q1 patch señuelo con ---/+++ entrecomillados: git apply REAL escribiría el fichero denegado; validatePatch lo rechaza (y la ruta que git toca es la que se valida)', () => {
+  const { dir, sh, head } = evilRepo();
+  // Demostración del ataque que se impide: sin nuestra validación, git aplica la cabecera entrecomillada y modifica el workflow.
+  const scratch = `${dir}/scratch`; spawnSync('git', ['clone', '-q', '-b', 'feature/x', `${dir}/origin.git`, scratch]); fs.writeFileSync(`${dir}/q.patch`, QUOTED);
+  assert.equal(spawnSync('git', ['-C', scratch, 'apply', `${dir}/q.patch`], { encoding: 'utf8' }).status, 0, 'git apply acepta el parche señuelo');
+  assert.equal(fs.readFileSync(`${scratch}/.github/workflows/evil.yml`, 'utf8'), 'on: pull_request_target\n', 'y MODIFICA el fichero denegado');
+  assert.equal(fs.readFileSync(`${scratch}/apps/web/src/a.js`, 'utf8'), 'export const a = 1;\n', 'mientras la ruta "aprobada" del diff --git queda intacta');
+  const v = validatePatch(QUOTED, policy); assert.equal(v.ok, false); assert.match(v.reason, /header_path_mismatch/);
+  // Con el publicador completo: nada se aplica ni se empuja.
+  return (async () => {
+    const g = fakeGithub({ head }); await step(g, cmdEvent(OWNER)); g.addReview(CODEX, head, [g.finding('apps/web/src/a.js', 1, 'x')]); await step(g, codexEvent());
+    const r = await publishRound({ api: g.api, policy, repository: REPO, number: 7, round: 1, claudeResult: 'success', patch: QUOTED, repoDir: `${dir}/work`, switchEnabled: 'true' });
+    assert.equal(r.outcome, 'rejected_patch'); assert.equal(sh(dir, '--git-dir=origin.git', 'rev-parse', 'refs/heads/feature/x'), head);
+    assert.equal(fs.readFileSync(`${dir}/work/.github/workflows/evil.yml`, 'utf8'), 'on: push\n');
+  })();
+});
+test('Q2 variantes de señuelo y basura: todas rechazadas con razón concreta', () => {
+  const ok = 'diff --git a/apps/web/src/a.js b/apps/web/src/a.js\n--- a/apps/web/src/a.js\n+++ b/apps/web/src/a.js\n@@ -1 +1 @@\n-a\n+b\n';
+  assert.equal(validatePatch(ok, policy).ok, true);
+  const cases = {
+    'sin entrecomillar, ruta distinta': ok.replace('--- a/apps/web/src/a.js\n+++ b/apps/web/src/a.js', '--- a/.github/workflows/x.yml\n+++ b/.github/workflows/x.yml'),
+    'solo +++ distinto': ok.replace('+++ b/apps/web/src/a.js', '+++ b/.github/workflows/x.yml'),
+    'diff --git entrecomillado': ok.replace('diff --git a/apps/web/src/a.js b/apps/web/src/a.js', 'diff --git "a/.github/x.yml" "b/.github/x.yml"').replace(/(---|\+\+\+) ([ab])\/apps\/web\/src\/a.js/g, '$1 "$2/.github/x.yml"'),
+    'basura entre cabeceras': ok.replace('--- a/', 'garbage\n--- a/'),
+    'basura antes del primer diff': `text libre\n${ok}`,
+    'ruta con escape C': ok.replace(/apps\/web\/src\/a\.js/g, 'apps/web/src/\\303\\251.js'),
+    'ruta con espacio': ok.replace(/apps\/web\/src\/a\.js/g, 'apps/web/src/a b.js'),
+    'tabulador final en ---': ok.replace('--- a/apps/web/src/a.js', '--- a/apps/web/src/a.js\t'),
+    'cabeceras duplicadas': ok.replace('--- a/apps/web/src/a.js\n', '--- a/apps/web/src/a.js\n--- a/.github/x\n'),
+    'hunk con líneas de más': `${ok}-extra\n`, 'hunk con líneas de menos': ok.replace('@@ -1 +1 @@', '@@ -1,2 +1,2 @@'),
+    'segundo bloque oculto tras el hunk': `${ok}diff --git a/.github/x b/.github/x\n--- a/.github/x\n+++ b/.github/x\n@@ -1 +1 @@\n-a\n+b\n`,
+    'archivo sin hunks': 'diff --git a/apps/web/src/a.js b/apps/web/src/a.js\n--- a/apps/web/src/a.js\n+++ b/apps/web/src/a.js\n',
+    'modo ejecutable nuevo': ok.replace('--- a/', 'new file mode 100755\n--- a/'), 'cambio de modo': ok.replace('--- a/', 'old mode 100644\nnew mode 100644\n--- a/'),
+    'CR en el parche': ok.replace('-a\n', '-a\r\n'), 'byte nulo': ok.replace('+b', '+b\0'),
+  };
+  for (const [name, patch] of Object.entries(cases)) { const v = validatePatch(patch, policy); assert.equal(v.ok, false, name); assert.ok(v.reason, name); }
+});
+test('Q3 sin falsos positivos: líneas de CONTENIDO que parecen cabeceras dentro de un hunk no cuentan; creación y borrado reales de git pasan', () => {
+  const content = 'diff --git a/apps/web/src/a.js b/apps/web/src/a.js\n--- a/apps/web/src/a.js\n+++ b/apps/web/src/a.js\n@@ -1,2 +1,3 @@\n--- a/.github/workflows/evil.yml\n-b\n++ b/.github/workflows/evil.yml\n+++ b/.github/workflows/evil.yml\n+ok\n';
+  const v = validatePatch(content, policy); assert.equal(v.ok, true); assert.deepEqual(v.paths, ['apps/web/src/a.js']);
+  const { dir } = gitRepo(); fs.writeFileSync(`${dir}/work/apps/web/src/del.js`, 'x\ny\n'); sh0(dir, 'add', '.'); sh0(dir, 'commit', '-q', '-m', 'd');
+  fs.rmSync(`${dir}/work/apps/web/src/del.js`); fs.writeFileSync(`${dir}/work/apps/web/src/new.js`, 'n'); fs.writeFileSync(`${dir}/work/apps/web/src/a.js`, 'export const a = 1;\nmás\n');
+  spawnSync('git', ['-C', `${dir}/work`, 'add', '-A']); const d = spawnSync('git', ['-C', `${dir}/work`, 'diff', '--cached', '--binary', '--no-renames', 'HEAD'], { encoding: 'utf8' }).stdout;
+  const r = validatePatch(d, policy); assert.equal(r.ok, true, JSON.stringify(r)); assert.deepEqual(r.paths, ['apps/web/src/a.js', 'apps/web/src/del.js', 'apps/web/src/new.js']);
+  function sh0(dd, ...a) { const x = spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-C', `${dd}/work`, ...a], { encoding: 'utf8' }); assert.equal(x.status, 0, x.stderr); }
+});
+test('Q4 segunda capa: aunque un análisis aprobara un parche señuelo, las rutas que git modificó de verdad se comprueban; se deshace sin confirmar ni empujar', () => {
+  const { dir, sh, head } = evilRepo(); const before = sh(dir, '--git-dir=origin.git', 'rev-parse', 'refs/heads/feature/x');
+  const r = applyPatchAndPush({ repoDir: `${dir}/work`, headSha: head, headRef: 'feature/x', patch: QUOTED, round: 1, policy });
+  assert.deepEqual([r.ok, r.reason], [false, 'applied_paths_outside_policy']);
+  assert.equal(sh(`${dir}/work`, 'rev-parse', 'HEAD'), head); assert.equal(fs.readFileSync(`${dir}/work/.github/workflows/evil.yml`, 'utf8'), 'on: push\n', 'índice y árbol restaurados');
+  assert.equal(sh(`${dir}/work`, 'status', '--porcelain'), ''); assert.equal(sh(dir, '--git-dir=origin.git', 'rev-parse', 'refs/heads/feature/x'), before);
+  assert.deepEqual(applyPatchAndPush({ repoDir: `${dir}/work`, headSha: head, headRef: 'feature/x', patch: QUOTED, round: 1 }), { ok: false, reason: 'policy_required' }, 'sin política: fail-closed');
+  assert.equal(checkPaths(['apps/web/src/a.js'], policy).ok, true); assert.equal(checkPaths(['.github/workflows/x.yml'], policy).reason, 'denied_path'); assert.equal(checkPaths([], policy).reason, 'no_paths');
 });

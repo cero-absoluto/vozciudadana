@@ -159,18 +159,69 @@ export function mayPublish(state, facts, policy, round) {
 }
 
 // ── Validación del parche que produce el modelo (se aplica por código de confianza, sin modelo con token de escritura) ──
+// Analizador ESTRICTO: recorre el parche con las mismas reglas de longitud de hunk que git y rechaza cualquier línea que
+// no sea una cabecera conocida o contenido de un hunk. Así no hay "basura" que git ignore ni nombres de ruta que git
+// interprete de otra forma (entrecomillados con escapes C, espacios, no ASCII): solo rutas de caracteres seguros, y la
+// ruta de `diff --git`, la de `---` y la de `+++` tienen que coincidir. La ruta aprobada es la que git aplicará.
+const SAFE_PATH = /^[A-Za-z0-9._@+\-][A-Za-z0-9._@+\-/]*$/;
+const HUNK = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(?: .*)?$/;
 export function validatePatch(patch, policy) {
   if (typeof patch !== 'string' || !patch.trim()) return { ok: false, reason: 'empty_patch' };
   if (Buffer.byteLength(patch) > policy.limits.maxPatchBytes) return { ok: false, reason: 'patch_too_large' };
   if (/^GIT binary patch|^Binary files /m.test(patch)) return { ok: false, reason: 'binary_patch' };
-  if (/^(new|old) mode 120000|^(new|deleted) file mode 120000|^new file mode 100755|^new mode 100755/m.test(patch)) return { ok: false, reason: 'symlink_or_exec_bit' };
-  if (/^(rename|copy) (from|to) /m.test(patch)) return { ok: false, reason: 'rename_or_copy' };
-  const paths = new Set();
-  for (const m of patch.matchAll(/^diff --git a\/(.+) b\/(.+)$/gm)) { paths.add(m[1]); paths.add(m[2]); }
-  for (const m of patch.matchAll(/^(?:---|\+\+\+) (?:a|b)\/(.+)$/gm)) paths.add(m[1]);
+  if (patch.includes('\0') || patch.includes('\r')) return { ok: false, reason: 'unparsable_patch' };
+  const lines = patch.split('\n'); if (lines[lines.length - 1] === '') lines.pop();
+  const files = []; let cur = null; let i = 0;
+  const bad = (reason, extra = {}) => ({ ok: false, reason, ...extra });
+  const closeFile = () => {
+    if (!cur) return null;
+    if (!cur.hunks) return 'no_changes_in_file';
+    if (cur.minus === undefined || cur.plus === undefined) return 'missing_file_headers';
+    const aOk = cur.created ? cur.minus === '/dev/null' : cur.minus === `a/${cur.a}`; const bOk = cur.deleted ? cur.plus === '/dev/null' : cur.plus === `b/${cur.b}`;
+    if (!aOk || !bOk || cur.a !== cur.b) return 'header_path_mismatch';
+    files.push(cur.a); cur = null; return null;
+  };
+  while (i < lines.length) {
+    const l = lines[i]; let m;
+    if ((m = /^diff --git a\/(\S+) b\/(\S+)$/.exec(l))) {
+      const err = closeFile(); if (err) return bad(err);
+      cur = { a: m[1], b: m[2], hunks: 0 }; i++; continue;
+    }
+    if (!cur) return bad('unparsable_patch', { line: i + 1 }); // nada antes del primer `diff --git` (git ignora la basura inicial)
+    if (/^(rename|copy|similarity|dissimilarity) /.test(l)) return bad('rename_or_copy');
+    if (/^(old|new) mode /.test(l)) return bad('symlink_or_exec_bit');
+    if ((m = /^new file mode (\d+)$/.exec(l))) { if (m[1] !== '100644') return bad('symlink_or_exec_bit'); cur.created = true; i++; continue; }
+    if ((m = /^deleted file mode (\d+)$/.exec(l))) { if (m[1] !== '100644') return bad('symlink_or_exec_bit'); cur.deleted = true; i++; continue; }
+    if (/^index [0-9a-f]{7,64}\.\.[0-9a-f]{7,64}(?: 100644)?$/.test(l)) { i++; continue; }
+    if (l.startsWith('--- ')) { if (cur.minus !== undefined || cur.hunks) return bad('unparsable_patch', { line: i + 1 }); cur.minus = l.slice(4); i++; continue; }
+    if (l.startsWith('+++ ')) { if (cur.plus !== undefined || cur.hunks || cur.minus === undefined) return bad('unparsable_patch', { line: i + 1 }); cur.plus = l.slice(4); i++; continue; }
+    if ((m = HUNK.exec(l))) {
+      if (cur.minus === undefined || cur.plus === undefined) return bad('missing_file_headers');
+      let oldLeft = m[2] === undefined ? 1 : Number(m[2]); let newLeft = m[4] === undefined ? 1 : Number(m[4]); i++;
+      while (oldLeft > 0 || newLeft > 0) {
+        const c = lines[i]; if (c === undefined || c.length === 0) return bad('malformed_hunk', { line: i + 1 });
+        const t = c[0];
+        if (t === ' ') { oldLeft--; newLeft--; } else if (t === '-') oldLeft--; else if (t === '+') newLeft--; else return bad('malformed_hunk', { line: i + 1 });
+        if (oldLeft < 0 || newLeft < 0) return bad('malformed_hunk', { line: i + 1 });
+        i++;
+      }
+      if (lines[i] === '\\ No newline at end of file') i++;
+      cur.hunks++; continue;
+    }
+    return bad('unparsable_patch', { line: i + 1 }); // cualquier otra línea fuera de un hunk: rechazo (no se confía en lo que git ignore)
+  }
+  const err = closeFile(); if (err) return bad(err);
+  if (!files.length) return bad('no_paths');
+  const c = checkPaths(files, policy);
+  return c.ok ? { ok: true, paths: c.paths } : bad(c.reason, { path: c.path });
+}
+
+/** Comprobación de rutas (segura + denegadas + permitidas). También se usa sobre las rutas que git MODIFICÓ de verdad. */
+export function checkPaths(files, policy) {
+  const paths = new Set(files);
   if (!paths.size) return { ok: false, reason: 'no_paths' };
   for (const p of paths) {
-    if (p.startsWith('/') || p.includes('\\') || p.split('/').some((s) => s === '..' || s === '.' || s === '' ) || /[\0\r\n"]/.test(p)) return { ok: false, reason: 'unsafe_path', path: p };
+    if (!SAFE_PATH.test(p) || p.split('/').some((x) => x === '..' || x === '.' || x === '') || p.length > 300) return { ok: false, reason: 'unsafe_path', path: p };
     if (policy.denyPaths.some((d) => p === d || p.startsWith(d))) return { ok: false, reason: 'denied_path', path: p };
     if (!policy.allowPaths.some((a) => p.startsWith(a))) return { ok: false, reason: 'path_outside_allowlist', path: p };
   }

@@ -8,6 +8,9 @@ import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
+import { analyzeUses } from '../automation/preflight/workflow-uses.mjs';
 import * as pf from '../automation/preflight/preflight.mjs';
 
 const { PASS, FAIL, NP } = pf;
@@ -235,19 +238,75 @@ test('RE2 el CLI no vuelca el entorno: ejecutar `controller` con un entorno llen
   const all = r.stdout + r.stderr + fs.readFileSync(`${d}/controller.json`, 'utf8'); assert.ok(!all.includes('valor-secreto'));
 });
 
-test('PI2 pins: un `uses` sin SHA de 40 caracteres en el workflow INSTALADO falla aunque el candidato inerte esté bien; control con SHA válido y acciones locales → PASS', () => {
-  const sha = 'a'.repeat(40); const f = tmp(); const cand = path.join(f, 'cand.yml'); const inst = path.join(f, 'inst.yml');
-  const pins = path.join(f, 'pins.json'); fs.writeFileSync(pins, JSON.stringify({ 'claude-code-action': { repo: 'c/a', tag: 'v9', sha: 'c'.repeat(40) } }));
-  fs.writeFileSync(cand, `steps:\n  - uses: x/y@${sha} # v1.2.3\n`);
-  const run = () => pf.cmdPins({ files: [cand, inst], spawn: () => ({ status: 0, stdout: `${sha}\trefs/tags/v1.2.3\n` }), pinsFile: pins });
-  fs.writeFileSync(inst, `steps:\n  - uses: x/y@${sha} # v1.2.3\n  - uses: ./.github/actions/local\n`);
-  assert.equal(st(run(), 'pins.unpinned'), PASS, 'control: SHA válido + acción local');
+const wfDoc = (...steps) => `name: t\non: workflow_dispatch\njobs:\n  j:\n    runs-on: ubuntu-latest\n    steps:\n${steps.join('\n')}\n`;
+const SHA40 = 'a'.repeat(40);
+// Detector ANTERIOR (expresión regular sobre líneas `uses:`), conservado solo para demostrar que los casos nuevos lo eludían.
+const legacyUnpinned = (text) => { const bad = []; let m; const re = /^[ \t]*(?:-[ \t]*)?uses:[ \t]*(?:"([^"\n]*)"|'([^'\n]*)'|([^\s#][^\n#]*?))[ \t]*(?:#.*)?$/gm; while ((m = re.exec(text))) { const ref = (m[1] ?? m[2] ?? m[3]).trim(); if (ref.startsWith('./')) continue; if (!/^[\w.-]+\/[\w.-]+(?:\/[\w./-]+)?@[0-9a-f]{40}$/.test(ref)) bad.push(ref); } return bad; };
+function pinsRun(candText, instText) {
+  const f = tmp(); const cand = path.join(f, 'cand.yml'); const inst = path.join(f, 'inst.yml'); const pins = path.join(f, 'pins.json');
+  fs.writeFileSync(pins, JSON.stringify({ 'claude-code-action': { repo: 'c/a', tag: 'v9', sha: 'c'.repeat(40) } })); fs.writeFileSync(cand, candText); fs.writeFileSync(inst, instText);
+  return pf.cmdPins({ files: [cand, inst], spawn: () => ({ status: 0, stdout: `${SHA40}\trefs/tags/v1.2.3\n` }), pinsFile: pins });
+}
+const goodStep = `      - uses: x/y@${SHA40} # v1.2.3`;
+const detail = (r) => r.checks.find((c) => c.id === 'pins.unpinned').detail;
+test('PI2 pins: un `uses` sin SHA de 40 caracteres en el workflow INSTALADO falla aunque el candidato inerte esté bien; controles válidos → PASS', () => {
+  const cand = wfDoc(goodStep);
+  assert.equal(st(pinsRun(cand, wfDoc(goodStep, '      - uses: ./.github/actions/local')), 'pins.unpinned'), PASS, 'control: SHA válido + acción local');
+  assert.equal(st(pinsRun(cand, wfDoc(goodStep, `      - uses: x/y/sub@${SHA40} # v1.2.3`)), 'pins.unpinned'), PASS, 'control: subruta con SHA');
   for (const bad of ['owner/action@main', 'owner/action@v4', `owner/action@${'a'.repeat(39)}`, `owner/action@${'A'.repeat(40)}`, 'owner/action', 'docker://alpine:3', '"owner/action@main"', `owner/action/sub@v1 # ${'a'.repeat(40)}`]) {
-    fs.writeFileSync(inst, `steps:\n  - uses: x/y@${sha} # v1.2.3\n  - uses: ${bad}\n`);
-    const r = run(); assert.equal(st(r, 'pins.unpinned'), FAIL, bad); assert.match(r.checks.find((c) => c.id === 'pins.unpinned').detail, /owner|alpine/, bad);
+    const r = pinsRun(cand, wfDoc(goodStep, `      - uses: ${bad}`)); assert.equal(st(r, 'pins.unpinned'), FAIL, bad); assert.match(detail(r), /inst\.yml/, 'identifica el fichero instalado'); assert.doesNotMatch(detail(r), /cand\.yml/);
   }
-  fs.writeFileSync(inst, `steps:\n  - uses: owner/action@main\n`); assert.equal(st(run(), 'pin.x/y'), PASS, 'el candidato correcto no oculta el fallo: pins.unpinned lo marca');
+  assert.equal(st(pinsRun(cand, wfDoc('      - uses: owner/action@main')), 'pin.x/y'), PASS, 'el candidato correcto no oculta el fallo: pins.unpinned lo marca');
   assert.ok(pf.REQUIRED.pins.includes('pins.unpinned'));
+  assert.equal(st(pinsRun(wfDoc('      - uses: owner/action@main'), wfDoc(goodStep)), 'pins.unpinned'), FAIL, 'y el fallo del candidato también se marca');
+});
+test('PI3 pins: grafías YAML alternativas de `uses` (clave entrecomillada, espacio antes de `:`, comillas simples, mapas en línea, listas en línea, jobs reutilizables) → FAIL; el detector por regex anterior las eludía', () => {
+  const cand = wfDoc(goodStep);
+  const spellings = {
+    'clave "uses" entre comillas dobles': wfDoc(goodStep, '      - "uses": owner/action@main'),
+    'uses con espacio antes de dos puntos': wfDoc(goodStep, '      - uses : owner/action@main'),
+    "clave 'uses' entre comillas simples": wfDoc(goodStep, "      - 'uses': owner/action@main"),
+    'clave entrecomillada y espacio': wfDoc(goodStep, '      - "uses" : owner/action@main'),
+    'mapa en línea': wfDoc(goodStep, '      - { uses: owner/action@main }'),
+    'mapa en línea con clave entrecomillada': wfDoc(goodStep, '      - { "uses": "owner/action@main", name: x }'),
+    'mapa en línea con name antes': wfDoc(goodStep, '      - {name: x, uses: owner/action@v4}'),
+    'pasos como lista en línea': `name: t\non: workflow_dispatch\njobs:\n  j:\n    runs-on: ubuntu-latest\n    steps: [{ uses: owner/action@main }]\n`,
+    'job en mapa en línea': `name: t\non: workflow_dispatch\njobs:\n  j: { runs-on: ubuntu-latest, steps: [{ "uses": owner/action@main }] }\n`,
+    'workflow reutilizable en el job': `name: t\non: workflow_dispatch\njobs:\n  j:\n    uses: owner/repo/.github/workflows/w.yml@main\n`,
+    'SHA completo pero sin comentario de versión (no verificable)': wfDoc(goodStep, `      - "uses": z/w@${SHA40}`),
+    'valor con comillas dobles y comentario': wfDoc(goodStep, '      - uses: "owner/action@main" # nota'),
+    'clave entrecomillada en paso con otras claves': wfDoc(goodStep, '      - name: x\n        "uses": owner/action@v4\n        with: { a: b }'),
+  };
+  for (const [name, inst] of Object.entries(spellings)) {
+    const r = pinsRun(cand, inst); assert.equal(st(r, 'pins.unpinned'), FAIL, name); assert.match(detail(r), /inst\.yml/, name); assert.doesNotMatch(detail(r), /cand\.yml/, name);
+  }
+  // el detector anterior no veía estas grafías (demostración de que la versión previa falla los casos nuevos)
+  for (const name of ['clave "uses" entre comillas dobles', 'uses con espacio antes de dos puntos', "clave 'uses' entre comillas simples", 'clave entrecomillada y espacio', 'mapa en línea', 'mapa en línea con clave entrecomillada', 'mapa en línea con name antes', 'pasos como lista en línea', 'job en mapa en línea']) assert.deepEqual(legacyUnpinned(spellings[name]), [], `regex anterior elude: ${name}`);
+  // controles válidos con las mismas grafías
+  for (const ok of [wfDoc(goodStep, `      - "uses": x/y@${SHA40} # v1.2.3`), wfDoc(goodStep, `      - uses : x/y@${SHA40} # v1.2.3`), wfDoc(goodStep, `      - 'uses': x/y@${SHA40} # v1.2.3`), wfDoc(goodStep, `      - { uses: x/y@${SHA40} } # v1.2.3`), wfDoc(goodStep, '      - { uses: ./local }')]) assert.equal(st(pinsRun(cand, ok), 'pins.unpinned'), PASS, ok);
+  // una clave `uses` que es solo texto dentro de un bloque `run: |` o de un comentario NO es una referencia
+  assert.equal(st(pinsRun(cand, wfDoc(goodStep, '      - run: |\n          echo "uses: owner/action@main"\n      # uses: owner/action@main')), 'pins.unpinned'), PASS);
+});
+test('PI4 pins: documento no interpretable con seguridad → FAIL (anclas, alias, etiquetas, <<, varios documentos, claves duplicadas, tabuladores, `uses` no cadena, sin jobs)', () => {
+  const cand = wfDoc(goodStep);
+  const unsafe = {
+    ancla: wfDoc(goodStep, '      - &a uses: owner/action@main'), alias: wfDoc(goodStep, '      - *a'), etiqueta: wfDoc(goodStep, '      - !!map { uses: owner/action@main }'),
+    mezcla: wfDoc(goodStep, '      - <<: { uses: owner/action@main }'), 'varios documentos': `${wfDoc(goodStep)}---\n${wfDoc(goodStep)}`,
+    'clave duplicada': wfDoc(goodStep, '      - uses: x/y@' + SHA40 + '\n        uses: owner/action@main'), tabulador: wfDoc(goodStep).replace('    runs-on', '\truns-on'),
+    'uses no cadena': wfDoc(goodStep, '      - uses: [owner/action@main]'), 'uses nulo': wfDoc(goodStep, '      - uses:'), 'sin jobs': 'name: t\non: workflow_dispatch\n',
+    'raíz no mapa': '- a\n- b\n', vacío: '', 'coleccion sin cerrar': wfDoc(goodStep, '      - { uses: owner/action@main'), 'comilla sin cerrar': wfDoc(goodStep, '      - uses: "owner/action@main'),
+    'clave compleja': wfDoc(goodStep, '      - ? uses\n        : owner/action@main'),
+  };
+  for (const [name, inst] of Object.entries(unsafe)) { const r = pinsRun(cand, inst); assert.equal(st(r, 'pins.unpinned'), FAIL, name); assert.match(detail(r), /inst\.yml/, name); }
+});
+test('PI5 lector estricto: coincide con la librería `yaml` en los workflows reales (si está disponible en el entorno) y devuelve las mismas referencias', async (t) => {
+  let YAML; try { YAML = (await import(pathToFileURL(createRequire('/opt/npm-tools/package.json').resolve('yaml')).href)).default; } catch { t.skip('librería yaml no disponible'); return; }
+  const refs = (doc) => { const o = []; for (const j of Object.values(doc.jobs)) { if (j.uses) o.push(j.uses); for (const s of j.steps ?? []) if (s.uses) o.push(s.uses); } return o; };
+  for (const file of ['.github/workflows/deploy.yml', 'automation/preflight/candidate/actions-preflight.yml']) {
+    const text = fs.readFileSync(`${root}${file}`, 'utf8'); const a = analyzeUses(text);
+    assert.deepEqual([...a.pinned, ...a.unpinned].sort(), refs(YAML.parse(text)).filter((x) => !x.startsWith('./')).sort(), file);
+  }
+  for (const doc of [wfDoc('      - "uses" : "x/y@v1"\n        name: n'), wfDoc("      - { 'uses': x/y@v2, name: q }"), wfDoc('      - name: a\n        uses: p/q@main # c\n        with:\n          k: |\n            uses: no/es@main')]) assert.deepEqual([...analyzeUses(doc).unpinned], refs(YAML.parse(doc)));
 });
 
 // ── workflow candidato y alcance ────────────────────────────────────────────────────────────────────────

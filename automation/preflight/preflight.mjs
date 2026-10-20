@@ -8,6 +8,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { analyzeUses, Unsafe } from './workflow-uses.mjs';
 import { decide, ownerStopped, mayPublish, validatePatch, encodeState, STATUS } from '../coordination/controller.mjs';
 
 export const PASS = 'PASS'; export const FAIL = 'FAIL'; export const NP = 'NO_PROBADO';
@@ -144,25 +145,26 @@ export async function cmdIdentity({ api, repository, pr, policy = loadPolicy() }
 
 /** Cada `uses: owner/repo@SHA # vX` del workflow debe resolver (git ls-remote) a ese SHA. */
 export function parsePins(text) {
-  const pins = []; let m; const re = /^\s*-?\s*uses:\s*([\w.-]+\/[\w.-]+)@([0-9a-f]{40})(?:\s*#\s*(\S+))?/gm;
+  const pins = []; let m; const re = /^\s*-?\s*uses:\s*([\w.-]+\/[\w.-]+)(?:\/[\w./-]+)?@([0-9a-f]{40})(?:\s*#\s*(\S+))?/gm;
   while ((m = re.exec(text))) pins.push({ repo: m[1], sha: m[2], tag: m[3] ?? null });
   return pins;
-}
-/** TODOS los `uses:` del workflow que no sean locales (./): los que no fijan un SHA de 40 caracteres se devuelven para fallar (no se omiten). */
-export function unpinnedUses(text) {
-  const bad = []; let m; const re = /^[ \t]*(?:-[ \t]*)?uses:[ \t]*(?:"([^"\n]*)"|'([^'\n]*)'|([^\s#][^\n#]*?))[ \t]*(?:#.*)?$/gm;
-  while ((m = re.exec(text))) {
-    const ref = (m[1] ?? m[2] ?? m[3]).trim(); if (ref.startsWith('./')) continue;
-    if (!/^[\w.-]+\/[\w.-]+(?:\/[\w./-]+)?@[0-9a-f]{40}$/.test(ref)) bad.push(ref);
-  }
-  return bad;
 }
 export function cmdPins({ files, spawn = spawnSync, fs: f = fs, pinsFile = path.join(here, 'pins.json') }) {
   const r = new Report('pins'); const seen = new Map();
   for (const file of files) { if (!f.existsSync(file)) continue; for (const p of parsePins(f.readFileSync(file, 'utf8'))) seen.set(`${p.repo}@${p.sha}`, { ...p, file }); }
   const present = files.filter((x) => f.existsSync(x));
-  const unpinned = []; for (const file of present) for (const u of unpinnedUses(f.readFileSync(file, 'utf8'))) unpinned.push(`${file}: ${u}`);
-  r.add('pins.unpinned', unpinned.length ? FAIL : PASS, unpinned.length ? `referencias sin SHA de 40 caracteres: ${unpinned.join('; ')}` : 'todo `uses:` externo está fijado a un SHA de 40 caracteres');
+  // Cada fichero se lee POR SEPARADO con el lector estricto de estructura YAML: un candidato correcto no oculta un fallo del instalado.
+  const unpinned = [];
+  for (const file of present) {
+    const text = f.readFileSync(file, 'utf8');
+    try {
+      const a = analyzeUses(text);
+      for (const u of a.unpinned) unpinned.push(`${file}: ${u}`);
+      const commented = new Set(parsePins(text).map((x) => `${x.repo}@${x.sha}`));
+      for (const u of a.pinned) if (!commented.has(`${u.split('@')[0].split('/').slice(0, 2).join('/')}@${u.split('@')[1]}`)) unpinned.push(`${file}: ${u} (SHA sin comentario de versión verificable)`);
+    } catch (e) { if (!(e instanceof Unsafe)) throw e; unpinned.push(`${file}: documento no interpretable con seguridad (${e.message})`); }
+  }
+  r.add('pins.unpinned', unpinned.length ? FAIL : PASS, unpinned.length ? `referencias rechazadas: ${unpinned.join('; ')}` : 'todo `uses:` externo está fijado a un SHA de 40 caracteres');
   r.add('pins.found', seen.size ? PASS : FAIL, `${seen.size} acciones fijadas por SHA en ${present.length} fichero(s) candidato(s)`);
   const ca = JSON.parse(f.readFileSync(pinsFile, 'utf8'))['claude-code-action'];
   seen.set(`${ca.repo}@${ca.sha}`, { ...ca, file: 'pins.json' }); // la acción del modelo se fija por `ref:` en el checkout de solo lectura

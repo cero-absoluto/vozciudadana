@@ -86,24 +86,32 @@ export function cmdContext({ env, spawn = spawnSync, fs: f = fs, policy = loadPo
   return ensure(r);
 }
 
-/** Permisos efectivos del GITHUB_TOKEN: lecturas esperadas OK; escrituras esperadas DENEGADAS (403), con sondas que no pueden tener efecto. */
+/** Permisos efectivos del GITHUB_TOKEN: lecturas esperadas OK; escrituras esperadas DENEGADAS (403), con sondas que no deberían tener efecto (ver límites en cada sonda). */
 export async function cmdPermissions({ api, repository, pr }) {
   const r = new Report('permissions');
   const reads = [['contents', `/repos/${repository}`], ['issues', `/repos/${repository}/issues/${pr}/comments?per_page=1`], ['pull_requests', `/repos/${repository}/pulls/${pr}`]];
   for (const [scope, p] of reads) {
     try { const x = await api('GET', p); r.add(`read.${scope}`, x.status === 200 ? PASS : FAIL, `GET → ${x.status}`); } catch (e) { r.add(`read.${scope}`, NP, `error de red: ${e.message}`, INFRA); }
   }
-  // Sondas sin efecto posible: el recurso NO existe. Con permiso de escritura GitHub contesta 404/422; sin él, 403.
+  // Sondas de escritura. Dos tipos:
+  //  • recurso INEXISTENTE (contents, pull_requests): sin permiso GitHub contesta 403; con permiso, 404/422. Ejecución 39381273494: 403 en ambas.
+  //  • recurso EXISTENTE con carga inválida (issues): la ejecución 39381273494 dio 404 sobre una incidencia inexistente (GitHub resuelve el recurso
+  //    antes de comprobar el permiso), que es AMBIGUO. Ahora se apunta a la incidencia/PR real `pr` (ya leída con 200 en `read.issues`) con un cuerpo
+  //    SIN `body`, que la API documenta como obligatorio: sin permiso → 403; con permiso → 422 de validación y NO se crea nada. Nunca PASS con 404.
   const writes = [
-    ['contents', 'PATCH', `/repos/${repository}/git/refs/heads/preflight-no-existe`, { sha: H('0'), force: false }],
-    ['issues', 'POST', `/repos/${repository}/issues/2147483647/comments`, { body: 'preflight' }],
-    ['pull_requests', 'POST', `/repos/${repository}/pulls/2147483647/comments`, { body: 'preflight' }],
+    { scope: 'contents', method: 'PATCH', path: `/repos/${repository}/git/refs/heads/preflight-no-existe`, body: { sha: H('0'), force: false }, existing: false },
+    { scope: 'issues', method: 'POST', path: `/repos/${repository}/issues/${pr}/comments`, body: {}, existing: true },
+    { scope: 'pull_requests', method: 'POST', path: `/repos/${repository}/pulls/2147483647/comments`, body: { body: 'preflight' }, existing: false },
   ];
-  for (const [scope, m, p, b] of writes) {
+  for (const { scope, method, path: p, body, existing } of writes) {
     try {
-      const x = await api(m, p, b);
-      r.add(`write_denied.${scope}`, x.status === 403 ? PASS : (x.status === 404 || x.status === 422 || (x.status >= 200 && x.status < 300)) ? FAIL : NP,
-        x.status === 403 ? 'escritura denegada (403): permisos de solo lectura efectivos' : `respuesta ${x.status}: la escritura parece permitida o la denegación es ambigua`, (x.status === 403 || x.status === 404 || x.status === 422 || (x.status >= 200 && x.status < 300)) ? undefined : INFRA);
+      const x = await api(method, p, body); const ok = x.status >= 200 && x.status < 300; const known = x.status === 403 || x.status === 404 || x.status === 422 || ok;
+      const detail = x.status === 403 ? 'escritura denegada (403): permisos de solo lectura efectivos'
+        : x.status === 404 ? (existing ? 'respuesta 404 sobre un recurso que existe: AMBIGUO, no prueba denegación ni permiso' : 'respuesta 404: AMBIGUO (recurso inexistente), no prueba denegación')
+        : x.status === 422 ? (existing ? 'respuesta 422 (validación del cuerpo): la solicitud superó la comprobación de permiso, hay permiso de escritura' : 'respuesta 422: la escritura parece permitida')
+        : ok ? `respuesta ${x.status}: escritura ACEPTADA; comprobar a mano si se creó algún efecto`
+        : `respuesta ${x.status}: no concluyente`;
+      r.add(`write_denied.${scope}`, x.status === 403 ? PASS : known ? FAIL : NP, detail, known ? undefined : INFRA);
     } catch (e) { r.add(`write_denied.${scope}`, NP, `error de red: ${e.message}`, INFRA); }
   }
   r.add('permission.token_as_model_credential', NP, 'GITHUB_TOKEN no certifica permisos del modelo autenticado (credencial de Claude): requiere inferencia');

@@ -31,12 +31,38 @@ test('PE1 permisos: lecturas 200 y escrituras 403 → PASS; 404/422/2xx en una e
   r = await pf.cmdPermissions({ api: async () => { throw new Error('red'); }, repository: REPO, pr: 38 }); assert.equal(st(r, 'write_denied.contents'), NP);
   assert.equal(st(r, 'permission.token_as_model_credential'), NP, 'GITHUB_TOKEN no certifica permisos del modelo');
 });
-test('PE2 las sondas de escritura no pueden tener efecto: recursos inexistentes, sha nulo, sin force', async () => {
+test('PE2 las sondas de escritura: contents y pulls sobre recurso inexistente; issues sobre el recurso EXISTENTE con cuerpo sin `body` (nada que crear)', async () => {
   const seen = []; await pf.cmdPermissions({ api: async (m, p, b) => { seen.push([m, p, b]); return { status: 403, json: [] }; }, repository: REPO, pr: 38 });
   const writes = seen.filter(([m]) => m !== 'GET'); assert.equal(writes.length, 3);
   assert.ok(writes.some(([m, p, b]) => m === 'PATCH' && /git\/refs\/heads\/preflight-no-existe$/.test(p) && b.sha === '0'.repeat(40) && b.force === false));
-  assert.ok(writes.some(([m, p]) => m === 'POST' && /issues\/2147483647\/comments$/.test(p))); assert.ok(writes.some(([m, p]) => m === 'POST' && /pulls\/2147483647\/comments$/.test(p)));
-  assert.ok(writes.every(([, p]) => !/\/pulls\/38|\/issues\/38/.test(p)), 'ninguna escritura apunta a un PR real');
+  assert.ok(writes.some(([m, p]) => m === 'POST' && /pulls\/2147483647\/comments$/.test(p)));
+  const iss = writes.find(([, p]) => /\/issues\//.test(p)); assert.equal(iss[0], 'POST'); assert.equal(iss[1], `/repos/${REPO}/issues/38/comments`, 'recurso existente y ya leído (read.issues)');
+  assert.deepEqual(iss[2], {}, 'sin `body`: la API lo exige, no puede crearse ningún comentario'); assert.ok(!('body' in iss[2]));
+  assert.ok(!writes.some(([, p]) => /issues\/2147483647/.test(p)), 'ya no se sondea una incidencia inexistente (404 ambiguo en la ejecución 39381273494)');
+  assert.ok(writes.every(([m, p]) => !(m === 'PATCH' || m === 'PUT' || m === 'DELETE') || /preflight-no-existe/.test(p)), 'ninguna modificación/borrado de un recurso real');
+});
+// Evidencia de la ejecución 39381273494 (66 PASS, 1 FAIL, 11 NO_PROBADO): POST a una incidencia inexistente → 404, ambiguo.
+const issuesProbe = async (status, { pr = 38, others = 403 } = {}) => {
+  const api = async (m, p) => ({ status: m === 'GET' ? 200 : (/\/issues\/\d+\/comments$/.test(p) ? status : others), json: [] });
+  return pf.cmdPermissions({ api, repository: REPO, pr });
+};
+test('PE3 write_denied.issues sobre recurso existente: 403 → PASS; 404 → no PASS (ambiguo, FAIL); 422 → FAIL (permiso de escritura); 2xx inesperado → FAIL; 5xx/error → NO_PROBADO', async () => {
+  let r = await issuesProbe(403); assert.equal(st(r, 'write_denied.issues'), PASS); assert.match(by(r, 'write_denied.issues').detail, /denegada \(403\)/);
+  r = await issuesProbe(404); assert.equal(st(r, 'write_denied.issues'), FAIL); assert.match(by(r, 'write_denied.issues').detail, /AMBIGUO/); assert.match(by(r, 'write_denied.issues').detail, /existe/);
+  r = await issuesProbe(422); assert.equal(st(r, 'write_denied.issues'), FAIL); assert.match(by(r, 'write_denied.issues').detail, /permiso de escritura/);
+  for (const code of [200, 201, 204]) { r = await issuesProbe(code); assert.equal(st(r, 'write_denied.issues'), FAIL, String(code)); assert.match(by(r, 'write_denied.issues').detail, /ACEPTADA/); }
+  for (const code of [401, 429, 500, 502]) { r = await issuesProbe(code); assert.equal(st(r, 'write_denied.issues'), NP, String(code)); assert.equal(by(r, 'write_denied.issues').data?.infra, true); }
+  r = await pf.cmdPermissions({ api: async (m, p) => { if (m !== 'GET' && /\/issues\//.test(p)) throw new Error('red'); return { status: m === 'GET' ? 200 : 403, json: [] }; }, repository: REPO, pr: 38 }); assert.equal(st(r, 'write_denied.issues'), NP);
+  // las otras comprobaciones no cambian y son independientes de la de issues
+  r = await issuesProbe(404); for (const id of ['read.contents', 'read.issues', 'read.pull_requests', 'write_denied.contents', 'write_denied.pull_requests']) assert.equal(st(r, id), PASS, id);
+  assert.equal(r.checks.length, 7, 'mismas siete comprobaciones');
+});
+test('PE4 la sonda de issues viaja como POST con cuerpo `{}` y sin escribir nada: probado con un fetch simulado (ninguna petición real)', async () => {
+  const calls = []; const fetchImpl = async (url, init) => { calls.push({ url, ...init }); return { status: init.method === 'GET' ? 200 : 403, json: async () => ({}) }; };
+  const api = pf.makeFetchApi({ token: 'FICTICIO', fetchImpl, base: 'https://api.invalid' });
+  const r = await pf.cmdPermissions({ api, repository: REPO, pr: 38 }); assert.equal(st(r, 'write_denied.issues'), PASS);
+  const c = calls.find((x) => x.method === 'POST' && /\/issues\/38\/comments$/.test(x.url)); assert.ok(c); assert.equal(c.body, '{}'); assert.ok(calls.every((x) => x.url.startsWith('https://api.invalid/')), 'sin red real');
+  assert.ok(!calls.some((x) => /\/issues\/38\//.test(x.url) && x.method !== 'GET' && JSON.parse(x.body).body !== undefined), 'ninguna escritura hacia la incidencia real lleva texto de comentario');
 });
 
 // ── identidades de bot ──────────────────────────────────────────────────────────────────────────────────

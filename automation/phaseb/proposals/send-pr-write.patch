@@ -1,7 +1,7 @@
 diff --git a/automation/phaseb/candidate/phase-b-send.yml b/automation/phaseb/candidate/phase-b-send.yml
 --- a/automation/phaseb/candidate/phase-b-send.yml
 +++ b/automation/phaseb/candidate/phase-b-send.yml
-@@ -51,8 +51,8 @@
+@@ -51,7 +51,7 @@
      timeout-minutes: 5
      permissions:
        contents: read

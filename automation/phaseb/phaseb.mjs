@@ -60,7 +60,7 @@ export async function plan({ api, repository, pr, expectedSha, env, policy = loa
 export function postFailureEvidence(res, env = process.env) {
   const safe = (value, max = 512) => {
     if (typeof value !== 'string') return null;
-    const text = value.replace(/[\u0000-\u001f\u007f]/g, ' ').slice(0, max);
+    const text = value.replace(/[\u0000-\u001f\u007f]/g, ' ');
     try { assertNoSecrets(text, env); } catch { return '[REDACTED]'; }
     return text.slice(0, max);
   };

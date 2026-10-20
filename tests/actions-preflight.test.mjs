@@ -235,6 +235,21 @@ test('RE2 el CLI no vuelca el entorno: ejecutar `controller` con un entorno llen
   const all = r.stdout + r.stderr + fs.readFileSync(`${d}/controller.json`, 'utf8'); assert.ok(!all.includes('valor-secreto'));
 });
 
+test('PI2 pins: un `uses` sin SHA de 40 caracteres en el workflow INSTALADO falla aunque el candidato inerte esté bien; control con SHA válido y acciones locales → PASS', () => {
+  const sha = 'a'.repeat(40); const f = tmp(); const cand = path.join(f, 'cand.yml'); const inst = path.join(f, 'inst.yml');
+  const pins = path.join(f, 'pins.json'); fs.writeFileSync(pins, JSON.stringify({ 'claude-code-action': { repo: 'c/a', tag: 'v9', sha: 'c'.repeat(40) } }));
+  fs.writeFileSync(cand, `steps:\n  - uses: x/y@${sha} # v1.2.3\n`);
+  const run = () => pf.cmdPins({ files: [cand, inst], spawn: () => ({ status: 0, stdout: `${sha}\trefs/tags/v1.2.3\n` }), pinsFile: pins });
+  fs.writeFileSync(inst, `steps:\n  - uses: x/y@${sha} # v1.2.3\n  - uses: ./.github/actions/local\n`);
+  assert.equal(st(run(), 'pins.unpinned'), PASS, 'control: SHA válido + acción local');
+  for (const bad of ['owner/action@main', 'owner/action@v4', `owner/action@${'a'.repeat(39)}`, `owner/action@${'A'.repeat(40)}`, 'owner/action', 'docker://alpine:3', '"owner/action@main"', `owner/action/sub@v1 # ${'a'.repeat(40)}`]) {
+    fs.writeFileSync(inst, `steps:\n  - uses: x/y@${sha} # v1.2.3\n  - uses: ${bad}\n`);
+    const r = run(); assert.equal(st(r, 'pins.unpinned'), FAIL, bad); assert.match(r.checks.find((c) => c.id === 'pins.unpinned').detail, /owner|alpine/, bad);
+  }
+  fs.writeFileSync(inst, `steps:\n  - uses: owner/action@main\n`); assert.equal(st(run(), 'pin.x/y'), PASS, 'el candidato correcto no oculta el fallo: pins.unpinned lo marca');
+  assert.ok(pf.REQUIRED.pins.includes('pins.unpinned'));
+});
+
 // ── workflow candidato y alcance ────────────────────────────────────────────────────────────────────────
 const wfPath = `${root}automation/preflight/candidate/actions-preflight.yml`;
 const wf = fs.readFileSync(wfPath, 'utf8'); const code = wf.replace(/^[ \t]*#.*$/gm, '').replace(/[ \t]+#.*$/gm, '');

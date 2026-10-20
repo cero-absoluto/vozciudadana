@@ -23,7 +23,7 @@ export const REQUIRED = {
   context: ['runner.node', 'runner.hosted', 'checkout.sha', 'checkout.clean', 'checkout.no_persisted_credentials', 'event.name', 'repo.identity', 'event.actor_is_owner', 'event.ref'],
   permissions: ['read.contents', 'read.issues', 'read.pull_requests', 'write_denied.contents', 'write_denied.issues', 'write_denied.pull_requests', 'permission.token_as_model_credential'],
   identity: ['api.auditor_user', 'api.state_writer_user', 'api.auditor_app_id', 'event.auditor_activity_present', 'event.auditor_identity', 'event.auditor_receipt_app', 'event.auditor_review_commit_id', 'event.auditor_comment_edited', 'event.state_writer_comment', 'delivery.bot_to_codex', 'delivery.codex_event_to_workflow'],
-  pins: ['pins.found', 'pin.actions/checkout', 'pin.actions/setup-node', 'pin.actions/upload-artifact', 'pin.actions/download-artifact', 'pin.anthropics/claude-code-action'],
+  pins: ['pins.found', 'pins.unpinned', 'pin.actions/checkout', 'pin.actions/setup-node', 'pin.actions/upload-artifact', 'pin.actions/download-artifact', 'pin.anthropics/claude-code-action'],
   cli: ['action.sha', 'action.cli_version_pin', 'job.no_model_credentials', 'cli.install', 'cli.version', 'cli.flag--allowedTools', 'cli.flag--disallowedTools', 'cli.flag--setting-sources', 'cli.flag--strict-mcp-config', 'cli.flag--disable-slash-commands', 'cli.flag--permission-mode', 'cli.flag--max-turns', 'cli.hooks_mcp_not_loaded', 'cli.edit_rules_effective', 'cli.subprocess_env_scrub', 'cli.network_isolation'],
   'env-a': ['env.fake_present_in_step', 'env.child_inherits_by_default'],
   'env-b': ['env.not_in_next_step', 'env.fake_is_not_a_real_credential'],
@@ -148,10 +148,21 @@ export function parsePins(text) {
   while ((m = re.exec(text))) pins.push({ repo: m[1], sha: m[2], tag: m[3] ?? null });
   return pins;
 }
+/** TODOS los `uses:` del workflow que no sean locales (./): los que no fijan un SHA de 40 caracteres se devuelven para fallar (no se omiten). */
+export function unpinnedUses(text) {
+  const bad = []; let m; const re = /^[ \t]*(?:-[ \t]*)?uses:[ \t]*(?:"([^"\n]*)"|'([^'\n]*)'|([^\s#][^\n#]*?))[ \t]*(?:#.*)?$/gm;
+  while ((m = re.exec(text))) {
+    const ref = (m[1] ?? m[2] ?? m[3]).trim(); if (ref.startsWith('./')) continue;
+    if (!/^[\w.-]+\/[\w.-]+(?:\/[\w./-]+)?@[0-9a-f]{40}$/.test(ref)) bad.push(ref);
+  }
+  return bad;
+}
 export function cmdPins({ files, spawn = spawnSync, fs: f = fs, pinsFile = path.join(here, 'pins.json') }) {
   const r = new Report('pins'); const seen = new Map();
   for (const file of files) { if (!f.existsSync(file)) continue; for (const p of parsePins(f.readFileSync(file, 'utf8'))) seen.set(`${p.repo}@${p.sha}`, { ...p, file }); }
   const present = files.filter((x) => f.existsSync(x));
+  const unpinned = []; for (const file of present) for (const u of unpinnedUses(f.readFileSync(file, 'utf8'))) unpinned.push(`${file}: ${u}`);
+  r.add('pins.unpinned', unpinned.length ? FAIL : PASS, unpinned.length ? `referencias sin SHA de 40 caracteres: ${unpinned.join('; ')}` : 'todo `uses:` externo está fijado a un SHA de 40 caracteres');
   r.add('pins.found', seen.size ? PASS : FAIL, `${seen.size} acciones fijadas por SHA en ${present.length} fichero(s) candidato(s)`);
   const ca = JSON.parse(f.readFileSync(pinsFile, 'utf8'))['claude-code-action'];
   seen.set(`${ca.repo}@${ca.sha}`, { ...ca, file: 'pins.json' }); // la acción del modelo se fija por `ref:` en el checkout de solo lectura

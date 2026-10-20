@@ -94,10 +94,11 @@ export async function cmdPermissions({ api, repository, pr }) {
     try { const x = await api('GET', p); r.add(`read.${scope}`, x.status === 200 ? PASS : FAIL, `GET → ${x.status}`); } catch (e) { r.add(`read.${scope}`, NP, `error de red: ${e.message}`, INFRA); }
   }
   // Sondas de escritura. Dos tipos:
-  //  • recurso INEXISTENTE (contents, pull_requests): sin permiso GitHub contesta 403; con permiso, 404/422. Ejecución 39381273494: 403 en ambas.
-  //  • recurso EXISTENTE con carga inválida (issues): la ejecución 39381273494 dio 404 sobre una incidencia inexistente (GitHub resuelve el recurso
-  //    antes de comprobar el permiso), que es AMBIGUO. Ahora se apunta a la incidencia/PR real `pr` (ya leída con 200 en `read.issues`) con un cuerpo
-  //    SIN `body`, que la API documenta como obligatorio: sin permiso → 403; con permiso → 422 de validación y NO se crea nada. Nunca PASS con 404.
+  //  • recurso INEXISTENTE (contents, pull_requests): esperadas 403. Ejecución 39381273494: 403 en ambas.
+  //  • recurso EXISTENTE con carga inválida (issues): la ejecución 39381273494 dio 404 sobre una incidencia inexistente, respuesta AMBIGUA. Ahora se
+  //    apunta a la incidencia/PR real `pr` (ya leída con 200 en `read.issues`) con un cuerpo SIN `body`, obligatorio según la API: no debería crearse
+  //    ningún comentario (contrato de la API; no medido en vivo). 403 → PASS; 404, 422 y 2xx → FAIL; el orden interno autenticación/autorización/validación
+  //    NO está medido, así que ni el 404 ni el 422 se interpretan como prueba de permiso ni de denegación.
   const writes = [
     { scope: 'contents', method: 'PATCH', path: `/repos/${repository}/git/refs/heads/preflight-no-existe`, body: { sha: H('0'), force: false }, existing: false },
     { scope: 'issues', method: 'POST', path: `/repos/${repository}/issues/${pr}/comments`, body: {}, existing: true },
@@ -107,8 +108,8 @@ export async function cmdPermissions({ api, repository, pr }) {
     try {
       const x = await api(method, p, body); const ok = x.status >= 200 && x.status < 300; const known = x.status === 403 || x.status === 404 || x.status === 422 || ok;
       const detail = x.status === 403 ? 'escritura denegada (403): permisos de solo lectura efectivos'
-        : x.status === 404 ? (existing ? 'respuesta 404 sobre un recurso que existe: AMBIGUO, no prueba denegación ni permiso' : 'respuesta 404: AMBIGUO (recurso inexistente), no prueba denegación')
-        : x.status === 422 ? (existing ? 'respuesta 422 (validación del cuerpo): la solicitud superó la comprobación de permiso, hay permiso de escritura' : 'respuesta 422: la escritura parece permitida')
+        : x.status === 404 ? (existing ? 'respuesta 404: ambigua; no prueba denegación ni permiso' : 'respuesta 404: recurso inexistente, respuesta ambigua; no prueba denegación')
+        : x.status === 422 ? (existing ? 'respuesta 422: validación del cuerpo rechazada; permiso de escritura NO demostrado (orden de comprobaciones no medido)' : 'respuesta 422: validación rechazada; denegación no demostrada')
         : ok ? `respuesta ${x.status}: escritura ACEPTADA; comprobar a mano si se creó algún efecto`
         : `respuesta ${x.status}: no concluyente`;
       r.add(`write_denied.${scope}`, x.status === 403 ? PASS : known ? FAIL : NP, detail, known ? undefined : INFRA);

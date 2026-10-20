@@ -48,8 +48,8 @@ const issuesProbe = async (status, { pr = 38, others = 403 } = {}) => {
 };
 test('PE3 write_denied.issues sobre recurso existente: 403 → PASS; 404 → no PASS (ambiguo, FAIL); 422 → FAIL (permiso de escritura); 2xx inesperado → FAIL; 5xx/error → NO_PROBADO', async () => {
   let r = await issuesProbe(403); assert.equal(st(r, 'write_denied.issues'), PASS); assert.match(by(r, 'write_denied.issues').detail, /denegada \(403\)/);
-  r = await issuesProbe(404); assert.equal(st(r, 'write_denied.issues'), FAIL); assert.match(by(r, 'write_denied.issues').detail, /AMBIGUO/); assert.match(by(r, 'write_denied.issues').detail, /existe/);
-  r = await issuesProbe(422); assert.equal(st(r, 'write_denied.issues'), FAIL); assert.match(by(r, 'write_denied.issues').detail, /permiso de escritura/);
+  r = await issuesProbe(404); assert.equal(st(r, 'write_denied.issues'), FAIL); assert.match(by(r, 'write_denied.issues').detail, /ambigua/); assert.doesNotMatch(by(r, 'write_denied.issues').detail, /existe|permiso de escritura\b(?! NO)/);
+  r = await issuesProbe(422); assert.equal(st(r, 'write_denied.issues'), FAIL); assert.match(by(r, 'write_denied.issues').detail, /NO demostrado/); assert.doesNotMatch(by(r, 'write_denied.issues').detail, /hay permiso|superó/);
   for (const code of [200, 201, 204]) { r = await issuesProbe(code); assert.equal(st(r, 'write_denied.issues'), FAIL, String(code)); assert.match(by(r, 'write_denied.issues').detail, /ACEPTADA/); }
   for (const code of [401, 429, 500, 502]) { r = await issuesProbe(code); assert.equal(st(r, 'write_denied.issues'), NP, String(code)); assert.equal(by(r, 'write_denied.issues').data?.infra, true); }
   r = await pf.cmdPermissions({ api: async (m, p) => { if (m !== 'GET' && /\/issues\//.test(p)) throw new Error('red'); return { status: m === 'GET' ? 200 : 403, json: [] }; }, repository: REPO, pr: 38 }); assert.equal(st(r, 'write_denied.issues'), NP);
@@ -355,7 +355,10 @@ const wfPath = `${root}automation/preflight/candidate/actions-preflight.yml`;
 const wf = fs.readFileSync(wfPath, 'utf8'); const code = wf.replace(/^[ \t]*#.*$/gm, '').replace(/[ \t]+#.*$/gm, '');
 const jobsOf = (c) => Object.fromEntries([...c.matchAll(/^  ([\w-]+):\n([\s\S]*?)(?=^  [\w-]+:\n|(?![\s\S]))/gm)].filter((m) => !/^(workflow_dispatch|inputs|pr_number|switch_wait_seconds)$/.test(m[1])).map((m) => [m[1], m[2]]));
 test('WF1 candidato inerte, manual y de solo lectura: fuera de .github/workflows; solo workflow_dispatch; sin escrituras, secretos, id-token ni acción de Claude', () => {
-  assert.deepEqual(fs.readdirSync(`${root}.github/workflows`), ['deploy.yml']); assert.ok(!fs.existsSync(`${root}.github/workflows/actions-preflight.yml`));
+  // Tras la incorporación autorizada (#39): el workflow manual instalado es idéntico al candidato y no hay ningún workflow del modelo.
+  assert.deepEqual(fs.readdirSync(`${root}.github/workflows`).sort(), ['actions-preflight.yml', 'deploy.yml']);
+  assert.ok(fs.readFileSync(`${root}.github/workflows/actions-preflight.yml`).equals(fs.readFileSync(wfPath)), 'instalado idéntico al candidato');
+  for (const f of fs.readdirSync(`${root}.github/workflows`)) assert.doesNotMatch(fs.readFileSync(`${root}.github/workflows/${f}`, 'utf8'), /anthropics\/claude-code-action@|claude_code_oauth_token|anthropic_api_key|ANTHROPIC_API_KEY/, `${f} sin workflow del modelo (la credencial ficticia FICTICIO- del paso env-a no cuenta)`);
   assert.match(code, /^on:\n  workflow_dispatch:\n/m); assert.doesNotMatch(code, /\n  (push|pull_request\w*|issue_comment|schedule|workflow_run):/);
   assert.match(code, /^permissions: \{\}$/m); assert.doesNotMatch(code, /(contents|issues|pull-requests|actions|checks|statuses|packages|id-token|deployments): write|write-all/); assert.doesNotMatch(code, /id-token/);
   assert.doesNotMatch(code, /secrets\./); assert.doesNotMatch(code, /anthropics\/claude-code-action@|claude_code_oauth_token|anthropic_api_key|ANTHROPIC_API_KEY/);

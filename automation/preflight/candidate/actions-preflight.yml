@@ -56,6 +56,10 @@ jobs:
         run: node automation/preflight/preflight.mjs identity
         env:
           GITHUB_TOKEN: ${{ github.token }}
+      # Única instalación: la herramienta aislada del preflight (solo `yaml`, versión exacta, lockfile propio, sin scripts). Sin credenciales; permisos de solo lectura.
+      - id: tools
+        if: always()
+        run: npm ci --ignore-scripts --no-audit --no-fund --prefix automation/preflight/tools
       - if: always()
         run: node automation/preflight/preflight.mjs pins
       - if: always()

@@ -8,7 +8,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { analyzeUses, Unsafe } from './workflow-uses.mjs';
+import { createRequire } from 'node:module';
 import { decide, ownerStopped, mayPublish, validatePatch, encodeState, STATUS } from '../coordination/controller.mjs';
 
 export const PASS = 'PASS'; export const FAIL = 'FAIL'; export const NP = 'NO_PROBADO';
@@ -148,6 +148,50 @@ export function parsePins(text) {
   const pins = []; let m; const re = /^\s*-?\s*uses:\s*([\w.-]+\/[\w.-]+)(?:\/[\w./-]+)?@([0-9a-f]{40})(?:\s*#\s*(\S+))?/gm;
   while ((m = re.exec(text))) pins.push({ repo: m[1], sha: m[2], tag: m[3] ?? null });
   return pins;
+}
+// ── lectura de `uses` con la biblioteca `yaml` (dependencia AISLADA de este preflight: tools/package.json + lockfile propio) ──────────────
+// No hay analizador propio: la biblioteca interpreta el documento y aquí solo se recorre el árbol resultante. `yaml` es la misma biblioteca de la que
+// depende @actions/workflow-parser (el analizador de código abierto de workflows); NO es una medición de lo que GitHub ejecuta en sus servidores.
+export class Unsafe extends Error {}
+const UNSAFE_LINE_BREAKS = /[\u0085\u2028\u2029]/; // saltos de línea YAML (NEL, LS, PS) cuya interpretación no se da por segura: se rechazan antes de parsear
+const PIN_REF = /^[\w.-]+\/[\w.-]+(?:\/[\w./-]+)?@[0-9a-f]{40}$/;
+let yamlLib;
+function loadYaml() {
+  if (yamlLib) return yamlLib;
+  try { yamlLib = createRequire(path.join(here, 'tools', 'package.json'))('yaml'); } catch { throw new Unsafe('biblioteca `yaml` no instalada (npm ci --ignore-scripts --prefix automation/preflight/tools)'); }
+  return yamlLib;
+}
+/** {pinned, unpinned} de TODAS las referencias `uses` (pasos y workflows reutilizables). Lanza Unsafe si el documento es ambiguo o no se interpreta. */
+export function analyzeUses(source, YAML = loadYaml()) {
+  if (typeof source !== 'string') throw new Unsafe('entrada no textual');
+  if (UNSAFE_LINE_BREAKS.test(source)) throw new Unsafe('saltos de línea Unicode (U+0085, U+2028 o U+2029) no admitidos');
+  if (source.includes('\0')) throw new Unsafe('NUL en el documento');
+  const docs = YAML.parseAllDocuments(source, { version: '1.2', uniqueKeys: true, prettyErrors: false });
+  if (docs.length !== 1) throw new Unsafe(`el fichero contiene ${docs.length} documentos YAML`);
+  const doc = docs[0];
+  if (doc.errors.length) throw new Unsafe(`error de YAML: ${doc.errors[0].code}`);
+  if (doc.warnings.length) throw new Unsafe(`aviso de YAML: ${doc.warnings[0].code}`);
+  let ambiguous = null;
+  YAML.visit(doc, {
+    Alias() { ambiguous ??= 'alias YAML'; },
+    Node(_k, n) { if (n.anchor) ambiguous ??= 'ancla YAML'; if (n.tag) ambiguous ??= `etiqueta YAML explícita ${n.tag}`; },
+    Pair(_k, pr) { if (!YAML.isScalar(pr.key) || typeof pr.key.value !== 'string') ambiguous ??= 'clave que no es una cadena'; else if (pr.key.value === '<<') ambiguous ??= 'clave de mezcla <<'; },
+  });
+  if (ambiguous) throw new Unsafe(ambiguous);
+  const root = doc.toJS({ maxAliasCount: 0 });
+  const isMap = (x) => x !== null && typeof x === 'object' && !Array.isArray(x);
+  if (!isMap(root) || !isMap(root.jobs) || !Object.keys(root.jobs).length) throw new Unsafe('falta el mapa `jobs`');
+  const pinned = [], unpinned = [];
+  const check = (v, where) => { if (typeof v !== 'string' || v === '') throw new Unsafe(`\`uses\` no es una cadena (${where})`); const ref = v.trim(); if (ref.startsWith('./')) return; (PIN_REF.test(ref) ? pinned : unpinned).push(ref); };
+  for (const [id, job] of Object.entries(root.jobs)) {
+    if (!isMap(job)) throw new Unsafe(`el job ${id} no es un mapa`);
+    if ('uses' in job) check(job.uses, `job ${id}`);
+    if (job.steps !== undefined && job.steps !== null) {
+      if (!Array.isArray(job.steps)) throw new Unsafe(`steps de ${id} no es una lista`);
+      job.steps.forEach((st, k) => { if (!isMap(st)) throw new Unsafe(`paso ${k} de ${id} no es un mapa`); if ('uses' in st) check(st.uses, `${id} paso ${k}`); });
+    }
+  }
+  return { pinned, unpinned };
 }
 export function cmdPins({ files, spawn = spawnSync, fs: f = fs, pinsFile = path.join(here, 'pins.json') }) {
   const r = new Report('pins'); const seen = new Map();

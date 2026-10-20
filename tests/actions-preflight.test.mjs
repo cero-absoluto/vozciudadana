@@ -10,7 +10,6 @@ import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
-import { analyzeUses } from '../automation/preflight/workflow-uses.mjs';
 import * as pf from '../automation/preflight/preflight.mjs';
 
 const { PASS, FAIL, NP } = pf;
@@ -239,7 +238,7 @@ test('RE2 el CLI no vuelca el entorno: ejecutar `controller` con un entorno llen
 });
 
 const wfDoc = (...steps) => `name: t\non: workflow_dispatch\njobs:\n  j:\n    runs-on: ubuntu-latest\n    steps:\n${steps.join('\n')}\n`;
-const SHA40 = 'a'.repeat(40);
+const analyzeUses = pf.analyzeUses; const SHA40 = 'a'.repeat(40);
 // Detector ANTERIOR (expresión regular sobre líneas `uses:`), conservado solo para demostrar que los casos nuevos lo eludían.
 const legacyUnpinned = (text) => { const bad = []; let m; const re = /^[ \t]*(?:-[ \t]*)?uses:[ \t]*(?:"([^"\n]*)"|'([^'\n]*)'|([^\s#][^\n#]*?))[ \t]*(?:#.*)?$/gm; while ((m = re.exec(text))) { const ref = (m[1] ?? m[2] ?? m[3]).trim(); if (ref.startsWith('./')) continue; if (!/^[\w.-]+\/[\w.-]+(?:\/[\w./-]+)?@[0-9a-f]{40}$/.test(ref)) bad.push(ref); } return bad; };
 function pinsRun(candText, instText) {
@@ -292,21 +291,37 @@ test('PI4 pins: documento no interpretable con seguridad → FAIL (anclas, alias
   const unsafe = {
     ancla: wfDoc(goodStep, '      - &a uses: owner/action@main'), alias: wfDoc(goodStep, '      - *a'), etiqueta: wfDoc(goodStep, '      - !!map { uses: owner/action@main }'),
     mezcla: wfDoc(goodStep, '      - <<: { uses: owner/action@main }'), 'varios documentos': `${wfDoc(goodStep)}---\n${wfDoc(goodStep)}`,
-    'clave duplicada': wfDoc(goodStep, '      - uses: x/y@' + SHA40 + '\n        uses: owner/action@main'), tabulador: wfDoc(goodStep).replace('    runs-on', '\truns-on'),
+    'clave duplicada': wfDoc(goodStep, '      - uses: x/y@' + SHA40 + '\n        uses: owner/action@main'), 'clave duplicada (la última fijada)': wfDoc(goodStep, '      - uses: owner/action@main\n        uses: x/y@' + SHA40 + ' # v1.2.3'), 'clave duplicada en el job': `name: t\non: workflow_dispatch\njobs:\n  j:\n    runs-on: a\n    runs-on: b\n    steps: []\n`, tabulador: wfDoc(goodStep).replace('    runs-on', '\truns-on'),
     'uses no cadena': wfDoc(goodStep, '      - uses: [owner/action@main]'), 'uses nulo': wfDoc(goodStep, '      - uses:'), 'sin jobs': 'name: t\non: workflow_dispatch\n',
     'raíz no mapa': '- a\n- b\n', vacío: '', 'coleccion sin cerrar': wfDoc(goodStep, '      - { uses: owner/action@main'), 'comilla sin cerrar': wfDoc(goodStep, '      - uses: "owner/action@main'),
     'clave compleja': wfDoc(goodStep, '      - ? uses\n        : owner/action@main'),
   };
   for (const [name, inst] of Object.entries(unsafe)) { const r = pinsRun(cand, inst); assert.equal(st(r, 'pins.unpinned'), FAIL, name); assert.match(detail(r), /inst\.yml/, name); }
 });
-test('PI5 lector estricto: coincide con la librería `yaml` en los workflows reales (si está disponible en el entorno) y devuelve las mismas referencias', async (t) => {
-  let YAML; try { YAML = (await import(pathToFileURL(createRequire('/opt/npm-tools/package.json').resolve('yaml')).href)).default; } catch { t.skip('librería yaml no disponible'); return; }
-  const refs = (doc) => { const o = []; for (const j of Object.values(doc.jobs)) { if (j.uses) o.push(j.uses); for (const s of j.steps ?? []) if (s.uses) o.push(s.uses); } return o; };
-  for (const file of ['.github/workflows/deploy.yml', 'automation/preflight/candidate/actions-preflight.yml']) {
-    const text = fs.readFileSync(`${root}${file}`, 'utf8'); const a = analyzeUses(text);
-    assert.deepEqual([...a.pinned, ...a.unpinned].sort(), refs(YAML.parse(text)).filter((x) => !x.startsWith('./')).sort(), file);
+test('PI5 la biblioteca `yaml` fijada (tools/) es la que interpreta: versión exacta del lockfile propio, sin tocar package.json/lockfile raíz, y devuelve las referencias de los workflows reales', () => {
+  const lock = JSON.parse(fs.readFileSync(`${root}automation/preflight/tools/package-lock.json`, 'utf8')); const pkg = JSON.parse(fs.readFileSync(`${root}automation/preflight/tools/package.json`, 'utf8'));
+  assert.deepEqual(pkg.dependencies, { yaml: '2.9.1' }, 'versión exacta, sin rango'); assert.equal(lock.packages['node_modules/yaml'].version, '2.9.1'); assert.match(lock.packages['node_modules/yaml'].integrity, /^sha512-/);
+  assert.deepEqual(Object.keys(lock.packages).sort(), ['', 'node_modules/yaml'], 'sin dependencias transitivas');
+  for (const f of ['package.json', 'package-lock.json']) assert.doesNotMatch(fs.readFileSync(`${root}${f}`, 'utf8'), /"yaml"\s*:\s*"2\.9\.1"|preflight-tools/, `${f} raíz sin la herramienta del preflight`);
+  const own = fs.readFileSync(`${root}automation/preflight/preflight.mjs`, 'utf8'); assert.doesNotMatch(own, /workflow-uses/); assert.ok(!fs.existsSync(`${root}automation/preflight/workflow-uses.mjs`), 'sin analizador propio');
+  for (const file of ['.github/workflows/deploy.yml', 'automation/preflight/candidate/actions-preflight.yml']) { const a = analyzeUses(fs.readFileSync(`${root}${file}`, 'utf8')); assert.ok(a.pinned.length + a.unpinned.length > 0, file); }
+  assert.equal(analyzeUses(fs.readFileSync(`${root}automation/preflight/candidate/actions-preflight.yml`, 'utf8')).unpinned.length, 0);
+  assert.deepEqual(analyzeUses(fs.readFileSync(`${root}.github/workflows/deploy.yml`, 'utf8')).unpinned.sort(), ['actions/checkout@v4', 'actions/setup-node@v4', 'peaceiris/actions-gh-pages@v4'], 'el despliegue existente usa tags: lo detecta (no es parte de este PR)');
+});
+test('PI6 saltos de línea Unicode U+0085/U+2028/U+2029 y casos de ambigüedad: se rechazan antes de parsear; hallazgo r4322043722 reproducido', () => {
+  const cand = wfDoc(goodStep);
+  for (const [name, cp] of [['NEL U+0085', '\u0085'], ['LS U+2028', ' '], ['PS U+2029', ' ']]) {
+    const inst = wfDoc(goodStep, `      - name: foo${cp}        uses: owner/action@main`);
+    const r = pinsRun(cand, inst); assert.equal(st(r, 'pins.unpinned'), FAIL, name); assert.match(detail(r), /Unicode/, name); assert.match(detail(r), /inst\.yml/);
+    assert.throws(() => analyzeUses(inst), pf.Unsafe);
+    // en cualquier posición, también dentro de un comentario o de un bloque (la decisión es previa al parseo)
+    assert.throws(() => analyzeUses(wfDoc(goodStep, `      - run: echo${cp}x`)), pf.Unsafe, `${name} en cualquier posición`);
+    assert.equal(st(pinsRun(cand, wfDoc(goodStep, `      - run: echo x`)), 'pins.unpinned'), PASS, 'control sin saltos Unicode');
   }
-  for (const doc of [wfDoc('      - "uses" : "x/y@v1"\n        name: n'), wfDoc("      - { 'uses': x/y@v2, name: q }"), wfDoc('      - name: a\n        uses: p/q@main # c\n        with:\n          k: |\n            uses: no/es@main')]) assert.deepEqual([...analyzeUses(doc).unpinned], refs(YAML.parse(doc)));
+  // el detector anterior (líneas separadas solo por \n) no veía el `uses` oculto tras U+0085
+  assert.deepEqual(legacyUnpinned(wfDoc(goodStep, '      - name: foo\u0085        uses: owner/action@main')), []);
+  assert.throws(() => analyzeUses(wfDoc(goodStep), { parseAllDocuments: () => [] }), pf.Unsafe, 'sin documentos → rechazo');
+  assert.throws(() => pf.analyzeUses('jobs: {}\n'), pf.Unsafe, 'jobs vacío');
 });
 
 // ── workflow candidato y alcance ────────────────────────────────────────────────────────────────────────
@@ -318,7 +333,7 @@ test('WF1 candidato inerte, manual y de solo lectura: fuera de .github/workflows
   assert.match(code, /^on:\n  workflow_dispatch:\n/m); assert.doesNotMatch(code, /\n  (push|pull_request\w*|issue_comment|schedule|workflow_run):/);
   assert.match(code, /^permissions: \{\}$/m); assert.doesNotMatch(code, /(contents|issues|pull-requests|actions|checks|statuses|packages|id-token|deployments): write|write-all/); assert.doesNotMatch(code, /id-token/);
   assert.doesNotMatch(code, /secrets\./); assert.doesNotMatch(code, /anthropics\/claude-code-action@|claude_code_oauth_token|anthropic_api_key|ANTHROPIC_API_KEY/);
-  assert.doesNotMatch(code, /git push|git commit|gh (pr|api|issue)|curl|wget|\| ?bash|npm (install|ci)|@codex/);
+  assert.doesNotMatch(code, /git push|git commit|gh (pr|api|issue)|curl|wget|\| ?bash|npm install|npm ci(?! --ignore-scripts --no-audit --no-fund --prefix automation\/preflight\/tools)|@codex/);
   assert.doesNotMatch(code, /\bprintenv\b|\benv\b *$|set -x|ACTIONS_STEP_DEBUG|ACTIONS_RUNNER_DEBUG|echo \$\{\{|toJSON\(/m, 'ningún paso vuelca entorno ni contextos');
   for (const [name, body] of Object.entries(jobsOf(code))) { assert.match(body, /timeout-minutes: \d+/, name); assert.match(body, /runs-on: ubuntu-latest/, name); }
   assert.equal(Object.keys(jobsOf(code)).length, 8); assert.match(code, /group: actions-preflight\n\s+cancel-in-progress: false/);
@@ -385,4 +400,13 @@ test('WF7 todo `path:` de actions/checkout es relativo y sin `..`; ACTION_DIR ap
   const dir = /ACTION_DIR: \$\{\{ github\.workspace \}\}\/([^\n]+)/.exec(code); assert.ok(dir, 'ACTION_DIR dentro del workspace');
   assert.equal(dir[1].trim(), sec[1].trim()); assert.doesNotMatch(code, /ACTION_DIR: \$\{\{ runner\.temp/);
   assert.ok(code.indexOf('preflight.mjs context') < code.indexOf('repository: anthropics/claude-code-action'), 'context (checkout.clean) corre antes del checkout secundario');
+});
+
+test('WF8 la única instalación del candidato es la herramienta aislada: un `npm ci --ignore-scripts` con lockfile propio, en el job runner, antes de `pins`, sin credenciales ni permisos nuevos', () => {
+  const cmds = [...code.matchAll(/^\s*run: (npm .*)$/gm)].map((m) => m[1]); assert.deepEqual(cmds, ['npm ci --ignore-scripts --no-audit --no-fund --prefix automation/preflight/tools']);
+  const runner = jobsOf(code).runner; assert.ok(runner.includes(cmds[0])); assert.ok(runner.indexOf(cmds[0]) < runner.indexOf('preflight.mjs pins'), 'se instala antes de usar yaml');
+  assert.ok(runner.indexOf('actions/setup-node') < runner.indexOf(cmds[0]), 'con Node ya preparado');
+  const step = /- id: tools\n([\s\S]*?)(?=\n      - |\n  [\w-]+:\n)/.exec(runner)[1]; assert.doesNotMatch(step, /env:|secrets|GITHUB_TOKEN|CLAUDE/); assert.match(step, /if: always\(\)/);
+  assert.match(runner, /permissions:\n      contents: read\n      issues: read\n      pull-requests: read/, 'permisos del job sin cambios');
+  assert.ok(fs.existsSync(`${root}automation/preflight/tools/package-lock.json`));
 });

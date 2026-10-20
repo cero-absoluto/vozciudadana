@@ -203,6 +203,10 @@ test('PB11 alcance: solo automation/ y tests/; no toca .github/workflows, apps/,
 test('PB12 documentación: PLAN.md cubre activación, permisos, retirada, límites y la pregunta de la entrega bot→Codex', () => {
   const doc = fs.readFileSync(`${root}automation/phaseb/PLAN.md`, 'utf8');
   for (const re of [/Activaci[oó]n/, /Permisos/, /Retirada/, /PHASEB_PR/, /pull-requests: write/, /no medido|NO se ha medido|solo puede medirse en vivo/i, /cuota/i, /minutos/i, /sin reintentos/i, /phaseb\/synthetic/, /probe\.txt/, /RECEIVED_OK/, /GITHUB_TOKEN/]) assert.match(doc, re, String(re));
+  const permissions = doc.split('## Permisos\n')[1]?.split('\n## ')[0];
+  assert.ok(permissions, 'sección principal de permisos presente');
+  assert.match(permissions, /`send`: `contents: read` \+ `issues: read` \+ \*\*`pull-requests: write`\*\*/);
+  assert.doesNotMatch(permissions, /`issues: write`/);
   assert.ok(doc.split('\n').length <= 80, 'una página');
 });
 

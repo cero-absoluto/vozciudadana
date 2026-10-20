@@ -16,6 +16,16 @@
 const EXPECTED_HOSTNAMES = (process.env.RECAPTCHA_EXPECTED_HOSTNAMES || 'voiceprotest.org,www.voiceprotest.org')
   .split(',').map(h => h.trim()).filter(Boolean);
 
+const DEFAULT_TIMEOUT_MS = 5000;
+const MAX_TIMEOUT_MS = 30000;
+/** Tiempo máximo de la verificación: RECAPTCHA_TIMEOUT_MS si es un entero entre 1 y 30000; si no, 5000. */
+export function recaptchaTimeoutMs(env = process.env) {
+  const raw = env.RECAPTCHA_TIMEOUT_MS;
+  if (typeof raw !== 'string' || !/^\d+$/.test(raw)) return DEFAULT_TIMEOUT_MS;
+  const n = Number(raw);
+  return n >= 1 && n <= MAX_TIMEOUT_MS ? n : DEFAULT_TIMEOUT_MS;
+}
+
 export async function verifyRecaptcha(token, expectedAction, req, reply) {
   const secret = process.env.RECAPTCHA_SECRET;
   if (!secret) {
@@ -27,13 +37,23 @@ export async function verifyRecaptcha(token, expectedAction, req, reply) {
     return;
   }
 
-  const res = await fetch(
-    `https://www.google.com/recaptcha/api/siteverify?secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}`,
-    { method: 'POST' }
-  );
-  const json = await res.json();
-
+  // Disponibilidad: sin tiempo máximo, un reCAPTCHA que no responde dejaba cada petición (alta, OTP, adhesión) colgada hasta el límite del servidor.
+  // Si no se puede verificar, se falla CERRADO (serviceUnavailable; el manejador central de server.js lo expone como 5xx): nunca se da por válida una verificación que no se completó.
   const log = req?.log?.warn ? (obj, msg) => req.log.warn(obj, msg) : (obj, msg) => console.warn(msg, obj);
+  let json;
+  try {
+    const res = await fetch(
+      `https://www.google.com/recaptcha/api/siteverify?secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}`,
+      { method: 'POST', signal: AbortSignal.timeout(recaptchaTimeoutMs()) }
+    );
+    if (!res.ok) throw new Error(`http_${res.status}`);
+    json = await res.json();
+  } catch (err) {
+    // Solo el tipo de error: el mensaje de fetch puede incluir la URL, y la URL lleva el secreto en la consulta.
+    log({ error: err?.name ?? 'Error' }, 'recaptcha: verification service unavailable');
+    reply.serviceUnavailable('reCAPTCHA verification unavailable');
+    throw new Error('recaptcha_unavailable');
+  }
 
   if (!json.success) {
     log({ errorCodes: json['error-codes'] }, 'recaptcha: token invalid');

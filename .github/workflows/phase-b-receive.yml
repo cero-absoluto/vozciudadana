@@ -1,0 +1,78 @@
+# CANDIDATO — INERTE. No está en .github/workflows/, así que no se ejecuta. Instalarlo requiere autorización expresa del Owner; ver ../PLAN.md.
+# Fase B, receptor: registra (SOLO LECTURA) los eventos que Codex emite sobre la PR piloto y los correlaciona con la petición. No comenta, no responde,
+# no lanza modelos, no ejecuta texto ni código de la PR: el evento se lee como datos (GITHUB_EVENT_PATH) y nada del evento se interpola en `run:`.
+# Interruptor de parada: borrar la variable PHASEB_PR (el filtro temprano deja de coincidir) o retirar este fichero.
+name: phase-b-receive
+on:
+  issue_comment:
+    types: [created, edited]
+  pull_request_review:
+    types: [submitted]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Número de la PR sintética (modo observe, solo Owner)
+        required: true
+        type: string
+permissions: {}
+concurrency:
+  group: phase-b-receive-${{ github.event.issue.number || github.event.pull_request.number || inputs.pr_number }}
+  cancel-in-progress: false
+jobs:
+  receive:
+    # Filtro temprano: repositorio, piloto activo (vars.PHASEB_PR), PR (no incidencia suelta) e identidad del auditor (id y tipo).
+    if: >-
+      github.repository == 'cero-absoluto/vozciudadana' && vars.PHASEB_PR != '' && (
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request != null && format('{0}', github.event.issue.number) == vars.PHASEB_PR && github.event.comment.user.id == 199175422 && github.event.comment.user.type == 'Bot')
+      || (github.event_name == 'pull_request_review' && format('{0}', github.event.pull_request.number) == vars.PHASEB_PR && github.event.review.user.id == 199175422 && github.event.review.user.type == 'Bot'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - run: node automation/phaseb/phaseb.mjs receive
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          PHASEB_PR: ${{ vars.PHASEB_PR }}
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: phaseb-receive-${{ github.run_id }}
+          path: phaseb-out
+          retention-days: 14
+  observe:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'cero-absoluto/vozciudadana'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - run: node automation/phaseb/phaseb.mjs observe
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: phaseb-observe-${{ github.run_id }}
+          path: phaseb-out
+          retention-days: 14

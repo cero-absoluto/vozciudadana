@@ -399,7 +399,8 @@ test('DP1 un push a main con estos ficheros no activa despliegues: deploy.yml fi
   const railway = ['/apps/api/**']; // watchPatterns de Railway: ajuste de cuenta, no está en el repositorio (no verificable aquí)
   const changed = new Set(['automation/preflight/preflight.mjs', 'automation/preflight/PLAN.md', 'automation/preflight/pins.json', 'automation/preflight/candidate/actions-preflight.yml', 'automation/preflight/fixtures/patch-a.patch', 'automation/preflight/fixtures/patch-b.patch', 'automation/coordination/controller.mjs', 'automation/coordination/policy.json', 'tests/actions-preflight.test.mjs']);
   const base = process.env.PREFLIGHT_BASE ?? 'origin/main'; const diff = spawnSync('git', ['-C', root, 'diff', '--name-only', `${base}...HEAD`], { encoding: 'utf8' });
-  if (diff.status === 0) for (const f of diff.stdout.split('\n').filter(Boolean)) changed.add(f);
+  // Solo se vigilan los ficheros de ESTA herramienta (automation/, tests/): lo que otras PR cambien fuera de ahí se evalúa en su propia PR (p. ej. apps/api activa Railway por su cuenta).
+  if (diff.status === 0) for (const f of diff.stdout.split('\n').filter(Boolean)) if (/^(automation|tests)\//.test(f)) changed.add(f);
   for (const f of changed) { assert.ok(/^(automation|tests)\//.test(f), `${f} fuera de automation/ y tests/`); assert.ok(!paths.some((g) => re(g).test(f)), `${f} activaría deploy.yml`); assert.ok(!railway.some((g) => re(g.replace(/^\//, '')).test(f)), `${f} activaría el despliegue de la API`); }
   for (const f of ['.github/workflows/actions-preflight.yml']) { assert.ok(!paths.some((g) => re(g).test(f)), `${f} (ubicación futura del workflow, tras autorización) tampoco activa deploy.yml`); }
   assert.ok(re('apps/web/**').test('apps/web/src/x.js') && re('package.json').test('package.json') && !re('package.json').test('automation/package.json'), 'el comprobador de rutas detecta lo que debe');

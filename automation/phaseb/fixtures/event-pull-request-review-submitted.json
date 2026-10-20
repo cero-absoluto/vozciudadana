@@ -1,0 +1,28 @@
+{
+  "action": "submitted",
+  "repository": {
+    "full_name": "cero-absoluto/vozciudadana"
+  },
+  "sender": {
+    "login": "chatgpt-codex-connector[bot]",
+    "id": 199175422,
+    "type": "Bot"
+  },
+  "pull_request": {
+    "number": 77
+  },
+  "review": {
+    "id": 9101,
+    "node_id": "PRR_synthetic",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "type": "Bot"
+    },
+    "state": "commented",
+    "commit_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "submitted_at": "2026-10-21T10:01:00Z",
+    "author_association": "NONE",
+    "body": "<!-- codex-review-receipt:v1 -->\n\n### Codex Review\n"
+  }
+}

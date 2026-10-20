@@ -1,5 +1,5 @@
 # Propuesta acotada: permiso para comentar en la PR sintética
-Estado: NO ADOPTADA, NO APLICADA. No hay workflows instalados ni ejecución autorizada.
+Estado: implementación del candidato AUTORIZADA el 20-10-2026; preparada en #46, SIN ACTIVACIÓN. No hay workflows instalados ni nueva ejecución autorizada. El parche adjunto conserva la propuesta original contra su base, no debe reaplicarse al candidato modificado.
 
 ## Evidencia
 Run 39389285739: precheck pasó, el único POST devolvió 403 y "Resource not accessible by integration".
@@ -25,7 +25,7 @@ El permiso solo existiría en el job send durante el piloto. No habilitarlo glob
 La corrección diagnóstica de #44 se conserva.
 
 ## Ejecución posterior, todavía NO autorizada
-Tras aprobación: aplicar el parche, ajustar PB8/PB13 y PLAN.md a los permisos elegidos y auditar el commit final.
+El candidato, PB8/PB12/PB13 y PLAN.md ya reflejan la alternativa elegida. Auditar el commit final antes de pedir una ejecución.
 Solo después incorporar las copias de los workflows, crear PR sintética nueva y enviar UNA petición.
 Si falla, conservar diagnóstico y detenerse sin otro intento. Si envía, comprobar Codex y la entrega a Actions por separado.
 Retirar workflows, variable y PR sintética al terminar. #38, I4/D3, #31 y la aplicación siguen fuera.
@@ -33,7 +33,7 @@ No se necesita cambiar la configuración global "Workflow permissions" de GitHub
 
 ## Verificación de esta propuesta
 Parche de dos líneas, preparado contra main 4b04c3e3d64f460fadbe793641d1c30d7b533065 y candidato blob dea69cc381fb4c65c8be9c3b29f859bacd794809.
-No aplicado a ningún workflow ni candidato. Sin Actions, modelos, pruebas contra GitHub ni despliegue.
+Aplicado solo al candidato inerte, con pruebas y plan ajustados. Sin Actions, pruebas contra GitHub ni despliegue. La revisión independiente se solicitará a Codex (consume su cuota).
 Fuentes:
 https://docs.github.com/en/rest/issues/comments#create-an-issue-comment
 https://docs.github.com/en/rest/using-the-rest-api/troubleshooting-the-rest-api#resource-not-accessible

@@ -246,8 +246,13 @@ jobs:
           path: ${{ github.workspace }}/preflight-all
       - run: node automation/preflight/preflight.mjs summary
         env:
-          GATE_RUN_RESULT: ${{ needs.gate-run.result }}
-          GATE_SKIP_RESULT: ${{ needs.gate-skip.result }}
+          RESULT_RUNNER: ${{ needs.runner.result }}
+          RESULT_PRODUCE: ${{ needs.produce.result }}
+          RESULT_CONSUME: ${{ needs.consume.result }}
+          RESULT_GATE_RUN: ${{ needs.gate-run.result }}
+          RESULT_GATE_SKIP: ${{ needs.gate-skip.result }}
+          RESULT_SWITCH_1: ${{ needs.switch-1.result }}
+          RESULT_SWITCH_2: ${{ needs.switch-2.result }}
           SWITCH_1: ${{ needs.switch-1.outputs.value }}
           SWITCH_2: ${{ needs.switch-2.outputs.value }}
           SWITCH_WAIT: ${{ inputs.switch_wait_seconds }}

@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import * as pf from '../automation/preflight/preflight.mjs';
 
@@ -144,14 +145,75 @@ test('CO1 controlador con fixtures: decisiones, parada, interruptor real; escrib
 });
 
 // ── resumen, interruptor, redacción ─────────────────────────────────────────────────────────────────────
-test('SU1 resumen: puertas `if:` y vars por job; FAIL → código 1; NO_PROBADO no falla', () => {
-  const d = tmp(); fs.writeFileSync(`${d}/a.json`, JSON.stringify({ name: 'a', checks: [{ id: 'x', status: PASS, detail: 'ok' }, { id: 'y', status: NP, detail: 'n' }] }));
-  const run = (env) => pf.cmdSummary({ dir: d, env: { GATE_RUN_RESULT: 'success', GATE_SKIP_RESULT: 'skipped', SWITCH_1: 'true', SWITCH_2: 'false', SWITCH_WAIT: '60', ARTIFACT_DIGEST: `sha256:${'a'.repeat(64)}`, ...env } });
-  let s = run({}); assert.equal(s.fail, 0); assert.equal(st(s.report, 'vars.evaluated_per_job'), PASS); assert.equal(st(s.report, 'gate.skip_when_action_differs'), PASS); assert.match(s.markdown, /PASS 5 · FAIL 0 · NO_PROBADO 1/);
-  s = run({ SWITCH_2: 'true' }); assert.equal(st(s.report, 'vars.evaluated_per_job'), NP); assert.equal(s.fail, 0);
-  s = run({ SWITCH_WAIT: '0', SWITCH_2: 'true' }); assert.match(by(s.report, 'vars.evaluated_per_job').detail, /no se intentó/);
-  s = run({ GATE_SKIP_RESULT: 'success' }); assert.equal(s.fail, 1); s = run({ GATE_RUN_RESULT: 'skipped' }); assert.equal(s.fail, 1);
-  fs.writeFileSync(`${d}/b.json`, JSON.stringify({ name: 'b', checks: [{ id: 'z', status: FAIL, detail: 'mal' }] })); assert.equal(run({}).fail, 1);
+// Informes sintéticos COMPLETOS (todos los ids obligatorios en PASS) para probar el resumen.
+function fullReports(over = {}) {
+  const d = tmp();
+  for (const [name, ids] of Object.entries(pf.REQUIRED)) fs.writeFileSync(path.join(d, `${name}.json`), JSON.stringify({ name, checks: ids.map((id) => ({ id, status: PASS, detail: 'ok' })), ...over[name] }));
+  return d;
+}
+const OK_ENV = { RESULT_RUNNER: 'success', RESULT_PRODUCE: 'success', RESULT_CONSUME: 'success', RESULT_GATE_RUN: 'success', RESULT_GATE_SKIP: 'skipped', RESULT_SWITCH_1: 'success', RESULT_SWITCH_2: 'success', SWITCH_1: 'true', SWITCH_2: 'false', SWITCH_WAIT: '60', ARTIFACT_DIGEST: pf.sha256('zip-bytes') };
+const summ = (dir, env = {}) => pf.cmdSummary({ dir, env: { ...OK_ENV, ...env } });
+test('SU1 resumen de una ejecución COMPLETA: todo PASS; NO_PROBADO previsto no falla', () => {
+  const d = fullReports({ cli: { checks: pf.REQUIRED.cli.map((id) => ({ id, status: /hooks_mcp|edit_rules|env_scrub|network_isolation|max-turns/.test(id) ? NP : PASS, detail: 'previsto' })) } });
+  const s = summ(d); assert.equal(s.fail, 0, JSON.stringify(s.rows.filter((c) => c.status === FAIL))); assert.equal(st(s.report, 'vars.evaluated_per_job'), PASS); assert.match(s.markdown, /FAIL 0/);
+  assert.equal(st(summ(d, { SWITCH_2: 'true' }).report, 'vars.evaluated_per_job'), NP); assert.equal(summ(d, { SWITCH_2: 'true' }).fail, 0, 'vars sin cambio es NO_PROBADO, no FAIL');
+  assert.match(by(summ(d, { SWITCH_WAIT: '0', SWITCH_2: 'true' }).report, 'vars.evaluated_per_job').detail, /no se intentó/);
+});
+test('SU2 ejecución INCOMPLETA → FAIL global, nunca PASS por ausencia: falta un informe (consume, cli…), una comprobación, o el job no terminó bien', () => {
+  const base = () => fullReports();
+  for (const name of Object.keys(pf.REQUIRED)) { const d = base(); fs.rmSync(path.join(d, `${name}.json`)); const x = summ(d); assert.ok(x.fail >= 1, `sin informe ${name}`); assert.equal(st(x.report, `inventory.report.${name}`), FAIL); }
+  { const d = base(); const f = path.join(d, 'integrity-consume.json'); const j = JSON.parse(fs.readFileSync(f)); j.checks.pop(); fs.writeFileSync(f, JSON.stringify(j)); const x = summ(d); assert.ok(x.fail >= 1); assert.equal(st(x.report, 'inventory.check.integrity-consume.integrity.detects_valid_substitution'), FAIL); }
+  // el job consume falló al descargar/ejecutar antes de escribir su JSON
+  { const d = base(); fs.rmSync(path.join(d, 'integrity-consume.json')); const x = summ(d, { RESULT_CONSUME: 'failure' }); assert.ok(x.fail >= 2); assert.equal(st(x.report, 'job.consume.result'), FAIL); }
+  for (const [job, bad] of [['RUNNER', 'failure'], ['PRODUCE', 'cancelled'], ['CONSUME', 'skipped'], ['SWITCH_1', 'failure'], ['SWITCH_2', 'skipped'], ['GATE_RUN', 'skipped'], ['GATE_SKIP', 'success']]) assert.ok(summ(base(), { [`RESULT_${job}`]: bad }).fail >= 1, job);
+  for (const job of ['RUNNER', 'PRODUCE', 'CONSUME', 'SWITCH_1', 'SWITCH_2', 'GATE_RUN', 'GATE_SKIP']) { const e = { ...OK_ENV }; delete e[`RESULT_${job}`]; assert.ok(pf.cmdSummary({ dir: base(), env: e }).fail >= 1, `sin resultado de ${job}`); }
+  const empty = summ(tmp()); assert.ok(empty.fail >= Object.keys(pf.REQUIRED).length, 'directorio vacío: todo FAIL'); assert.match(empty.markdown, /FAIL \d+/); assert.doesNotMatch(empty.markdown, /FAIL 0\b/);
+});
+test('SU3 informes corruptos o engañosos → FAIL: JSON roto, nombre ajeno, estado desconocido, NO_PROBADO de infraestructura; el NO_PROBADO previsto no falla', () => {
+  { const d = fullReports(); fs.writeFileSync(path.join(d, 'cli.json'), '{no es json'); assert.equal(st(summ(d).report, 'inventory.report.cli'), FAIL); }
+  { const d = fullReports(); const f = path.join(d, 'cli.json'); const j = JSON.parse(fs.readFileSync(f)); fs.writeFileSync(f, JSON.stringify({ ...j, name: 'otro' })); assert.equal(st(summ(d).report, 'inventory.report.cli'), FAIL); }
+  { const d = fullReports(); const f = path.join(d, 'context.json'); const j = JSON.parse(fs.readFileSync(f)); j.checks[0].status = 'OK'; fs.writeFileSync(f, JSON.stringify(j)); const x = summ(d); assert.ok(x.fail >= 1); assert.match(x.rows.find((c) => c.status === FAIL).detail, /estado desconocido/); }
+  { const d = fullReports(); const f = path.join(d, 'permissions.json'); const j = JSON.parse(fs.readFileSync(f)); j.checks[3] = { ...j.checks[3], status: NP, detail: 'error de red', data: { infra: true } }; fs.writeFileSync(f, JSON.stringify(j)); const x = summ(d); assert.equal(x.fail, 1); assert.match(x.rows.find((c) => c.status === FAIL).detail, /infraestructura/); }
+  { const d = fullReports(); const f = path.join(d, 'permissions.json'); const j = JSON.parse(fs.readFileSync(f)); j.checks[3] = { ...j.checks[3], status: NP, detail: 'límite previsto' }; fs.writeFileSync(f, JSON.stringify(j)); assert.equal(summ(d).fail, 0); }
+});
+test('SU4 retornos tempranos: `ensure` convierte lo que no se emitió en NO_PROBADO de infraestructura (→ FAIL), p. ej. cli sin instalación', () => {
+  const r = pf.cmdCli({ env: { PATH: '/x' }, actionDir: actionTree(), installDir: `${tmp()}/c`, spawn: cliSpawn({ npmOk: false }) });
+  for (const id of pf.REQUIRED.cli) assert.ok(by(r, id), `falta ${id}`);
+  assert.equal(by(r, 'cli.version').data.infra, true);
+  const d = fullReports({ cli: { checks: r.checks } }); assert.ok(summ(d).fail >= 1, 'cli.install fallido y comprobaciones no ejecutadas → FAIL global');
+  const inc = pf.ensure(new pf.Report('controller')); assert.equal(inc.checks.length, pf.REQUIRED.controller.length); assert.ok(inc.checks.every((c) => c.status === NP && c.data.infra));
+});
+test('DG1 digest de upload-artifact: el formato REAL es sha256 hex de 64 caracteres sin prefijo (fuente de la acción fijada); se acepta; formatos inválidos no', () => {
+  const real = crypto.createHash('sha256').update(fs.readFileSync(`${root}automation/preflight/fixtures/patch-a.patch`)).digest('hex'); // misma expresión que la acción: hash.digest('hex')
+  const docExample = '0fde654d4c6e659b45783a725dc92f1bfb0baa6c2de64b34e814dc206ff4aaaf'; // ejemplo del README de upload-artifact (SHA cf430e0)
+  assert.equal(real.length, 64); assert.equal(docExample.length, 64);
+  for (const ok of [real, docExample, `sha256:${real}`]) assert.equal(pf.parseArtifactDigest(ok), ok.replace('sha256:', ''));
+  for (const bad of ['facefeed', real.toUpperCase(), real.slice(1), `${real}0`, '', undefined, null, `sha512:${real}`, ` ${real}`]) assert.equal(pf.parseArtifactDigest(bad), null, String(bad));
+  const d = fullReports(); assert.equal(st(summ(d, { ARTIFACT_DIGEST: real }).report, 'artifact.digest_reported'), PASS); assert.equal(st(summ(d, { ARTIFACT_DIGEST: 'sha256:xyz' }).report, 'artifact.digest_reported'), FAIL);
+  assert.equal(summ(d, { ARTIFACT_DIGEST: '' }).fail, 1, 'sin digest: FAIL, no NO_PROBADO');
+});
+test('RD1 el inventario obligatorio coincide con lo que cada comando emite (guarda contra deriva): ids de context, permissions, identity, pins, cli, env, controller, integrity, switch y wait', async () => {
+  const have = {};
+  have.context = pf.cmdContext({ env: ctxEnv(), spawn: ctxSpawn() });
+  have.permissions = await pf.cmdPermissions({ api: permApi(403), repository: REPO, pr: 38 });
+  have.identity = await pf.cmdIdentity({ api: idApi({ comments: [codexComment()] }), repository: REPO, pr: 38 });
+  const shas = fs.readFileSync(wfPath, 'utf8').match(/[0-9a-f]{40}/g).join('\n'); const pinFile = `${root}automation/preflight/pins.json`; const sha = JSON.parse(fs.readFileSync(pinFile))['claude-code-action'].sha;
+  have.pins = pf.cmdPins({ files: [wfPath], spawn: () => ({ status: 0, stdout: `${shas}\n${sha}\trefs/tags/v` }) });
+  have.cli = pf.cmdCli({ env: { PATH: '/x' }, actionDir: actionTree(), installDir: `${tmp()}/c`, spawn: cliSpawn() });
+  have['env-a'] = pf.cmdEnvA({ env: process.env }); have['env-b'] = pf.cmdEnvB({ env: {} }); have.controller = pf.cmdController({ env: {} });
+  const prod = pf.cmdIntegrityProduce({ outDir: tmp() }); have['integrity-produce'] = prod.report; have['integrity-consume'] = pf.cmdIntegrityConsume({ dir: path.dirname(`${tmp()}/x`) , expected: prod.sha256 });
+  have['switch-1'] = pf.cmdSwitch({ env: {}, which: 1 }).report; have['switch-2'] = pf.cmdSwitch({ env: {}, which: 2 }).report;
+  const w = tmp(); assert.equal(spawnSync(process.execPath, [`${root}automation/preflight/preflight.mjs`, 'wait'], { env: { PATH: process.env.PATH, REPORT_DIR: w, WAIT: '0' } }).status, 0); have.wait = JSON.parse(fs.readFileSync(`${w}/wait.json`));
+  for (const [name, ids] of Object.entries(pf.REQUIRED)) { const got = new Set(have[name].checks.map((c) => c.id)); for (const id of ids) assert.ok(got.has(id), `${name}: el comando no emite ${id}`); }
+  assert.deepEqual(Object.keys(have).sort(), Object.keys(pf.REQUIRED).sort());
+  // y un wait fuera de rango se rechaza (no duerme)
+  assert.equal(spawnSync(process.execPath, [`${root}automation/preflight/preflight.mjs`, 'wait'], { env: { PATH: process.env.PATH, REPORT_DIR: w, WAIT: '301' } }).status, 2);
+});
+test('SU5 proceso real: el CLI `summary` sale con 0 si todo está completo y con 1 si falta cualquier informe (consume) o un job falló', () => {
+  const run = (dir, env = {}) => spawnSync(process.execPath, [`${root}automation/preflight/preflight.mjs`, 'summary'], { env: { PATH: process.env.PATH, REPORT_DIR: dir, ...OK_ENV, ...env }, encoding: 'utf8' });
+  const d = fullReports(); const ok = run(d); assert.equal(ok.status, 0, ok.stdout + ok.stderr); assert.match(ok.stdout, /FAIL 0/);
+  fs.rmSync(path.join(d, 'integrity-consume.json')); const bad = run(d); assert.equal(bad.status, 1); assert.match(bad.stdout, /inventory\.report\.integrity-consume \| FAIL/);
+  assert.equal(run(fullReports(), { RESULT_CONSUME: 'failure' }).status, 1);
 });
 test('SW1 vars: valores enumerados (true/false/otro/ausente); nunca el texto libre', () => {
   for (const [v, e] of [['true', 'true'], ['false', 'false'], ['loquesea-secreto', 'otro'], ['', 'ausente'], [undefined, 'ausente']]) { const x = pf.cmdSwitch({ env: { SWITCH_VALUE: v }, which: 1 }); assert.equal(x.value, e); assert.ok(!JSON.stringify(x.report).includes('loquesea')); }
@@ -163,8 +225,8 @@ test('RE1 redacción: valor de un token presente en el entorno, o con forma de s
   assert.throws(() => pf.assertNoSecrets('FICTICIO-NO-ES-UN-TOKEN-preflight', { CLAUDE_CODE_OAUTH_TOKEN: 'FICTICIO-NO-ES-UN-TOKEN-preflight' }), /secret_leak_blocked/, 'si la variable está en el entorno, su valor nunca sale (ni siquiera el ficticio)');
   assert.throws(() => pf.writeReport({ name: 'x', checks: [{ id: 'a', status: PASS, detail: tok }] }, d, {}));
   assert.equal(fs.existsSync(`${d}/x.json`), false, 'no se escribe el informe con un secreto');
-  const reports = tmp(); fs.writeFileSync(`${reports}/r.json`, JSON.stringify({ name: 'r', checks: [{ id: 'a', status: PASS, detail: tok }] }));
-  const r = spawnSync(process.execPath, [`${root}automation/preflight/preflight.mjs`, 'summary'], { env: { PATH: process.env.PATH, REPORT_DIR: reports }, encoding: 'utf8' });
+  const reports = fullReports({ context: { checks: pf.REQUIRED.context.map((id, i) => ({ id, status: PASS, detail: i === 0 ? tok : 'ok' })) } });
+  const r = spawnSync(process.execPath, [`${root}automation/preflight/preflight.mjs`, 'summary'], { env: { PATH: process.env.PATH, REPORT_DIR: reports, ...OK_ENV }, encoding: 'utf8' });
   assert.equal(r.status, 2); assert.ok(!r.stdout.includes(tok) && !r.stderr.includes(tok), 'el valor no sale por stdout ni stderr');
 });
 test('RE2 el CLI no vuelca el entorno: ejecutar `controller` con un entorno lleno de valores no los imprime ni los guarda', () => {
@@ -224,7 +286,17 @@ test('DP1 un push a main con estos ficheros no activa despliegues: deploy.yml fi
   for (const f of ['.github/workflows/actions-preflight.yml']) { assert.ok(!paths.some((g) => re(g).test(f)), `${f} (ubicación futura del workflow, tras autorización) tampoco activa deploy.yml`); }
   assert.ok(re('apps/web/**').test('apps/web/src/x.js') && re('package.json').test('package.json') && !re('package.json').test('automation/package.json'), 'el comprobador de rutas detecta lo que debe');
 });
-test('VE1 las piezas reutilizadas de #38 son idénticas byte a byte (hash de blob git del commit 642b9ab)', () => {
+test('VE1 las piezas reutilizadas de #38 son idénticas byte a byte (hash de blob git del commit c54498e)', () => {
   const h = (f) => spawnSync('git', ['hash-object', `${root}${f}`], { encoding: 'utf8' }).stdout.trim();
-  assert.equal(h('automation/coordination/controller.mjs'), '7d0282870a683262e9fb11ef441581d09eb4a23c'); assert.equal(h('automation/coordination/policy.json'), '56714bd08189fa7e2c1ba246cf406617dd323bbd');
+  assert.equal(h('automation/coordination/controller.mjs'), '75027622c5d8a1a147298c3aaec341ddff29b523'); assert.equal(h('automation/coordination/policy.json'), '56714bd08189fa7e2c1ba246cf406617dd323bbd');
+});
+test('WF6 el resumen depende de TODOS los jobs, corre siempre y recibe el resultado de cada uno y el digest; el entorno del resumen coincide con JOB_EXPECTED', () => {
+  const sum = /^  summary:\n([\s\S]*)/m.exec(code)[1];
+  const needs = /needs: \[([^\]]+)\]/.exec(sum)[1].split(',').map((x) => x.trim()).sort(); assert.deepEqual(needs, Object.keys(pf.JOB_EXPECTED).sort());
+  assert.match(sum, /if: always\(\)\n/);
+  for (const job of Object.keys(pf.JOB_EXPECTED)) assert.match(sum, new RegExp(`RESULT_${job.toUpperCase().replace(/-/g, '_')}: \\$\\{\\{ needs\\.${job}\\.result \\}\\}`), job);
+  assert.match(sum, /ARTIFACT_DIGEST: \$\{\{ needs\.produce\.outputs\.artifact_digest \}\}/); assert.match(code, /artifact_digest: \$\{\{ steps\.up\.outputs\.artifact-digest \}\}/);
+  assert.match(sum, /pattern: report-\*\n\s+merge-multiple: true/);
+  // cada informe obligatorio lo produce algún job con el comando correspondiente
+  for (const name of Object.keys(pf.REQUIRED)) if (name !== 'wait') assert.match(code, new RegExp(`preflight\\.mjs ${name === 'integrity-produce' ? 'integrity-produce' : name === 'switch-1' ? 'switch 1' : name === 'switch-2' ? 'switch 2' : name}\\b`), name);
 });

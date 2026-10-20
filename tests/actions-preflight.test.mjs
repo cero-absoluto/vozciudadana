@@ -300,3 +300,15 @@ test('WF6 el resumen depende de TODOS los jobs, corre siempre y recibe el result
   // cada informe obligatorio lo produce algún job con el comando correspondiente
   for (const name of Object.keys(pf.REQUIRED)) if (name !== 'wait') assert.match(code, new RegExp(`preflight\\.mjs ${name === 'integrity-produce' ? 'integrity-produce' : name === 'switch-1' ? 'switch 1' : name === 'switch-2' ? 'switch 2' : name}\\b`), name);
 });
+
+// ── coherencia de rutas de checkout (hallazgo r4321856972): actions/checkout exige `path` relativo DENTRO de GITHUB_WORKSPACE ─
+test('WF7 todo `path:` de actions/checkout es relativo y sin `..`; ACTION_DIR apunta al mismo directorio dentro del workspace; el árbol limpio se mide antes del checkout secundario', () => {
+  const checkouts = [...code.matchAll(/uses: actions\/checkout@[^\n]*\n\s+with:\n((?: {10}[^\n]*\n)+)/g)];
+  assert.ok(checkouts.length >= 2, 'checkout principal y secundario');
+  for (const m of checkouts) { const p = /^\s+path: (.+)$/m.exec(m[1]); if (!p) continue;
+    assert.doesNotMatch(p[1], /^\/|^\$\{\{|\.\.|runner\.temp|^[A-Za-z]:/, `path de checkout no relativo: ${p[1]}`); }
+  const sec = /repository: anthropics\/claude-code-action[\s\S]*?path: ([^\n]+)/.exec(code); assert.ok(sec, 'checkout secundario');
+  const dir = /ACTION_DIR: \$\{\{ github\.workspace \}\}\/([^\n]+)/.exec(code); assert.ok(dir, 'ACTION_DIR dentro del workspace');
+  assert.equal(dir[1].trim(), sec[1].trim()); assert.doesNotMatch(code, /ACTION_DIR: \$\{\{ runner\.temp/);
+  assert.ok(code.indexOf('preflight.mjs context') < code.indexOf('repository: anthropics/claude-code-action'), 'context (checkout.clean) corre antes del checkout secundario');
+});

@@ -63,13 +63,13 @@ jobs:
         with:
           repository: anthropics/claude-code-action
           ref: 6c690188da61cf16ee7debb28383ba67f02abb4c   # v1.0.242: el SHA que usaría el piloto (ver pins.json)
-          path: ${{ runner.temp }}/action-src
+          path: action-src
           persist-credentials: false
           fetch-depth: 1
       - if: always()
         run: node automation/preflight/preflight.mjs cli
         env:
-          ACTION_DIR: ${{ runner.temp }}/action-src
+          ACTION_DIR: ${{ github.workspace }}/action-src
           INSTALL_DIR: ${{ runner.temp }}/cli
       # Credencial FICTICIA e inequívoca: solo declarada en este paso. No certifica nada del modelo autenticado.
       - if: always()

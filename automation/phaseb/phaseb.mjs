@@ -56,6 +56,48 @@ export async function plan({ api, repository, pr, expectedSha, env, policy = loa
   return { ok: reasons.length === 0, reasons, data: { head_sha: P.head?.sha, base_sha: P.base?.sha } };
 }
 
+/** Bounded, allowlisted error evidence; never dump raw responses, request headers or tokens. */
+export function postFailureEvidence(res, env = process.env) {
+  const safe = (value, max = 512) => {
+    if (typeof value !== 'string') return null;
+    const text = value.replace(/[\u0000-\u001f\u007f]/g, ' ').slice(0, max);
+    try { assertNoSecrets(text, env); } catch { return '[REDACTED]'; }
+    return text.slice(0, max);
+  };
+  let documentation = null;
+  try {
+    const url = new URL(res.json?.documentation_url);
+    if (url.protocol === 'https:' && url.hostname === 'docs.github.com' && !url.username && !url.password)
+      documentation = safe(url.origin + url.pathname, 256);
+  } catch { /* absent or invalid URL */ }
+  return {
+    message: safe(res.json?.message),
+    documentation_url: documentation,
+    request_id: safe(res.evidence?.request_id, 128),
+    accepted_permissions: safe(res.evidence?.accepted_permissions, 256),
+    rate_limit_remaining: safe(res.evidence?.rate_limit_remaining, 32),
+    retry_after: safe(res.evidence?.retry_after, 32),
+  };
+}
+/** Same API calls and single-attempt behavior; retain only four diagnostic response headers. */
+export function makePhaseBApi({ token, fetchImpl = globalThis.fetch }) {
+  return async (method, p, body) => {
+    let evidence = {};
+    const api = makeFetchApi({ token, fetchImpl: async (...args) => {
+      const response = await fetchImpl(...args);
+      evidence = {
+        request_id: response.headers?.get('x-github-request-id') ?? null,
+        accepted_permissions: response.headers?.get('x-accepted-github-permissions') ?? null,
+        rate_limit_remaining: response.headers?.get('x-ratelimit-remaining') ?? null,
+        retry_after: response.headers?.get('retry-after') ?? null,
+      };
+      return response;
+    } });
+    const result = await api(method, p, body);
+    return { ...result, evidence };
+  };
+}
+
 /** Único comando que escribe: revalida y publica UNA petición. Sin reintentos: un 5xx o un fallo de red deja el estado «desconocido» para revisión manual. */
 export async function send({ api, repository, pr, expectedSha, env, policy = loadPolicy() }) {
   const v = await plan({ api, repository, pr, expectedSha, env, policy });
@@ -64,7 +106,7 @@ export async function send({ api, repository, pr, expectedSha, env, policy = loa
   let res;
   try { res = await api('POST', `/repos/${repository}/issues/${pr}/comments`, { body: requestBody(expectedSha, runId) }); }
   catch (e) { return { sent: false, state: 'unknown', reasons: ['network_error_no_retry'], note: 'no se reintenta: comprobar a mano si el comentario existe' }; }
-  if (res.status !== 201 || !res.json?.id) return { sent: false, state: res.status >= 500 ? 'unknown' : 'not_created', status: res.status, reasons: ['post_failed_no_retry'] };
+  if (res.status !== 201 || !res.json?.id) return { sent: false, state: res.status >= 500 ? 'unknown' : 'not_created', status: res.status, reasons: ['post_failed_no_retry'], error_evidence: postFailureEvidence(res) };
   const rec = { sent: true, state: 'created', request_comment_id: res.json.id, request_node_id: res.json.node_id, request_created_at: res.json.created_at, head_sha: expectedSha, run_id: runId, pr };
   try { // identidad real del autor del comentario (el preflight dejó NO_PROBADO el comentario real de github-actions[bot])
     const g = await api('GET', `/repos/${repository}/issues/comments/${res.json.id}`);
@@ -157,7 +199,7 @@ function writeJson(name, obj, env) {
   console.log(text);
 }
 async function main(argv, env) {
-  const [cmd] = argv; const repository = env.GITHUB_REPOSITORY; const policy = loadPolicy(); const api = makeFetchApi({ token: env.GITHUB_TOKEN });
+  const [cmd] = argv; const repository = env.GITHUB_REPOSITORY; const policy = loadPolicy(); const api = makePhaseBApi({ token: env.GITHUB_TOKEN });
   if (repository !== policy.repository) throw new Error('repositorio distinto del de la política');
   if (cmd === 'plan' || cmd === 'send') {
     const args = { api, repository, pr: Number(env.PR_NUMBER), expectedSha: env.EXPECTED_HEAD_SHA, env, policy };

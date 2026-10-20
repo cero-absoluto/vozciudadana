@@ -161,17 +161,18 @@ const sendPath = `${root}automation/phaseb/candidate/phase-b-send.yml`; const re
 let YAML; try { YAML = createRequire(`${root}automation/preflight/tools/package.json`)('yaml'); } catch { YAML = null; }
 const load = (p) => { assert.ok(YAML, 'instalar la herramienta: npm ci --ignore-scripts --prefix automation/preflight/tools'); const d = YAML.parseAllDocuments(fs.readFileSync(p, 'utf8'), { version: '1.2', uniqueKeys: true }); assert.equal(d.length, 1); assert.deepEqual(d[0].errors, []); return d[0].toJS(); };
 const stepsOf = (wf) => Object.values(wf.jobs).flatMap((j) => j.steps ?? []);
-test('PB8 emisor: manual, inerte, permisos mínimos (issues:write solo en `send`), acciones fijadas, sin credenciales de modelo ni checkout de la PR', () => {
+test('PB8 emisor: manual, inerte, permisos mínimos (pull-requests:write solo en `send`), acciones fijadas, sin credenciales de modelo ni checkout de la PR', () => {
   const wf = load(sendPath); const text = fs.readFileSync(sendPath, 'utf8');
   assert.deepEqual(Object.keys(wf.on), ['workflow_dispatch']); assert.deepEqual(wf.permissions, {}); assert.deepEqual(Object.keys(wf.jobs), ['precheck', 'send']);
-  assert.deepEqual(wf.jobs.send.permissions, { contents: 'read', issues: 'write', 'pull-requests': 'read' }); assert.deepEqual(wf.jobs.precheck.permissions, { contents: 'read', issues: 'read', 'pull-requests': 'read' });
-  assert.doesNotMatch(text.replace(/^\s*#.*$/gm, ''), /(contents|pull-requests|actions|checks|statuses|packages|id-token|deployments): write|write-all|secrets\.|id-token|CLAUDE|ANTHROPIC|claude-code-action|pull_request_target/);
+  assert.deepEqual(wf.jobs.send.permissions, { contents: 'read', issues: 'read', 'pull-requests': 'write' }); assert.deepEqual(wf.jobs.precheck.permissions, { contents: 'read', issues: 'read', 'pull-requests': 'read' });
+  assert.doesNotMatch(text.replace(/^\s*#.*$/gm, ''), /(contents|issues|actions|checks|statuses|packages|id-token|deployments): write|write-all|secrets\.|id-token|CLAUDE|ANTHROPIC|claude-code-action|pull_request_target/);
   assert.equal(analyzeUses(text).unpinned.length, 0); assert.ok(analyzeUses(text).pinned.length >= 4);
   for (const j of Object.values(wf.jobs)) assert.ok(j['timeout-minutes'] <= 5);
   for (const s of stepsOf(wf).filter((s) => s.uses?.startsWith('actions/checkout'))) { assert.equal(s.with.ref, 'main'); assert.equal(s.with['persist-credentials'], false); }
   assert.equal(wf.concurrency['cancel-in-progress'], false); assert.match(wf.jobs.precheck.if, /refs\/heads\/main/);
   assert.deepEqual(stepsOf(wf).filter((s) => s.run).map((s) => s.run), ['node automation/phaseb/phaseb.mjs plan', 'node automation/phaseb/phaseb.mjs send']);
-  assert.equal(JSON.stringify(wf).match(/issues: ?write|"issues":"write"/g).length, 1, 'issues:write aparece una sola vez');
+  assert.equal(Object.values(wf.jobs).filter((j) => j.permissions?.['pull-requests'] === 'write').length, 1, 'solo send tiene escritura de PR');
+  assert.ok(Object.values(wf.jobs).every((j) => j.permissions?.issues === 'read'), 'sin escritura de incidencias');
   assert.ok(!fs.existsSync(`${root}.github/workflows/phase-b-send.yml`) && !fs.existsSync(`${root}.github/workflows/phase-b-receive.yml`), 'inertes: fuera de .github/workflows');
 });
 test('PB9 receptor: filtro temprano (repo, piloto, PR, identidad), solo lectura, sin interpolar el evento en `run:`, sin checkout de la PR', () => {
@@ -201,21 +202,24 @@ test('PB11 alcance: solo automation/ y tests/; no toca .github/workflows, apps/,
 });
 test('PB12 documentación: PLAN.md cubre activación, permisos, retirada, límites y la pregunta de la entrega bot→Codex', () => {
   const doc = fs.readFileSync(`${root}automation/phaseb/PLAN.md`, 'utf8');
-  for (const re of [/Activaci[oó]n/, /Permisos/, /Retirada/, /PHASEB_PR/, /issues: write/, /no medido|NO se ha medido|solo puede medirse en vivo/i, /cuota/i, /minutos/i, /sin reintentos/i, /phaseb\/synthetic/, /probe\.txt/, /RECEIVED_OK/, /GITHUB_TOKEN/]) assert.match(doc, re, String(re));
+  for (const re of [/Activaci[oó]n/, /Permisos/, /Retirada/, /PHASEB_PR/, /pull-requests: write/, /no medido|NO se ha medido|solo puede medirse en vivo/i, /cuota/i, /minutos/i, /sin reintentos/i, /phaseb\/synthetic/, /probe\.txt/, /RECEIVED_OK/, /GITHUB_TOKEN/]) assert.match(doc, re, String(re));
   assert.ok(doc.split('\n').length <= 80, 'una página');
 });
 
 // Cobertura de permisos (hallazgo r4322327001): cada job debe conceder lo que su comando consulta, o fallaría antes de actuar.
 test('PB13 cada job concede los permisos que su comando usa realmente: las rutas GET que recorre plan/send/receive/observe están cubiertas por `permissions`', async () => {
-  const scopeOf = (p) => (/\/pulls\//.test(p) ? 'pull-requests' : /\/issues\//.test(p) ? 'issues' : 'contents');
-  const need = (calls) => { const n = {}; for (const [m, p] of calls) { const sc = scopeOf(p); n[sc] = m === 'GET' ? n[sc] ?? 'read' : 'write'; } return n; };
+  // This is the documented PR-comment permission alternative, not a live authorization test.
+  const scopeOf = (p, method) => (method === 'POST' && /\/issues\/\d+\/comments$/.test(p) ? 'pull-requests' : /\/pulls\//.test(p) ? 'pull-requests' : /\/issues\//.test(p) ? 'issues' : 'contents');
+  const need = (calls) => { const n = {}; for (const [m, p] of calls) { const sc = scopeOf(p, m); n[sc] = m === 'GET' ? n[sc] ?? 'read' : 'write'; } return n; };
   const covers = (perm, n) => Object.entries(n).every(([sc, lvl]) => perm?.[sc] === 'write' || (lvl === 'read' && perm?.[sc] === 'read'));
   let w = world(); await pb.plan({ api: w.api, repository: REPO, pr: PR, expectedSha: SHA, env: ENV, policy }); const planNeeds = need(w.calls);
   w = world(); await pb.send({ api: w.api, repository: REPO, pr: PR, expectedSha: SHA, env: ENV, policy }); const sendNeeds = need(w.calls);
   w = goodWorld(); await recv(w, 'issue_comment', evComment()); const recvNeeds = need(w.calls);
   w = goodWorld(); await pb.observe({ api: w.api, repository: REPO, pr: PR, policy }); const obsNeeds = need(w.calls);
-  assert.deepEqual(planNeeds, { 'pull-requests': 'read', issues: 'read' }); assert.deepEqual(sendNeeds, { 'pull-requests': 'read', issues: 'write' });
+  assert.deepEqual(planNeeds, { 'pull-requests': 'read', issues: 'read' }); assert.deepEqual(sendNeeds, { 'pull-requests': 'write', issues: 'read' });
   const send = load(sendPath); const rcv = load(recvPath);
+  assert.equal(covers({ contents: 'read', issues: 'write', 'pull-requests': 'read' }, sendNeeds), false, 'la alternativa elegida exige PR write');
+  assert.equal(covers({ contents: 'read', issues: 'read', 'pull-requests': 'read' }, sendNeeds), false, 'solo lectura no cubre el POST');
   assert.ok(covers(send.jobs.precheck.permissions, planNeeds), 'precheck cubre plan'); assert.ok(covers(send.jobs.send.permissions, sendNeeds), 'send cubre revalidación + publicación');
   assert.ok(covers(rcv.jobs.receive.permissions, recvNeeds), 'receive'); assert.ok(covers(rcv.jobs.observe.permissions, obsNeeds), 'observe');
   assert.equal(send.jobs.send.permissions.contents, 'read'); for (const j of [...Object.values(send.jobs), ...Object.values(rcv.jobs)]) assert.notEqual(j.permissions.contents, 'write');

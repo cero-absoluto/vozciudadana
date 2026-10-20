@@ -1,0 +1,8 @@
+{
+  "name": "preflight-tools",
+  "private": true,
+  "description": "Herramienta aislada del preflight (#39): solo el analizador YAML. No forma parte de la aplicación ni del package.json raíz.",
+  "dependencies": {
+    "yaml": "2.9.1"
+  }
+}

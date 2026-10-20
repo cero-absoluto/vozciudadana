@@ -1,0 +1,6 @@
+diff --git a/apps/web/src/preflight-fixture.js b/apps/web/src/preflight-fixture.js
+new file mode 100644
+--- /dev/null
++++ b/apps/web/src/preflight-fixture.js
+@@ -0,0 +1 @@
++export const fixture = 'a';

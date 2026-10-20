@@ -1,0 +1,4 @@
+{
+  "claude-code-action": { "repo": "anthropics/claude-code-action", "tag": "v1.0.242", "sha": "6c690188da61cf16ee7debb28383ba67f02abb4c" },
+  "claude-cli": { "expectedFromAction": "base-action/action.yml: CLAUDE_CODE_VERSION" }
+}

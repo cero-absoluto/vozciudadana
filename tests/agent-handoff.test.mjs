@@ -596,3 +596,22 @@ test('A2 publisher rejects a deleted branch or one reset to an ancestor', () => 
     else assert.equal(remote.stdout.trim(), ancestor);
   }
 });
+
+// Regresión del piloto #52: una reseña tratada no equivale a un defecto corregido.
+test('R1 clean receipt cannot clear previously handled findings on unchanged HEAD after failed correction', async () => {
+  const g = fakeGithub();
+  await step(g, cmdEvent(OWNER));
+  const review = g.addReview(CODEX, H0, [g.finding('tests/fixture.mjs', 1, 'count + 1 cambia el contador')]);
+  await step(g, codexEvent());
+  await publishRound({ api: g.api, policy, repository: REPO, number: 7, round: 1, claudeResult: 'failure', patch: '', repoDir: '/nonexistent', switchEnabled: 'true' });
+  await step(g, cmdEvent(OWNER, '/handoff stop'));
+  await step(g, cmdEvent(OWNER));
+  g.receiptClean(H0);
+  const r = await step(g, codexEvent());
+  assert.equal(r.outputs.action, 'blocked');
+  assert.equal(stateOf(g).status, STATUS.BLOCKED);
+  assert.equal(stateOf(g).reason, 'clean_receipt_conflicts_with_findings');
+  assert.equal(stateOf(g).rounds, 1);
+  assert.ok(stateOf(g).handled.includes(`review:${review.id}`));
+  assert.ok(!g.comments.some(c => c.body.startsWith('OWNER_REVIEW')));
+});

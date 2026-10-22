@@ -399,7 +399,11 @@ test('W7 el job del modelo no tiene shell, git ni red, ni carga config del PR; p
   const sec = (n, next) => new RegExp(`^  ${n}:\\n([\\s\\S]*?)(?=^  ${next}:|(?![\\s\\S]))`, 'm').exec(code)[1];
   const claude = sec('claude', 'patch'); const patch = sec('patch', 'verify'); const verify = sec('verify', 'publish'); const publish = /^  publish:\n([\s\S]*)/m.exec(code)[1];
   assert.doesNotMatch(claude.replace(/--disallowedTools "[^"]*"/, ''), /Bash|WebFetch|WebSearch/); assert.match(claude, /--disallowedTools "Bash,WebFetch,WebSearch/);
-  assert.doesNotMatch(claude, /^\s+run:/m, 'ningún run en el job del modelo'); assert.doesNotMatch(claude, /git diff|node --test/);
+  const bootstrap = '        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends bubblewrap';
+  assert.equal(claude.split(bootstrap).length, 2, 'instalación fija de bubblewrap exactamente una vez');
+  assert.ok(claude.indexOf(bootstrap) < claude.indexOf('uses: actions/checkout@'), 'bootstrap antes del código del PR');
+  assert.doesNotMatch(claude.replace(bootstrap, ''), /^\s+run:/m, 'ningún otro run en el job del modelo');
+  assert.match(claude, /CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: '1'/); assert.doesNotMatch(claude, /git diff|node --test/);
   assert.match(claude, /--allowedTools "Read,Glob,Grep,Edit\(apps\/web\/src\/\*\*\),Edit\(tests\/\*\*\)"/); assert.doesNotMatch(claude, /Write\(/, 'las reglas Write(ruta) no se evalúan: solo Edit(ruta)');
   assert.match(claude, /--setting-sources user --strict-mcp-config --disable-slash-commands/);
   assert.match(patch, /publish\.mjs build-patch/); assert.match(patch, /sha256: \$\{\{ steps\.build\.outputs\.sha256 \}\}/); assert.doesNotMatch(patch, /npm|node --test|secrets\./);

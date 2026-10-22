@@ -657,3 +657,24 @@ test('R4 retry resumes a stop for publication; a later owner stop still wins', (
   assert.equal(ownerStopped({ ownerCommands: [...cmds, { id: 3, cmd: 'stop', author: OWNER }] }, policy), true);
   assert.equal(ownerStopped({ ownerCommands: [cmds[0], { ...cmds[1], author: { ...OWNER, id: 999 } }] }, policy), true);
 });
+
+const bootstrapEmptyPaths = ['.claude-pr/.gitmodules', '.env', '.env.development', '.env.development.local', '.env.local', '.env.production.local', '.env.production', '.env.test', '.env.test.local', '.gitmodules', '.npmrc', '.yarnrc', '.yarnrc.yml', 'bunfig.toml', 'pnpm-lock.yaml', 'yarn.lock'];
+test('E1 observed empty bootstrap files are excluded only when new; real correction remains', () => {
+  const { dir } = gitRepo(); const tree = `${dir}/tree`; copyTree(`${dir}/work`, tree);
+  fs.writeFileSync(`${tree}/apps/web/src/a.js`, 'export const a = 2;\n');
+  for (const rel of bootstrapEmptyPaths) { fs.mkdirSync(path.dirname(`${tree}/${rel}`), { recursive: true }); fs.writeFileSync(`${tree}/${rel}`, ''); }
+  const r = buildPatchFromTree({ repoDir: `${dir}/work`, treeDir: tree, policy });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.deepEqual(r.paths, ['apps/web/src/a.js']);
+  for (const rel of bootstrapEmptyPaths) assert.equal(fs.existsSync(`${dir}/work/${rel}`), false, rel);
+});
+test('E2 nonempty bootstrap paths, tracked placeholders and unknown empty paths remain rejected', () => {
+  for (const [rel, tracked, value] of [['.npmrc', false, 'hook=x\n'], ['.gitmodules', true, ''], ['.claude-pr/unexpected', false, ''], ['unknown', false, ''], ['tests/new-empty.mjs', false, '']]) {
+    const { dir, sh } = gitRepo();
+    if (tracked) { fs.writeFileSync(`${dir}/work/${rel}`, 'original\n'); sh(`${dir}/work`, 'add', rel); sh(`${dir}/work`, 'commit', '-qm', 'tracked config'); }
+    const tree = `${dir}/tree`; copyTree(`${dir}/work`, tree);
+    fs.mkdirSync(path.dirname(`${tree}/${rel}`), { recursive: true }); fs.writeFileSync(`${tree}/${rel}`, value);
+    fs.writeFileSync(`${tree}/apps/web/src/a.js`, 'export const a = 2;\n');
+    assert.equal(buildPatchFromTree({ repoDir: `${dir}/work`, treeDir: tree, policy }).ok, false, rel);
+  }
+});

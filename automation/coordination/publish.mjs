@@ -58,15 +58,27 @@ function walkTree(root) {
  * sin ejecutar git dentro del directorio del modelo: se copia sobre un checkout limpio del HEAD y se hace `git add -A`
  * (incluye ficheros nuevos) con configuración neutra. Valida con las listas de rutas. Solo lee/escribe repoDir.
  */
+// Archivos vacíos observados en el artefacto de la acción fijada (run 39853705423).
+// Solo se omiten si no existen en HEAD y tienen cero bytes; jamás contenido o cambios a ficheros tracked.
+const EMPTY_BOOTSTRAP_PATHS = new Set([
+  '.claude-pr/.gitmodules', '.env', '.env.development', '.env.development.local',
+  '.env.local', '.env.production.local', '.env.production', '.env.test', '.env.test.local',
+  '.gitmodules', '.npmrc', '.yarnrc', '.yarnrc.yml', 'bunfig.toml', 'pnpm-lock.yaml', 'yarn.lock',
+]);
 export function buildPatchFromTree({ repoDir, treeDir, policy }) {
   const g = (...a) => spawnSync('git', ['-C', repoDir, '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath=/dev/null', '-c', 'core.fileMode=false', '-c', 'core.autocrlf=false', '-c', 'core.attributesFile=/dev/null', ...a],
     { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, GIT_TERMINAL_PROMPT: '0', GIT_CONFIG_NOSYSTEM: '1' } });
-  const files = walkTree(treeDir);
+  let files = walkTree(treeDir);
   if (!files) return { ok: false, reason: 'symlink_or_special_in_tree' };
-  const wanted = new Set(files);
   const tracked = g('ls-files', '-z');
   if (tracked.status !== 0) return { ok: false, reason: 'ls_files_failed' };
-  for (const f of tracked.stdout.split('\0').filter(Boolean)) if (!wanted.has(f)) fs.rmSync(path.join(repoDir, f), { force: true });
+  const trackedPaths = new Set(tracked.stdout.split('\0').filter(Boolean));
+  const omitted = files.filter((f) => !trackedPaths.has(f) && EMPTY_BOOTSTRAP_PATHS.has(f)
+    && fs.statSync(path.join(treeDir, f)).size === 0);
+  const omit = new Set(omitted);
+  files = files.filter((f) => !omit.has(f));
+  const wanted = new Set(files);
+  for (const f of trackedPaths) if (!wanted.has(f)) fs.rmSync(path.join(repoDir, f), { force: true });
   for (const f of files) {
     const src = path.join(treeDir, f); const dst = path.join(repoDir, f);
     if (fs.existsSync(dst) && fs.lstatSync(dst).isFile() && fs.readFileSync(dst).equals(fs.readFileSync(src))) continue;
@@ -76,7 +88,7 @@ export function buildPatchFromTree({ repoDir, treeDir, policy }) {
   const d = g('diff', '--cached', '--binary', '--no-ext-diff', '--no-textconv', '--no-renames', 'HEAD');
   if (d.status !== 0) return { ok: false, reason: 'diff_failed' };
   const v = validatePatch(d.stdout, policy);
-  return v.ok ? { ok: true, patch: d.stdout, paths: v.paths } : { ok: false, reason: v.reason, path: v.path };
+  return v.ok ? { ok: true, patch: d.stdout, paths: v.paths, omittedEmptyBootstrapPaths: omitted } : { ok: false, reason: v.reason, path: v.path };
 }
 
 export const sha256 = (text) => crypto.createHash('sha256').update(text ?? '').digest('hex');

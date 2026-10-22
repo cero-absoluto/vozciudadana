@@ -1,0 +1,157 @@
+{
+  "library": {
+    "name": "libphonenumber-js",
+    "version": "1.12.10",
+    "license": "MIT",
+    "metadata": "max"
+  },
+  "test_set": {
+    "description": "ejemplos móviles sintéticos publicados por la biblioteca; los porcentajes describen ESTE conjunto, no precisión universal",
+    "countries_with_example": 245
+  },
+  "table_source_A": {
+    "rows": 66,
+    "calling_codes": 64,
+    "counts": {
+      "unmapped": 148,
+      "unique_same_iso": 63,
+      "unique_other_iso": 9,
+      "multiple_in_table_contains": 3,
+      "multiple_in_table_misses": 22
+    },
+    "unmapped_pct_of_test_set": 60.4,
+    "unique_other_iso": [
+      "AX->FI",
+      "CC->AU",
+      "CX->AU",
+      "GG->GB",
+      "IM->GB",
+      "JE->GB",
+      "KZ->RU",
+      "SJ->NO",
+      "VA->IT"
+    ],
+    "multiple_in_table": [
+      "CA~US/CA/DO",
+      "DO~US/CA/DO",
+      "US~US/CA/DO",
+      "AG~US/CA/DO",
+      "AI~US/CA/DO",
+      "AS~US/CA/DO",
+      "BB~US/CA/DO",
+      "BM~US/CA/DO",
+      "BS~US/CA/DO",
+      "DM~US/CA/DO",
+      "GD~US/CA/DO",
+      "GU~US/CA/DO",
+      "JM~US/CA/DO",
+      "KN~US/CA/DO",
+      "KY~US/CA/DO",
+      "LC~US/CA/DO",
+      "MP~US/CA/DO",
+      "MS~US/CA/DO",
+      "PR~US/CA/DO",
+      "SX~US/CA/DO",
+      "TC~US/CA/DO",
+      "TT~US/CA/DO",
+      "VC~US/CA/DO",
+      "VG~US/CA/DO",
+      "VI~US/CA/DO"
+    ]
+  },
+  "library_raw_output_B": {
+    "counts": {
+      "returned_same_iso": 236,
+      "returned_other_iso": 9,
+      "no_result": 0
+    },
+    "returned_same_iso_pct_of_test_set": 96.3,
+    "returned_other_iso": [
+      {
+        "example_country": "AX",
+        "returned": "FI",
+        "same_example_number_as_returned": true
+      },
+      {
+        "example_country": "BL",
+        "returned": "GP",
+        "same_example_number_as_returned": true
+      },
+      {
+        "example_country": "CC",
+        "returned": "AU",
+        "same_example_number_as_returned": true
+      },
+      {
+        "example_country": "CX",
+        "returned": "AU",
+        "same_example_number_as_returned": true
+      },
+      {
+        "example_country": "EH",
+        "returned": "MA",
+        "same_example_number_as_returned": true
+      },
+      {
+        "example_country": "IM",
+        "returned": "GB",
+        "same_example_number_as_returned": false
+      },
+      {
+        "example_country": "MF",
+        "returned": "GP",
+        "same_example_number_as_returned": true
+      },
+      {
+        "example_country": "SJ",
+        "returned": "NO",
+        "same_example_number_as_returned": false
+      },
+      {
+        "example_country": "VA",
+        "returned": "IT",
+        "same_example_number_as_returned": true
+      }
+    ],
+    "getPossibleCountries_size_distribution": {
+      "1": 245
+    },
+    "note": "La biblioteca no expone un conjunto de candidatos ni un estado ambiguo: devuelve un ISO o ninguno."
+  },
+  "additional_classification_shared_calling_code": {
+    "source": "metadatos de la biblioteca (getCountries + getCountryCallingCode); indicio a nivel de plan, no medida de ambigüedad",
+    "calling_codes_shared": 12,
+    "countries_in_shared_codes": 51,
+    "cross_tab_with_raw_output": {
+      "unshared_same": 194,
+      "unshared_other": 0,
+      "unshared_none": 0,
+      "shared_same": 42,
+      "shared_other": 9,
+      "shared_none": 0
+    },
+    "every_other_iso_case_is_in_a_shared_code": true,
+    "largest_shared": [
+      {
+        "calling_code": "1",
+        "countries": 25
+      },
+      {
+        "calling_code": "44",
+        "countries": 4
+      },
+      {
+        "calling_code": "61",
+        "countries": 3
+      },
+      {
+        "calling_code": "590",
+        "countries": 3
+      },
+      {
+        "calling_code": "7",
+        "countries": 2
+      }
+    ]
+  }
+}

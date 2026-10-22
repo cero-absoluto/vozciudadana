@@ -596,3 +596,64 @@ test('A2 publisher rejects a deleted branch or one reset to an ancestor', () => 
     else assert.equal(remote.stdout.trim(), ancestor);
   }
 });
+
+// Regresión del piloto #52: una reseña tratada no equivale a un defecto corregido.
+test('R1 clean receipt cannot clear previously handled findings on unchanged HEAD after failed correction', async () => {
+  const g = fakeGithub();
+  await step(g, cmdEvent(OWNER));
+  const review = g.addReview(CODEX, H0, [g.finding('tests/fixture.mjs', 1, 'count + 1 cambia el contador')]);
+  await step(g, codexEvent());
+  await publishRound({ api: g.api, policy, repository: REPO, number: 7, round: 1, claudeResult: 'failure', patch: '', repoDir: '/nonexistent', switchEnabled: 'true' });
+  await step(g, cmdEvent(OWNER, '/handoff stop'));
+  await step(g, cmdEvent(OWNER));
+  g.receiptClean(H0);
+  const r = await step(g, codexEvent());
+  assert.equal(r.outputs.action, 'blocked');
+  assert.equal(stateOf(g).status, STATUS.BLOCKED);
+  assert.equal(stateOf(g).reason, 'clean_receipt_conflicts_with_findings');
+  assert.equal(stateOf(g).rounds, 1);
+  assert.ok(stateOf(g).handled.includes(`review:${review.id}`));
+  assert.ok(!g.comments.some(c => c.body.startsWith('OWNER_REVIEW')));
+});
+
+test('R2 owner retry reuses authenticated handled findings, preserves history and consumes last round', async () => {
+  const g = fakeGithub();
+  await step(g, cmdEvent(OWNER));
+  const review = g.addReview(CODEX, H0, [g.finding('tests/fixture.mjs', 1, 'keep count')]);
+  await step(g, codexEvent());
+  await publishRound({ api: g.api, policy, repository: REPO, number: 7, round: 1, claudeResult: 'failure', patch: '', repoDir: '/nonexistent', switchEnabled: 'true' });
+  const retry = g.addComment(OWNER, '/handoff retry');
+  const r = await step(g, { comment: retry });
+  assert.equal(r.outputs.action, 'run_claude');
+  assert.equal(r.outputs.round, '2');
+  assert.equal(stateOf(g).maxRounds, 2);
+  assert.ok(stateOf(g).handled.includes(`review:${review.id}`));
+  assert.ok(stateOf(g).handled.includes(`retry-command:${retry.id}`));
+  assert.equal(JSON.parse(fs.readFileSync(r.findingsPath)).findings[0].text, '**P1** keep count');
+  assert.equal(ownerStopped(r.facts, policy), false);
+  assert.equal((await step(g, { comment: retry })).outputs.action, 'none');
+  await publishRound({ api: g.api, policy, repository: REPO, number: 7, round: 2, claudeResult: 'failure', patch: '', repoDir: '/nonexistent', switchEnabled: 'true' });
+  assert.equal((await step(g, { comment: retry })).outputs.reason, 'retry_already_handled');
+  assert.equal((await step(g, { comment: g.addComment(OWNER, '/handoff retry') })).outputs.reason, 'retry_round_limit');
+  assert.equal(stateOf(g).rounds, 2);
+});
+
+test('R3 retry refuses untrusted actors, changed HEAD, absent payload, running round and switch off', async () => {
+  for (const mode of ['actor', 'head', 'findings', 'running', 'switch']) {
+    const g = fakeGithub(); await step(g, cmdEvent(OWNER));
+    g.addReview(CODEX, H0, [g.finding('tests/fixture.mjs', 1, 'x')]); await step(g, codexEvent());
+    if (mode !== 'running') await publishRound({ api: g.api, policy, repository: REPO, number: 7, round: 1, claudeResult: 'failure', patch: '', repoDir: '/nonexistent', switchEnabled: 'true' });
+    if (mode === 'head') g.pr.head.sha = H1;
+    if (mode === 'findings') g.reviews[0].comments = [];
+    const retry = g.addComment(mode === 'actor' ? { ...OWNER, id: 999 } : OWNER, '/handoff retry');
+    const r = await step(g, { comment: retry }, { enabled: mode === 'switch' ? 'false' : 'true' });
+    assert.equal(r.outputs.action, 'none', mode); assert.equal(stateOf(g).rounds, 1, mode);
+  }
+});
+
+test('R4 retry resumes a stop for publication; a later owner stop still wins', () => {
+  const cmds = [{ id: 1, cmd: 'stop', author: OWNER }, { id: 2, cmd: 'retry', author: OWNER }];
+  assert.equal(ownerStopped({ ownerCommands: cmds }, policy), false);
+  assert.equal(ownerStopped({ ownerCommands: [...cmds, { id: 3, cmd: 'stop', author: OWNER }] }, policy), true);
+  assert.equal(ownerStopped({ ownerCommands: [cmds[0], { ...cmds[1], author: { ...OWNER, id: 999 } }] }, policy), true);
+});

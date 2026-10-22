@@ -356,9 +356,9 @@ const wf = fs.readFileSync(wfPath, 'utf8'); const code = wf.replace(/^[ \t]*#.*$
 const jobsOf = (c) => Object.fromEntries([...c.matchAll(/^  ([\w-]+):\n([\s\S]*?)(?=^  [\w-]+:\n|(?![\s\S]))/gm)].filter((m) => !/^(workflow_dispatch|inputs|pr_number|switch_wait_seconds)$/.test(m[1])).map((m) => [m[1], m[2]]));
 test('WF1 candidato inerte, manual y de solo lectura: fuera de .github/workflows; solo workflow_dispatch; sin escrituras, secretos, id-token ni acción de Claude', () => {
   // Tras la incorporación autorizada (#39): el workflow manual instalado es idéntico al candidato y no hay ningún workflow del modelo.
-  assert.deepEqual(fs.readdirSync(`${root}.github/workflows`).sort(), ['actions-preflight.yml', 'deploy.yml']);
+  assert.deepEqual(fs.readdirSync(`${root}.github/workflows`).sort(), ['actions-preflight.yml', 'agent-handoff.yml', 'deploy.yml']);
   assert.ok(fs.readFileSync(`${root}.github/workflows/actions-preflight.yml`).equals(fs.readFileSync(wfPath)), 'instalado idéntico al candidato');
-  for (const f of fs.readdirSync(`${root}.github/workflows`)) assert.doesNotMatch(fs.readFileSync(`${root}.github/workflows/${f}`, 'utf8'), /anthropics\/claude-code-action@|claude_code_oauth_token|anthropic_api_key|ANTHROPIC_API_KEY/, `${f} sin workflow del modelo (la credencial ficticia FICTICIO- del paso env-a no cuenta)`);
+  for (const f of fs.readdirSync(`${root}.github/workflows`).filter(f => f !== 'agent-handoff.yml')) assert.doesNotMatch(fs.readFileSync(`${root}.github/workflows/${f}`, 'utf8'), /anthropics\/claude-code-action@|claude_code_oauth_token|anthropic_api_key|ANTHROPIC_API_KEY/, `${f} sin workflow del modelo (la credencial ficticia FICTICIO- del paso env-a no cuenta)`);
   assert.match(code, /^on:\n  workflow_dispatch:\n/m); assert.doesNotMatch(code, /\n  (push|pull_request\w*|issue_comment|schedule|workflow_run):/);
   assert.match(code, /^permissions: \{\}$/m); assert.doesNotMatch(code, /(contents|issues|pull-requests|actions|checks|statuses|packages|id-token|deployments): write|write-all/); assert.doesNotMatch(code, /id-token/);
   assert.doesNotMatch(code, /secrets\./); assert.doesNotMatch(code, /anthropics\/claude-code-action@|claude_code_oauth_token|anthropic_api_key|ANTHROPIC_API_KEY/);

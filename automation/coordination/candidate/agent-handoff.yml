@@ -32,8 +32,8 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: read        # código de confianza de la rama por defecto
-      issues: write         # comentario de estado y avisos
-      pull-requests: read   # leer PR, reseñas y comentarios inline
+      issues: read
+      pull-requests: write # comentario de estado y avisos en PR   # leer PR, reseñas y comentarios inline
     outputs:
       action: ${{ steps.gather.outputs.action }}
       round: ${{ steps.gather.outputs.round }}
@@ -215,8 +215,8 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write        # empujar SOLO la rama del PR (nunca main: lo impone el código y debe imponerlo la protección de rama)
-      issues: write
-      pull-requests: read
+      issues: read
+      pull-requests: write # comentarios en PR; modelo sin escritura
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:

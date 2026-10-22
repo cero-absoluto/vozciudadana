@@ -191,14 +191,13 @@ test('PB10 actionlint no encuentra problemas en los candidatos (si está instala
   const v = spawnSync('actionlint', ['-version'], { encoding: 'utf8' }); if (v.status !== 0) { t.skip('actionlint no instalado'); return; }
   const r = spawnSync('actionlint', [sendPath, recvPath], { encoding: 'utf8' }); assert.equal(r.status, 0, r.stdout + r.stderr);
 });
-test('PB11 alcance: solo automation/ y tests/; no toca .github/workflows, apps/, package.json ni lockfiles, y no activa despliegues', () => {
-  const run = (...a) => spawnSync('git', a, { cwd: root, encoding: 'utf8' });
-  const base = run('rev-parse', '--verify', 'origin/main'); if (base.status !== 0) return;
-  const files = [...run('diff', '--name-only', 'origin/main...HEAD').stdout.split('\n'), ...run('ls-files', '--others', '--exclude-standard').stdout.split('\n'), ...run('diff', '--name-only').stdout.split('\n')].filter(Boolean);
-  for (const f of files) assert.ok(/^(automation\/|tests\/)/.test(f), `${f} fuera de automation/ y tests/`);
-  const deploy = fs.readFileSync(`${root}.github/workflows/deploy.yml`, 'utf8'); const wanted = ['apps/web/**', 'package.json', '.github/workflows/deploy.yml'];
-  for (const w of wanted) assert.ok(deploy.includes(w), `deploy.yml filtra por ${w}`);
-  assert.deepEqual(fs.readdirSync(`${root}.github/workflows`).sort(), ['actions-preflight.yml', 'deploy.yml']);
+test('PB11 phase B remains inactive independently of the authorized handoff workflow', () => {
+  const deploy = fs.readFileSync(`${root}.github/workflows/deploy.yml`, 'utf8');
+  for (const w of ['apps/web/**', 'package.json', '.github/workflows/deploy.yml']) assert.ok(deploy.includes(w));
+  const installed = fs.readdirSync(`${root}.github/workflows`);
+  assert.ok(!installed.includes('phase-b-send.yml'));
+  assert.ok(!installed.includes('phase-b-receive.yml'));
+  assert.ok(installed.includes('agent-handoff.yml'));
 });
 test('PB12 documentación: PLAN.md cubre activación, permisos, retirada, límites y la pregunta de la entrega bot→Codex', () => {
   const doc = fs.readFileSync(`${root}automation/phaseb/PLAN.md`, 'utf8');

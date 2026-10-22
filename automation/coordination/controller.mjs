@@ -75,9 +75,26 @@ export function decide(facts, policy) {
   // 1. Órdenes del Owner (solo issue_comment de PR, creado, texto exacto)
   if (ev.name === 'issue_comment' && ev.action === 'created' && ev.isPullRequest) {
     const line = String(ev.body ?? '').split('\n')[0].trim();
-    const cmd = line === policy.commands.enable ? 'enable' : line === policy.commands.stop ? 'stop' : null;
+    const cmd = line === policy.commands.enable ? 'enable' : line === policy.commands.stop ? 'stop' : line === policy.commands.retry ? 'retry' : null;
     if (cmd) {
       if (!isOwner(ev.actor, facts.actorPermission, policy)) return none('command_actor_not_authorized', state);
+      if (cmd === 'retry') {
+        // Recuperación explícita; conserva reseñas tratadas y consume una ronda normal.
+        if (!state || ![STATUS.STOPPED, STATUS.BLOCKED].includes(state.status)) return none('retry_requires_stopped_or_blocked', state);
+        if (state.pr !== facts.pr.number || state.head !== facts.pr.headSha) return none('retry_head_mismatch', state);
+        if (!Number.isInteger(ev.commentId)) return none('retry_requires_comment_id', state);
+        const retryId = `retry-command:${ev.commentId}`;
+        if (state.handled.includes(retryId)) return none('retry_already_handled', state);
+        if (state.rounds < 1 || state.rounds >= state.maxRounds) return none('retry_round_limit', state);
+        const prior = (facts.auditor?.reviews ?? []).filter((r) => isAuditor(r, policy)
+          && r.commitId === facts.pr.headSha && r.findingCount > 0 && state.handled.includes(`review:${r.id}`));
+        if (!prior.length) return none('retry_requires_handled_findings', state);
+        const items = prior.flatMap((r) => r.findings ?? []).slice(0, policy.limits.maxFindings)
+          .map((f) => ({ path: String(f.path ?? '').slice(0, 300), line: Number.isInteger(f.line) ? f.line : null, text: String(f.text ?? '').slice(0, policy.limits.maxFindingChars) }));
+        if (!items.length) return none('retry_requires_findings_payload', state);
+        const round = state.rounds + 1;
+        return { state: { ...withHandled(state, [retryId], policy), status: STATUS.CORRECTING, rounds: round, reason: `owner retry round ${round}` }, action: { type: 'run_claude', round, head: facts.pr.headSha, findings: items } };
+      }
       if (cmd === 'stop') {
         const s = state ?? newState(facts, policy);
         return { state: { ...s, status: STATUS.STOPPED, reason: 'stopped by owner' }, action: { type: 'notify', kind: 'stopped' } };
@@ -128,6 +145,14 @@ export function decide(facts, policy) {
     return { state: { ...withHandled(state, ids, policy), status: STATUS.CORRECTING, rounds: round, reason: `correction round ${round}` }, action: { type: 'run_claude', round, head: facts.pr.headSha, findings: items } };
   }
   if (clean.length) {
+    // handled solo deduplica ejecuciones; no acredita que el hallazgo se corrigiera.
+    // Un recibo limpio del mismo SHA no puede borrar una reseña con hallazgos,
+    // incluso si aquella ronda falló antes de generar un parche. Fallar cerrado.
+    const conflicts = (facts.auditor?.reviews ?? []).some((r) =>
+      isAuditor(r, policy) && r.commitId === facts.pr.headSha && r.findingCount > 0);
+    if (conflicts) {
+      return { state: { ...withHandled(state, signals.map((x) => x.id), policy), status: STATUS.BLOCKED, reason: 'clean_receipt_conflicts_with_findings' }, action: { type: 'blocked', reason: 'clean_receipt_conflicts_with_findings' } };
+    }
     return { state: { ...withHandled(state, signals.map((x) => x.id), policy), status: STATUS.OWNER_REVIEW, reason: 'no findings on current head' }, action: { type: 'notify', kind: 'owner_review' } };
   }
   return none(signals.length ? 'signal_without_verdict' : (ignored.length ? `ignored:${ignored.map((i) => i[1]).join(',')}` : 'no_signal'), state);
@@ -146,7 +171,7 @@ export function decideAfterClaude(state, result, policy) {
 /** El publicador pregunta justo antes de empujar: parada o interruptor global lo impiden aunque Claude ya haya corrido. */
 /** La última orden del Owner (por id de comentario, identidad exacta de la política) es `stop`: se ve aunque su ejecución siga en cola. */
 export function ownerStopped(facts, policy) {
-  const cmds = (facts.ownerCommands ?? []).filter((c) => c && Number.isInteger(c.id) && (c.cmd === 'stop' || c.cmd === 'enable'))
+  const cmds = (facts.ownerCommands ?? []).filter((c) => c && Number.isInteger(c.id) && (c.cmd === 'stop' || c.cmd === 'enable' || c.cmd === 'retry'))
     .filter((c) => c.author && c.author.type === 'User' && policy.owners.some((o) => o.id === c.author.id && o.login === c.author.login && o.type === c.author.type));
   if (!cmds.length) return false;
   return cmds.reduce((a, b) => (b.id > a.id ? b : a)).cmd === 'stop';

@@ -70,6 +70,9 @@ jobs:
       pull-requests: read
       issues: read
     steps:
+      # Dependencia del aislamiento; antes del checkout del PR y sin secretos.
+      - name: Install subprocess isolation dependency
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends bubblewrap
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ needs.decide.outputs.head }}       # SHA exacto verificado por el controlador (mismo repositorio)

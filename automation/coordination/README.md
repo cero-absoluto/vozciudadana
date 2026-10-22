@@ -1,3 +1,13 @@
+# Recuperación explícita y recibos contradictorios — propuesta #55
+
+`/handoff retry` solo permite al Owner reintentar una reseña auténtica ya tratada, con hallazgos en el mismo HEAD, desde STOPPED o BLOCKED. Conserva los identificadores tratados, registra el id de la orden y consume una ronda normal: no reinicia ni amplía el límite. No solicita otra revisión a Codex. Sin hallazgos recuperables, con HEAD distinto, orden duplicada, interruptor apagado o rondas agotadas, no llama a Claude. Un stop posterior sigue impidiendo publicar.
+
+Un recibo limpio no acredita la resolución de hallazgos previos sobre el mismo SHA: se bloquea con `clean_receipt_conflicts_with_findings`. Es conservador incluso ante una posible retractación: hace falta resolver esa contradicción explícitamente. Los hallazgos de un SHA anterior no impiden aceptar la revisión limpia de un nuevo commit.
+
+Validación offline: 46 pruebas dirigidas superadas. La recuperación con esta orden todavía no está demostrada en Actions.
+
+---
+
 # Activación solicitada — 2026-10-22
 
 El Owner autoriza poner en marcha el relevo. Confirma haber guardado `CLAUDE_CODE_OAUTH_TOKEN` en Secrets de Actions (confirmación del Owner, no lectura de su valor ni prueba de autenticación). Esta rama propone instalar el candidato de #38 con las dos correcciones de su última revisión Codex: identidad exacta de cada comentario inline y lease exacto del HEAD remoto al publicar.

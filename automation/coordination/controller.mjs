@@ -128,6 +128,14 @@ export function decide(facts, policy) {
     return { state: { ...withHandled(state, ids, policy), status: STATUS.CORRECTING, rounds: round, reason: `correction round ${round}` }, action: { type: 'run_claude', round, head: facts.pr.headSha, findings: items } };
   }
   if (clean.length) {
+    // handled solo deduplica ejecuciones; no acredita que el hallazgo se corrigiera.
+    // Un recibo limpio del mismo SHA no puede borrar una reseña con hallazgos,
+    // incluso si aquella ronda falló antes de generar un parche. Fallar cerrado.
+    const conflicts = (facts.auditor?.reviews ?? []).some((r) =>
+      isAuditor(r, policy) && r.commitId === facts.pr.headSha && r.findingCount > 0);
+    if (conflicts) {
+      return { state: { ...withHandled(state, signals.map((x) => x.id), policy), status: STATUS.BLOCKED, reason: 'clean_receipt_conflicts_with_findings' }, action: { type: 'blocked', reason: 'clean_receipt_conflicts_with_findings' } };
+    }
     return { state: { ...withHandled(state, signals.map((x) => x.id), policy), status: STATUS.OWNER_REVIEW, reason: 'no findings on current head' }, action: { type: 'notify', kind: 'owner_review' } };
   }
   return none(signals.length ? 'signal_without_verdict' : (ignored.length ? `ignored:${ignored.map((i) => i[1]).join(',')}` : 'no_signal'), state);

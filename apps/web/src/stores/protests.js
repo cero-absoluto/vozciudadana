@@ -156,13 +156,18 @@ export const useProtestsStore = defineStore('protests', () => {
   }
 
   // ── Actions ────────────────────────────────────────────────────────────────
+  let latestLoad = 0;
   async function loadProtests(filters = {}) {
+    const load = ++latestLoad;
     loading.value = true;
     // error is NOT cleared here: while a retry is in flight the failure notice
     // (shown as "Loading…") must stay and the empty state must not appear.
     // It is cleared only when a load succeeds (below).
     try {
       const data = await api.fetchProtests(filters);
+      // A later refresh owns the visible list, error and loading state.
+      // Slow responses from earlier requests must not overwrite that state.
+      if (load !== latestLoad) return;
       const locks = useDeviceStore().getLocks();
       const fresh = data.map(p => {
         const n = normalizeProtest(p);
@@ -179,12 +184,13 @@ export const useProtestsStore = defineStore('protests', () => {
       protests.value = [...fresh, ...keptClosed];
       error.value = null;
     } catch (err) {
+      if (load !== latestLoad) return;
       // A failed load is an error state, not an empty list: keep whatever real
       // data is already in memory, never substitute fictitious data, and let
       // the UI show a translated message with a manual retry (shown by HomeScreen).
       error.value = err.message;
     } finally {
-      loading.value = false;
+      if (load === latestLoad) loading.value = false;
     }
   }
 

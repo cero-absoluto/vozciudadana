@@ -1,3 +1,4 @@
+import { requestReview } from '../automation/coordination/request-review.mjs';
 // #37 — Pruebas OFFLINE del relevo Claude ⇄ Codex. Sin red, sin modelos, sin secretos, sin Railway, sin SMS.
 // Un GitHub falso en memoria + repositorios git temporales. No demuestra integración real (ver README: Límites).
 import test from 'node:test';
@@ -282,8 +283,8 @@ test('W3 todas las acciones externas fijadas a SHA completo; sin tags móviles',
 });
 test('W4 permisos mínimos: workflow {} y por job; el job del modelo sin escritura; solo el publicador escribe contenido', () => {
   assert.match(code, /^permissions: \{\}$/m);
-  const jobs = Object.fromEntries([...code.matchAll(/^  (decide|claude|patch|verify|publish):\n([\s\S]*?)(?=^  \w+:\n|(?![\s\S]))/gm)].map((m) => [m[1], m[2]]));
-  assert.deepEqual(Object.keys(jobs).sort(), ['claude', 'decide', 'patch', 'publish', 'verify']);
+  const jobs = Object.fromEntries([...code.matchAll(/^  (decide|claude|patch|verify|publish|review):\n([\s\S]*?)(?=^  \w+:\n|(?![\s\S]))/gm)].map((m) => [m[1], m[2]]));
+  assert.deepEqual(Object.keys(jobs).sort(), ['claude', 'decide', 'patch', 'publish', 'review', 'verify']);
   assert.doesNotMatch(jobs.claude, /write/); assert.doesNotMatch(jobs.verify, /write/); assert.doesNotMatch(jobs.patch, /write/); assert.doesNotMatch(jobs.verify, /secrets\./); assert.doesNotMatch(jobs.decide, /contents: write/); assert.match(jobs.publish, /contents: write/);
   for (const j of Object.values(jobs)) assert.match(j, /timeout-minutes: \d+/);
   assert.doesNotMatch(code, /id-token/);
@@ -293,7 +294,7 @@ test('W5 aislamiento de credenciales: el secreto del modelo aparece una vez, en 
   assert.equal((code.match(/secrets\.ANTHROPIC_API_KEY/g) ?? []).length, 0, 'la alternativa por API solo se documenta en comentarios (no activa)');
   const step = code.slice(code.indexOf('uses: anthropics/claude-code-action'));
   assert.ok(step.indexOf('secrets.CLAUDE_CODE_OAUTH_TOKEN') > 0 && step.indexOf('secrets.CLAUDE_CODE_OAUTH_TOKEN') < step.indexOf('claude_args'));
-  assert.doesNotMatch(code, /secrets\.(?!GITHUB_TOKEN|CLAUDE_CODE_OAUTH_TOKEN|ANTHROPIC_API_KEY)/);
+  assert.doesNotMatch(code, /secrets\.(?!GITHUB_TOKEN|CLAUDE_CODE_OAUTH_TOKEN|ANTHROPIC_API_KEY|CODEX_REVIEW_GITHUB_TOKEN)/);
   assert.doesNotMatch(code.replace(/^\s+env:\s*\n(\s+\w+: .*\n)+/gm, ''), /^env:/m);
   assert.ok((code.match(/persist-credentials: false/g) ?? []).length >= 4, 'ningún checkout deja credenciales en .git');
 });
@@ -397,7 +398,7 @@ test('V1 pruebas del job verify fallidas u omitidas → BLOCKED y sin push', asy
 });
 test('W7 el job del modelo no tiene shell, git ni red, ni carga config del PR; parche en job de confianza; pruebas en job sin credenciales ni subida; publish exige huella', () => {
   const sec = (n, next) => new RegExp(`^  ${n}:\\n([\\s\\S]*?)(?=^  ${next}:|(?![\\s\\S]))`, 'm').exec(code)[1];
-  const claude = sec('claude', 'patch'); const patch = sec('patch', 'verify'); const verify = sec('verify', 'publish'); const publish = /^  publish:\n([\s\S]*)/m.exec(code)[1];
+  const claude = sec('claude', 'patch'); const patch = sec('patch', 'verify'); const verify = sec('verify', 'publish'); const publish = sec('publish', 'review');
   assert.doesNotMatch(claude.replace(/--disallowedTools "[^"]*"/, ''), /Bash|WebFetch|WebSearch/); assert.match(claude, /--disallowedTools "Bash,WebFetch,WebSearch/);
   const bootstrap = '        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends bubblewrap';
   assert.equal(claude.split(bootstrap).length, 2, 'instalación fija de bubblewrap exactamente una vez');
@@ -676,5 +677,44 @@ test('E2 nonempty bootstrap paths, tracked placeholders and unknown empty paths 
     fs.mkdirSync(path.dirname(`${tree}/${rel}`), { recursive: true }); fs.writeFileSync(`${tree}/${rel}`, value);
     fs.writeFileSync(`${tree}/apps/web/src/a.js`, 'export const a = 2;\n');
     assert.equal(buildPatchFromTree({ repoDir: `${dir}/work`, treeDir: tree, policy }).ok, false, rel);
+  }
+});
+
+// Credencial de revisión: solo código confiable y sin PR, pruebas ni modelo en el job.
+test('W8 el PAT de revisión queda confinado al paso de petición y el publicador exporta solo el SHA publicado', () => {
+  const review = code.split('\n  review:\n')[1];
+  assert.equal((code.match(/secrets\.CODEX_REVIEW_GITHUB_TOKEN/g) ?? []).length, 1);
+  assert.doesNotMatch(code.split('\n  review:\n')[0], /CODEX_REVIEW_GITHUB_TOKEN/);
+  assert.match(review, /pull-requests: read/);
+  assert.match(review, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
+  assert.doesNotMatch(review, /download-artifact|npm|CLAUDE_CODE|contents: write|ref:.*needs\./);
+  assert.match(review, /run: node automation\/coordination\/request-review\.mjs/);
+  assert.match(code, /review_head: \$\{\{ steps\.publish\.outputs\.review_head \}\}/);
+});
+
+test('R1 revisión con identidad Owner, deduplicación por SHA y recuperación sin consumir rondas', async () => {
+  const g = fakeGithub(); await step(g, cmdEvent(OWNER));
+  let posts = 0;
+  const ownerApi = { request: async (method, p, body) => {
+    if (method === 'GET' && p === '/user') return OWNER;
+    assert.equal(method, 'POST'); assert.equal(p, `/repos/${REPO}/issues/7/comments`);
+    posts++; return g.addComment(OWNER, body.body);
+  } };
+  const args = { api: g.api, ownerApi, policy, repository: REPO, number: 7, head: H0, switchEnabled: 'true' };
+  assert.equal((await requestReview(args)).outcome, 'requested');
+  assert.equal((await requestReview(args)).outcome, 'already_requested'); assert.equal(posts, 1);
+  const r = await step(g, cmdEvent(OWNER, '/handoff review'));
+  assert.equal(r.result.action.type, 'request_review'); assert.equal(stateOf(g).rounds, 0);
+  const s = stateOf(g); s.rounds = 2; g.comments.find((c) => c.body.includes('agent-handoff-state:v1')).body = encodeState(s);
+  assert.equal((await step(g, cmdEvent(OWNER, '/handoff review'))).result.action.type, 'request_review'); assert.equal(stateOf(g).rounds, 2);
+});
+test('R2 token ajeno, SHA obsoleto, stop, estado corrupto, apagado y cambio durante lectura no publican petición', async () => {
+  for (const mode of ['identity', 'head', 'stop', 'corrupt', 'off', 'race']) {
+    const g = fakeGithub(); await step(g, cmdEvent(OWNER)); let posts = 0;
+    if (mode === 'stop') g.addComment(OWNER, '/handoff stop');
+    if (mode === 'corrupt') g.comments.find((c) => c.body.includes('agent-handoff-state:v1')).body = '<!-- agent-handoff-state:v1 {} -->';
+    const ownerApi = { request: async (method) => { if (method === 'POST') { posts++; return {}; } if (mode === 'race') g.pr.head.sha = H1; return mode === 'identity' ? CODEX : OWNER; } };
+    await assert.rejects(requestReview({ api: g.api, ownerApi, policy, repository: REPO, number: 7, head: mode === 'head' ? H1 : H0, switchEnabled: mode === 'off' ? 'false' : 'true' }), /review_/);
+    assert.equal(posts, 0, mode);
   }
 });

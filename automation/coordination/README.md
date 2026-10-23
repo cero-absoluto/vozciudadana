@@ -91,3 +91,22 @@ node --experimental-test-module-mocks --test tests/agent-handoff.test.mjs   # 40
 Cubren (además): paginación completa con un `stop` tras >1000 comentarios, techo sin truncado silencioso, interruptor apagado tras empezar la ronda (STOPPED, sin push, reanudable); huella del parche (sustituirlo por otro cambio permitido → no se publica; sin huella → no se publica), job `verify` sin subida, `npm ci --ignore-scripts`, flags de configuración del modelo; parche con ficheros nuevos permitidos que llegan al commit final, nuevos/borrados/symlinks fuera de lista rechazados, `.git`/`.gitattributes` del modelo inertes, `stop` publicado con la ronda en curso o interruptor apagado → sin push, `verify` fallido/omitido → `BLOCKED`, y el workflow sin shell en el job del modelo. Antes: hallazgo → corrección (push real a un remoto git local) → nueva revisión → OWNER_REVIEW; sin hallazgos; SHA antiguo, HEAD ajeno, emoji y eventos irrelevantes (cero llamadas a la API); impostores (login parecido, id/tipo/app distintos, estado falsificado/corrupto); fork, PR cerrada, base y referencias ambiguas; duplicados e idempotencia; dos rondas/errores/parche rechazado/push rechazado → BLOCKED; parada e interruptor; validación de parches; análisis estático del workflow (acciones fijadas, permisos, un solo secreto en el paso del modelo, sin `pull_request_target`/`allowed_bots: '*'`). No invocan modelos ni la red. Mutaciones comprobadas: quitar el SHA de HEAD, el límite de rondas, el permiso del Owner, el id del auditor, la deduplicación, el rechazo de forks o la lista de rutas denegadas hace fallar al menos una prueba; igual con ignorar `verify`, ignorar `stop` o no hacer `git add -A`. Las defensas de `.git` (omitirlo, `core.fsmonitor`, `--no-textconv`) son redundantes: solo quitarlas todas a la vez hace fallar B3.
 
 Fuentes leídas: code.claude.com/docs/en/github-actions; código y `docs/security.md` de anthropics/claude-code-action (SHA 6c69018 y 5eb090f); learn.chatgpt.com/docs/third-party/github.
+
+### Identidad de la petición de revisión
+
+El job aislado `review` usa `CODEX_REVIEW_GITHUB_TOKEN` (PAT de un Owner de
+`policy.json`, restringido a este repositorio, permiso Pull requests: read/write).
+Se configura como secreto de Actions; nunca se coloca en el PR ni en los jobs
+Claude, patch, verify o publish. El PAT solo identifica la cuenta y publica la
+petición; las lecturas de estado usan el GITHUB_TOKEN de solo lectura del job.
+No hay fallback a una petición con la identidad github-actions[bot].
+
+Después de publicar, `publish` entrega el SHA al job `review`, que vuelve a
+comprobar el HEAD, estado auténtico AWAITING_REVIEW, interruptor y órdenes stop.
+Un Owner puede recuperar exclusivamente esa petición con `/handoff review`:
+no modifica el parche, no ejecuta Claude ni consume otra ronda. La petición se
+deduplica por PR, SHA e identidad del Owner. El límite de dos correcciones y la
+parada en OWNER_REVIEW se mantienen. Si el secreto falta, caduca o su cuenta no
+coincide, el job falla y el estado sigue pendiente; se renueva el secreto y se
+repite la orden. Una solicitud aceptada no demuestra una revisión completada:
+se requiere evidencia auténtica de Codex sobre ese mismo SHA.

@@ -75,9 +75,14 @@ export function decide(facts, policy) {
   // 1. Órdenes del Owner (solo issue_comment de PR, creado, texto exacto)
   if (ev.name === 'issue_comment' && ev.action === 'created' && ev.isPullRequest) {
     const line = String(ev.body ?? '').split('\n')[0].trim();
-    const cmd = line === policy.commands.enable ? 'enable' : line === policy.commands.stop ? 'stop' : line === policy.commands.retry ? 'retry' : null;
+    const cmd = line === policy.commands.enable ? 'enable' : line === policy.commands.stop ? 'stop' : line === policy.commands.retry ? 'retry' : line === policy.commands.review ? 'review' : null;
     if (cmd) {
       if (!isOwner(ev.actor, facts.actorPermission, policy)) return none('command_actor_not_authorized', state);
+      if (cmd === 'review') {
+        if (!state || state.status !== STATUS.AWAITING_REVIEW) return none('review_requires_awaiting', state);
+        if (state.pr !== facts.pr.number || state.head !== facts.pr.headSha || ownerStopped(facts, policy)) return none('review_not_current_or_stopped', state);
+        return { state, action: { type: 'request_review', head: state.head } };
+      }
       if (cmd === 'retry') {
         // Recuperación explícita; conserva reseñas tratadas y consume una ronda normal.
         if (!state || ![STATUS.STOPPED, STATUS.BLOCKED].includes(state.status)) return none('retry_requires_stopped_or_blocked', state);

@@ -209,6 +209,8 @@ jobs:
         working-directory: work
 
   publish:
+    outputs:
+      review_head: ${{ steps.publish.outputs.review_head }}
     needs: [decide, claude, patch, verify]
     # Se ejecuta SIEMPRE que `decide` lanzó una ronda, aunque el interruptor se haya apagado: `vars` se evalúa al arrancar ESTE
     # job (tras el modelo y las pruebas) y se pasa al publicador, que sin interruptor NO empuja y deja el estado en STOPPED
@@ -238,7 +240,8 @@ jobs:
         with:
           name: patch
           path: ${{ runner.temp }}/patch
-      - run: node trusted/automation/coordination/publish.mjs
+      - id: publish
+        run: node trusted/automation/coordination/publish.mjs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           AGENT_HANDOFF_ENABLED: ${{ vars.AGENT_HANDOFF_ENABLED }}
@@ -251,3 +254,29 @@ jobs:
           EXPECTED_PATCH_SHA256: ${{ needs.patch.outputs.sha256 }}
           PATCH_PATH: ${{ runner.temp }}/patch/handoff.patch
           REPO_DIR: ${{ github.workspace }}/work
+
+
+  review:
+    needs: [decide, publish]
+    if: >-
+      always() && needs.decide.result == 'success' &&
+      (needs.publish.outputs.review_head != '' || needs.decide.outputs.action == 'request_review')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          fetch-depth: 1
+      - run: node automation/coordination/request-review.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CODEX_REVIEW_GITHUB_TOKEN: ${{ secrets.CODEX_REVIEW_GITHUB_TOKEN }}
+          AGENT_HANDOFF_ENABLED: ${{ vars.AGENT_HANDOFF_ENABLED }}
+          PR_NUMBER: ${{ needs.decide.outputs.pr }}
+          EXPECTED_HEAD: ${{ needs.publish.outputs.review_head || needs.decide.outputs.head }}

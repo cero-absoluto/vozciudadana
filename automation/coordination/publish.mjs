@@ -148,8 +148,12 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1] && pro
   const auth = Buffer.from(`x-access-token:${token}`).toString('base64');
   publishRound({
     api: makeApi({ token }), policy: loadPolicy(), repository: e.GITHUB_REPOSITORY, number: Number(e.PR_NUMBER), round: Number(e.ROUND),
+    requestReview: false, // La petición usa una identidad humana en un job aislado.
     claudeResult: e.CLAUDE_RESULT, verifyResult: e.VERIFY_RESULT ?? 'missing',
     patchStatus: { ok: e.PATCH_OK === 'true', reason: e.PATCH_REASON ?? '' }, expectedPatchSha256: e.EXPECTED_PATCH_SHA256 ?? null, patch: fs.existsSync(e.PATCH_PATH ?? '') ? fs.readFileSync(e.PATCH_PATH, 'utf8') : '', repoDir: e.REPO_DIR,
     pushEnv: { GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'http.https://github.com/.extraheader', GIT_CONFIG_VALUE_0: `AUTHORIZATION: basic ${auth}` },
-  }).then((r) => console.log(JSON.stringify({ outcome: r.outcome, action: r.next.action.type }))).catch((err) => { console.error(`publish: ${err.message}`); process.exit(1); });
+  }).then((r) => {
+    if (e.GITHUB_OUTPUT && r.outcome === 'pushed' && r.next.action.type === 'request_review') fs.appendFileSync(e.GITHUB_OUTPUT, `review_head=${r.next.state.head}\n`);
+    console.log(JSON.stringify({ outcome: r.outcome, action: r.next.action.type }));
+  }).catch((err) => { console.error(`publish: ${err.message}`); process.exit(1); });
 }

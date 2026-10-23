@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { decide, encodeState, pickState, FINDING_MARKER, RECEIPT_MARKER, STATE_MARKER } from './controller.mjs';
+import { decide, encodeState, pickState, SUMMARY_MARKER, FINDING_MARKER, RECEIPT_MARKER, STATE_MARKER } from './controller.mjs';
 import { makeApi } from './github.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -40,7 +40,7 @@ export async function collectFacts({ api, policy, repository, event, switchEnabl
     .map((c) => ({ id: c.id, cmd: cmdOf(c), author: user(c.user) }));
   base.stateComments = comments.filter((c) => (c.body ?? '').includes(STATE_MARKER))
     .map((c) => ({ id: c.id, authorId: c.user?.id, authorType: c.user?.type, authorLogin: c.user?.login, body: c.body }));
-  base.auditor.receipts = comments.filter((c) => (c.body ?? '').includes(RECEIPT_MARKER))
+  base.auditor.receipts = comments.filter((c) => ((c.body ?? '').includes(RECEIPT_MARKER) || (c.body ?? '').includes(SUMMARY_MARKER)))
     .map((c) => ({ id: c.id, userId: c.user?.id, userType: c.user?.type, userLogin: c.user?.login, appId: c.performed_via_github_app?.id ?? null, body: c.body }));
   const reviews = await api.paginate(`/repos/${repository}/pulls/${number}/reviews`);
   for (const r of reviews) {

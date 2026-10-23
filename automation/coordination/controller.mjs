@@ -15,6 +15,7 @@ const SHA = /^[0-9a-f]{40}$/;
 const SAFE_REF = /^[A-Za-z0-9][A-Za-z0-9._\/-]{0,199}$/;
 export const STATE_MARKER = 'agent-handoff-state:v1';
 export const FINDING_MARKER = 'codex-code-review-finding:v1';
+export const SUMMARY_MARKER = 'codex-review-state:v1';
 export const RECEIPT_MARKER = 'codex-review-receipt:v1';
 
 export const none = (reason, state) => ({ state, action: { type: 'none', reason } });
@@ -132,6 +133,17 @@ export function decide(facts, policy) {
   for (const c of facts.auditor?.receipts ?? []) {
     const id = `receipt:${c.id}`;
     if (!isAuditor(c, policy) || c.appId !== policy.auditor.appId) { ignored.push([id, 'not_auditor']); continue; }
+    if (String(c.body ?? '').includes(SUMMARY_MARKER)) {
+      // El resumen es dato: solo el bot/app auténticos y el SHA completo actual acreditan cierre.
+      const matches = [...String(c.body).matchAll(/<!-- codex-review-state:v1 (\{[^\n]*\}) -->/g)];
+      if (matches.length !== 1) { ignored.push([id, 'invalid_summary']); continue; }
+      let review;
+      try { review = JSON.parse(matches[0][1]).code_review; } catch { ignored.push([id, 'invalid_summary']); continue; }
+      if (!review || review.commit_sha !== facts.pr.headSha) { ignored.push([id, 'stale_summary']); continue; }
+      const clean = review.status === 'completed' && review.has_any_findings === false && review.has_unresolved_findings === false;
+      signals.push({ id, kind: clean ? 'clean' : 'summary_not_clean' });
+      continue;
+    }
     const m = /\*\*Reviewed commit:\*\*\s*`([0-9a-f]{7,40})`/.exec(c.body ?? '');
     if (!m || !facts.pr.headSha.startsWith(m[1])) { ignored.push([id, 'stale_or_unparsed_sha']); continue; }
     if (state.handled.includes(id)) { ignored.push([id, 'duplicate']); continue; }
@@ -153,6 +165,7 @@ export function decide(facts, policy) {
     // handled solo deduplica ejecuciones; no acredita que el hallazgo se corrigiera.
     // Un recibo limpio del mismo SHA no puede borrar una reseña con hallazgos,
     // incluso si aquella ronda falló antes de generar un parche. Fallar cerrado.
+    if (signals.some((x) => x.kind === 'summary_not_clean')) return none('summary_not_clean', state);
     const conflicts = (facts.auditor?.reviews ?? []).some((r) =>
       isAuditor(r, policy) && r.commitId === facts.pr.headSha && r.findingCount > 0);
     if (conflicts) {

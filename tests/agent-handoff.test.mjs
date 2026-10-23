@@ -718,3 +718,41 @@ test('R2 token ajeno, SHA obsoleto, stop, estado corrupto, apagado y cambio dura
     assert.equal(posts, 0, mode);
   }
 });
+
+// Formato auténtico observado en #59, comentario 6358008943 (sin recibo textual).
+const summaryBody = (over = {}) => '<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 ' + JSON.stringify({ code_review: { commit_sha: H0, status: 'completed', has_any_findings: false, has_unresolved_findings: false, ...over } }) + ' -->';
+test('S1 resumen auténtico completo cierra y deduplica sin consumir rondas', async () => {
+  const g = fakeGithub(); await step(g, cmdEvent(OWNER));
+  g.addComment(CODEX, summaryBody(), { performed_via_github_app: { id: policy.auditor.appId } });
+  const r = await step(g, codexEvent());
+  assert.equal(r.result.state.status, STATUS.OWNER_REVIEW); assert.equal(r.result.state.rounds, 0);
+  const count = g.comments.length; await step(g, codexEvent()); assert.equal(g.comments.length, count);
+});
+test('S2 resumen incompleto, no limpio, obsoleto o ambiguo nunca aprueba', async () => {
+  for (const body of [summaryBody({status:'running'}), summaryBody({status:'failed'}), summaryBody({commit_sha:H1}), summaryBody({commit_sha:H0.slice(0,10)}), summaryBody({has_any_findings:null}), summaryBody({has_any_findings:true}), summaryBody({has_unresolved_findings:true}), '<!-- codex-review-state:v1 {bad} -->', summaryBody()+'\n'+summaryBody()]) {
+    const g=fakeGithub(); await step(g,cmdEvent(OWNER));
+    g.addComment(CODEX,body,{performed_via_github_app:{id:policy.auditor.appId}});
+    const r=await step(g,codexEvent()); assert.equal(r.result.state.status,STATUS.AWAITING_REVIEW); assert.equal(r.result.state.rounds,0);
+  }
+});
+test('S3 resumen requiere identidad exacta y aplicación auténtica', async () => {
+  for (const [user,app] of [[OWNER,policy.auditor.appId],[{...CODEX,id:123},policy.auditor.appId],[{...CODEX,login:'fake'},policy.auditor.appId],[{...CODEX,type:'User'},policy.auditor.appId],[CODEX,99],[CODEX,null]]) {
+    const g=fakeGithub(); await step(g,cmdEvent(OWNER)); g.addComment(user,summaryBody(),{performed_via_github_app:{id:app}});
+    const r=await step(g,codexEvent()); assert.equal(r.result.state.status,STATUS.AWAITING_REVIEW);
+  }
+});
+test('S4 resumen limpio no borra hallazgos auténticos del mismo SHA con 2/2 rondas', async () => {
+  const g=fakeGithub(); await step(g,cmdEvent(OWNER));
+  const sc=g.comments.find(c=>c.body.includes('agent-handoff-state:v1')); const state=decodeState(sc.body);
+  const review=g.addReview(CODEX,H0,[g.finding('tests/a.js',1,'defecto')]);
+  sc.body=encodeState({...state,rounds:2,handled:[`review:${review.id}`]});
+  g.addComment(CODEX,summaryBody(),{performed_via_github_app:{id:policy.auditor.appId}});
+  const r=await step(g,codexEvent()); assert.equal(r.result.state.status,STATUS.BLOCKED); assert.equal(r.result.state.rounds,2);
+});
+test('S5 recibo limpio no elude resumen actual running o con hallazgos', async () => {
+  for(const over of [{status:'running'},{has_any_findings:true}]) {
+    const g=fakeGithub(); await step(g,cmdEvent(OWNER)); g.receiptClean(H0);
+    g.addComment(CODEX,summaryBody(over),{performed_via_github_app:{id:policy.auditor.appId}});
+    const r=await step(g,codexEvent()); assert.equal(r.result.state.status,STATUS.AWAITING_REVIEW);
+  }
+});

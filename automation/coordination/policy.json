@@ -4,7 +4,7 @@
   "owners": [{ "login": "cero-absoluto", "id": 280877387, "type": "User" }],
   "auditor": { "login": "chatgpt-codex-connector[bot]", "id": 199175422, "type": "Bot", "appId": 1144995 },
   "stateWriter": { "login": "github-actions[bot]", "id": 41898282, "type": "Bot" },
-  "commands": { "enable": "/handoff enable", "stop": "/handoff stop", "retry": "/handoff retry" },
+  "commands": { "enable": "/handoff enable", "stop": "/handoff stop", "retry": "/handoff retry", "review": "/handoff review" },
   "maxRounds": 2,
   "limits": { "maxPatchBytes": 200000, "maxFindings": 20, "maxFindingChars": 2000, "maxHandled": 60 },
   "allowPaths": ["apps/web/src/", "tests/"],

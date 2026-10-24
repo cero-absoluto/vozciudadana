@@ -177,6 +177,21 @@ test('C6 workflow routes structured tasks to Claude and requires build after tes
   assert.doesNotMatch(verify, /secrets\./);
 });
 
+test('C7 rejected second implementation never clears an Owner stop queued behind the running workflow', async () => {
+  const g = fakeGithub(); await startImplementation(g);
+  g.addComment(OWNER, '/handoff stop'); // Not processed yet: publisher must read the queued stop.
+  const second = g.addComment(OWNER, '/handoff implement\nAnother task');
+  const rejected = await step(g, { comment: second });
+  assert.equal(rejected.outputs.reason, 'implementation_requires_new_pr');
+  assert.equal(stateOf(g).status, STATUS.IMPLEMENTING);
+  assert.equal(ownerStopped(rejected.facts, policy), true);
+  assert.equal(mayPublish(stateOf(g), rejected.facts, policy, 0), false);
+  const result = await publishRound({ api: g.api, policy, repository: REPO, number: 7, round: 0,
+    claudeResult: 'success', patch: '', repoDir: '/nonexistent', switchEnabled: 'true' });
+  assert.equal(result.outcome, 'stopped');
+  assert.equal(stateOf(g).status, STATUS.STOPPED);
+});
+
 // ── Flujos completos con estado persistente ─────────────────────────────────────────────────────────────
 test('F1 hallazgo actual → corrección (parche validado, push real a un remoto local) → nueva revisión limpia → OWNER_REVIEW', async () => {
   const dir = tmp();

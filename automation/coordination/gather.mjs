@@ -35,7 +35,7 @@ export async function collectFacts({ api, policy, repository, event, switchEnabl
   };
   const comments = await api.paginate(`/repos/${repository}/issues/${number}/comments`);
   // Órdenes del Owner ya publicadas (incluidas las que aún esperan en la cola de concurrencia): solo identidad y orden exacta.
-  const cmdOf = (c) => { const l = String(c.body ?? '').split('\n')[0].trim(); return l === policy.commands.implement ? 'implement' : l === policy.commands.stop ? 'stop' : l === policy.commands.enable ? 'enable' : l === policy.commands.retry ? 'retry' : null; };
+  const cmdOf = (c) => { const l = String(c.body ?? '').split('\n')[0].trim(); return l === policy.commands.stop ? 'stop' : l === policy.commands.enable ? 'enable' : l === policy.commands.retry ? 'retry' : null; };
   base.ownerCommands = comments.filter((c) => cmdOf(c) && policy.owners.some((o) => o.id === c.user?.id))
     .map((c) => ({ id: c.id, cmd: cmdOf(c), author: user(c.user) }));
   base.stateComments = comments.filter((c) => (c.body ?? '').includes(STATE_MARKER))

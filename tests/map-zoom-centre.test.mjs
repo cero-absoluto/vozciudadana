@@ -43,6 +43,14 @@ function map(width, height) {
 function sameCentre(a, b) {
   a.forEach((value, i) => assert.ok(Math.abs(value - b[i]) < 1e-8, `${a} != ${b}`));
 }
+test('a later location signal updates initial framing until the user moves', () => {
+  const m = map(390, 220);
+  m.run("globalThis.framed = []; frameCountry = country => framed.push(country); props.homeCountry = 'MT'; autoFrame();");
+  m.run("props.homeCountry = 'NL'; autoFrame(); autoFrame();");
+  assert.deepEqual(Array.from(m.run('framed')), ['MT', 'NL']);
+  m.run("userMoved = true; props.homeCountry = 'ES'; autoFrame();");
+  assert.deepEqual(Array.from(m.run('framed')), ['MT', 'NL']);
+});
 for (const [label, width, height] of [['desktop', 1100, 500], ['mobile', 390, 220]]) {
   test(`${label}: buttons and off-centre wheel keep geographic centre, including zoom limits`, () => {
     const m = map(width, height), initial = m.centre();

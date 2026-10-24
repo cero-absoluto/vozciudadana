@@ -776,6 +776,7 @@
     "toastInstalled": "✓ Voice Protest已安装"
   },
   "map": {
+    "approximateLocation": "根据时区估算的位置",
     "zoomIn": "放大地图",
     "zoomOut": "缩小地图",
     "resetView": "重置地图视图",

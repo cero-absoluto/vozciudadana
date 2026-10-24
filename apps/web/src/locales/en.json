@@ -776,6 +776,7 @@
     "toastInstalled": "✓ Voice Protest installed"
   },
   "map": {
+    "approximateLocation": "Approximate location from time zone",
     "zoomIn": "Zoom in on map",
     "zoomOut": "Zoom out on map",
     "resetView": "Reset map view",

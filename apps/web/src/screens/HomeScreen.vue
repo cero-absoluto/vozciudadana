@@ -62,11 +62,11 @@
       <!-- Filters + count -->
       <div class="map-topbar">
         <div class="filter-row">
-          <button class="pill" :class="{active: protests.filter==='global'}"   @click="setFilter('global')">{{ $t('home.filterGlobal') }}</button>
-          <button class="pill" :class="{active: protests.filter==='national'}" @click="setFilter('national')">{{ $t('home.filterNational') }}</button>
-          <button class="pill" :class="{active: protests.filter==='regional'}" @click="setFilter('regional')">{{ $t('home.filterRegional') }}</button>
-          <button class="pill" :class="{active: protests.filter==='local'}"    @click="setFilter('local')">{{ $t('home.filterLocal') }}</button>
-          <button class="pill" :class="{active: protests.filter==='institutional'}" @click="setFilter('institutional')">{{ $t('home.filterInstitutional') }}</button>
+          <button class="pill" :class="{active: protests.filter==='global'}" :aria-pressed="protests.filter==='global'"   @click="setFilter('global')">{{ $t('home.filterGlobal') }}</button>
+          <button class="pill" :class="{active: protests.filter==='national'}" :aria-pressed="protests.filter==='national'" @click="setFilter('national')">{{ $t('home.filterNational') }}</button>
+          <button class="pill" :class="{active: protests.filter==='regional'}" :aria-pressed="protests.filter==='regional'" @click="setFilter('regional')">{{ $t('home.filterRegional') }}</button>
+          <button class="pill" :class="{active: protests.filter==='local'}" :aria-pressed="protests.filter==='local'"    @click="setFilter('local')">{{ $t('home.filterLocal') }}</button>
+          <button class="pill" :class="{active: protests.filter==='institutional'}" :aria-pressed="protests.filter==='institutional'" @click="setFilter('institutional')">{{ $t('home.filterInstitutional') }}</button>
         </div>
         <div class="global-chip">
           <div class="red-dot"></div>

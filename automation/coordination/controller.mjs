@@ -87,7 +87,7 @@ export function decide(facts, policy) {
         const task = String(ev.body ?? '').split('\n').slice(1).join('\n').trim();
         if (!task || task.length > 8000) return none('invalid_implementation_task', state);
         return {
-          state: newState(facts, policy, { status: STATUS.IMPLEMENTING, flow: 'claude-first', handled: [`implementation-command:${ev.commentId}`] }),
+          state: newState(facts, policy, { status: STATUS.IMPLEMENTING, flow: 'claude-first', resumeCommandId: ev.commentId, handled: [`implementation-command:${ev.commentId}`] }),
           action: { type: 'run_claude', mode: 'implementation', round: 0, head: facts.pr.headSha, task, findings: [] },
         };
       }
@@ -111,7 +111,7 @@ export function decide(facts, policy) {
           .map((f) => ({ path: String(f.path ?? '').slice(0, 300), line: Number.isInteger(f.line) ? f.line : null, text: String(f.text ?? '').slice(0, policy.limits.maxFindingChars) }));
         if (!items.length) return none('retry_requires_findings_payload', state);
         const round = state.rounds + 1;
-        return { state: { ...withHandled(state, [retryId], policy), status: STATUS.CORRECTING, rounds: round, reason: `owner retry round ${round}` }, action: { type: 'run_claude', round, head: facts.pr.headSha, findings: items } };
+        return { state: { ...withHandled(state, [retryId], policy), status: STATUS.CORRECTING, rounds: round, ...(state.flow === 'claude-first' ? { resumeCommandId: ev.commentId } : {}), reason: `owner retry round ${round}` }, action: { type: 'run_claude', round, head: facts.pr.headSha, findings: items } };
       }
       if (cmd === 'stop') {
         const s = state ?? newState(facts, policy);
@@ -119,8 +119,10 @@ export function decide(facts, policy) {
       }
       if (!state) return { state: newState(facts, policy), action: { type: 'notify', kind: 'enabled' } };
       if (state.flow === 'claude-first' && !state.implementationHead) return none('implementation_not_published', state);
-      if (state.status === STATUS.STOPPED) return { state: { ...state, status: STATUS.AWAITING_REVIEW, head: facts.pr.headSha, reason: 're-enabled by owner' }, action: { type: 'notify', kind: 'enabled' } };
-      if (state.status === STATUS.AWAITING_REVIEW && state.head !== facts.pr.headSha) return { state: { ...state, head: facts.pr.headSha, reason: 'head re-baselined by owner' }, action: { type: 'notify', kind: 'rebaselined' } };
+      if (state.flow === 'claude-first' && !Number.isSafeInteger(ev.commentId)) return none('resume_requires_comment_id', state);
+      const resume = state.flow === 'claude-first' ? { resumeCommandId: ev.commentId } : {};
+      if (state.status === STATUS.STOPPED) return { state: { ...state, ...resume, status: STATUS.AWAITING_REVIEW, head: facts.pr.headSha, reason: 're-enabled by owner' }, action: { type: 'notify', kind: 'enabled' } };
+      if (state.status === STATUS.AWAITING_REVIEW && state.head !== facts.pr.headSha) return { state: { ...state, ...resume, head: facts.pr.headSha, reason: 'head re-baselined by owner' }, action: { type: 'notify', kind: 'rebaselined' } };
       return none('already_enabled_or_terminal', state);
     }
   }
@@ -205,6 +207,13 @@ export function decideAfterClaude(state, result, policy) {
 export function ownerStopped(facts, policy) {
   const cmds = (facts.ownerCommands ?? []).filter((c) => c && Number.isInteger(c.id) && (c.cmd === 'stop' || c.cmd === 'enable' || c.cmd === 'retry'))
     .filter((c) => c.author && c.author.type === 'User' && policy.owners.some((o) => o.id === c.author.id && o.login === c.author.login && o.type === c.author.type));
+  // For Claude-first tasks, only a command actually accepted and persisted by
+  // decide may resume work. A later rejected/queued command cannot cancel stop.
+  const { state } = pickState(facts.stateComments, policy);
+  if (state && state !== 'corrupt' && state.flow === 'claude-first') {
+    const resumedAt = Number.isSafeInteger(state.resumeCommandId) ? state.resumeCommandId : 0;
+    return cmds.some(c => c.cmd === 'stop' && c.id > resumedAt);
+  }
   if (!cmds.length) return false;
   return cmds.reduce((a, b) => (b.id > a.id ? b : a)).cmd === 'stop';
 }

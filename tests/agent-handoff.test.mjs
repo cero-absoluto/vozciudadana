@@ -192,6 +192,37 @@ test('C7 rejected second implementation never clears an Owner stop queued behind
   assert.equal(stateOf(g).status, STATUS.STOPPED);
 });
 
+test('C8 every rejected or queued command preserves stop during initial implementation', async () => {
+  for (const command of ['enable', 'retry', 'review', 'implement\nAnother task']) {
+    const g = fakeGithub(); await startImplementation(g);
+    const authorized = stateOf(g).resumeCommandId;
+    g.addComment(OWNER, '/handoff stop');
+    const comment = g.addComment(OWNER, `/handoff ${command}`);
+    const result = await step(g, { comment });
+    assert.equal(result.outputs.action, 'none', command);
+    assert.equal(stateOf(g).resumeCommandId, authorized, command);
+    assert.equal(ownerStopped(result.facts, policy), true, command);
+    assert.equal(mayPublish(stateOf(g), result.facts, policy, 0), false, command);
+  }
+});
+
+test('C9 only an accepted resume after completed implementation clears earlier stops', async () => {
+  const g = fakeGithub(); await startImplementation(g);
+  const next = decideAfterClaude(stateOf(g), { round: 0, outcome: 'pushed', newHead: H1 }, policy);
+  g.comments.find(c => c.body.includes('agent-handoff-state:v1')).body = encodeState(next.state);
+  g.pr.head.sha = H1;
+  await step(g, { comment: g.addComment(OWNER, '/handoff stop') });
+  const comment = g.addComment(OWNER, '/handoff enable');
+  await step(g, { comment });
+  assert.equal(stateOf(g).status, STATUS.AWAITING_REVIEW);
+  assert.equal(stateOf(g).resumeCommandId, comment.id);
+  const observed = await step(g, codexEvent());
+  assert.equal(ownerStopped(observed.facts, policy), false);
+  g.addComment(OWNER, '/handoff stop');
+  const stopped = await step(g, codexEvent());
+  assert.equal(ownerStopped(stopped.facts, policy), true);
+});
+
 // ── Flujos completos con estado persistente ─────────────────────────────────────────────────────────────
 test('F1 hallazgo actual → corrección (parche validado, push real a un remoto local) → nueva revisión limpia → OWNER_REVIEW', async () => {
   const dir = tmp();

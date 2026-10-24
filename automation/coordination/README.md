@@ -1,3 +1,50 @@
+# Flujo Claude implementa → Codex audita — propuesta actual
+
+Para tareas nuevas, ChatGPT concreta el objetivo y prepara una PR de soporte desde main
+(por ejemplo con criterios de aceptación o pruebas, sin implementar el cambio de producto).
+El Owner inicia la tarea con una orden nueva, no editada:
+
+```text
+/handoff implement
+
+Objetivo concreto y criterios de aceptación de la tarea autorizada.
+```
+
+La primera línea debe coincidir exactamente. El encargo debe tener entre 1 y 8000
+caracteres. Solo la identidad exacta del Owner con permiso admin/write y el
+interruptor global activo pueden iniciar el trabajo. Una sola implementación por
+PR, sin reutilizar estados previos ni reiniciar contadores. Encargos demasiado
+amplios o que requieran rutas denegadas deben dividirse o resolverse fuera del agente.
+
+Flujo: IMPLEMENTING (ronda 0) → Claude edita → parche validado → pruebas y build en
+job sin secretos → publicador de confianza empuja solo la rama del PR → petición
+de revisión Codex del SHA publicado → AWAITING_REVIEW. Solo una revisión auténtica
+limpia del HEAD actual permite OWNER_REVIEW. Los hallazgos permiten hasta dos
+rondas CORRECTING adicionales, siempre con pruebas, build y nueva revisión.
+Sin resultado o con Running sigue pendiente; nunca se sustituye por autorrevisión.
+La fusión y el despliegue siguen fuera del workflow y requieren autorización del Owner.
+
+Claude no recibe permisos nuevos, shell, red ni el PAT de petición de revisión.
+El objetivo viaja como JSON de datos en el artefacto existente, no se interpola en
+comandos ni código. Se conservan las listas de rutas, la huella del parche,
+la comprobación del HEAD, el lease del push y el job aislado que pide revisión.
+El nombre histórico del artefacto `findings` contiene ahora mode/task/findings.
+
+La implementación inicial no consume correcciones. Si falla, no produce cambios,
+se rechaza el parche o fallan pruebas/build, queda BLOCKED sin pedir aprobación.
+Una parada o interruptor apagado impide empujar. Una implementación inicial fallida
+no puede saltarse con `/handoff enable` ni relanzarse por duplicación: hay que
+investigar y preparar una nueva PR con autorización explícita. `/handoff enable`,
+`/handoff retry` y `/handoff review` conservan su función histórica para los
+relevos existentes; `/handoff implement` es la entrada para tareas nuevas.
+
+Esta propuesta tiene pruebas offline de la implementación inicial y del relevo.
+No acredita ejecución real de la nueva fase ni resuelve el fallo intermitente de
+publicación del conector Codex. Antes de fusionar necesita auditoría independiente;
+antes de declarar el nuevo flujo operativo necesita una tarea real observada.
+
+---
+
 # Recuperación explícita y recibos contradictorios — propuesta #55
 
 `/handoff retry` solo permite al Owner reintentar una reseña auténtica ya tratada, con hallazgos en el mismo HEAD, desde STOPPED o BLOCKED. Conserva los identificadores tratados, registra el id de la orden y consume una ronda normal: no reinicia ni amplía el límite. No solicita otra revisión a Codex. Sin hallazgos recuperables, con HEAD distinto, orden duplicada, interruptor apagado o rondas agotadas, no llama a Claude. Un stop posterior sigue impidiendo publicar.

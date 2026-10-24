@@ -66,6 +66,163 @@ const cmdEvent = (user, body = '/handoff enable') => ({ comment: { user, body } 
 const codexEvent = (action = 'edited') => ({ action, comment: { user: CODEX, body: '<!-- codex-pull-request-review-summary -->' } });
 const stateOf = (g) => pickState(g.comments.map((c) => ({ id: c.id, authorId: c.user.id, authorType: c.user.type, authorLogin: c.user.login, body: c.body })), policy).state;
 
+const startImplementation = (g, task = 'Implementa el criterio acordado y añade pruebas.') =>
+  step(g, { comment: g.addComment(OWNER, `/handoff implement\n\n${task}`) });
+
+test('C1 Owner task → Claude implementation → verified push → current Codex clean → OWNER_REVIEW, zero corrections', async () => {
+  const local = gitRepo(), g = fakeGithub({ head: local.head });
+  const started = await startImplementation(g);
+  assert.equal(started.outputs.action, 'run_claude');
+  assert.equal(started.outputs.round, '0');
+  assert.equal(stateOf(g).status, STATUS.IMPLEMENTING);
+  const payload = JSON.parse(fs.readFileSync(started.findingsPath));
+  assert.equal(payload.mode, 'implementation');
+  assert.match(payload.task, /criterio acordado/);
+  assert.deepEqual(payload.findings, []);
+  g.receiptClean(local.head);
+  assert.equal((await step(g, codexEvent())).outputs.reason, 'implementation_in_progress');
+  const patch = 'diff --git a/apps/web/src/a.js b/apps/web/src/a.js\n--- a/apps/web/src/a.js\n+++ b/apps/web/src/a.js\n@@ -1 +1 @@\n-export const a = 1;\n+export const a = 2;\n';
+  const published = await publishRound({ api: g.api, policy, repository: REPO, number: 7, round: 0,
+    claudeResult: 'success', patch, repoDir: `${local.dir}/work`, switchEnabled: 'true', requestReview: false });
+  assert.equal(published.outcome, 'pushed');
+  assert.equal(published.next.action.type, 'request_review');
+  const head = published.next.state.head;
+  assert.notEqual(head, local.head);
+  assert.equal(stateOf(g).implementationHead, head);
+  assert.equal(stateOf(g).rounds, 0);
+  assert.match(local.sh(`${local.dir}/work`, 'log', '-1', '--format=%s'), /initial Claude implementation/);
+  g.pr.head.sha = head;
+  assert.notEqual((await step(g, codexEvent())).result.state.status, STATUS.OWNER_REVIEW, 'old review cannot approve implementation');
+  g.receiptClean(head);
+  await step(g, codexEvent());
+  assert.equal(stateOf(g).status, STATUS.OWNER_REVIEW);
+  assert.equal(stateOf(g).rounds, 0);
+});
+
+test('C2 initial implementation preserves both correction rounds and missing verdict never approves', async () => {
+  const g = fakeGithub(); await startImplementation(g);
+  const next = decideAfterClaude(stateOf(g), { round: 0, outcome: 'pushed', newHead: H1 }, policy);
+  g.comments.find(c => c.body.includes('agent-handoff-state:v1')).body = encodeState(next.state);
+  g.pr.head.sha = H1;
+  for (let i = 0; i < 3; i++) assert.equal((await step(g, codexEvent())).result.state.status, STATUS.AWAITING_REVIEW);
+  for (const [head, newHead, round] of [[H1, H2, 1], [H2, H0, 2]]) {
+    g.addReview(CODEX, head, [g.finding('apps/web/src/a.js', 1, 'Fix the current issue')]);
+    const result = await step(g, codexEvent());
+    assert.equal(result.outputs.round, String(round));
+    assert.equal(JSON.parse(fs.readFileSync(result.findingsPath)).mode, 'correction');
+    const after = decideAfterClaude(stateOf(g), { round, outcome: 'pushed', newHead }, policy);
+    g.comments.find(c => c.body.includes('agent-handoff-state:v1')).body = encodeState(after.state);
+    g.pr.head.sha = newHead;
+  }
+  g.addReview(CODEX, H0, [g.finding('apps/web/src/a.js', 1, 'Still broken')]);
+  await step(g, codexEvent());
+  assert.equal(stateOf(g).status, STATUS.BLOCKED);
+  assert.equal(stateOf(g).rounds, 2);
+});
+
+test('C3 initial task requires exact Owner command, created comment, payload and unused PR', async () => {
+  for (const mode of ['impostor', 'edited', 'empty', 'large', 'switch', 'no-id', 'fork', 'closed']) {
+    const g = fakeGithub({ fork: mode === 'fork', state: mode === 'closed' ? 'closed' : 'open' });
+    const comment = g.addComment(mode === 'impostor' ? { ...OWNER, id: 9 } : OWNER,
+      `/handoff implement\n${mode === 'empty' ? '' : mode === 'large' ? 'x'.repeat(8001) : 'Small task'}`);
+    if (mode === 'no-id') delete comment.id;
+    const result = await step(g, { action: mode === 'edited' ? 'edited' : 'created', comment }, { enabled: mode === 'switch' ? 'false' : 'true' });
+    assert.equal(result.outputs.action, 'none', mode);
+    assert.equal(stateOf(g), null, mode);
+  }
+  const g = fakeGithub(); const first = await startImplementation(g);
+  assert.equal((await step(g, { comment: g.comments[0] })).outputs.reason, 'implementation_requires_new_pr');
+  assert.equal((await startImplementation(g, 'Another task')).outputs.action, 'none');
+  assert.equal(stateOf(g).rounds, first.result.state.rounds);
+});
+
+test('C4 initial model/verification/empty patch errors block without approval or correction round consumption', async () => {
+  for (const [claudeResult, verifyResult, patchStatus, expected] of [
+    ['failure', 'success', { ok: true }, 'failure'],
+    ['cancelled', 'success', { ok: true }, 'timeout'],
+    ['success', 'failure', { ok: true }, 'verification_failed'],
+    ['success', 'success', { ok: false, reason: 'empty_patch' }, 'no_changes'],
+    ['success', 'success', { ok: false, reason: 'denied_path' }, 'rejected_patch'],
+  ]) {
+    const g = fakeGithub(); await startImplementation(g);
+    const r = await publishRound({ api: g.api, policy, repository: REPO, number: 7, round: 0,
+      claudeResult, verifyResult, patchStatus, patch: '', repoDir: '/nonexistent', switchEnabled: 'true' });
+    assert.equal(r.outcome, expected);
+    assert.equal(stateOf(g).status, STATUS.BLOCKED);
+    assert.equal(stateOf(g).rounds, 0);
+    assert.equal((await step(g, cmdEvent(OWNER))).outputs.reason, 'implementation_not_published');
+    assert.equal((await startImplementation(g)).outputs.action, 'none');
+  }
+});
+
+test('C5 stop and global switch prevent publishing the initial implementation', async () => {
+  for (const mode of ['stop', 'switch', 'queued-stop']) {
+    const g = fakeGithub(); await startImplementation(g);
+    if (mode === 'stop') await step(g, { comment: g.addComment(OWNER, '/handoff stop') });
+    if (mode === 'queued-stop') g.addComment(OWNER, '/handoff stop');
+    const result = await publishRound({ api: g.api, policy, repository: REPO, number: 7, round: 0,
+      claudeResult: 'success', patch: '', repoDir: '/nonexistent', switchEnabled: mode === 'switch' ? 'false' : 'true' });
+    assert.notEqual(result.outcome, 'pushed');
+    assert.equal(stateOf(g).status, STATUS.STOPPED);
+    assert.equal((await step(g, cmdEvent(OWNER))).outputs.reason, 'implementation_not_published');
+  }
+});
+
+test('C6 workflow routes structured tasks to Claude and requires build after tests in credential-free verify', () => {
+  const workflow = fs.readFileSync('.github/workflows/agent-handoff.yml', 'utf8');
+  assert.match(workflow, /Si mode es implementation/);
+  assert.match(workflow, /Si mode es correction/);
+  const verify = workflow.split('\n  verify:')[1].split('\n  publish:')[0];
+  assert.ok(verify.indexOf('node --experimental-test-module-mocks --test') < verify.indexOf('npm run build --workspace=apps/web'));
+  assert.doesNotMatch(verify, /secrets\./);
+});
+
+test('C7 rejected second implementation never clears an Owner stop queued behind the running workflow', async () => {
+  const g = fakeGithub(); await startImplementation(g);
+  g.addComment(OWNER, '/handoff stop'); // Not processed yet: publisher must read the queued stop.
+  const second = g.addComment(OWNER, '/handoff implement\nAnother task');
+  const rejected = await step(g, { comment: second });
+  assert.equal(rejected.outputs.reason, 'implementation_requires_new_pr');
+  assert.equal(stateOf(g).status, STATUS.IMPLEMENTING);
+  assert.equal(ownerStopped(rejected.facts, policy), true);
+  assert.equal(mayPublish(stateOf(g), rejected.facts, policy, 0), false);
+  const result = await publishRound({ api: g.api, policy, repository: REPO, number: 7, round: 0,
+    claudeResult: 'success', patch: '', repoDir: '/nonexistent', switchEnabled: 'true' });
+  assert.equal(result.outcome, 'stopped');
+  assert.equal(stateOf(g).status, STATUS.STOPPED);
+});
+
+test('C8 every rejected or queued command preserves stop during initial implementation', async () => {
+  for (const command of ['enable', 'retry', 'review', 'implement\nAnother task']) {
+    const g = fakeGithub(); await startImplementation(g);
+    const authorized = stateOf(g).resumeCommandId;
+    g.addComment(OWNER, '/handoff stop');
+    const comment = g.addComment(OWNER, `/handoff ${command}`);
+    const result = await step(g, { comment });
+    assert.equal(result.outputs.action, 'none', command);
+    assert.equal(stateOf(g).resumeCommandId, authorized, command);
+    assert.equal(ownerStopped(result.facts, policy), true, command);
+    assert.equal(mayPublish(stateOf(g), result.facts, policy, 0), false, command);
+  }
+});
+
+test('C9 only an accepted resume after completed implementation clears earlier stops', async () => {
+  const g = fakeGithub(); await startImplementation(g);
+  const next = decideAfterClaude(stateOf(g), { round: 0, outcome: 'pushed', newHead: H1 }, policy);
+  g.comments.find(c => c.body.includes('agent-handoff-state:v1')).body = encodeState(next.state);
+  g.pr.head.sha = H1;
+  await step(g, { comment: g.addComment(OWNER, '/handoff stop') });
+  const comment = g.addComment(OWNER, '/handoff enable');
+  await step(g, { comment });
+  assert.equal(stateOf(g).status, STATUS.AWAITING_REVIEW);
+  assert.equal(stateOf(g).resumeCommandId, comment.id);
+  const observed = await step(g, codexEvent());
+  assert.equal(ownerStopped(observed.facts, policy), false);
+  g.addComment(OWNER, '/handoff stop');
+  const stopped = await step(g, codexEvent());
+  assert.equal(ownerStopped(stopped.facts, policy), true);
+});
+
 // ── Flujos completos con estado persistente ─────────────────────────────────────────────────────────────
 test('F1 hallazgo actual → corrección (parche validado, push real a un remoto local) → nueva revisión limpia → OWNER_REVIEW', async () => {
   const dir = tmp();
@@ -303,7 +460,7 @@ test('W6 confianza del controlador: decide y publish toman código de la rama po
   assert.match(code, /group: agent-handoff-pr-\$\{\{ github\.event\.issue\.number \}\}\n\s+cancel-in-progress: false/);
   assert.match(code, /github\.event\.comment\.user\.id == 199175422/); assert.equal(policy.auditor.id, 199175422);
   assert.match(code, /vars\.AGENT_HANDOFF_ENABLED == 'true'/);
-  assert.deepEqual([...code.matchAll(/run: .*(npm|pnpm|yarn|npx).*/g)].map((m) => m[0]), ['run: npm ci --ignore-scripts --no-audit --no-fund', 'run: npm ci --ignore-scripts --no-audit --no-fund --prefix automation/preflight/tools'], 'solo verify instala, con lockfile congelado y sin scripts');
+  assert.deepEqual([...code.matchAll(/run: .*(npm|pnpm|yarn|npx).*/g)].map((m) => m[0]), ['run: npm ci --ignore-scripts --no-audit --no-fund', 'run: npm ci --ignore-scripts --no-audit --no-fund --prefix automation/preflight/tools', 'run: npm run build --workspace=apps/web'], 'solo verify instala con lockfile congelado y compila sin credenciales');
 });
 
 // ── Defensas redundantes (cada capa se prueba por separado) ─────────────────────────────────────────────

@@ -3,12 +3,12 @@
 // defecto) y devuelve el nuevo estado y UNA acción. Todo lo que viene de comentarios/PR/modelo es dato no fiable:
 // aquí solo se compara con identidades y SHAs; nada se ejecuta ni se interpreta como orden.
 //
-// Estados: AWAITING_REVIEW → (hallazgos) CORRECTING → AWAITING_REVIEW …  → OWNER_REVIEW | BLOCKED | STOPPED.
+// Estados: IMPLEMENTING (opcional, ronda 0) → AWAITING_REVIEW → (hallazgos) CORRECTING → AWAITING_REVIEW …  → OWNER_REVIEW | BLOCKED | STOPPED.
 // Reutiliza de la PR #23 (protocolo offline): revisión obsoleta rechazada, límite de dos correcciones, parada en
 // OWNER_REVIEW, sin merge. Añade identidad real (id/tipo/app), SHA de HEAD, deduplicación y contador persistente.
 
 export const STATUS = Object.freeze({
-  AWAITING_REVIEW: 'AWAITING_REVIEW', CORRECTING: 'CORRECTING', OWNER_REVIEW: 'OWNER_REVIEW', BLOCKED: 'BLOCKED', STOPPED: 'STOPPED',
+  IMPLEMENTING: 'IMPLEMENTING', AWAITING_REVIEW: 'AWAITING_REVIEW', CORRECTING: 'CORRECTING', OWNER_REVIEW: 'OWNER_REVIEW', BLOCKED: 'BLOCKED', STOPPED: 'STOPPED',
 });
 const TERMINAL = new Set([STATUS.OWNER_REVIEW, STATUS.BLOCKED]);
 const SHA = /^[0-9a-f]{40}$/;
@@ -76,9 +76,21 @@ export function decide(facts, policy) {
   // 1. Órdenes del Owner (solo issue_comment de PR, creado, texto exacto)
   if (ev.name === 'issue_comment' && ev.action === 'created' && ev.isPullRequest) {
     const line = String(ev.body ?? '').split('\n')[0].trim();
-    const cmd = line === policy.commands.enable ? 'enable' : line === policy.commands.stop ? 'stop' : line === policy.commands.retry ? 'retry' : line === policy.commands.review ? 'review' : null;
+    const cmd = line === policy.commands.implement ? 'implement' : line === policy.commands.enable ? 'enable' : line === policy.commands.stop ? 'stop' : line === policy.commands.retry ? 'retry' : line === policy.commands.review ? 'review' : null;
     if (cmd) {
       if (!isOwner(ev.actor, facts.actorPermission, policy)) return none('command_actor_not_authorized', state);
+      if (cmd === 'implement') {
+        // One initial implementation per PR. Retries/edits cannot silently start another model run.
+        if (state) return none('implementation_requires_new_pr', state);
+        if (!Number.isSafeInteger(ev.commentId)) return none('implementation_requires_comment_id', state);
+        if (ownerStopped(facts, policy)) return none('stopped_by_owner', state);
+        const task = String(ev.body ?? '').split('\n').slice(1).join('\n').trim();
+        if (!task || task.length > 8000) return none('invalid_implementation_task', state);
+        return {
+          state: newState(facts, policy, { status: STATUS.IMPLEMENTING, flow: 'claude-first', resumeCommandId: ev.commentId, handled: [`implementation-command:${ev.commentId}`] }),
+          action: { type: 'run_claude', mode: 'implementation', round: 0, head: facts.pr.headSha, task, findings: [] },
+        };
+      }
       if (cmd === 'review') {
         if (!state || state.status !== STATUS.AWAITING_REVIEW) return none('review_requires_awaiting', state);
         if (state.pr !== facts.pr.number || state.head !== facts.pr.headSha || ownerStopped(facts, policy)) return none('review_not_current_or_stopped', state);
@@ -99,15 +111,18 @@ export function decide(facts, policy) {
           .map((f) => ({ path: String(f.path ?? '').slice(0, 300), line: Number.isInteger(f.line) ? f.line : null, text: String(f.text ?? '').slice(0, policy.limits.maxFindingChars) }));
         if (!items.length) return none('retry_requires_findings_payload', state);
         const round = state.rounds + 1;
-        return { state: { ...withHandled(state, [retryId], policy), status: STATUS.CORRECTING, rounds: round, reason: `owner retry round ${round}` }, action: { type: 'run_claude', round, head: facts.pr.headSha, findings: items } };
+        return { state: { ...withHandled(state, [retryId], policy), status: STATUS.CORRECTING, rounds: round, ...(state.flow === 'claude-first' ? { resumeCommandId: ev.commentId } : {}), reason: `owner retry round ${round}` }, action: { type: 'run_claude', round, head: facts.pr.headSha, findings: items } };
       }
       if (cmd === 'stop') {
         const s = state ?? newState(facts, policy);
         return { state: { ...s, status: STATUS.STOPPED, reason: 'stopped by owner' }, action: { type: 'notify', kind: 'stopped' } };
       }
       if (!state) return { state: newState(facts, policy), action: { type: 'notify', kind: 'enabled' } };
-      if (state.status === STATUS.STOPPED) return { state: { ...state, status: STATUS.AWAITING_REVIEW, head: facts.pr.headSha, reason: 're-enabled by owner' }, action: { type: 'notify', kind: 'enabled' } };
-      if (state.status === STATUS.AWAITING_REVIEW && state.head !== facts.pr.headSha) return { state: { ...state, head: facts.pr.headSha, reason: 'head re-baselined by owner' }, action: { type: 'notify', kind: 'rebaselined' } };
+      if (state.flow === 'claude-first' && !state.implementationHead) return none('implementation_not_published', state);
+      if (state.flow === 'claude-first' && !Number.isSafeInteger(ev.commentId)) return none('resume_requires_comment_id', state);
+      const resume = state.flow === 'claude-first' ? { resumeCommandId: ev.commentId } : {};
+      if (state.status === STATUS.STOPPED) return { state: { ...state, ...resume, status: STATUS.AWAITING_REVIEW, head: facts.pr.headSha, reason: 're-enabled by owner' }, action: { type: 'notify', kind: 'enabled' } };
+      if (state.status === STATUS.AWAITING_REVIEW && state.head !== facts.pr.headSha) return { state: { ...state, ...resume, head: facts.pr.headSha, reason: 'head re-baselined by owner' }, action: { type: 'notify', kind: 'rebaselined' } };
       return none('already_enabled_or_terminal', state);
     }
   }
@@ -116,6 +131,7 @@ export function decide(facts, policy) {
   if (!state) return none('pr_not_enabled', null);
   if (state.status === STATUS.STOPPED) return none('stopped', state);
   if (TERMINAL.has(state.status)) return none('terminal_state', state);
+  if (state.status === STATUS.IMPLEMENTING) return none('implementation_in_progress', state);
   if (state.status === STATUS.CORRECTING) return none('correction_in_progress', state);
   if (state.pr !== facts.pr.number) return none('state_for_other_pr', state);
   if (state.head !== facts.pr.headSha) return none('head_differs_from_controller_state', state);
@@ -178,9 +194,9 @@ export function decide(facts, policy) {
 
 /** Resultado del job de Claude + publicador. outcome: pushed | failure | timeout | no_changes | rejected_patch | stale */
 export function decideAfterClaude(state, result, policy) {
-  if (!state || state.status !== STATUS.CORRECTING || result.round !== state.rounds) return none('stale_result', state);
+  if (!state || ![STATUS.IMPLEMENTING, STATUS.CORRECTING].includes(state.status) || result.round !== state.rounds) return none('stale_result', state);
   if (result.outcome === 'pushed' && SHA.test(result.newHead ?? '') && result.newHead !== state.head) {
-    return { state: { ...state, status: STATUS.AWAITING_REVIEW, head: result.newHead, reason: `awaiting review of round ${state.rounds}` }, action: { type: 'request_review', head: result.newHead } };
+    return { state: { ...state, status: STATUS.AWAITING_REVIEW, head: result.newHead, ...(state.status === STATUS.IMPLEMENTING ? { implementationHead: result.newHead } : {}), reason: `awaiting review of round ${state.rounds}` }, action: { type: 'request_review', head: result.newHead } };
   }
   const reason = result.outcome === 'pushed' ? 'invalid_new_head' : String(result.outcome ?? 'unknown_error');
   return { state: { ...state, status: STATUS.BLOCKED, reason }, action: { type: 'blocked', reason } };
@@ -191,6 +207,13 @@ export function decideAfterClaude(state, result, policy) {
 export function ownerStopped(facts, policy) {
   const cmds = (facts.ownerCommands ?? []).filter((c) => c && Number.isInteger(c.id) && (c.cmd === 'stop' || c.cmd === 'enable' || c.cmd === 'retry'))
     .filter((c) => c.author && c.author.type === 'User' && policy.owners.some((o) => o.id === c.author.id && o.login === c.author.login && o.type === c.author.type));
+  // For Claude-first tasks, only a command actually accepted and persisted by
+  // decide may resume work. A later rejected/queued command cannot cancel stop.
+  const { state } = pickState(facts.stateComments, policy);
+  if (state && state !== 'corrupt' && state.flow === 'claude-first') {
+    const resumedAt = Number.isSafeInteger(state.resumeCommandId) ? state.resumeCommandId : 0;
+    return cmds.some(c => c.cmd === 'stop' && c.id > resumedAt);
+  }
   if (!cmds.length) return false;
   return cmds.reduce((a, b) => (b.id > a.id ? b : a)).cmd === 'stop';
 }
@@ -198,7 +221,7 @@ export function mayPublish(state, facts, policy, round) {
   if (precheck(facts, policy)) return false;
   if (facts.switch?.enabled !== true) return false;
   if (ownerStopped(facts, policy)) return false;
-  return !!state && typeof state === 'object' && state.status === STATUS.CORRECTING && state.rounds === round && state.head === facts.pr.headSha;
+  return !!state && typeof state === 'object' && [STATUS.IMPLEMENTING, STATUS.CORRECTING].includes(state.status) && state.rounds === round && state.head === facts.pr.headSha;
 }
 
 // ── Validación del parche que produce el modelo (se aplica por código de confianza, sin modelo con token de escritura) ──

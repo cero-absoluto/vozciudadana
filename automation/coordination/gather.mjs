@@ -88,7 +88,7 @@ export async function main(env = process.env, deps = {}) {
   if (a.type === 'notify') await api.request('POST', `/repos/${repository}/issues/${facts.pr.number}/comments`, { body: NOTICE[a.kind] });
   if (a.type === 'blocked') await api.request('POST', `/repos/${repository}/issues/${facts.pr.number}/comments`, { body: blockedNotice(a.reason) });
   const out = { action: a.type, reason: a.reason ?? a.kind ?? '', round: a.round ?? '', head: a.head ?? '', pr: facts.pr?.number ?? '', head_ref: facts.pr?.headRef ?? '' };
-  if (a.type === 'run_claude') fs.writeFileSync(env.FINDINGS_PATH ?? 'findings.json', JSON.stringify({ round: a.round, head: a.head, findings: a.findings }, null, 2));
+  if (a.type === 'run_claude') fs.writeFileSync(env.FINDINGS_PATH ?? 'findings.json', JSON.stringify({ mode: a.mode ?? 'correction', task: a.task ?? null, round: a.round, head: a.head, findings: a.findings }, null, 2));
   if (env.GITHUB_OUTPUT) fs.appendFileSync(env.GITHUB_OUTPUT, Object.entries(out).map(([k, v]) => `${k}=${String(v).replace(/[\r\n]/g, ' ')}\n`).join(''));
   console.log(JSON.stringify({ decision: out }));
   return { facts, result, out };

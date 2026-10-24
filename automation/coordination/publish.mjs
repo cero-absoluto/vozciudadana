@@ -29,7 +29,7 @@ export function applyPatchAndPush({ repoDir, headSha, headRef, patch, round, pol
   const files = changed.status === 0 ? changed.stdout.split('\0').filter(Boolean) : [];
   const verdict = checkPaths(files, policy);
   if (!verdict.ok) { run('reset', '-q', '--hard', headSha); run('clean', '-fdq'); return { ok: false, reason: 'applied_paths_outside_policy' }; }
-  const msg = `agent-handoff: correction round ${round} of Codex findings\n\nApplied by the trusted publisher from a validated patch; no merge, no deployment.`;
+  const msg = `${round === 0 ? 'agent-handoff: initial Claude implementation' : `agent-handoff: correction round ${round} of Codex findings`}\n\nApplied by the trusted publisher from a validated patch; no merge, no deployment.`;
   const c = run('-c', 'user.name=agent-handoff[bot]', '-c', 'user.email=agent-handoff@users.noreply.github.com', '-c', 'core.hooksPath=/dev/null', 'commit', '-q', '--no-verify', '-m', msg);
   if (c.status !== 0) return { ok: false, reason: 'commit_failed' };
   const newHead = run('rev-parse', 'HEAD').stdout.trim();
@@ -101,7 +101,7 @@ export async function publishRound({ api, policy, repository, number, round, cla
   // Parada del Owner publicada mientras la ronda corría (aunque su ejecución siga en cola), o interruptor global apagado
   // tras empezar: se respeta antes de cualquier push y se deja un estado terminal reanudable (STOPPED; `/handoff enable`
   // lo reactiva), nunca CORRECTING colgado.
-  if (facts.pr && state && state !== 'corrupt' && state.status === STATUS.CORRECTING && state.rounds === round) {
+  if (facts.pr && state && state !== 'corrupt' && [STATUS.IMPLEMENTING, STATUS.CORRECTING].includes(state.status) && state.rounds === round) {
     const byOwner = ownerStopped(facts, policy);
     if (byOwner || facts.switch.enabled !== true) {
       await persistState({ api, repository, number, commentId, state: { ...state, status: STATUS.STOPPED, reason: byOwner ? 'stopped by owner during correction' : 'aborted: global switch off during correction' } });

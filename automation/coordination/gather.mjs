@@ -35,7 +35,7 @@ export async function collectFacts({ api, policy, repository, event, switchEnabl
   };
   const comments = await api.paginate(`/repos/${repository}/issues/${number}/comments`);
   // Órdenes del Owner ya publicadas (incluidas las que aún esperan en la cola de concurrencia): solo identidad y orden exacta.
-  const cmdOf = (c) => { const l = String(c.body ?? '').split('\n')[0].trim(); return l === policy.commands.stop ? 'stop' : l === policy.commands.enable ? 'enable' : l === policy.commands.retry ? 'retry' : null; };
+  const cmdOf = (c) => { const l = String(c.body ?? '').split('\n')[0].trim(); return l === policy.commands.implement ? 'implement' : l === policy.commands.stop ? 'stop' : l === policy.commands.enable ? 'enable' : l === policy.commands.retry ? 'retry' : null; };
   base.ownerCommands = comments.filter((c) => cmdOf(c) && policy.owners.some((o) => o.id === c.user?.id))
     .map((c) => ({ id: c.id, cmd: cmdOf(c), author: user(c.user) }));
   base.stateComments = comments.filter((c) => (c.body ?? '').includes(STATE_MARKER))
@@ -88,7 +88,7 @@ export async function main(env = process.env, deps = {}) {
   if (a.type === 'notify') await api.request('POST', `/repos/${repository}/issues/${facts.pr.number}/comments`, { body: NOTICE[a.kind] });
   if (a.type === 'blocked') await api.request('POST', `/repos/${repository}/issues/${facts.pr.number}/comments`, { body: blockedNotice(a.reason) });
   const out = { action: a.type, reason: a.reason ?? a.kind ?? '', round: a.round ?? '', head: a.head ?? '', pr: facts.pr?.number ?? '', head_ref: facts.pr?.headRef ?? '' };
-  if (a.type === 'run_claude') fs.writeFileSync(env.FINDINGS_PATH ?? 'findings.json', JSON.stringify({ round: a.round, head: a.head, findings: a.findings }, null, 2));
+  if (a.type === 'run_claude') fs.writeFileSync(env.FINDINGS_PATH ?? 'findings.json', JSON.stringify({ mode: a.mode ?? 'correction', task: a.task ?? null, round: a.round, head: a.head, findings: a.findings }, null, 2));
   if (env.GITHUB_OUTPUT) fs.appendFileSync(env.GITHUB_OUTPUT, Object.entries(out).map(([k, v]) => `${k}=${String(v).replace(/[\r\n]/g, ' ')}\n`).join(''));
   console.log(JSON.stringify({ decision: out }));
   return { facts, result, out };

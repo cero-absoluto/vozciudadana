@@ -24,6 +24,7 @@
       <div class="lang-switcher">
         <button v-for="l in langs" :key="l.code"
           class="lang-btn" :class="{active: ui.lang === l.code}"
+          :lang="l.code" :aria-label="l.name" :aria-pressed="ui.lang === l.code"
           @click="setLang(l.code)">{{ l.label }}</button>
       </div>
       <div class="badge-anon"><div class="pulse"></div><span>{{ $t('app.anon') }}</span></div>
@@ -37,8 +38,8 @@ import { useUiStore } from '@/stores/ui.js';
 const { locale } = useI18n({ useScope: 'global' });
 const ui = useUiStore();
 const langs = [
-  { code:'es', label:'ES' }, { code:'en', label:'EN' },
-  { code:'fr', label:'FR' }, { code:'zh', label:'中文' },
+  { code:'es', label:'ES', name:'Español' }, { code:'en', label:'EN', name:'English' },
+  { code:'fr', label:'FR', name:'Français' }, { code:'zh', label:'中文', name:'中文' },
 ];
 function setLang(code) {
   locale.value = code;

@@ -770,6 +770,7 @@
     "toastCopy": "📋 Copié ! Collez-le sur TikTok, Instagram ou où vous voulez"
   },
   "install": {
+    "dismiss": "Fermer l’avis d’installation",
     "title": "Installer Voice Protest",
     "subtitle": "Suivez le résultat en temps réel · Sans App Store · Sans permission de personne",
     "btn": "Installer",

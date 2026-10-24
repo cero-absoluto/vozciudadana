@@ -770,6 +770,7 @@
     "toastCopy": "📋 已复制！粘贴到TikTok、Instagram或任何地方"
   },
   "install": {
+    "dismiss": "关闭安装提示",
     "title": "安装Voice Protest",
     "subtitle": "实时跟踪结果 · 无需App商店 · 无需任何人许可",
     "btn": "安装",

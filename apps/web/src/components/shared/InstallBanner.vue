@@ -7,7 +7,7 @@
         <div class="ib-sub">{{ $t('install.subtitle') }}</div>
       </div>
       <button class="ib-btn" @click="ui.installPWA()">{{ $t('install.btn') }}</button>
-      <button class="ib-close" @click="ui.dismissInstallBanner()">✕</button>
+      <button class="ib-close" type="button" :aria-label="$t('install.dismiss')" :title="$t('install.dismiss')" @click="ui.dismissInstallBanner()">✕</button>
     </div>
   </Teleport>
 </template>

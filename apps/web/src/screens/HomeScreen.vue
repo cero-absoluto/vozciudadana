@@ -22,7 +22,7 @@
       </div>
       <div class="device-bar">
         <div class="dev-info">
-          <div class="dev-country"><span class="dev-flag">{{ deviceFlag }}</span> {{ displayCountryName }}{{ device.regionLabel ? ' · ' + device.regionLabel : '' }}</div>
+          <div class="dev-country"><span class="dev-flag">{{ deviceFlag }}</span> {{ location.country }} {{ displayCountryName }}<span v-if="location.approximate"> · {{ $t('map.approximateLocation') }}</span></div>
         </div>
       </div>
 
@@ -52,8 +52,7 @@
         :filter="protests.filter"
         :country-filter="protests.countryFilter"
         :country-filter-name="countryFilterName"
-        :home-country="device.simCountry"
-        :fallback-country="device.ipCountry"
+        :home-country="location.country"
         :height="220"
         @country-click="onCountryClick"
         @clear-country="clearCountryFilter"
@@ -94,6 +93,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { mapLocation } from '@/lib/mapLocation.js';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useProtestsStore } from '@/stores/protests.js';
@@ -141,17 +141,13 @@ if (showMapOverlay.value) {
 }
 const countryFilterName = ref(null);
 
+const location = computed(() => mapLocation(device));
 const deviceFlag = computed(() => {
-  const code = device.ipCountry || device.simCountry;
-  if (!code || code.length !== 2) return '🌍';
-  // Build flag from Unicode regional indicator symbols — renders consistently
-  // across platforms as long as the OS has any flag-capable font, and avoids
-  // a hardcoded country list that was missing most countries (e.g. Malta).
-  const codePoints = code.toUpperCase().split('').map(c => 0x1F1E6 - 65 + c.charCodeAt(0));
-  return String.fromCodePoint(...codePoints);
+  const code = location.value.country;
+  if (!code) return '🌍';
+  return String.fromCodePoint(...code.split('').map(c => 0x1F1E6 - 65 + c.charCodeAt(0)));
 });
-
-const displayCountryName = computed(() => localizedCountry(device.simCountry || device.ipCountry, locale.value) || device.simName);
+const displayCountryName = computed(() => localizedCountry(location.value.country, locale.value) || '');
 
 function setFilter(f) {
   // toggle: tapping the active scope again returns to the no-filter (gateway) view

@@ -776,6 +776,7 @@
     "toastInstalled": "✓ Voice Protest installé"
   },
   "map": {
+    "approximateLocation": "Localisation approximative selon le fuseau horaire",
     "zoomIn": "Agrandir la carte",
     "zoomOut": "Réduire la carte",
     "resetView": "Réinitialiser la vue de la carte",

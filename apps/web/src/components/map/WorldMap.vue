@@ -64,7 +64,7 @@ function buildProj() {
   gp = d3.geoPath(proj, ctx);
 }
 
-let autoFramed = null;   // null | 'ip' | 'sim' — which signal we auto-framed with
+let autoFramed = null;   // last country used for automatic framing
 let userMoved  = false;  // once the user pans/zooms/taps, stop auto-framing
 
 // Return the country's largest landmass as a single-polygon feature. Countries
@@ -116,16 +116,15 @@ function frameCountry(a2, fill = 0.6) {
   buildProj();
 }
 
-// Auto-frame with the best signal available *without asking permission*:
-// the SIM country if already known, otherwise the IP country (which arrives on
-// its own). If the SIM shows up later and the user hasn't touched the map, we
-// upgrade the framing to it — the SIM always wins over the IP, but only as an
-// improvement, never as a requirement. Once the user moves the map, we stop.
+// Use the best presentation-only location supplied by the parent. A later,
+// stronger country signal can replace the initial estimate until the user moves.
 function autoFrame() {
   if (userMoved || !worldData || !W) return;
-  const sim = props.homeCountry, ip = props.fallbackCountry;
-  if (sim && autoFramed !== 'sim')      { frameCountry(sim); autoFramed = 'sim'; }
-  else if (!sim && ip && !autoFramed)   { frameCountry(ip);  autoFramed = 'ip';  }
+  const country = props.homeCountry || props.fallbackCountry;
+  if (country && autoFramed !== country) {
+    frameCountry(country);
+    autoFramed = country;
+  }
 }
 
 // Re-run whenever either signal becomes available.

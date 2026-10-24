@@ -770,6 +770,7 @@
     "toastCopy": "📋 Copied! Paste it on TikTok, Instagram or wherever you want"
   },
   "install": {
+    "dismiss": "Dismiss installation notice",
     "title": "Install Voice Protest",
     "subtitle": "Follow the result in real time · No App Store · No one's permission",
     "btn": "Install",

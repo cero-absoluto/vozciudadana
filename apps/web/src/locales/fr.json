@@ -776,6 +776,9 @@
     "toastInstalled": "✓ Voice Protest installé"
   },
   "map": {
+    "zoomIn": "Agrandir la carte",
+    "zoomOut": "Réduire la carte",
+    "resetView": "Réinitialiser la vue de la carte",
     "hint": "Cliquez sur un pays pour filtrer · faites défiler pour zoomer",
     "clearFilter": "Tout afficher",
     "legendTitle": "Activité",

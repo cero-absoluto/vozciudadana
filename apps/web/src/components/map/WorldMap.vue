@@ -10,9 +10,9 @@
       <template v-else>{{ $t('map.hint') }}</template>
     </div>
     <div class="map-ctrl">
-      <button class="mc" @click="zoomIn">+</button>
-      <button class="mc" @click="zoomOut">−</button>
-      <button class="mc" @click="resetView" style="font-size:9px">⊙</button>
+      <button class="mc" type="button" :aria-label="$t('map.zoomIn')" :title="$t('map.zoomIn')" @click="zoomIn">+</button>
+      <button class="mc" type="button" :aria-label="$t('map.zoomOut')" :title="$t('map.zoomOut')" @click="zoomOut">−</button>
+      <button class="mc" type="button" :aria-label="$t('map.resetView')" :title="$t('map.resetView')" @click="resetView" style="font-size:9px">⊙</button>
     </div>
     <div class="map-legend">
       <div class="ml-title">{{ $t('map.legendTitle') }}</div>
@@ -66,7 +66,6 @@ function buildProj() {
 
 let autoFramed = null;   // null | 'ip' | 'sim' — which signal we auto-framed with
 let userMoved  = false;  // once the user pans/zooms/taps, stop auto-framing
-let lastFramed = null;   // last country framed on — used to re-centre after a resize
 
 // Return the country's largest landmass as a single-polygon feature. Countries
 // with far-flung overseas territories (France, the Netherlands, the USA, Spain…)
@@ -97,7 +96,6 @@ function frameCountry(a2, fill = 0.6) {
   const feat = topojson.feature(worldData, worldData.objects.countries).features
     .find(f => f.id && String(f.id).padStart(3, '0') === target);
   if (!feat) return;
-  lastFramed = a2;
   const mf = mainlandFeature(feat);
   const base = (W / 640) * 112;
   // Measure the mainland's projected size at zoom 1, centred.
@@ -293,19 +291,12 @@ function setupEvents() {
   c.addEventListener('wheel', e => {
     e.preventDefault();
     userMoved = true;
-    const rect = c.getBoundingClientRect();
-    const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
-    const geo = proj.invert([sx, sy]);            // punto geográfico bajo el cursor (antes de escalar)
-    zoom = Math.min(100, Math.max(0.7, zoom * (e.deltaY > 0 ? 0.82 : 1.4)));
-    buildProj();
-    if (geo) {                                    // zoom-to-cursor: recoloca ese punto bajo el cursor
-      const p = proj(geo);
-      if (p) { offX += sx - p[0]; offY += sy - p[1]; buildProj(); }
-    }
+    zoomBy(e.deltaY > 0 ? 0.82 : 1.4);
   }, { passive: false });
 
   // ── TOUCH EVENTS (móvil) ──────────────────────────────
   let lastTouchDist = 0;
+  let pinching = false;
   let touchStartX = 0, touchStartY = 0, touchOx = 0, touchOy = 0;
 
   c.addEventListener('touchstart', e => {
@@ -316,6 +307,9 @@ function setupEvents() {
       touchOx = offX; touchOy = offY;
       drag = false;
     } else if (e.touches.length === 2) {
+      pinching = true;
+      drag = true;
+      userMoved = true;
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       lastTouchDist = Math.sqrt(dx * dx + dy * dy);
@@ -335,17 +329,7 @@ function setupEvents() {
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (lastTouchDist > 0) {
-        const rect = c.getBoundingClientRect();
-        const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
-        const my = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
-        const geo = proj.invert([mx, my]);        // punto bajo el centro del pellizco
-        const ratio = dist / lastTouchDist;
-        zoom = Math.min(100, Math.max(0.7, zoom * ratio));
-        buildProj();
-        if (geo) {                                // zoom-to-pinch: mantiene fijo ese punto
-          const p = proj(geo);
-          if (p) { offX += mx - p[0]; offY += my - p[1]; buildProj(); }
-        }
+        zoomBy(dist / lastTouchDist);
       }
       lastTouchDist = dist;
     }
@@ -353,6 +337,19 @@ function setupEvents() {
 
   c.addEventListener('touchend', e => {
     e.preventDefault();
+    // A pinch is never a country tap, including when fingers lift separately.
+    if (pinching) {
+      lastTouchDist = 0;
+      if (e.touches.length === 1) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchOx = offX; touchOy = offY;
+      } else if (e.touches.length === 0) {
+        pinching = false;
+        drag = false;
+      }
+      return;
+    }
     if (e.changedTouches.length === 1 && !drag) {
       const touch = e.changedTouches[0];
       const fakeEvent = { clientX: touch.clientX, clientY: touch.clientY };
@@ -375,8 +372,19 @@ function setupEvents() {
   }, { passive: false });
 }
 
-function zoomIn()    { userMoved = true; zoom = Math.min(100, zoom * 1.3); buildProj(); }
-function zoomOut()   { userMoved = true; zoom = Math.max(0.7, zoom / 1.3); buildProj(); }
+// Scale offsets with zoom so the geographic point at viewport centre stays fixed.
+// Shared by buttons, mouse wheel and pinch; none of them selects another country.
+function zoomBy(factor) {
+  userMoved = true;
+  const next = Math.min(100, Math.max(0.7, zoom * factor));
+  const ratio = next / zoom;
+  offX *= ratio;
+  offY *= ratio;
+  zoom = next;
+  buildProj();
+}
+function zoomIn()    { zoomBy(1.3); }
+function zoomOut()   { zoomBy(1 / 1.3); }
 function resetView() { zoom = 1; offX = 0; offY = 0; buildProj(); }
 
 onMounted(() => {
@@ -405,13 +413,16 @@ onMounted(() => {
   c._visibilityHandler = handleVisibility;
 
   const ro = new ResizeObserver(() => {
+    const previousWidth = W;
     W = c.width  = c.parentElement.clientWidth  || window.innerWidth;
     H = c.height = c.parentElement.clientHeight || props.height;
-    // Re-centre on the current country: the pixel offsets were computed for the
-    // previous size, so on a resize (e.g. the list appearing) we re-frame to keep
-    // the map centred instead of drifting north.
-    if (lastFramed) frameCountry(lastFramed);
-    else buildProj();
+    // Projection scale is proportional to width. Preserve the explored centre
+    // and zoom rather than jumping back to the last selected country.
+    if (previousWidth) {
+      offX *= W / previousWidth;
+      offY *= W / previousWidth;
+    }
+    buildProj();
   });
   ro.observe(c.parentElement);
   c._ro = ro;

@@ -776,6 +776,9 @@
     "toastInstalled": "✓ Voice Protest installed"
   },
   "map": {
+    "zoomIn": "Zoom in on map",
+    "zoomOut": "Zoom out on map",
+    "resetView": "Reset map view",
     "hint": "Click a country to filter · scroll to zoom",
     "clearFilter": "Show all",
     "legendTitle": "Activity",

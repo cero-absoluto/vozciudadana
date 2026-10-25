@@ -4,30 +4,30 @@
   <!-- COLUMNA IZQUIERDA -->
   <div>
         <div class="fg">
-  <label>{{ $t('create.titleLabel') }}
+  <label for="create-title">{{ $t('create.titleLabel') }}
     <span class="info-icon" @mouseenter="showTooltip('title')" @mouseleave="hideTooltip()">ℹ️
       <div v-if="tooltip === 'title'" class="tooltip-box">{{ $t('create.titleTooltip') }}</div>
     </span>
   </label>
-      <input type="text" v-model="form.title" maxlength="120" :placeholder="$t('create.titlePlaceholder')">
+      <input id="create-title" type="text" v-model="form.title" maxlength="120" :placeholder="$t('create.titlePlaceholder')">
       <div class="char-c">{{ form.title.length }}/120</div>
     </div>
     <div class="fg">
-  <label>{{ $t('create.descLabel') }}
+  <label for="create-description">{{ $t('create.descLabel') }}
     <span class="info-icon" @mouseenter="showTooltip('description')" @mouseleave="hideTooltip()">ℹ️
       <div v-if="tooltip === 'description'" class="tooltip-box">{{ $t('create.descTooltip') }}</div>
     </span>
   </label>
-      <textarea v-model="form.description" rows="2" maxlength="500" :placeholder="$t('create.descPlaceholder')"></textarea>
+      <textarea id="create-description" v-model="form.description" rows="2" maxlength="500" :placeholder="$t('create.descPlaceholder')"></textarea>
       <div class="char-c">{{ form.description.length }}/500</div>
     </div>
     <div class="fg">
-  <label>{{ $t('create.demandsLabel') }}
+  <label for="create-demands">{{ $t('create.demandsLabel') }}
     <span class="info-icon" @mouseenter="showTooltip('demands')" @mouseleave="hideTooltip()">ℹ️
       <div v-if="tooltip === 'demands'" class="tooltip-box">{{ $t('create.demandsTooltip') }}</div>
     </span>
   </label>
-      <textarea v-model="form.demands" rows="2" maxlength="300" :placeholder="$t('create.demandsPlaceholder')"></textarea>
+      <textarea id="create-demands" v-model="form.demands" rows="2" maxlength="300" :placeholder="$t('create.demandsPlaceholder')"></textarea>
       <div class="char-c">{{ form.demands.length }}/300</div>
     </div>
 

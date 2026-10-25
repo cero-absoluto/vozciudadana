@@ -610,3 +610,9 @@ a:hover{opacity:.8}
 
 /* Compact 3-step strip (home gateway) */
 
+@media(max-width:520px){
+  .topbar{flex-wrap:wrap}
+  .topbar .logo{flex-basis:100%}
+  .topbar-right{width:100%;justify-content:flex-end}
+}
+

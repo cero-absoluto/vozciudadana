@@ -450,6 +450,8 @@
   "informe": {
     "loading": "Loading report...",
     "notFound": "The event was not found.",
+    "loadError": "Could not load the report.",
+    "retry": "Try again",
     "headerLabel": "Verified public report",
     "fuente": "📎 Source:",
     "tipoAbuso": "⚠️ Type of abuse:",

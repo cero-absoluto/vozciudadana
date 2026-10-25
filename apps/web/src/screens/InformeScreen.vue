@@ -9,8 +9,13 @@
       </div>
 
       <!-- Error -->
-      <div v-else-if="error" style="text-align:center;padding:80px 0;color:var(--accent3)">
+      <div v-else-if="notFound" style="text-align:center;padding:80px 0;color:var(--accent3)">
         {{ $t('informe.notFound') }}
+      </div>
+
+      <div v-else-if="error" role="alert" style="text-align:center;padding:80px 0;color:var(--accent3)">
+        <div style="margin-bottom:16px">{{ $t('informe.loadError') }}</div>
+        <button type="button" class="btn-primary" @click="loadReport">{{ $t('informe.retry') }}</button>
       </div>
 
       <div v-else-if="data" class="ir-doc">
@@ -921,8 +926,9 @@ const hasSnapshotV2 = computed(() => integrityData.value?.data_source === 'integ
 const integrityDiscrepancy = computed(() => hasIntegrityDiscrepancy(data.value?.protest, integrityData.value));
 const verifyState  = ref('idle');
 const verifyResult = ref(null);
-const loading = ref(true);
+const loading = ref(false);
 const error = ref(false);
+const notFound = ref(false);
 const showEmbed = ref(false);
 const copied = ref(false);
 
@@ -967,15 +973,23 @@ function copyEmbed() {
   });
 }
 
-onMounted(async () => {
+async function loadReport() {
+  if (loading.value) return;
+  loading.value = true;
+  error.value = false;
+  notFound.value = false;
+  data.value = null;
   try {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/protests/${route.params.id}/informe`);
+    if (res.status === 404) { notFound.value = true; return; }
     if (!res.ok) throw new Error();
     data.value = await res.json();
   } catch { error.value = true; }
   finally { loading.value = false; }
   if (data.value?.protest?.hash_integridad) await loadIntegrityData();
-});
+}
+
+onMounted(loadReport);
 
 function formatDate(iso) {
   if (!iso) return '—';

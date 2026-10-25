@@ -450,6 +450,8 @@
   "informe": {
     "loading": "Chargement du rapport...",
     "notFound": "L'événement n'a pas été trouvé.",
+    "loadError": "Impossible de charger le rapport.",
+    "retry": "Réessayer",
     "headerLabel": "Rapport public vérifié",
     "fuente": "📎 Source :",
     "tipoAbuso": "⚠️ Type d'abus :",

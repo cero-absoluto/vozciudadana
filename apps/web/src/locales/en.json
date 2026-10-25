@@ -790,6 +790,8 @@
     "legendHigh": "High/Critical"
   },
   "archivo": {
+    "loadError": "Could not load the archive.",
+    "retry": "Try again",
     "filterTypeLabel": "Filter by scope",
     "filterCountryLabel": "Filter by country",
     "sortLabel": "Sort events",

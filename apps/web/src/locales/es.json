@@ -790,6 +790,8 @@
     "legendHigh": "Alta/Crítica"
   },
   "archivo": {
+    "loadError": "No se pudo cargar el archivo.",
+    "retry": "Reintentar",
     "filterTypeLabel": "Filtrar por ámbito",
     "filterCountryLabel": "Filtrar por país",
     "sortLabel": "Ordenar convocatorias",

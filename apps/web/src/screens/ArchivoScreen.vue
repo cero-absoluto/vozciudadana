@@ -26,7 +26,7 @@
     </div>
 
     <!-- Lista -->
-    <div class="arch-list" v-if="!loading">
+    <div class="arch-list" v-if="!loading && !loadError">
       <div v-if="protestasFiltered.length === 0" class="arch-empty">
         <div style="font-size:36px;margin-bottom:12px">📭</div>
         <div style="font-size:16px;color:var(--text2)">{{ $t('archivo.empty') }}</div>
@@ -60,6 +60,11 @@
       </div>
     </div>
 
+    <div v-if="loadError" class="arch-loading" role="alert">
+      <div style="font-size:15px;color:var(--text2);margin-bottom:12px">{{ $t('archivo.loadError') }}</div>
+      <button type="button" class="btn-primary" @click="loadArchive">{{ $t('archivo.retry') }}</button>
+    </div>
+
     <div v-if="loading" class="arch-loading">
       <div class="spin-ring"></div>
       <div style="font-size:15px;color:var(--text2);margin-top:12px">{{ $t('archivo.loading') }}</div>
@@ -74,7 +79,8 @@ import { localizedCountry } from '@/constants.js';
 
 const { t, locale } = useI18n({ useScope: 'global' });
 
-const loading  = ref(true);
+const loading  = ref(false);
+const loadError = ref(false);
 const protestas = ref([]);
 const filtroTipo  = ref('');
 const filtroPais  = ref('');
@@ -123,14 +129,23 @@ const protestasFiltered = computed(() => {
   return list;
 });
 
-onMounted(async () => {
+async function loadArchive() {
+  if (loading.value) return;
+  loading.value = true;
+  loadError.value = false;
   try {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/protests/archivo`);
-    protestas.value = await res.json();
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!Array.isArray(data)) throw new Error('Invalid archive payload');
+    protestas.value = data;
   } catch {
     protestas.value = [];
+    loadError.value = true;
   } finally {
     loading.value = false;
   }
-});
+}
+
+onMounted(loadArchive);
 </script>

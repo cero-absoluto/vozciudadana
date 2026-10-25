@@ -790,6 +790,8 @@
     "legendHigh": "高/临界"
   },
   "archivo": {
+    "loadError": "无法加载归档。",
+    "retry": "重试",
     "filterTypeLabel": "按范围筛选",
     "filterCountryLabel": "按国家筛选",
     "sortLabel": "活动排序",

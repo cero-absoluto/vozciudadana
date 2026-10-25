@@ -630,7 +630,9 @@
     "invalidTitle": "Invitación no válida",
     "invalidBody": "Este enlace ha caducado, se ha usado el número máximo de veces, o no existe.",
     "goMap": "Ir al mapa →",
-    "errorInvalid": "Error — invitación no válida"
+    "errorInvalid": "Error — invitación no válida",
+    "loadError": "No se pudo cargar la invitación.",
+    "retry": "Reintentar"
   },
   "migrupo": {
     "back": "← Volver",

@@ -62,6 +62,17 @@
         </button>
       </div>
 
+      <!-- Error de carga -->
+      <div v-if="estado === 'error'" role="alert" style="text-align:center;padding:60px 20px">
+        <div style="font-size:48px;margin-bottom:12px">⚠️</div>
+        <div style="font-size:12px;color:var(--text3);line-height:1.7;margin-bottom:24px">
+          {{ $t('invite.loadError') }}
+        </div>
+        <button type="button" class="btn-primary" style="width:100%" @click="cargarInvitacion">
+          {{ $t('invite.retry') }}
+        </button>
+      </div>
+
     </div>
   </div>
 </template>
@@ -87,12 +98,23 @@ const invitacion = ref({
   protest_id: null,
 });
 
-onMounted(async () => {
+let loading = false;
+
+async function cargarInvitacion() {
+  if (loading) return;
+  loading = true;
+  estado.value = 'cargando';
   try {
     const res = await fetch(
       `${import.meta.env.VITE_API_URL}/api/grupos/invite/${token}`
     );
-    if (!res.ok) throw new Error(t('invite.invalidTitle'));
+    if (!res.ok) {
+      if ([400, 404, 410].includes(res.status)) {
+        estado.value = 'invalida';
+        return;
+      }
+      throw new Error(t('invite.loadError'));
+    }
     const data = await res.json();
     invitacion.value = {
       institucion: data.institucion,
@@ -102,9 +124,13 @@ onMounted(async () => {
     };
     estado.value = 'valida';
   } catch {
-    estado.value = 'invalida';
+    estado.value = 'error';
+  } finally {
+    loading = false;
   }
-});
+}
+
+onMounted(cargarInvitacion);
 
 async function aceptarInvitacion() {
   if (invitacion.value.protest_id && invitacion.value.group_id) {

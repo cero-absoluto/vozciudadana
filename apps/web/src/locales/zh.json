@@ -630,7 +630,9 @@
     "invalidTitle": "无效邀请",
     "invalidBody": "此链接已过期、已被使用最大次数或不存在。",
     "goMap": "前往地图 →",
-    "errorInvalid": "错误 — 邀请无效"
+    "errorInvalid": "错误 — 邀请无效",
+    "loadError": "无法加载邀请。",
+    "retry": "重试"
   },
   "migrupo": {
     "back": "← 返回",

@@ -630,7 +630,9 @@
     "invalidTitle": "Invalid invitation",
     "invalidBody": "This link has expired, has been used the maximum number of times, or doesn't exist.",
     "goMap": "Go to map →",
-    "errorInvalid": "Error — invalid invitation"
+    "errorInvalid": "Error — invalid invitation",
+    "loadError": "Could not load the invitation.",
+    "retry": "Try again"
   },
   "migrupo": {
     "back": "← Back",

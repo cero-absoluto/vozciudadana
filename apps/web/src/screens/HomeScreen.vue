@@ -29,7 +29,10 @@
      <!-- Overlay bienvenida — solo primera vez -->
       <div v-if="showMapOverlay" 
         style="position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;background:rgba(6,14,26,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border-radius:0"
-        @click="cerrarOverlay">
+        role="button" tabindex="0" :aria-label="$t('home.overlayTap')"
+        @click="cerrarOverlay"
+        @keydown.enter.prevent="cerrarOverlay"
+        @keydown.space.prevent="cerrarOverlay">
         <div style="text-align:center;padding:20px">
           <div style="font-size:40px;margin-bottom:12px;animation:pulse-map 1.5s ease-in-out infinite">🌍</div>
           <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:white;margin-bottom:8px;line-height:1.3">

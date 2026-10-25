@@ -21,8 +21,8 @@
             {{ $t('unirse.emailBody', { domain: dominio }) }}
           </div>
           <div class="fg">
-            <label>{{ $t('unirse.emailLabel') }}</label>
-            <input type="email" v-model="email"
+            <label for="join-group-email">{{ $t('unirse.emailLabel') }}</label>
+            <input type="email" id="join-group-email" v-model="email"
               :placeholder="`tu.nombre@${dominio}`"
               @keyup.enter="solicitarOtp">
             <div v-if="emailError" style="font-size:12px;color:var(--accent3);margin-top:4px">{{ emailError }}</div>
@@ -41,11 +41,11 @@
       <div v-if="paso === 2">
         
         <div class="block" style="margin-bottom:12px">
-          <div class="block-title">📬 {{ $t('unirse.otpTitle') }}</div>
+          <div class="block-title" id="join-group-code-title">📬 {{ $t('unirse.otpTitle') }}</div>
           <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">
             {{ $t('unirse.otpBody') }}
           </div>
-          <input type="text" v-model="otp" maxlength="6"
+          <input type="text" v-model="otp" aria-labelledby="join-group-code-title" maxlength="6"
             placeholder="000000"
             style="width:100%;padding:14px;text-align:center;letter-spacing:10px;font-size:24px;font-weight:700;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:'Syne',sans-serif"
             @keyup.enter="verificarOtp">

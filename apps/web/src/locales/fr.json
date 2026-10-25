@@ -790,6 +790,8 @@
     "legendHigh": "Élevée/Critique"
   },
   "archivo": {
+    "loadError": "Impossible de charger les archives.",
+    "retry": "Réessayer",
     "filterTypeLabel": "Filtrer par portée",
     "filterCountryLabel": "Filtrer par pays",
     "sortLabel": "Trier les événements",

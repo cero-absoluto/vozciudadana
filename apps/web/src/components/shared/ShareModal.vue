@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <div class="modal-overlay" :class="{open: ui.showShareModal}" @click.self="ui.showShareModal = false">
-      <div class="modal" role="dialog" aria-modal="true" aria-label="Compartir convocatoria">
+      <div ref="dialogEl" class="modal" role="dialog" aria-modal="true" aria-label="Compartir convocatoria">
         <div style="background:rgba(184,65,14,.08);border:.5px solid rgba(232,93,36,.25);border-radius:var(--r2);padding:12px 13px;margin-bottom:14px">
           <div style="font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:rgba(232,93,36,.8);margin-bottom:6px">{{ $t('share.previewLabel') }}</div>
           <div style="font-size:12px;color:var(--text);line-height:1.7;font-style:italic">{{ previewMsg }}</div>
@@ -41,7 +41,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, nextTick, onBeforeUnmount, shallowRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { useUiStore }       from '@/stores/ui.js';
@@ -54,6 +54,77 @@ const protests = useProtestsStore();
 const route    = useRoute();
 
 const BASE_URL = 'https://www.voiceprotest.org';
+
+// ── Focus management ──────────────────────────────────────────────────────
+const dialogEl = shallowRef(null);
+const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+let origin = null;
+let listening = false;
+let openToken = 0;
+
+function focusables() {
+  const el = dialogEl.value;
+  if (!el) return [];
+  return Array.from(el.querySelectorAll(FOCUSABLE)).filter(n => !n.disabled);
+}
+
+function onKeydown(e) {
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    ui.showShareModal = false;
+    return;
+  }
+  if (e.key !== 'Tab') return;
+  const items = focusables();
+  if (!items.length) { e.preventDefault(); return; }
+  const first = items[0];
+  const last  = items[items.length - 1];
+  const active = document.activeElement;
+  const inside = dialogEl.value?.contains(active);
+  if (!inside) {
+    e.preventDefault();
+    (e.shiftKey ? last : first).focus();
+  } else if (e.shiftKey && active === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && active === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}
+
+function stopListening() {
+  if (!listening) return;
+  document.removeEventListener('keydown', onKeydown);
+  listening = false;
+}
+
+function restoreFocus() {
+  const target = origin;
+  origin = null;
+  if (target && target.isConnected && typeof target.focus === 'function') target.focus();
+}
+
+watch(() => ui.showShareModal, async (open) => {
+  const token = ++openToken;
+  if (open) {
+    origin = document.activeElement;
+    if (!listening) { document.addEventListener('keydown', onKeydown); listening = true; }
+    await nextTick();
+    if (token !== openToken || !ui.showShareModal) return;
+    const items = focusables();
+    (items[0] || dialogEl.value)?.focus?.();
+  } else {
+    stopListening();
+    restoreFocus();
+  }
+});
+
+onBeforeUnmount(() => {
+  openToken++;
+  stopListening();
+  restoreFocus();
+});
 
 const currentProtest = computed(() => {
   // route.params.id exists on DetailScreen; after joining (VerifyScreen) the

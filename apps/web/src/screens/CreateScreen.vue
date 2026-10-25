@@ -229,8 +229,8 @@
         </div>
       </div>
 <div v-if="uiScope === 'national' || uiScope === 'regional'" class="fg" style="margin-top:12px">
-  <label>{{ $t('create.paisLabel') }}</label>
-  <select v-model="form.convocatoria_pais">
+  <label for="create-geographic-country">{{ $t('create.paisLabel') }}</label>
+  <select id="create-geographic-country" v-model="form.convocatoria_pais">
     <option value="">{{ $t('create.paisPlaceholder') }}</option>
     <option v-for="c in sortedCountries" :key="c.code" :value="c.code">{{ c.name }}</option>
   </select>
@@ -238,9 +238,10 @@
 
 <!-- Geographic entity search — for local scope (municipality) and regional scope (region/province) -->
 <div v-if="uiScope === 'local' || uiScope === 'regional'" class="fg" style="margin-top:12px">
-  <label>{{ uiScope === 'local' ? $t('create.municipioLabel') : $t('create.regionOsmLabel') }} *</label>
+  <label for="create-municipality">{{ uiScope === 'local' ? $t('create.municipioLabel') : $t('create.regionOsmLabel') }} *</label>
   <div style="position:relative">
     <input
+      id="create-municipality"
       type="text"
       v-model="municipioQuery"
       :placeholder="uiScope === 'local' ? $t('create.municipioPlaceholder') : $t('create.regionOsmPlaceholder')"
@@ -273,8 +274,8 @@
 </div>
 
 <div v-if="form.institutionalMode" class="fg" style="margin-top:12px">
-  <label>{{ $t('create.institucionLabel') }} *</label>
-  <input type="text" v-model="form.convocatoria_institucion" :placeholder="$t('create.institucionPlaceholder')">
+  <label for="create-institution">{{ $t('create.institucionLabel') }} *</label>
+  <input id="create-institution" type="text" v-model="form.convocatoria_institucion" :placeholder="$t('create.institucionPlaceholder')">
   <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">{{ $t('create.institucionHint') }}</div>
 </div>
 

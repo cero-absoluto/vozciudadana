@@ -33,13 +33,14 @@
 
     <!-- ── CAMPO WIKIDATA: Who is it directed at? ── -->
     <div class="fg" style="position:relative">
-  <label>{{ $t('create.focalLabel') }}
+  <label for="create-target">{{ $t('create.focalLabel') }}
     <span class="info-icon" @mouseenter="showTooltip('focal')" @mouseleave="hideTooltip()">ℹ️
       <div v-if="tooltip === 'focal'" class="tooltip-box">{{ $t('create.focalTooltip') }}</div>
     </span>
   </label>
   <div style="position:relative">
     <input type="text"
+      id="create-target"
       v-model="targetQuery"
       @input="onTargetInput"
       @blur="onTargetBlur"
@@ -72,8 +73,8 @@
   </div>
 </div>
     
-    <div class="fg"><label>{{ $t('create.abusoLabel') }}</label>
-  <select v-model="form.tipo_abuso">
+    <div class="fg"><label for="create-abuse">{{ $t('create.abusoLabel') }}</label>
+  <select id="create-abuse" v-model="form.tipo_abuso">
     <option value="">{{ $t('create.abusoPlaceholder') }}</option>
     <optgroup :label="$t('create.abuseGroupIntegrity')">
       <option value="corruption">{{ $t('create.abusoCorrupcion') }}</option>
@@ -100,12 +101,12 @@
   </select>
 </div>
 <div class="fg">
-  <label>{{ $t('create.fuenteLabel') }}
+  <label for="create-source">{{ $t('create.fuenteLabel') }}
     <span class="info-icon" @mouseenter="showTooltip('fuente')" @mouseleave="hideTooltip()">ℹ️
       <div v-if="tooltip === 'fuente'" class="tooltip-box">{{ $t('create.fuenteTooltip') }}</div>
     </span>
   </label>
-  <input type="text" v-model="form.fuente_url" :placeholder="$t('create.fuentePlaceholder')">
+  <input type="text" id="create-source" v-model="form.fuente_url" :placeholder="$t('create.fuentePlaceholder')">
 
   <!-- Checking spinner -->
   <div v-if="sourceChecking" style="font-size:12px;color:var(--text3);margin-top:6px;display:flex;align-items:center;gap:6px">

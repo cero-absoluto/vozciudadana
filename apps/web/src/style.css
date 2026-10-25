@@ -618,3 +618,8 @@ a:hover{opacity:.8}
 
 @media(max-width:899px){.grecaptcha-badge{bottom:80px!important}}
 
+@media(max-width:520px){
+  #s-create .fg{min-width:0}
+  #s-create .fg input, #s-create .fg textarea, #s-create .fg select{min-width:0;width:100%;max-width:100%}
+}
+

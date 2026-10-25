@@ -630,7 +630,9 @@
     "invalidTitle": "Invitation invalide",
     "invalidBody": "Ce lien a expiré, a été utilisé le nombre maximum de fois, ou n'existe pas.",
     "goMap": "Aller à la carte →",
-    "errorInvalid": "Erreur — invitation invalide"
+    "errorInvalid": "Erreur — invitation invalide",
+    "loadError": "Impossible de charger l’invitation.",
+    "retry": "Réessayer"
   },
   "migrupo": {
     "back": "← Retour",

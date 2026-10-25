@@ -280,10 +280,10 @@
 </div>
 
 <div v-show="form.institutionalMode" class="fg" style="margin-top:12px">
- <label>{{ $t('create.dominioLabel') }}</label>
+ <label for="create-institution-domain">{{ $t('create.dominioLabel') }}</label>
 <div style="display:flex;align-items:center;gap:0">
   <div style="padding:9px 10px;background:var(--bg3);border:.5px solid var(--border);border-right:none;border-radius:var(--r) 0 0 var(--r);font-size:15px;color:var(--text3);font-family:'DM Sans',sans-serif">@</div>
-  <input type="text" v-model="form.dominio_email" placeholder="uu.nl, students.uu.nl, hospital.org" style="border-radius:0 var(--r) var(--r) 0;flex:1">
+  <input id="create-institution-domain" type="text" v-model="form.dominio_email" placeholder="uu.nl, students.uu.nl, hospital.org" style="border-radius:0 var(--r) var(--r) 0;flex:1">
 </div>
 <div class="char-c" style="text-align:left;margin-top:4px;opacity:.6">{{ $t('create.dominioHint') }}</div>
 </div>
@@ -291,8 +291,8 @@
 <!-- Optional institution country — used only to place the institution on the map.
      Does NOT affect eligibility (institutional events are verified by email). -->
 <div v-if="form.institutionalMode" class="fg" style="margin-top:12px">
-  <label>{{ $t('create.institucionPaisLabel') }} *</label>
-  <select v-model="form.convocatoria_pais">
+  <label for="create-institution-country">{{ $t('create.institucionPaisLabel') }} *</label>
+  <select id="create-institution-country" v-model="form.convocatoria_pais">
     <option value="">{{ $t('create.paisPlaceholder') }}</option>
     <option v-for="c in sortedCountries" :key="c.code" :value="c.code">{{ c.name }}</option>
   </select>

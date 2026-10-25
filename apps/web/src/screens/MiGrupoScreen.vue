@@ -36,8 +36,8 @@
           </div>
           <div v-if="!genesisOtpVisible">
             <div class="fg">
-              <label>{{ $t('migrupo.emailLabel') }}</label>
-              <input type="email" v-model="genesisEmail"
+              <label for="census-email">{{ $t('migrupo.emailLabel') }}</label>
+              <input id="census-email" type="email" v-model="genesisEmail"
                 :placeholder="`tu.nombre@${protest?.dominio_email}`">
               <div v-if="genesisError" style="font-size:12px;color:var(--accent3);margin-top:4px">{{ genesisError }}</div>
             </div>
@@ -48,8 +48,8 @@
           </div>
         </div>
         <div v-if="genesisOtpVisible" class="block" style="text-align:left;margin-top:12px">
-          <div class="block-title">📬 {{ $t('migrupo.enterCode') }}</div>
-          <input type="text" v-model="genesisOtp" maxlength="6"
+          <div id="census-code-title" class="block-title">📬 {{ $t('migrupo.enterCode') }}</div>
+          <input type="text" v-model="genesisOtp" aria-labelledby="census-code-title" maxlength="6"
             placeholder="000000"
             style="width:100%;padding:14px;text-align:center;letter-spacing:10px;font-size:24px;font-weight:700;background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:'Syne',sans-serif">
           <div v-if="genesisOtpError" style="font-size:12px;color:var(--accent3);margin-top:6px">{{ genesisOtpError }}</div>

@@ -157,7 +157,7 @@ a:hover{opacity:.8}
 .logo-mark svg{width:44px;height:44px;fill:none}
 .topbar-right{display:flex;align-items:center;gap:5px;flex-shrink:0}
 .lang-switcher{display:flex;gap:2px;background:var(--bg3);border-radius:8px;padding:2px}
-.lang-btn{padding:3px 6px;border-radius:6px;font-size:9px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text3);transition:all .15s}
+.lang-btn{min-width:32px;min-height:32px;padding:3px 6px;border-radius:6px;font-size:9px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text3);transition:all .15s}
 .lang-btn.active{background:var(--accent);color:white}
 .badge-anon{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--accent2);background:rgba(76,255,164,.07);padding:3px 7px;border-radius:20px;border:1px solid rgba(76,255,164,.18);font-weight:500;white-space:nowrap}
 .pulse{width:4px;height:4px;border-radius:50%;background:var(--accent2);animation:blink 2s infinite}

@@ -623,3 +623,5 @@ a:hover{opacity:.8}
   #s-create .fg input, #s-create .fg textarea, #s-create .fg select{min-width:0;width:100%;max-width:100%}
 }
 
+@media(max-width:899px){.app-main{margin-bottom:100px}}
+

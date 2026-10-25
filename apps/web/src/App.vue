@@ -58,6 +58,8 @@ html, body { height: 100%; overflow: hidden; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  width: 100%;
+  min-width: 0;
   max-width: 520px;
   margin: 0 auto;
   border-left: 1px solid var(--border);

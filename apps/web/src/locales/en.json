@@ -790,6 +790,9 @@
     "legendHigh": "High/Critical"
   },
   "archivo": {
+    "filterTypeLabel": "Filter by scope",
+    "filterCountryLabel": "Filter by country",
+    "sortLabel": "Sort events",
     "title": "📁 File",
     "subtitle": "Closed events — public record",
     "filterAll": "All types",

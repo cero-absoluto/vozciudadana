@@ -790,6 +790,9 @@
     "legendHigh": "Élevée/Critique"
   },
   "archivo": {
+    "filterTypeLabel": "Filtrer par portée",
+    "filterCountryLabel": "Filtrer par pays",
+    "sortLabel": "Trier les événements",
     "title": "📁 Archives",
     "subtitle": "Événements clôturés — registre public",
     "filterAll": "Tous les types",

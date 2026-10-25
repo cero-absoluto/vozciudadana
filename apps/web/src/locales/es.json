@@ -790,6 +790,9 @@
     "legendHigh": "Alta/Crítica"
   },
   "archivo": {
+    "filterTypeLabel": "Filtrar por ámbito",
+    "filterCountryLabel": "Filtrar por país",
+    "sortLabel": "Ordenar convocatorias",
     "title": "📁 Archivo",
     "subtitle": "Eventos cerrados — registro público",
     "filterAll": "Todos los tipos",

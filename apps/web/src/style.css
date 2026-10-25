@@ -625,3 +625,5 @@ a:hover{opacity:.8}
 
 @media(max-width:899px){.app-main{margin-bottom:100px}}
 
+@media(max-width:520px){.create-date-risk{flex-direction:column}}
+

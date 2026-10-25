@@ -314,7 +314,7 @@
   </div>
 </div>
     </div>
-    <div style="display:flex;gap:12px">
+    <div class="create-date-risk" style="display:flex;gap:12px">
       <div class="fg" style="flex:1"><label for="create-start-date">{{ $t('create.dateLabel') }}</label>
         <input id="create-start-date" type="date" v-model="form.starts_at" :min="minDate">
       </div>

@@ -790,6 +790,9 @@
     "legendHigh": "高/临界"
   },
   "archivo": {
+    "filterTypeLabel": "按范围筛选",
+    "filterCountryLabel": "按国家筛选",
+    "sortLabel": "活动排序",
     "title": "📁 档案",
     "subtitle": "已关闭的活动——公共记录",
     "filterAll": "所有类型",

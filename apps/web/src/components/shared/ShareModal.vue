@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <div class="modal-overlay" :class="{open: ui.showShareModal}" @click.self="ui.showShareModal = false">
-      <div class="modal" role="dialog" aria-modal="true" aria-label="Compartir convocatoria">
+      <div class="modal" ref="dialogEl" role="dialog" aria-modal="true" aria-label="Compartir convocatoria">
         <div style="background:rgba(184,65,14,.08);border:.5px solid rgba(232,93,36,.25);border-radius:var(--r2);padding:12px 13px;margin-bottom:14px">
           <div style="font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:rgba(232,93,36,.8);margin-bottom:6px">{{ $t('share.previewLabel') }}</div>
           <div style="font-size:12px;color:var(--text);line-height:1.7;font-style:italic">{{ previewMsg }}</div>
@@ -41,7 +41,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch, nextTick, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { useUiStore }       from '@/stores/ui.js';
@@ -52,6 +52,73 @@ const { t } = useI18n();
 const ui       = useUiStore();
 const protests = useProtestsStore();
 const route    = useRoute();
+
+const dialogEl = ref(null);
+let origin = null;
+let openToken = 0;
+let listening = false;
+
+function focusables() {
+  const root = dialogEl.value;
+  if (!root) return [];
+  return Array.from(root.querySelectorAll(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  ));
+}
+
+function onKeydown(e) {
+  if (e.key === 'Escape') {
+    e.preventDefault?.();
+    ui.showShareModal = false;
+    return;
+  }
+  if (e.key !== 'Tab') return;
+  const items = focusables();
+  if (!items.length) { e.preventDefault(); return; }
+  const first = items[0], last = items[items.length - 1];
+  const active = document.activeElement;
+  const inside = items.includes(active);
+  if (e.shiftKey) {
+    if (!inside || active === first) { e.preventDefault(); last.focus(); }
+  } else if (!inside || active === last) {
+    e.preventDefault(); first.focus();
+  }
+}
+
+function listen(on) {
+  if (on === listening) return;
+  listening = on;
+  if (on) document.addEventListener('keydown', onKeydown);
+  else document.removeEventListener('keydown', onKeydown);
+}
+
+function restoreFocus() {
+  const target = origin;
+  origin = null;
+  try {
+    if (target && target.isConnected !== false && typeof target.focus === 'function') target.focus();
+  } catch { /* origin gone: nothing to restore */ }
+}
+
+watch(() => ui.showShareModal, async (open) => {
+  const token = ++openToken;
+  if (open) {
+    origin = document.activeElement;
+    listen(true);
+    await nextTick();
+    if (token !== openToken || !ui.showShareModal) return;
+    focusables()[0]?.focus();
+  } else {
+    listen(false);
+    restoreFocus();
+  }
+});
+
+onBeforeUnmount(() => {
+  openToken++;
+  listen(false);
+  if (ui.showShareModal) restoreFocus();
+});
 
 const BASE_URL = 'https://www.voiceprotest.org';
 

@@ -7,8 +7,8 @@
       <div class="verify-title">{{ $t('verificacional.title') }}</div>
       <div class="verify-sub">{{ $t('verificacional.subtitle', { domain: dominio }) }}</div>
       <div class="fg" style="margin-top:24px">
-        <label>{{ $t('verificacional.emailLabel') }}</label>
-        <input type="email" v-model="email"
+        <label for="institution-verify-email">{{ $t('verificacional.emailLabel') }}</label>
+        <input id="institution-verify-email" type="email" v-model="email"
           :placeholder="`Ej: tu.nombre@${dominio}`"
           @keyup.enter="sendOtp">
         <div v-if="emailError" class="verify-error">{{ emailError }}</div>
@@ -26,8 +26,8 @@
       <div class="verify-title">{{ $t('verificacional.otpTitle') }}</div>
       <div class="verify-sub">{{ $t('verificacional.otpSubtitle') }}</div>
       <div class="fg" style="margin-top:24px">
-        <label>{{ $t('verificacional.otpLabel') }}</label>
-        <input type="text" v-model="otp" maxlength="6"
+        <label for="institution-verify-code">{{ $t('verificacional.otpLabel') }}</label>
+        <input id="institution-verify-code" type="text" v-model="otp" maxlength="6"
           placeholder="000000" @keyup.enter="verifyOtp"
           style="letter-spacing:8px;font-size:22px;text-align:center">
         <div v-if="otpError" class="verify-error">{{ otpError }}</div>

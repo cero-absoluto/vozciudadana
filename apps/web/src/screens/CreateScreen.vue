@@ -315,11 +315,11 @@
 </div>
     </div>
     <div style="display:flex;gap:12px">
-      <div class="fg" style="flex:1"><label>{{ $t('create.dateLabel') }}</label>
-        <input type="date" v-model="form.starts_at" :min="minDate">
+      <div class="fg" style="flex:1"><label for="create-start-date">{{ $t('create.dateLabel') }}</label>
+        <input id="create-start-date" type="date" v-model="form.starts_at" :min="minDate">
       </div>
-      <div class="fg" style="flex:1"><label>{{ $t('create.riskLabel') }}</label>
-        <select v-model="form.risk_level">
+      <div class="fg" style="flex:1"><label for="create-risk-level">{{ $t('create.riskLabel') }}</label>
+        <select id="create-risk-level" v-model="form.risk_level">
           <option value="low">{{ $t('create.riskLow') }}</option>
           <option value="med">{{ $t('create.riskMed') }}</option>
           <option value="high">{{ $t('create.riskHigh') }}</option>

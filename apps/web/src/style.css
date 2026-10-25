@@ -616,3 +616,5 @@ a:hover{opacity:.8}
   .topbar-right{width:100%;justify-content:flex-end}
 }
 
+@media(max-width:899px){.grecaptcha-badge{bottom:80px!important}}
+

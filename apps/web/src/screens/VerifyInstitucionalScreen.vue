@@ -99,11 +99,11 @@ async function getRecaptchaToken(action) {
 
 async function sendOtp() {
   emailError.value = '';
-  if (!email.value.trim()) { emailError.value = 'Introduce tu email institucional'; return; }
-  if (!email.value.includes('@')) { emailError.value = 'Email no válido'; return; }
+  if (!email.value.trim()) { emailError.value = t('verificacional.errEmail'); return; }
+  if (!email.value.includes('@')) { emailError.value = t('verificacional.errEmailInvalid'); return; }
   const parts = email.value.split('@');
   if (parts[1]?.toLowerCase() !== dominio.value.toLowerCase()) {
-    emailError.value = `El email debe ser del dominio @${dominio.value}`;
+    emailError.value = t('verificacional.errDomain', { domain: '@' + dominio.value });
     return;
   }
   loading.value = true;

@@ -638,6 +638,9 @@
   },
   "migrupo": {
     "back": "← Volver",
+    "loading": "Cargando grupo…",
+    "loadError": "No se pudo cargar el grupo.",
+    "retry": "Reintentar",
     "title": "Mi Grupo —",
     "noExistsTitle": "El censo aún no existe",
     "noExistsBody": "Sé el primero en iniciarlo. Como nodo génesis puedes invitar a compañeros y avalar sus solicitudes.",

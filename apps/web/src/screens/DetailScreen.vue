@@ -142,6 +142,14 @@
     </div>
   </div>
 
+  <!-- Error de carga (red/servidor) — reintentable, distinto de "no encontrada" -->
+  <div class="screen active" id="s-detail" v-else-if="loadError">
+    <div role="alert" style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;padding:24px;text-align:center">
+      <div style="font-size:14px;color:var(--text2);line-height:1.6;max-width:280px">{{ $t('home.loadFailed') }}</div>
+      <button type="button" class="btn-primary" @click="loadDetail">{{ $t('home.retry') }}</button>
+    </div>
+  </div>
+
   <!-- No encontrada (id inválido o convocatoria eliminada) -->
   <div class="screen active" id="s-detail" v-else-if="notFound">
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;padding:24px;text-align:center">
@@ -207,6 +215,7 @@ const sobreOpen = ref(true);
 // /api/protests). Without this, the screen used to render nothing at all.
 const loadingFallback = ref(false);
 const notFound        = ref(false);
+const loadError       = ref(false);
 
 const isClosed = computed(() => !!protest.value && protest.value.timer <= 0);
 
@@ -265,19 +274,28 @@ const donacionesInfo = computed(() => {
   };
 });
 
-onMounted(async () => {
+async function loadDetail() {
+  if (loadingFallback.value) return;
+  loadingFallback.value = true;
+  notFound.value = false;
+  loadError.value = false;
   // Fallback: this protest isn't in the already-loaded list yet — either
   // restoreFromStorage() hasn't resolved, or (for closed convocatorias)
   // it never will, since the list endpoint only returns active ones.
   // Fetch it directly by id instead of leaving the screen blank.
-  if (!protest.value) {
-    loadingFallback.value = true;
-    const found = await store.fetchProtestById(route.params.id);
-    loadingFallback.value = false;
-    if (!found) {
-      notFound.value = true;
-      return;
+  try {
+    if (!protest.value) {
+      const found = await store.fetchProtestById(route.params.id);
+      if (!found) {
+        notFound.value = true;
+        return;
+      }
     }
+  } catch {
+    loadError.value = true;
+    return;
+  } finally {
+    loadingFallback.value = false;
   }
 
   if (protest.value?.requiere_censo) {
@@ -295,7 +313,9 @@ onMounted(async () => {
     velocidadHoy.value = informe.velocidad?.adhesiones_hoy || 0;
     tendenciaHoy.value = informe.velocidad?.tendencia_hoy || 0;
   } catch { /* silencioso */ }
-});
+}
+
+onMounted(loadDetail);
 
 const simOk = computed(() => {
   if (!protest.value) return false;

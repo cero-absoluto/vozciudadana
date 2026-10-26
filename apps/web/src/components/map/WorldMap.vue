@@ -22,6 +22,11 @@
       <div class="ml-row"><div class="ml-sq" style="background:#f4d03f"></div>{{ $t('map.legendMed') }}</div>
       <div class="ml-row"><div class="ml-sq" style="background:#ff2424"></div>{{ $t('map.legendHigh') }}</div>
     </div>
+    <div v-if="mapLoadError" role="alert"
+         style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(10,22,40,0.85);color:#fff;font-size:12px;text-align:center;z-index:5">
+      <span>{{ $t('map.loadError') }}</span>
+      <button type="button" :disabled="mapLoading" :aria-busy="mapLoading" @click="loadWorldMap">{{ $t('home.retry') }}</button>
+    </div>
     <div class="mtt" ref="tooltipEl"></div>
   </div>
 </template>
@@ -72,6 +77,10 @@ const emit = defineEmits(['country-click', 'protest-click', 'clear-country']);
 
 const canvasEl  = ref(null);
 const tooltipEl = ref(null);
+
+const mapLoading = ref(false);
+const mapLoadError = ref(false);
+let worldMapDisposed = false;
 
 let ctx, worldData, raf;
 let W = 0, H = 0;
@@ -409,6 +418,24 @@ function zoomIn()    { zoomBy(1.3); }
 function zoomOut()   { zoomBy(1 / 1.3); }
 function resetView() { zoom = 1; offX = 0; offY = 0; buildProj(); }
 
+async function loadWorldMap() {
+  if (mapLoading.value || worldMapDisposed) return;
+  mapLoading.value = true;
+  mapLoadError.value = false;
+  try {
+    const data = await d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json');
+    if (!data?.objects?.countries) throw new Error('invalid world map data');
+    if (worldMapDisposed) return;
+    worldData = data;
+    autoFrame();
+    if (!document.hidden) drawFrame();
+  } catch (e) {
+    if (!worldMapDisposed) mapLoadError.value = true;
+  } finally {
+    mapLoading.value = false;
+  }
+}
+
 onMounted(() => {
   const c = canvasEl.value;
   ctx = c.getContext('2d');
@@ -416,11 +443,7 @@ onMounted(() => {
   H = c.height = c.parentElement.clientHeight || props.height;
   buildProj();
 
-  d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json').then(data => {
-    worldData = data;
-    autoFrame();
-    drawFrame();
-  });
+  loadWorldMap();
 
   setupEvents();
 
@@ -451,6 +474,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  worldMapDisposed = true;
   cancelAnimationFrame(raf);
   canvasEl.value?._ro?.disconnect();
   if (canvasEl.value?._visibilityHandler) {

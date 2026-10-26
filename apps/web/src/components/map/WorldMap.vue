@@ -48,13 +48,13 @@ function renderCountryTooltip(tt, countryName, prot) {
   if (prot) {
     const row1 = document.createElement('div');
     row1.className = 'mt-row';
-    const t = document.createElement('span');
-    t.textContent = prot.title.substring(0, 28) + '...';
-    row1.appendChild(t);
+    const titleSpan = document.createElement('span');
+    titleSpan.textContent = prot.title.substring(0, 28) + '...';
+    row1.appendChild(titleSpan);
     const row2 = document.createElement('div');
     row2.className = 'mt-row';
     const label = document.createElement('span');
-    label.textContent = 'Adheridos';
+    label.textContent = t('archivo.metaAdheridos');
     const ct = document.createElement('span');
     ct.className = 'mt-ct';
     ct.textContent = String(fmt(prot.count));

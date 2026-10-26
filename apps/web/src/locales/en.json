@@ -638,6 +638,9 @@
   },
   "migrupo": {
     "back": "← Back",
+    "loading": "Loading group…",
+    "loadError": "Could not load the group.",
+    "retry": "Try again",
     "title": "My Group —",
     "noExistsTitle": "The census doesn't exist yet",
     "noExistsBody": "Be the first to start it. As the genesis node you can invite colleagues and endorse their requests.",

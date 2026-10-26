@@ -638,6 +638,9 @@
   },
   "migrupo": {
     "back": "← Retour",
+    "loading": "Chargement du groupe…",
+    "loadError": "Impossible de charger le groupe.",
+    "retry": "Réessayer",
     "title": "Mon Groupe —",
     "noExistsTitle": "Le recensement n'existe pas encore",
     "noExistsBody": "Soyez le premier à l'initier. En tant que nœud genesis, vous pouvez inviter des collègues et cautionner leurs demandes.",

@@ -638,6 +638,9 @@
   },
   "migrupo": {
     "back": "← 返回",
+    "loading": "正在加载群组…",
+    "loadError": "无法加载群组。",
+    "retry": "重试",
     "title": "我的群组 —",
     "noExistsTitle": "名册尚不存在",
     "noExistsBody": "成为第一个启动它的人。作为创始节点，您可以邀请同事并担保他们的申请。",

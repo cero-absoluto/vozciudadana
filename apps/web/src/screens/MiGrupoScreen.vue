@@ -12,9 +12,15 @@
           {{ protest?.convocatoria_region || '' }} {{ protest?.dominio_email ? '· @' + protest.dominio_email : '' }}
         </div>
       </div>
+      <div v-if="cargando" style="text-align:center;padding:20px">
+        {{ $t('migrupo.loading') }}
+      </div>
+      <div v-if="loadError" role="alert" style="text-align:center;padding:20px">
+        <div style="margin-bottom:16px">{{ $t('migrupo.loadError') }}</div>
+        <button type="button" class="btn-primary" @click="loadGroup">{{ $t('migrupo.retry') }}</button>
+      </div>
       <!-- Sin grupo — crear censo -->
-      <!-- Sin grupo — crear censo -->
-      <div v-if="!groupId && !cargando">
+      <div v-if="!groupId && !cargando && !loadError">
         <div v-if="!creandoGrupo" style="text-align:center;padding:40px 20px">
           <div style="font-size:48px;margin-bottom:16px">🌱</div>
           <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin-bottom:8px">
@@ -61,7 +67,7 @@
       </div>
        
       <!-- Con grupo — mostrar estado -->
-      <div v-if="groupId">
+      <div v-if="groupId && !cargando && !loadError">
 
       <!-- Estado del censo -->
       <div class="block" style="margin-bottom:12px">
@@ -182,7 +188,8 @@ const protest = computed(() => protests.protests.find(p => String(p.id) === prot
 
 const linkInvitacion = ref('');
 const groupId = ref(null);
-const cargando = ref(true);
+const cargando = ref(false);
+const loadError = ref(false);
 const emailHash = ref(sessionStorage.getItem('vc_email_hash') || '');
 const creandoGrupo = ref(false);
 const genesisEmail = ref('');
@@ -267,6 +274,7 @@ function formatFecha(iso) {
 
 async function cargarEstado() {
   if (!groupId.value) return;
+  loadError.value = false;
   try {
     const data = await api.fetchGrupoEstado(groupId.value, emailHash.value);
     grupo.value = {
@@ -279,6 +287,7 @@ async function cargarEstado() {
     solicitudes.value = data.solicitudes;
   } catch (e) {
     ui.showToast(t('migrupo.toastLoadError'));
+    loadError.value = true;
   }
 }
 
@@ -337,20 +346,33 @@ async function compartirLink() {
   }
 }
   
-onMounted(async () => {
-  await protests.loadProtests();
+async function loadGroup() {
+  if (cargando.value) return;
+  cargando.value = true;
+  loadError.value = false;
+  groupId.value = null;
+  creandoGrupo.value = false;
   try {
-    const data = await api.fetchGrupoPorConvocatoria(protestId);
-    groupId.value = data.group_id;
-    sessionStorage.setItem('vc_group_id', data.group_id);
+    await protests.loadProtests();
+    try {
+      const data = await api.fetchGrupoPorConvocatoria(protestId);
+      groupId.value = data.group_id;
+      sessionStorage.setItem('vc_group_id', data.group_id);
+    } catch (e) {
+      if (e.status !== 404) throw e;
+      groupId.value = null;
+    }
+    await cargarEstado();
+    // Si viene con ?iniciar=true, mostrar directamente el formulario
+    if (route.query.iniciar === 'true' && !groupId.value && !loadError.value) {
+      creandoGrupo.value = true;
+    }
   } catch {
-    groupId.value = null;
+    loadError.value = true;
+  } finally {
+    cargando.value = false;
   }
-  await cargarEstado();
-  cargando.value = false;
-  // Si viene con ?iniciar=true, mostrar directamente el formulario
-  if (route.query.iniciar === 'true' && !groupId.value) {
-    creandoGrupo.value = true;
-  }
-});
+}
+
+onMounted(loadGroup);
 </script>

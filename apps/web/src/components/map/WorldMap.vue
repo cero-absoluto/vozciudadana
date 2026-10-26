@@ -73,7 +73,7 @@ const props = defineProps({
   fallbackCountry:   { type: String, default: '' },
   height:            { type: Number, default: 220 },
 });
-const emit = defineEmits(['country-click', 'protest-click', 'clear-country']);
+const emit = defineEmits(['country-click', 'protest-click', 'clear-country', 'global-click']);
 
 const canvasEl  = ref(null);
 const tooltipEl = ref(null);
@@ -270,6 +270,21 @@ function countryAtEvent(e) {
     .find(f => d3.geoContains(f, geo)) || null;
 }
 
+// Tap on the global marker: selects every global convocatoria. Returns true when handled.
+function handleGlobalTap(e) {
+  if (props.filter !== 'all' && props.filter !== 'global') return false;
+  const globals = props.protests.filter(p => displayScope(p) === 'global');
+  if (!globals.length) return false;
+  const xy = proj(REGION_COORDS.global);
+  if (!xy) return false;
+  const rect = canvasEl.value.getBoundingClientRect();
+  const dx = (e.clientX - rect.left) - xy[0];
+  const dy = (e.clientY - rect.top) - xy[1];
+  if (dx * dx + dy * dy > 22 * 22) return false;
+  emit('global-click', globals.map(p => p.id));
+  return true;
+}
+
 function setupEvents() {
   const c = canvasEl.value;
 
@@ -306,6 +321,7 @@ function setupEvents() {
 
   c.addEventListener('click', e => {
     if (!worldData || drag) return;
+    if (handleGlobalTap(e)) return;
     const geo = cssToGeo(e);
     if (!geo) return;
     const found = topojson.feature(worldData, worldData.objects.countries).features
@@ -384,6 +400,7 @@ function setupEvents() {
     if (e.changedTouches.length === 1 && !drag) {
       const touch = e.changedTouches[0];
       const fakeEvent = { clientX: touch.clientX, clientY: touch.clientY };
+      if (handleGlobalTap(fakeEvent)) { lastTouchDist = 0; return; }
       const geo = cssToGeo(fakeEvent);
       if (geo) {
         const found = topojson.feature(worldData, worldData.objects.countries).features

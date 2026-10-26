@@ -59,6 +59,7 @@
         :height="220"
         @country-click="onCountryClick"
         @clear-country="clearCountryFilter"
+        @global-click="onGlobalClick"
       />
 
       <!-- Filters + count -->
@@ -168,6 +169,13 @@ function onCountryClick(isoA2, name) {
 function clearCountryFilter() {
   protests.countryFilter  = null;
   countryFilterName.value = null;
+}
+
+function onGlobalClick(ids) {
+  protests.filter = 'global';
+  clearCountryFilter();
+  tab.value = 'active';
+  if (ids.length === 1) openDetail(ids[0]);
 }
 
 function openDetail(id) {

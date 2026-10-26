@@ -122,10 +122,10 @@ const otpError = ref('');
 
 async function solicitarOtp() {
   emailError.value = '';
-  if (!email.value.trim()) { emailError.value = 'Introduce tu email institucional'; return; }
+  if (!email.value.trim()) { emailError.value = t('unirse.errEmail'); return; }
   const partes = email.value.split('@');
   if (partes[1]?.toLowerCase() !== dominio.value.toLowerCase()) {
-    emailError.value = `El email debe ser del dominio @${dominio.value}`;
+    emailError.value = t('unirse.errDomain', { domain: '@' + dominio.value });
     return;
   }
   loading.value = true;

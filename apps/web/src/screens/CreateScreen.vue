@@ -347,7 +347,7 @@
     {{ $t('create.principleNote') }}
   </div>
 </div>
-      <button class="btn-primary" style="width:100%;margin-bottom:18px" @click="submit">{{ $t('create.submit') }}</button>
+      <button class="btn-primary" style="width:100%;margin-bottom:18px" type="button" :disabled="creating" :aria-busy="creating" @click="submit">{{ creating ? $t('create.publishing') : $t('create.submit') }}</button>
   </div>
 </div>
   </div>

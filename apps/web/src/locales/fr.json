@@ -247,6 +247,7 @@
     "validationStep3": "Dénonciation d'abus — pas de demandes d'amélioration ni de préférences politiques",
     "validationStep4": "Verbes d'action — exiger, dénoncer, démissionner. Non : demander, solliciter, proposer",
     "submit": "Créer l'événement →",
+    "publishing": "Publication en cours…",
     "errTitle": "Le titre est obligatoire",
     "errDesc": "La description est obligatoire",
     "errDemands": "Indiquez ce que vous exigez",

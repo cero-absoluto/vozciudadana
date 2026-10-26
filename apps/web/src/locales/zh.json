@@ -789,6 +789,7 @@
     "toastInstalled": "✓ Voice Protest已安装"
   },
   "map": {
+    "loadError": "地图加载失败，请重试。",
     "approximateLocation": "根据时区估算的位置",
     "zoomIn": "放大地图",
     "zoomOut": "缩小地图",

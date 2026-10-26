@@ -213,7 +213,7 @@ function drawFrame() {
     const idSeed = typeof p.id === 'number' ? p.id
       : String(p.id).split('').reduce((n, c) => ((n << 5) - n + c.charCodeAt(0)) | 0, 0);
     const pulse = 0.4 + Math.sin(t / 500 + idSeed) * 0.3;
-    const r = 3 + (p.heat / 100) * 5;
+    const r = p.scope === 'global' ? 10 + (Math.max(0, Math.min(100, Number(p.heat) || 0)) / 100) * 2 : 3 + (p.heat / 100) * 5;
     ctx.beginPath(); ctx.arc(x, y, r * 2.5, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(255,80,80,${pulse * 0.2})`; ctx.fill();
     ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);

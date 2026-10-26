@@ -450,6 +450,8 @@
   "informe": {
     "loading": "加载报告中...",
     "notFound": "未找到该活动。",
+    "loadError": "无法加载报告。",
+    "retry": "重试",
     "headerLabel": "经过验证的公开报告",
     "fuente": "📎 来源：",
     "tipoAbuso": "⚠️ 滥权类型：",

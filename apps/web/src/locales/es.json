@@ -450,6 +450,8 @@
   "informe": {
     "loading": "Cargando informe...",
     "notFound": "El evento no fue encontrado.",
+    "loadError": "No se pudo cargar el informe.",
+    "retry": "Reintentar",
     "headerLabel": "Informe público verificado",
     "fuente": "📎 Fuente:",
     "tipoAbuso": "⚠️ Tipo de abuso:",

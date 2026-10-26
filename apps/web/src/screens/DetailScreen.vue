@@ -184,7 +184,7 @@ function badgeLabel(p) {
 
 function fmtCloseDate(endsAt) {
   if (!endsAt) return '';
-  return new Date(endsAt).toLocaleString(undefined, {
+  return new Date(endsAt).toLocaleString(locale.value || 'en', {
     weekday: 'short', day: 'numeric', month: 'short',
     hour: '2-digit', minute: '2-digit'
   });

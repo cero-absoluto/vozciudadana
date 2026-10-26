@@ -176,7 +176,7 @@ import { useUiStore } from '@/stores/ui.js';
 import { useI18n } from 'vue-i18n';
 import * as api from '@/services/api.js';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const route = useRoute();
 const router = useRouter();
@@ -269,7 +269,7 @@ const progresoPercent = computed(() =>
 
 function formatFecha(iso) {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  return new Date(iso).toLocaleDateString(locale.value || 'en', { day: 'numeric', month: 'short' });
 }
 
 async function cargarEstado() {

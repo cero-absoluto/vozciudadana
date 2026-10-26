@@ -7,7 +7,7 @@
 
     <!-- Filtros -->
     <div class="arch-filters">
-      <select v-model="filtroTipo" class="arch-sel" :aria-label="$t('archivo.filterTypeLabel')">
+      <select id="archive-filter-type" v-model="filtroTipo" class="arch-sel" :aria-label="$t('archivo.filterTypeLabel')">
         <option value="">{{ $t('archivo.filterAll') }}</option>
         <option value="national">{{ $t('archivo.filterNational') }}</option>
         <option value="regional">{{ $t('archivo.filterRegional') }}</option>
@@ -15,11 +15,11 @@
         <option value="global">{{ $t('archivo.filterGlobal') }}</option>
         <option value="institutional">{{ $t('archivo.filterInstitutional') }}</option>
       </select>
-      <select v-model="filtroPais" class="arch-sel" :aria-label="$t('archivo.filterCountryLabel')">
+      <select id="archive-filter-country" v-model="filtroPais" class="arch-sel" :aria-label="$t('archivo.filterCountryLabel')">
         <option value="">{{ $t('archivo.filterAllCountries') }}</option>
         <option v-for="code in paisesDisponibles" :key="code" :value="code">{{ localizedCountry(code, locale) || code }}</option>
       </select>
-      <select v-model="filtroOrden" class="arch-sel" :aria-label="$t('archivo.sortLabel')">
+      <select id="archive-filter-sort" v-model="filtroOrden" class="arch-sel" :aria-label="$t('archivo.sortLabel')">
         <option value="fecha">{{ $t('archivo.sortDate') }}</option>
         <option value="adheridos">{{ $t('archivo.sortAdheridos') }}</option>
       </select>

@@ -1,0 +1,2 @@
+# Punto6: publicación
+Botón de publicación de CreateScreen.vue desactivado y aria-busy mientras creating=true, texto create.publishing traducido. Con creating=false conserva create.submit. Mantener guard if(creating.value)return, try/finally y errores existentes. Revisión visual en cuatro idiomas; sin publicación de datos reales durante pruebas. Suite/build existentes; no tests nuevos para atributos/textos estáticos.

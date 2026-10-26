@@ -7,9 +7,9 @@ import zh from './locales/zh.json';
 const SUPPORTED = ['es', 'en', 'fr', 'zh'];
 
 function detectLocale() {
-  const saved = localStorage.getItem('vc_lang');
+  const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('vc_lang') : null;
   if (saved && SUPPORTED.includes(saved)) return saved;
-  const browser = navigator.language?.split('-')[0];
+  const browser = typeof navigator !== 'undefined' ? navigator.language?.split('-')[0] : undefined;
   return SUPPORTED.includes(browser) ? browser : 'es';
 }
 

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { REGIONS, inRegion, fmtTime, displayScope } from '@/constants.js';
 import { useDeviceStore } from './device.js';
 import * as api from '@/services/api.js';
+import i18n from '@/i18n.js';
 
 const SCOPE_COLOR = { national: '#7C6FFF', regional: '#FFB347', local: '#4CC8FF', global: '#4CFFA4' };
 const INST_COLOR = '#FF7CB0'; // institutional events, distinct on the map
@@ -117,15 +118,15 @@ export const useProtestsStore = defineStore('protests', () => {
 
     if (p.scope === 'national') {
       const active = protests.value.find(x => x.scope === 'national' && x.joined && x.id !== p.id);
-      if (active) return { ok: false, lock: true, msg: `Tu dispositivo ya está adherido a "${active.title}" (${fmtTime(active.timer)} restante).` };
+      if (active) return { ok: false, lock: true, msg: i18n.global.t('active.lockNational', { title: active.title, time: fmtTime(active.timer) }) };
     }
     if (p.scope === 'regional' && !p.dominio_email) {
       const active = protests.value.find(x => x.scope === 'regional' && !x.dominio_email && x.region === p.region && x.joined && x.id !== p.id);
-      if (active) return { ok: false, lock: true, msg: `Tu dispositivo ya está adherido a una convocatoria del bloque ${REGIONS[p.region]?.name}.` };
+      if (active) return { ok: false, lock: true, msg: i18n.global.t('active.lockRegional', { region: REGIONS[p.region]?.name }) };
     }
     if (p.scope === 'global') {
       const active = protests.value.find(x => x.scope === 'global' && x.joined && x.id !== p.id);
-      if (active) return { ok: false, lock: true, msg: `Tu dispositivo ya está adherido a una convocatoria global: "${active.title}".` };
+      if (active) return { ok: false, lock: true, msg: i18n.global.t('active.lockGlobal', { title: active.title }) };
     }
 
     if (p.scope === 'national') {
@@ -134,14 +135,14 @@ export const useProtestsStore = defineStore('protests', () => {
       // not block adhesion — otherwise legitimate citizens whose auxiliary
       // signals (IP/GPS/timezone/language) are weak or misaligned would be
       // unfairly excluded. Auxiliary signals describe signal quality, not rights.
-      if (device.simCountry !== p.country) return { ok: false, geo: true, msg: `Esta convocatoria es exclusivamente para ciudadanos de ${p.countryName}.` };
+      if (device.simCountry !== p.country) return { ok: false, geo: true, msg: i18n.global.t('active.geoNational', { country: p.countryName }) };
     }
    if (p.scope === 'regional') {
       if (p.dominio_email) return { ok: true };
       if (p.convocatoria_pais) {
         const simOk = device.simCountry === p.convocatoria_pais;
         const ipOk  = device.ipCountry  === p.convocatoria_pais;
-        if (!simOk && !ipOk) return { ok: false, geo: true, msg: `Esta convocatoria es para personas en ${p.countryName}.` };
+        if (!simOk && !ipOk) return { ok: false, geo: true, msg: i18n.global.t('active.geoRegional', { country: p.countryName }) };
       }
       return { ok: true };
     }

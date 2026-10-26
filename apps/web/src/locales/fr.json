@@ -88,6 +88,11 @@
     "emptyDesc": "Il n'y a pas d'événements actifs dans ce pays pour le moment.",
     "createBtn": "+ Créer un événement",
     "joined": "✓ Rejoint · {time} restant",
+    "lockNational": "Votre appareil a déjà rejoint « {title} » ({time} restantes).",
+    "lockRegional": "Votre appareil a déjà rejoint un événement dans la région {region}.",
+    "lockGlobal": "Votre appareil a déjà rejoint un événement mondial : « {title} ».",
+    "geoNational": "Cet événement est exclusivement réservé aux citoyens de {country}.",
+    "geoRegional": "Cet événement est destiné aux personnes se trouvant en {country}.",
     "toastLocked": "🔒 Appareil verrouillé jusqu'à la fin de l'événement actif",
     "toastGeo": "🌍 Vous ne pouvez pas participer : hors du périmètre géographique",
     "joinBtn": "Rejoindre la protestation"

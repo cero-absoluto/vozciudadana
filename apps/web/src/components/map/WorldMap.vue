@@ -171,9 +171,13 @@ watch(() => props.countryFilter, (nv, ov) => {
   if (!nv && ov) { const c = props.homeCountry || props.fallbackCountry; if (c) frameCountry(c); }
 });
 
+function getVisibleProtests() {
+  return props.filter === 'all' ? props.protests : props.protests.filter(p => displayScope(p) === props.filter);
+}
+
 function getHeat(iso) {
   const a2 = ISO_NUM_TO_A2[iso];
-  const p = props.protests.find(x => x.country === a2);
+  const p = getVisibleProtests().find(x => x.country === a2);
   if (!p) return 0;                  // sin convocatoria → tierra apagada
   return Math.max(p.heat || 0, 5);   // con convocatoria → al menos la franja visible (azul)
 }
@@ -192,7 +196,7 @@ function drawFrame() {
   });
 
   const t = Date.now();
-  const vis = props.filter === 'all' ? props.protests : props.protests.filter(p => displayScope(p) === props.filter);
+  const vis = getVisibleProtests();
   // ── Malta — punto fijo siempre visible ──
   if (zoom > 3) {
     const maltaCoords = proj([14.5, 35.9]);
@@ -304,7 +308,7 @@ function setupEvents() {
       const iso = found.id ? String(found.id).padStart(3, '0') : null;
       hovered = iso;
       const heat = getHeat(iso), a2 = ISO_NUM_TO_A2[iso] || iso;
-      const prot = props.protests.find(p => p.country === a2);
+      const prot = getVisibleProtests().find(p => p.country === a2);
       if (heat > 0 || prot) {
         tt.style.display = 'block'; tt.style.left = ttx + 'px'; tt.style.top = tty + 'px';
         renderCountryTooltip(tt, found.properties?.name || '—', prot);

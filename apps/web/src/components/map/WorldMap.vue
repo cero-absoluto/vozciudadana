@@ -35,6 +35,30 @@ const { t } = useI18n({ useScope: 'global' });
 import * as topojson from 'topojson-client';
 import { ISO_NUM_TO_A2, COORDS, REGION_COORDS, heatColor, lighten, fmt, fmtTime, REGIONS, displayScope } from '@/constants.js';
 
+function renderCountryTooltip(tt, countryName, prot) {
+  const title = document.createElement('div');
+  title.className = 'mt-title';
+  title.textContent = countryName;
+  const nodes = [title];
+  if (prot) {
+    const row1 = document.createElement('div');
+    row1.className = 'mt-row';
+    const t = document.createElement('span');
+    t.textContent = prot.title.substring(0, 28) + '...';
+    row1.appendChild(t);
+    const row2 = document.createElement('div');
+    row2.className = 'mt-row';
+    const label = document.createElement('span');
+    label.textContent = 'Adheridos';
+    const ct = document.createElement('span');
+    ct.className = 'mt-ct';
+    ct.textContent = String(fmt(prot.count));
+    row2.append(label, ct);
+    nodes.push(row1, row2);
+  }
+  tt.replaceChildren(...nodes);
+}
+
 const props = defineProps({
   protests:          { type: Array,  required: true },
   filter:            { type: String, default: 'all' },
@@ -259,9 +283,7 @@ function setupEvents() {
       const prot = props.protests.find(p => p.country === a2);
       if (heat > 0 || prot) {
         tt.style.display = 'block'; tt.style.left = ttx + 'px'; tt.style.top = tty + 'px';
-        tt.innerHTML = `<div class="mt-title">${found.properties?.name || '—'}</div>` +
-          (prot ? `<div class="mt-row"><span>${prot.title.substring(0, 28)}...</span></div>
-            <div class="mt-row"><span>Adheridos</span><span class="mt-ct">${fmt(prot.count)}</span></div>` : ``);
+        renderCountryTooltip(tt, found.properties?.name || '—', prot);
       } else { tt.style.display = 'none'; hovered = null; }
     } else { tt.style.display = 'none'; hovered = null; }
   });

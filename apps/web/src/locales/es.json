@@ -789,6 +789,7 @@
     "toastInstalled": "✓ Voice Protest instalado"
   },
   "map": {
+    "loadError": "No se pudo cargar el mapa. Inténtalo de nuevo.",
     "approximateLocation": "Ubicación aproximada por zona horaria",
     "zoomIn": "Ampliar mapa",
     "zoomOut": "Reducir mapa",

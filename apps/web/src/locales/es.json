@@ -88,6 +88,11 @@
     "emptyDesc": "No hay eventos activos en este país ahora mismo.",
     "createBtn": "+ Crear evento",
     "joined": "✓ Unido · {time} restante",
+    "lockNational": "Tu dispositivo ya está adherido a «{title}» ({time} restante).",
+    "lockRegional": "Tu dispositivo ya está adherido a una convocatoria del bloque {region}.",
+    "lockGlobal": "Tu dispositivo ya está adherido a una convocatoria global: «{title}».",
+    "geoNational": "Esta convocatoria es exclusivamente para ciudadanos de {country}.",
+    "geoRegional": "Esta convocatoria es para personas en {country}.",
     "toastLocked": "🔒 Dispositivo bloqueado hasta que termine el evento activo",
     "toastGeo": "🌍 No puedes participar: fuera del ámbito geográfico",
     "joinBtn": "Unirse a la protesta"

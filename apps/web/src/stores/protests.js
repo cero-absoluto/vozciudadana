@@ -199,7 +199,8 @@ export const useProtestsStore = defineStore('protests', () => {
   // hasn't resolved yet, or because the protest has already closed and the
   // list endpoint only returns active ones (GET /api/protests filters by
   // ends_at). Returns the normalized protest, or null if it truly doesn't
-  // exist (404). Never throws — callers just check the return value.
+  // exist (404). Any other failure (network, 5xx) is rethrown so callers can
+  // tell "missing" apart from "couldn't load" and offer a retry.
   async function fetchProtestById(id) {
     const existing = protests.value.find(p => String(p.id) === String(id));
     if (existing) return existing;
@@ -211,7 +212,8 @@ export const useProtestsStore = defineStore('protests', () => {
       protests.value.push(n);
       return n;
     } catch (err) {
-      return null;
+      if (err.status === 404) return null;
+      throw err;
     }
   }
 

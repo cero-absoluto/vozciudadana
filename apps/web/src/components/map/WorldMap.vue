@@ -258,7 +258,29 @@ function drawFrame() {
     ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI * 2);
     ctx.fillStyle = 'white'; ctx.fill();
   });
+  drawGlobalLabel(vis);
   raf = requestAnimationFrame(drawFrame);
+}
+
+// Single translated label under the global marker, drawn once however many
+// global convocatorias share its position.
+function drawGlobalLabel(vis) {
+  if (!vis.some(p => displayScope(p) === 'global')) return;
+  const xy = proj(REGION_COORDS.global);
+  if (!xy) return;
+  const [x, y] = xy;
+  if (x < -10 || x > W + 10 || y < -10 || y > H + 10) return;
+  const label = t('home.filterGlobal');
+  ctx.save();
+  ctx.font = '600 11px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#0a1628';
+  ctx.fillStyle = '#fff';
+  ctx.strokeText(label, x, y + 18);
+  ctx.fillText(label, x, y + 18);
+  ctx.restore();
 }
 
 function cssToGeo(e) {

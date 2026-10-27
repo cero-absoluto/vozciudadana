@@ -1011,13 +1011,14 @@
     }
   },
   "timing": {
-    "openSince": "Abierta desde el {date}",
     "open": "Abierta",
     "upcoming": "Empieza en {time}",
     "ended": "Finalizada",
-    "starts": "Empieza: {date}",
-    "ends": "Finaliza el {date}",
-    "endedOn": "Finalizó el {date}",
-    "unknown": "Horario no disponible"
+    "starts": "La protesta empieza el {date}",
+    "ends": "La protesta finaliza el {date}",
+    "endedOn": "La protesta finalizó el {date}",
+    "unknown": "Horario no disponible",
+    "joiningSince": "Abierta a adhesiones desde el {date}",
+    "joiningOpen": "Abierta a adhesiones"
 }
 }

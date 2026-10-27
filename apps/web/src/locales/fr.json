@@ -1011,13 +1011,14 @@
     }
   },
   "timing": {
-    "openSince": "Ouverte depuis le {date}",
     "open": "Ouverte",
     "upcoming": "Commence dans {time}",
     "ended": "Terminée",
-    "starts": "Début : {date}",
-    "ends": "Fin : {date}",
-    "endedOn": "Terminée le : {date}",
-    "unknown": "Horaires indisponibles"
+    "starts": "La manifestation commence le {date}",
+    "ends": "La manifestation se termine le {date}",
+    "endedOn": "La manifestation s’est terminée le {date}",
+    "unknown": "Horaires indisponibles",
+    "joiningSince": "Ouverte aux adhésions depuis le {date}",
+    "joiningOpen": "Ouverte aux adhésions"
 }
 }

@@ -1011,13 +1011,14 @@
     }
   },
   "timing": {
-    "openSince": "Open since {date}",
     "open": "Open",
     "upcoming": "Starts in {time}",
     "ended": "Ended",
-    "starts": "Starts: {date}",
-    "ends": "Ends: {date}",
-    "endedOn": "Ended: {date}",
-    "unknown": "Schedule unavailable"
+    "starts": "Protest starts on {date}",
+    "ends": "Protest ends on {date}",
+    "endedOn": "Protest ended on {date}",
+    "unknown": "Schedule unavailable",
+    "joiningSince": "Open for joining since {date}",
+    "joiningOpen": "Open for joining"
 }
 }

@@ -76,11 +76,11 @@
       <!-- Filters + count -->
       <div class="map-topbar">
         <div class="filter-row">
-          <button class="pill" :class="{active: protests.filter==='global'}" :aria-pressed="protests.filter==='global'"   @click="setFilter('global')">{{ $t('home.filterGlobal') }}</button>
-          <button class="pill" :class="{active: protests.filter==='national'}" :aria-pressed="protests.filter==='national'" @click="setFilter('national')">{{ $t('home.filterNational') }}</button>
-          <button class="pill" :class="{active: protests.filter==='regional'}" :aria-pressed="protests.filter==='regional'" @click="setFilter('regional')">{{ $t('home.filterRegional') }}</button>
-          <button class="pill" :class="{active: protests.filter==='local'}" :aria-pressed="protests.filter==='local'"    @click="setFilter('local')">{{ $t('home.filterLocal') }}</button>
-          <button class="pill" :class="{active: protests.filter==='institutional'}" :aria-pressed="protests.filter==='institutional'" @click="setFilter('institutional')">{{ $t('home.filterInstitutional') }}</button>
+          <button class="pill" :class="{active: protests.filter==='global', 'has-open': openScopes.has('global')}" :aria-pressed="protests.filter==='global'"   @click="setFilter('global')">{{ $t('home.filterGlobal') }}</button>
+          <button class="pill" :class="{active: protests.filter==='national', 'has-open': openScopes.has('national')}" :aria-pressed="protests.filter==='national'" @click="setFilter('national')">{{ $t('home.filterNational') }}</button>
+          <button class="pill" :class="{active: protests.filter==='regional', 'has-open': openScopes.has('regional')}" :aria-pressed="protests.filter==='regional'" @click="setFilter('regional')">{{ $t('home.filterRegional') }}</button>
+          <button class="pill" :class="{active: protests.filter==='local', 'has-open': openScopes.has('local')}" :aria-pressed="protests.filter==='local'"    @click="setFilter('local')">{{ $t('home.filterLocal') }}</button>
+          <button class="pill" :class="{active: protests.filter==='institutional', 'has-open': openScopes.has('institutional')}" :aria-pressed="protests.filter==='institutional'" @click="setFilter('institutional')">{{ $t('home.filterInstitutional') }}</button>
         </div>
         <div class="global-chip">
           <div class="red-dot"></div>
@@ -117,7 +117,7 @@ import WorldMap   from '@/components/map/WorldMap.vue';
 import ActiveTab  from '@/components/home/ActiveTab.vue';
 import QueueTab   from '@/components/home/QueueTab.vue';
 import SlotsTab   from '@/components/home/SlotsTab.vue';
-import { fmt, ISO_NUM_TO_A2, localizedCountry } from '@/constants.js';
+import { fmt, ISO_NUM_TO_A2, localizedCountry, displayScope } from '@/constants.js';
 
 const router   = useRouter();
 const protests = useProtestsStore();
@@ -156,6 +156,7 @@ if (showMapOverlay.value) {
 }
 const countryFilterName = ref(null);
 const globalChoiceIds = ref([]);
+const openScopes = computed(() => new Set(protests.openProtests.map(p => displayScope(p))));
 const globalChoices = computed(() => protests.openProtests.filter(p => globalChoiceIds.value.includes(p.id)));
 
 const location = computed(() => mapLocation(device));
@@ -200,3 +201,11 @@ function openDetail(id) {
   router.push(`/detail/${id}`);
 }
 </script>
+
+<style scoped>
+.filter-row .pill.has-open,
+.filter-row .pill.has-open:hover:not(.active) { background: #4CFFA4; color: #06210f; border-color: #4CFFA4; }
+.filter-row .pill.active { box-shadow: 0 0 0 2px var(--bg, #fff), 0 0 0 4px var(--text, #fff); font-weight: 700; }
+.filter-row .pill.active:not(.has-open) { background: var(--accent); color: white; border-color: var(--accent); }
+.filter-row .pill:focus-visible { outline: 2px solid var(--text, #fff); outline-offset: 3px; }
+</style>

@@ -61,7 +61,7 @@ export const REGION_COORDS = {
   asean:    [108.0, 14.0],
   latam:    [-65.0,-10.0],
   g20:      [ 20.0, 30.0],
-  global:   [0.0, 0.0], // Symbolic global reference: Equator / Greenwich intersection.
+  global:   [-3.0, 36.0], // Symbolic global reference in the Alboran Sea.
 };
 
 // ── Helpers ─────────────────────────────────────────────────────────────────

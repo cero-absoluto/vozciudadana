@@ -83,6 +83,9 @@ const mapLoadError = ref(false);
 let worldMapDisposed = false;
 
 let ctx, worldData, raf;
+let motionPreference;
+let reduceMotion = false;
+function updateMotionPreference(e) { reduceMotion = e.matches; }
 let W = 0, H = 0;
 let zoom = 1, offX = 0, offY = 0;
 let proj = null, gp = null;
@@ -197,6 +200,7 @@ function drawFrame() {
 
   const t = Date.now();
   const vis = getVisibleProtests();
+  drawGlobalParallel(vis, t);
   // ── Malta — punto fijo siempre visible ──
   if (zoom > 3) {
     const maltaCoords = proj([14.5, 35.9]);
@@ -249,7 +253,7 @@ function drawFrame() {
     if (x < -10 || x > W + 10 || y < -10 || y > H + 10) return;
     const idSeed = typeof p.id === 'number' ? p.id
       : String(p.id).split('').reduce((n, c) => ((n << 5) - n + c.charCodeAt(0)) | 0, 0);
-    const pulse = 0.4 + Math.sin(t / 500 + idSeed) * 0.3;
+    const pulse = reduceMotion ? 0.4 : 0.4 + Math.sin(t / 500 + idSeed) * 0.3;
     const r = p.scope === 'global' ? 10 + (Math.max(0, Math.min(100, Number(p.heat) || 0)) / 100) * 2 : 3 + (p.heat / 100) * 5;
     ctx.beginPath(); ctx.arc(x, y, r * 2.5, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(255,80,80,${pulse * 0.2})`; ctx.fill();
@@ -260,6 +264,22 @@ function drawFrame() {
   });
   drawGlobalLabel(vis);
   raf = requestAnimationFrame(drawFrame);
+}
+
+// GeoJSON sampling keeps the parallel attached to the projection when panning,
+// zooming or crossing the antimeridian. Draw once, beneath every marker.
+function drawGlobalParallel(vis, now) {
+  if (!vis.some(p => displayScope(p) === 'global')) return;
+  const latitude = REGION_COORDS.global[1];
+  const coordinates = Array.from({ length: 181 }, (_, i) => [-180 + i * 2, latitude]);
+  const alpha = reduceMotion ? 0.7 : 0.7 + 0.2 * Math.sin(now / 1200);
+  ctx.save();
+  ctx.beginPath();
+  gp({ type: 'LineString', coordinates });
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = `rgba(76,255,164,${alpha})`;
+  ctx.stroke();
+  ctx.restore();
 }
 
 // Single translated label under the global marker, drawn once however many
@@ -480,6 +500,9 @@ async function loadWorldMap() {
 }
 
 onMounted(() => {
+  motionPreference = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+  reduceMotion = motionPreference?.matches ?? false;
+  motionPreference?.addEventListener?.('change', updateMotionPreference);
   const c = canvasEl.value;
   ctx = c.getContext('2d');
   W = c.width  = c.parentElement.clientWidth  || window.innerWidth;
@@ -518,6 +541,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   worldMapDisposed = true;
+  motionPreference?.removeEventListener?.('change', updateMotionPreference);
   cancelAnimationFrame(raf);
   canvasEl.value?._ro?.disconnect();
   if (canvasEl.value?._visibilityHandler) {

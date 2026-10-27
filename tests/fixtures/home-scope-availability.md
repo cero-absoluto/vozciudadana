@@ -1,0 +1,7 @@
+# Scope availability indicators
+
+Home scope pills global/national/regional/local/institutional turn the existing global green (#4CFFA4) when at least one open convocatoria has that effective displayScope. Derive reactively from protests.openProtests, never filteredProtests; country/scope selection must not hide availability. Reuse displayScope from constants.js, including institutional precedence. No additional requests or database changes.
+
+Empty scopes retain neutral styling and remain clickable. Selected scope remains visually distinct whether empty or populated, with a separate outline/other non-color selection cue; aria-pressed continues to mean selected only. Preserve visible keyboard focus and hover contrast. Green filled buttons need dark legible text. Use scoped selectors specific to the home filter row, never change other .pill consumers. All five scopes use the same green for availability.
+
+Verify: global open -> global green before any selection; all five independently; institutional effective scope not incorrectly regional; closed excluded; updates when last open expires; choosing a country or other filter does not change indicators; no events all neutral; active and keyboard focus identifiable; mobile320/390 no layout regression; existing translations and toggling intact. Add a small meaningful behavioral test for effective-scope availability based on openProtests; Actions runs full tests/build.

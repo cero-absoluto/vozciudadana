@@ -76,11 +76,11 @@
       <!-- Filters + count -->
       <div class="map-topbar">
         <div class="filter-row">
-          <button class="pill" :class="{active: protests.filter==='global', 'has-open': openScopes.has('global')}" :aria-pressed="protests.filter==='global'"   @click="setFilter('global')">{{ $t('home.filterGlobal') }}</button>
-          <button class="pill" :class="{active: protests.filter==='national', 'has-open': openScopes.has('national')}" :aria-pressed="protests.filter==='national'" @click="setFilter('national')">{{ $t('home.filterNational') }}</button>
-          <button class="pill" :class="{active: protests.filter==='regional', 'has-open': openScopes.has('regional')}" :aria-pressed="protests.filter==='regional'" @click="setFilter('regional')">{{ $t('home.filterRegional') }}</button>
-          <button class="pill" :class="{active: protests.filter==='local', 'has-open': openScopes.has('local')}" :aria-pressed="protests.filter==='local'"    @click="setFilter('local')">{{ $t('home.filterLocal') }}</button>
-          <button class="pill" :class="{active: protests.filter==='institutional', 'has-open': openScopes.has('institutional')}" :aria-pressed="protests.filter==='institutional'" @click="setFilter('institutional')">{{ $t('home.filterInstitutional') }}</button>
+          <button class="pill" :class="{active: protests.filter==='global', 'has-open': openScopes.has('global')}" :aria-pressed="protests.filter==='global'"   @click="setFilter('global')">{{ $t('home.filterGlobal') }} · {{ scopeCounts['global'] || 0 }}</button>
+          <button class="pill" :class="{active: protests.filter==='national', 'has-open': openScopes.has('national')}" :aria-pressed="protests.filter==='national'" @click="setFilter('national')">{{ $t('home.filterNational') }} · {{ scopeCounts['national'] || 0 }}</button>
+          <button class="pill" :class="{active: protests.filter==='regional', 'has-open': openScopes.has('regional')}" :aria-pressed="protests.filter==='regional'" @click="setFilter('regional')">{{ $t('home.filterRegional') }} · {{ scopeCounts['regional'] || 0 }}</button>
+          <button class="pill" :class="{active: protests.filter==='local', 'has-open': openScopes.has('local')}" :aria-pressed="protests.filter==='local'"    @click="setFilter('local')">{{ $t('home.filterLocal') }} · {{ scopeCounts['local'] || 0 }}</button>
+          <button class="pill" :class="{active: protests.filter==='institutional', 'has-open': openScopes.has('institutional')}" :aria-pressed="protests.filter==='institutional'" @click="setFilter('institutional')">{{ $t('home.filterInstitutional') }} · {{ scopeCounts['institutional'] || 0 }}</button>
         </div>
         <div class="global-chip">
           <div class="red-dot"></div>
@@ -156,6 +156,7 @@ if (showMapOverlay.value) {
 }
 const countryFilterName = ref(null);
 const globalChoiceIds = ref([]);
+const scopeCounts = computed(() => protests.openProtests.reduce((counts, p) => { const scope = displayScope(p); counts[scope] = (counts[scope] || 0) + 1; return counts; }, {}));
 const openScopes = computed(() => new Set(protests.openProtests.map(p => displayScope(p))));
 const globalChoices = computed(() => protests.openProtests.filter(p => globalChoiceIds.value.includes(p.id)));
 

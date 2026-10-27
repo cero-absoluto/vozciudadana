@@ -1009,5 +1009,14 @@
       "petition_filter": "来源已通过请愿平台过滤（change.org、avaaz.org 等被拒绝）。",
       "wikidata_verified": "收件方验证已在服务器端通过 Wikidata API 完成。"
     }
-  }
+  },
+  "timing": {
+    "open": "进行中",
+    "upcoming": "{time}后开始",
+    "ended": "已结束",
+    "starts": "开始：{date}",
+    "ends": "结束：{date}",
+    "endedOn": "已于{date}结束",
+    "unknown": "暂无时间信息"
+}
 }

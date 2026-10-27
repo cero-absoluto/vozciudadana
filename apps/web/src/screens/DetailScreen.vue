@@ -19,9 +19,7 @@
         <div class="sc"><div class="sc-n" style="color:var(--accent3)">{{ fmtTime(protest.timer) }}</div><div class="sc-l">{{ $t('detail.statRestante') }}</div></div>
       </div>
       <!-- Fecha de cierre -->
-      <div v-if="protest.ends_at && protest.timer > 0" style="text-align:center;font-size:13px;color:var(--text2);margin-bottom:8px">
-        {{ $t('detail.closesOn') }} {{ fmtCloseDate(protest.ends_at) }}
-      </div>
+      <ProtestTiming :protest="protest" />
 
       <!-- Velocidad — solo si hay datos de hoy -->
       <div v-if="velocidadHoy > 0" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(76,255,164,.06);border:.5px solid rgba(76,255,164,.2);border-radius:var(--r);margin-bottom:8px">
@@ -172,6 +170,7 @@ import { useDeviceStore }   from '@/stores/device.js';
 import { useUiStore }       from '@/stores/ui.js';
 import { useI18n } from 'vue-i18n';
 import { localizedCountry, fmt, fmtTime, inRegion } from '@/constants.js';
+import ProtestTiming from '@/components/protests/ProtestTiming.vue';
 
 function badgeLabel(p) {
   if (p.dominio_email)        return p.convocatoria_institucion || p.dominio_email;
@@ -182,13 +181,6 @@ function badgeLabel(p) {
   return store.scopeBadge(p).label;
 }
 
-function fmtCloseDate(endsAt) {
-  if (!endsAt) return '';
-  return new Date(endsAt).toLocaleString(locale.value || 'en', {
-    weekday: 'short', day: 'numeric', month: 'short',
-    hour: '2-digit', minute: '2-digit'
-  });
-}
 import * as api from '@/services/api.js';
 
 const { t, locale } = useI18n();

@@ -17,6 +17,7 @@
         <div class="pi-heat" :style="{ background: p.color+'18', color: p.color }">{{ p.heat }}°</div>
         <div class="pi-info">
           <div class="pi-title" style="white-space:normal;overflow:visible;text-overflow:unset">{{ p.title }}</div>
+          <ProtestTiming :protest="p" />
           <div class="pi-meta">
             <span class="scope-badge" :class="store.scopeBadge(p).cls">{{ store.scopeBadge(p).icon }} {{ badgeLabel(p) }}</span>
             <span v-if="p.country">{{ localizedCountry(p.country, locale) }}</span>
@@ -26,7 +27,6 @@
             <div v-if="isBlocked(p)" style="font-size:14px">🔒</div>
             <div class="pi-count" style="font-size:13px">{{ fmt(p.count) }}</div>
             <div style="font-size:12px;color:var(--text2);font-weight:600">{{ fmtTime(p.timer) }}</div>
-            <div v-if="p.ends_at" style="font-size:11px;color:var(--text3);margin-top:2px">{{ fmtCloseDate(p.ends_at) }}</div>
           </div>
           <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
             <!-- Botón principal: UNIRSE — protagonista -->
@@ -60,13 +60,7 @@ import { useProtestsStore } from '@/stores/protests.js';
 import { useUiStore }       from '@/stores/ui.js';
 import { fmt, fmtTime, localizedCountry } from '@/constants.js';
 
-function fmtCloseDate(endsAt) {
-  if (!endsAt) return '';
-  return new Date(endsAt).toLocaleString(undefined, {
-    weekday: 'short', day: 'numeric', month: 'short',
-    hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
-  });
-}
+import ProtestTiming from '@/components/protests/ProtestTiming.vue';
 
 const props  = defineProps({ protests: Array });
 const emit   = defineEmits(['open']);

@@ -1,9 +1,8 @@
 <template>
   <div class="protest-timing">
-    <strong v-if="timing.state !== 'ended' && timing.state !== 'unknown'">{{ Number.isFinite(timing.created) ? t('timing.joiningSince', { date: date(timing.created) }) : t('timing.joiningOpen') }}</strong>
-    <strong v-else>{{ t(`timing.${timing.state}`) }}</strong>
-    <div v-if="timing.state === 'upcoming'">{{ t('timing.upcoming', { time: fmtTime(timing.seconds) }) }}</div>
-    <div v-if="Number.isFinite(timing.start)">{{ t('timing.starts', { date: date(timing.start) }) }}</div>
+    <div v-if="timing.state !== 'ended' && timing.state !== 'unknown'">{{ Number.isFinite(timing.created) ? t('timing.joiningSince', { date: date(timing.created) }) : t('timing.joiningOpen') }}</div>
+    <div v-else>{{ t(`timing.${timing.state}`) }}</div>
+    <div v-if="Number.isFinite(timing.start)">{{ t('timing.starts', { date: date(timing.start) }) }}<span v-if="timing.state === 'upcoming'"> ({{ t('timing.upcoming', { time: fmtTime(timing.seconds) }) }})</span></div>
     <div v-if="Number.isFinite(timing.end)">{{ t(timing.state === 'ended' ? 'timing.endedOn' : 'timing.ends', { date: date(timing.end) }) }}</div>
   </div>
 </template>
@@ -31,5 +30,4 @@ function date(ms) {
 
 <style scoped>
 .protest-timing { margin: 6px 0; font-size: 12px; line-height: 1.5; color: var(--text2); overflow-wrap: anywhere; }
-.protest-timing strong { color: var(--text); }
 </style>

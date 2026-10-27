@@ -62,6 +62,17 @@
         @global-click="onGlobalClick"
       />
 
+      <section v-if="globalChoices.length > 1" :aria-label="$t('home.filterGlobal')"
+        style="display:flex;flex-direction:column;gap:8px;padding:12px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg2);margin:8px 0">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <h2 style="font-size:13px;margin:0">{{ $t('home.filterGlobal') }}</h2>
+          <button type="button" @click="globalChoiceIds = []"
+            style="padding:10px;cursor:pointer">{{ $t('share.close') }}</button>
+        </div>
+        <button v-for="p in globalChoices" :key="p.id" type="button" @click="openDetail(p.id)"
+          style="padding:10px;white-space:normal;overflow-wrap:anywhere;text-align:left;cursor:pointer">{{ p.title }}</button>
+      </section>
+
       <!-- Filters + count -->
       <div class="map-topbar">
         <div class="filter-row">
@@ -144,6 +155,8 @@ if (showMapOverlay.value) {
   }, stepTime);
 }
 const countryFilterName = ref(null);
+const globalChoiceIds = ref([]);
+const globalChoices = computed(() => protests.openProtests.filter(p => globalChoiceIds.value.includes(p.id)));
 
 const location = computed(() => mapLocation(device));
 const deviceFlag = computed(() => {
@@ -158,27 +171,32 @@ function setFilter(f) {
   protests.filter = (protests.filter === f) ? 'all' : f;
   protests.countryFilter = null;
   countryFilterName.value = null;
+  globalChoiceIds.value = [];
 }
 
 function onCountryClick(isoA2, name) {
   protests.countryFilter  = isoA2;
   countryFilterName.value = name;
+  globalChoiceIds.value = [];
   tab.value = 'active';
 }
 
 function clearCountryFilter() {
   protests.countryFilter  = null;
   countryFilterName.value = null;
+  globalChoiceIds.value = [];
 }
 
 function onGlobalClick(ids) {
   protests.filter = 'global';
   clearCountryFilter();
+  globalChoiceIds.value = ids.length > 1 ? ids : [];
   tab.value = 'active';
   if (ids.length === 1) openDetail(ids[0]);
 }
 
 function openDetail(id) {
+  globalChoiceIds.value = [];
   router.push(`/detail/${id}`);
 }
 </script>

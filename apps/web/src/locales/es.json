@@ -1009,5 +1009,14 @@
       "petition_filter": "La fuente superó el filtro de plataformas de peticiones (change.org, avaaz.org, etc. son rechazadas).",
       "wikidata_verified": "La validación del destinatario se realizó en el servidor mediante la API de Wikidata."
     }
-  }
+  },
+  "timing": {
+    "open": "Abierta",
+    "upcoming": "Empieza en {time}",
+    "ended": "Finalizada",
+    "starts": "Empieza: {date}",
+    "ends": "Finaliza el {date}",
+    "endedOn": "Finalizó el {date}",
+    "unknown": "Horario no disponible"
+}
 }

@@ -1009,5 +1009,14 @@
       "petition_filter": "The source passed the petition-platform filter (change.org, avaaz.org, etc. are rejected).",
       "wikidata_verified": "Recipient validation was performed server-side via the Wikidata API."
     }
-  }
+  },
+  "timing": {
+    "open": "Open",
+    "upcoming": "Starts in {time}",
+    "ended": "Ended",
+    "starts": "Starts: {date}",
+    "ends": "Ends: {date}",
+    "endedOn": "Ended: {date}",
+    "unknown": "Schedule unavailable"
+}
 }

@@ -41,6 +41,7 @@ function normalizeProtest(p) {
     donaciones_count:         p.donaciones_count ?? 0,
     donaciones_total:         p.donaciones_total ?? 0,
     ultima_donacion:          p.ultima_donacion ?? null,
+    starts_at:                p.starts_at ?? null,
     ends_at:                  p.ends_at ?? null,
     focal_point:              p.focal_point ?? null,
     fuente_url:               p.fuente_url ?? null,

@@ -22,3 +22,16 @@ test('availability ignores filter and country selection; empty is neutral',()=>{
  c.protests.openProtests=[];
  assert.equal(c.openScopes.value.size,0);
 });
+test('counts include every effective scope independently of selected filters and update to zero',()=>{
+ const match=source.match(/const scopeCounts = computed\(\(\) => ([\s\S]*?)\);\n/);assert.ok(match);
+ const ctx={protests:{openProtests:[{scope:'global'},{scope:'global'},{scope:'regional',dominio_email:'x.org'},{scope:'national'}],filter:'local',countryFilter:'ES'},displayScope};
+ ctx.computed=fn=>({get value(){return fn();}});
+ vm.createContext(ctx);vm.runInContext('globalThis.counts=computed(() => '+match[1]+')',ctx);
+ assert.equal(ctx.counts.value.global,2);
+ assert.equal(ctx.counts.value.institutional,1);
+ assert.equal(ctx.counts.value.regional||0,0);
+ ctx.protests.filter='national';ctx.protests.countryFilter='FR';
+ assert.equal(ctx.counts.value.global,2);
+ ctx.protests.openProtests=[];
+ assert.equal(ctx.counts.value.global||0,0);
+});

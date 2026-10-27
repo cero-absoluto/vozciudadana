@@ -1009,5 +1009,14 @@
       "petition_filter": "La source a passé le filtre des plateformes de pétitions.",
       "wikidata_verified": "La validation du destinataire a été effectuée côté serveur via l'API Wikidata."
     }
-  }
+  },
+  "timing": {
+    "open": "Ouverte",
+    "upcoming": "Commence dans {time}",
+    "ended": "Terminée",
+    "starts": "Début : {date}",
+    "ends": "Fin : {date}",
+    "endedOn": "Terminée le : {date}",
+    "unknown": "Horaires indisponibles"
+}
 }

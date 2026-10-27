@@ -1011,6 +1011,7 @@
     }
   },
   "timing": {
+    "openSince": "自{date}起开放",
     "open": "进行中",
     "upcoming": "{time}后开始",
     "ended": "已结束",

@@ -1011,6 +1011,7 @@
     }
   },
   "timing": {
+    "openSince": "Abierta desde el {date}",
     "open": "Abierta",
     "upcoming": "Empieza en {time}",
     "ended": "Finalizada",

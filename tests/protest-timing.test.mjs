@@ -22,3 +22,19 @@ test('missing or invalid dates never produce a false countdown', () => {
 test('equivalent date offsets give the same state', () => {
   assert.equal(protestTiming({ starts_at: '2026-10-27T11:00:00+01:00', ends_at: protest.ends_at }, start).state, 'open');
 });
+test('joining date stays at creation before and during the scheduled protest', () => {
+  const created = start - 365 * 86400000;
+  const p = { ...protest, created_at: new Date(created).toISOString() };
+  for (const now of [created, start - 1, start, end - 1, end]) {
+    const timing = protestTiming(p, now);
+    assert.equal(timing.created, created);
+    assert.equal(timing.start, start);
+    assert.equal(timing.end, end);
+  }
+  assert.equal(protestTiming(p, created).state, 'upcoming');
+  assert.equal(protestTiming(p, end).state, 'ended');
+});
+test('missing creation date is never replaced by protest start or current time', () => {
+  assert.equal(Number.isNaN(protestTiming(protest, start).created), true);
+  assert.equal(Number.isNaN(protestTiming({ ...protest, created_at: 'invalid' }, start).created), true);
+});

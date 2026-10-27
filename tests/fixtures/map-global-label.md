@@ -1,0 +1,2 @@
+# Punto8
+Etiqueta traducida junto al marcador global, solo si hay globales visibles según getVisibleProtests(). Dibujar una sola etiqueta aunque varias compartan posición. Usar home.filterGlobal existente, conservar tamaños,posición,pulso y selección. Texto legible a320/390/escritorio y alzoom; ocultar con filtros sin globales. Suite/build existentes; revisión visual pendiente. No tests automatizados nuevos para ajuste visual.

@@ -1,7 +1,7 @@
 <template>
   <div class="protest-timing">
-    <strong>{{ timing.state === 'upcoming' ? t('timing.upcoming', { time: fmtTime(timing.seconds) }) : t(`timing.${timing.state}`) }}</strong>
-    <div v-if="Number.isFinite(timing.start)">{{ t('timing.starts', { date: date(timing.start) }) }}</div>
+    <strong>{{ timing.state === 'upcoming' ? t('timing.upcoming', { time: fmtTime(timing.seconds) }) : timing.state === 'open' && Number.isFinite(timing.start) ? t('timing.openSince', { date: date(timing.start) }) : t(`timing.${timing.state}`) }}</strong>
+    <div v-if="timing.state !== 'open' && Number.isFinite(timing.start)">{{ t('timing.starts', { date: date(timing.start) }) }}</div>
     <div v-if="Number.isFinite(timing.end)">{{ t(timing.state === 'ended' ? 'timing.endedOn' : 'timing.ends', { date: date(timing.end) }) }}</div>
   </div>
 </template>

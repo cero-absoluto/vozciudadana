@@ -1011,6 +1011,7 @@
     }
   },
   "timing": {
+    "openSince": "Open since {date}",
     "open": "Open",
     "upcoming": "Starts in {time}",
     "ended": "Ended",

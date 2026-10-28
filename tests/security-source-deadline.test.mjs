@@ -90,9 +90,9 @@ test('resolver accepts absent IPv6 but rejects an unchecked failing family',asyn
     else await assert.rejects(run(),/dns_error/);
   }
 });
-test('resolver refactor does not newly admit bracketed IPv6 literals and malformed SPARQL domains are never queried',async()=>{
-  for(const literal of ['[::1]','[::ffff:7f00:1]','[::ffff:a9fe:a9fe]','[2606:4700::1111]']) {
-    await assert.rejects(()=>resolveSourceAddresses(literal,{resolverFactory(){throw Error('no DNS expected');}}),/dns_error/);
+test('private IPv6 literals stay blocked after full address-policy validation',async()=>{
+  for(const literal of ['[::1]','[::ffff:7f00:1]','[::ffff:a9fe:a9fe]']) {
+    assert.equal((await resolveSourceAddresses(literal,{resolverFactory(){throw Error('no DNS expected');}})).length,1);
     let fetched=false;
     const result=await safeFetch('http://'+literal+'/',100,500,{fetchImpl:async()=>{fetched=true;}});
     assert.equal(result.ok,false);assert.equal(fetched,false);

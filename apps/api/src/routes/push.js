@@ -1,4 +1,7 @@
 import webpush from 'web-push';
+import {createHash,timingSafeEqual} from 'node:crypto';
+import { deviceSecretMatches } from '../lib/participationToken.js';
+import { isAllowedPushEndpoint } from '../lib/pushEndpoint.js';
 import { supabase } from '../services/supabase.js';
 
 function initVapid() {
@@ -14,6 +17,15 @@ function initVapid() {
 }
 
 export default async function pushRoutes(app) {
+  async function authenticatedDevice(req, reply) {
+    const {data,error}=await supabase.from('devices').select('id,verified_at,device_secret_hash').eq('id',req.body.device_id).maybeSingle();
+    if(error)throw new Error('PUSH_AUTH_UNAVAILABLE');
+    if(!data?.verified_at||!deviceSecretMatches(req.body.device_secret,data.device_secret_hash)) {
+      reply.code(401).send({error:'PUSH_AUTH_REQUIRED'});return false;
+    }
+    return true;
+  }
+
 
   // GET /api/push/vapid-public-key — frontend needs this to subscribe
   app.get('/vapid-public-key', async () => ({
@@ -22,27 +34,30 @@ export default async function pushRoutes(app) {
 
   // POST /api/push/subscribe — save subscription
   app.post('/subscribe', {
+    config: {rateLimit:{max:10,timeWindow:'5 minutes'}},
     schema: {
       body: {
         type: 'object',
-        required: ['device_id', 'subscription'],
+        required: ['device_id', 'device_secret', 'subscription'],
+        additionalProperties: false,
         properties: {
-          device_id:    { type: 'string' },
-          protest_id:   { type: 'string', nullable: true },
+          device_id:    { type: 'string', minLength: 8, maxLength: 128 },
+          device_secret: { type: 'string', minLength: 32, maxLength: 256 },
+          protest_id:   { type: 'string', format: 'uuid', nullable: true },
           ends_at:      { type: 'string', nullable: true },
-          locale:       { type: 'string', nullable: true },
-          timezone:     { type: 'string', nullable: true },
+          locale:       { type: 'string', maxLength: 16, nullable: true },
+          timezone:     { type: 'string', maxLength: 100, nullable: true },
           subscription: {
             type: 'object',
             required: ['endpoint', 'keys'],
             properties: {
-              endpoint: { type: 'string' },
+              endpoint: { type: 'string', maxLength: 2048 },
               keys: {
                 type: 'object',
                 required: ['p256dh', 'auth'],
                 properties: {
-                  p256dh: { type: 'string' },
-                  auth:   { type: 'string' },
+                  p256dh: { type: 'string', pattern: '^[A-Za-z0-9_-]{87}={0,1}$' },
+                  auth:   { type: 'string', pattern: '^[A-Za-z0-9_-]{22}={0,2}$' },
                 },
               },
             },
@@ -51,39 +66,43 @@ export default async function pushRoutes(app) {
       },
     },
   }, async (req, reply) => {
-    const { device_id, protest_id, ends_at, locale, timezone, subscription } = req.body;
-    const { endpoint, keys: { p256dh, auth } } = subscription;
-
-    await supabase.from('push_subscriptions').upsert({
-      device_id,
-      endpoint,
-      p256dh,
-      auth,
-      protest_id: protest_id || null,
-      ends_at:    ends_at    || null,
-      locale:     locale || 'en',
-      timezone:   timezone   || null,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'endpoint' });
+    if(!await authenticatedDevice(req,reply))return;
+    const {device_id,protest_id,locale,timezone,subscription}=req.body;
+    if(!isAllowedPushEndpoint(subscription.endpoint))return reply.code(400).send({error:'PUSH_ENDPOINT_INVALID'});
+    const {data,error}=await supabase.rpc('save_owned_push_subscription',{
+      p_device_id:device_id,p_endpoint:subscription.endpoint,p_p256dh:subscription.keys.p256dh,
+      p_auth:subscription.keys.auth,p_protest_id:protest_id||null,
+      p_locale:['es','en','fr','zh'].includes(locale)?locale:'en',p_timezone:timezone||null,
+    });
+    if(error){
+      if(error.message==='VP_PUSH_DEVICE_UNVERIFIED')return reply.code(401).send({error:'PUSH_AUTH_REQUIRED'});
+      if(error.message==='VP_PUSH_PROTEST_NOT_FOUND')return reply.code(404).send({error:'PUSH_PROTEST_NOT_FOUND'});
+      throw new Error('PUSH_SAVE_FAILED');
+    }
+    if(data!==true)return reply.code(409).send({error:'PUSH_ENDPOINT_OWNED'});
 
     return reply.code(201).send({ ok: true });
   });
 
   // POST /api/push/unsubscribe — remove subscription
   app.post('/unsubscribe', {
+    config: {rateLimit:{max:10,timeWindow:'5 minutes'}},
     schema: {
       body: {
         type: 'object',
-        required: ['device_id'],
+        required: ['device_id','device_secret','endpoint'],
+        additionalProperties: false,
         properties: {
-          device_id: { type: 'string' },
+          device_id: { type: 'string', minLength: 8, maxLength: 128 },
+          device_secret: { type: 'string', minLength: 32, maxLength: 256 },
+          endpoint: { type: 'string', maxLength: 2048 },
         },
       },
     },
   }, async (req, reply) => {
-    await supabase.from('push_subscriptions')
-      .delete()
-      .eq('device_id', req.body.device_id);
+    if(!await authenticatedDevice(req,reply))return;
+    const {error}=await supabase.from('push_subscriptions').delete().eq('device_id',req.body.device_id).eq('endpoint',req.body.endpoint);
+    if(error)throw new Error('PUSH_DELETE_FAILED');
     return { ok: true };
   });
 
@@ -106,7 +125,8 @@ export default async function pushRoutes(app) {
   }, async (req, reply) => {
     const { protest_id, title, body, url, admin_secret } = req.body;
 
-    if (admin_secret !== process.env.ADMIN_SECRET) {
+    const expectedSecret=process.env.ADMIN_SECRET;
+    if (!expectedSecret || !timingSafeEqual(createHash('sha256').update(admin_secret).digest(),createHash('sha256').update(expectedSecret).digest())) {
       return reply.status(401).send({ error: 'No autorizado' });
     }
 
@@ -115,6 +135,7 @@ export default async function pushRoutes(app) {
       .from('adhesions')
       .select('device_id')
       .eq('protest_id', protest_id)
+      .is('deleted_at', null)
       .is('anonymized_at', null);
 
     if (!adhesions?.length) return { sent: 0 };
@@ -143,11 +164,11 @@ export default async function pushRoutes(app) {
     const dead = [];
 
     await Promise.allSettled(subs.map(async sub => {
-      if (type === 'closing' && isNighttime(sub.timezone)) return;
+      if (!isAllowedPushEndpoint(sub.endpoint)) return;
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          payload,
+          payload, {timeout:5000},
         );
         sent++;
       } catch (err) {
@@ -220,6 +241,7 @@ export default async function pushRoutes(app) {
     let sent = 0;
     const dead = [];
     await Promise.allSettled(subs.map(async sub => {
+      if (!isAllowedPushEndpoint(sub.endpoint)) return;
       if (type === 'closing' && isNighttime(sub.timezone)) return;
       try {
         const lang = (sub.locale || 'en').substring(0, 2);
@@ -233,7 +255,7 @@ export default async function pushRoutes(app) {
         });
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          payload
+          payload, {timeout:5000}
         );
         sent++;
       } catch (err) {

@@ -177,39 +177,12 @@ function hasMinimalConnection(sourceText, { title = '', demands = '', target_nam
 // endpoint, localhost, a private-network service) would be followed blindly,
 // since fetch's automatic redirect handling never re-validates the target.
 // Fixed here, once, for every caller of safeFetch — not duplicated per route.
-import net from 'net';
+import { isPublicSourceAddress } from './sourceAddressPolicy.js';
+import { pinnedSourceFetch } from './pinnedSourceFetch.js';
 import { withRequestDeadline } from './requestDeadline.js';
 import { resolveSourceAddresses } from './sourceDns.js';
 
 const MAX_REDIRECTS = 3;
-
-function isPrivateOrReservedIp(ip) {
-  const type = net.isIP(ip);
-  if (type === 4) {
-    const [a, b] = ip.split('.').map(Number);
-    if (a === 10) return true;                                  // 10.0.0.0/8
-    if (a === 127) return true;                                  // loopback
-    if (a === 0) return true;                                    // "this network"
-    if (a === 169 && b === 254) return true;                     // link-local incl. cloud metadata (169.254.169.254)
-    if (a === 172 && b >= 16 && b <= 31) return true;             // 172.16.0.0/12
-    if (a === 192 && b === 168) return true;                     // 192.168.0.0/16
-    if (a === 100 && b >= 64 && b <= 127) return true;            // 100.64.0.0/10 (carrier-grade NAT)
-    if (a >= 224) return true;                                    // multicast + reserved
-    return false;
-  }
-  if (type === 6) {
-    const lower = ip.toLowerCase();
-    if (lower === '::1' || lower === '::') return true;           // loopback / unspecified
-    if (lower.startsWith('fe80:') || lower.startsWith('fe8') || lower.startsWith('fe9') ||
-        lower.startsWith('fea') || lower.startsWith('feb')) return true; // fe80::/10 link-local
-    if (lower.startsWith('fc') || lower.startsWith('fd')) return true;   // fc00::/7 unique local
-    // IPv4-mapped IPv6 (::ffff:a.b.c.d) — unwrap and re-check as IPv4
-    const mapped = lower.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-    if (mapped) return isPrivateOrReservedIp(mapped[1]);
-    return false;
-  }
-  return true; // couldn't parse — treat as unsafe rather than assume it's fine
-}
 
 async function resolveAndCheck(hostname, lookup, signal) {
   let records;
@@ -219,14 +192,14 @@ async function resolveAndCheck(hostname, lookup, signal) {
     return { ok: false, reason: 'dns_error' };
   }
   if (!records.length) return { ok: false, reason: 'dns_error' };
-  if (records.some(r => isPrivateOrReservedIp(r.address))) {
+  if (records.some(r => !isPublicSourceAddress(r.address))) {
     return { ok: false, reason: 'private_address' };
   }
-  return { ok: true };
+  return { ok: true, addresses: records };
 }
 
 async function safeFetch(url, timeoutMs = 8000, maxBytes = 500_000, {
-  fetchImpl = globalThis.fetch, lookup = resolveSourceAddresses,
+  fetchImpl = pinnedSourceFetch, lookup = resolveSourceAddresses,
 } = {}) {
   try {
     return await withRequestDeadline(timeoutMs, async (signal, wait) => {
@@ -236,11 +209,13 @@ async function safeFetch(url, timeoutMs = 8000, maxBytes = 500_000, {
         try { parsed = new URL(currentUrl); }
         catch { return { ok: false, reason: 'invalid_url' }; }
         if (!['http:', 'https:'].includes(parsed.protocol)) return { ok: false, reason: 'blocked_scheme' };
+        if (parsed.port) return { ok: false, reason: 'blocked_port' };
+        if (parsed.username || parsed.password) return { ok: false, reason: 'invalid_url' };
         const dnsCheck = await wait(resolveAndCheck(parsed.hostname, lookup, signal));
         if (!dnsCheck.ok) return { ok: false, reason: dnsCheck.reason };
         signal.throwIfAborted();
         const res = await wait(fetchImpl(parsed.href, {
-          signal,
+          signal, addresses: dnsCheck.addresses,
           headers: {
             'User-Agent': 'VoiceProtest-SourceValidator/1.0 (+https://voiceprotest.org)',
             'Accept': 'text/html,application/xhtml+xml',

@@ -737,10 +737,10 @@ export default async function protestRoutes(app, opts = {}) {
       if (tokErr) {
         // Never hand the client a token that does not exist in the database —
         // the later PATCH would 404 and the failure would be undiagnosable.
-        req.log.error({ tokErr }, 'gps_update_token insert failed — reinforcement disabled for this adhesion');
+        req.log.error({code:'gps_token_failed'});
         gps_update_token = null;
       } else {
-        req.log.info({ adhesion_id: data.id, scope: protest.scope }, 'gps_update_token issued');
+        req.log.info({code:'gps_token_issued'});
       }
     }
 
@@ -866,7 +866,7 @@ export default async function protestRoutes(app, opts = {}) {
       pais   = geoData.address?.country || null;
       pais_code = geoData.address?.country_code?.toUpperCase() || null;
       if (geoData.osm_id) adhesion_osm_id = parseInt(geoData.osm_id);
-      req.log.info({ zoomLevel, adhesion_osm_id, osm_name: geoData.display_name?.slice(0, 60) }, 'GPS reinforcement: reverse geocode result');
+      req.log.info({code:'gps_geocode_completed'});
     } catch { /* silencioso — GPS update proceeds without osm_id */ }
 
     // Recalculate fiabilidad with GPS signal
@@ -937,7 +937,7 @@ export default async function protestRoutes(app, opts = {}) {
       p_senales:         senales.join(','),
     });
     if (rpcErr) {
-      req.log.error({ rpcErr }, 'GPS reinforcement update failed');
+      req.log.error({code:'gps_update_failed'});
       return reply.status(500).send({ error: 'GPS update failed' });
     }
     if (!applied || applied.length === 0) {
@@ -950,7 +950,7 @@ export default async function protestRoutes(app, opts = {}) {
     // Invalidate token — one-time use — only reached on a genuinely applied write.
     await supabase.from('gps_update_tokens').update({ used: true }).eq('token', gps_update_token);
 
-    req.log.info({ adhesion_id: tokenRow.adhesion_id, fiabilidad: nuevaFiabilidad, adhesion_osm_id }, 'GPS reinforcement completed');
+    req.log.info({code:'gps_update_completed'});
     return { ok: true, fiabilidad: nuevaFiabilidad, adhesion_osm_id };
   });
 
@@ -965,7 +965,7 @@ export default async function protestRoutes(app, opts = {}) {
     },
   }, async (req, reply) => {
     const { error } = await supabase.rpc('increment_viral_count', { protest_id: req.params.id });
-    if (error) req.log.error({ error }, 'increment_viral_count failed');
+    if (error) req.log.error({code:'viral_increment_failed'});
     return { ok: true };
   });
 

@@ -28,7 +28,7 @@ export async function verifyRecaptcha(token, expectedAction, req, reply, {
     return;
   }
   const reject = () => {
-    req?.log?.warn?.({ reason: 'invalid_response' }, 'recaptcha: verification failed');
+    req?.log?.warn?.({ code: 'recaptcha_rejected' });
     reply.badRequest('reCAPTCHA verification failed');
     throw new Error('recaptcha');
   };
@@ -45,7 +45,7 @@ export async function verifyRecaptcha(token, expectedAction, req, reply, {
       return await wait(res.json());
     });
   } catch {
-    req?.log?.warn?.({ reason: 'provider_unavailable' }, 'recaptcha: verification unavailable');
+    req?.log?.warn?.({ code: 'recaptcha_unavailable' });
     reply.serviceUnavailable('reCAPTCHA verification temporarily unavailable');
     throw new Error('recaptcha_unavailable');
   }

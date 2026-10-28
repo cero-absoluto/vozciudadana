@@ -1,0 +1,12 @@
+{
+  "name": "voiceprotest-native-network-push-rehearsal",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node launch.mjs"
+  },
+  "devDependencies": {
+    "@embedded-postgres/linux-x64": "17.6.0-beta.15",
+    "pg": "8.16.3"
+  }
+}

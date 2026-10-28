@@ -84,6 +84,9 @@ const gpsReinforceDone = ref(false);
 
 async function activarNotificacion() {
   if (notiActivada.value) return;
+  const deviceId=device.getDeviceId();
+  const deviceSecret=device.getDeviceSecret();
+  if (!deviceSecret) { ui.showToast(t('verify.notiError')); return; }
   try {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') return;
@@ -92,13 +95,12 @@ async function activarNotificacion() {
     const vapidRes = await fetch(`${import.meta.env.VITE_API_URL}/api/push/vapid-public-key`);
     const { publicKey } = await vapidRes.json();
 
-    const sub = await reg.pushManager.subscribe({
+    let sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(publicKey),
     });
 
     const protestId = sessionStorage.getItem('vc_last_joined');
-    const deviceId  = sessionStorage.getItem('vc_device_id');
 
     // Get protest ends_at
     const protestEndsAt = protests.protests.find(p => String(p.id) === protestId)?.ends_at || null;
@@ -106,20 +108,30 @@ async function activarNotificacion() {
     const locale = localStorage.getItem('vc_lang') || navigator.language?.substring(0, 2) || 'en';
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
 
-    await fetch(`${import.meta.env.VITE_API_URL}/api/push/subscribe`, {
+    const save = subscription => fetch(`${import.meta.env.VITE_API_URL}/api/push/subscribe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         device_id:    deviceId,
+        device_secret: deviceSecret,
         protest_id:   protestId,
         ends_at:      protestEndsAt,
         locale,
         timezone,
-        subscription: sub,
+        subscription,
       }),
     });
+    let saved = await save(sub);
+    if (saved.status === 409 && (await saved.json().catch(() => null))?.error === 'PUSH_ENDPOINT_OWNED') {
+      // Clearing device storage can leave an old browser endpoint. Obtain a
+      // new provider subscription instead of transferring another owner's row.
+      await sub.unsubscribe();
+      sub = await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(publicKey)});
+      saved = await save(sub);
+    }
+    if (!saved.ok) { ui.showToast(t('verify.notiError')); return; }
     notiActivada.value = true;
-  } catch { /* silencioso */ }
+  } catch { ui.showToast(t('verify.notiError')); }
 }
 
 function urlBase64ToUint8Array(base64String) {

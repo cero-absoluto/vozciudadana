@@ -13,46 +13,49 @@
 // token was generated on, so a token obtained on a different site cannot
 // be replayed against this one.
 
-const EXPECTED_HOSTNAMES = (process.env.RECAPTCHA_EXPECTED_HOSTNAMES || 'voiceprotest.org,www.voiceprotest.org')
-  .split(',').map(h => h.trim()).filter(Boolean);
+import { withRequestDeadline } from './requestDeadline.js';
 
-export async function verifyRecaptcha(token, expectedAction, req, reply) {
-  const secret = process.env.RECAPTCHA_SECRET;
+export async function verifyRecaptcha(token, expectedAction, req, reply, {
+  fetchImpl = globalThis.fetch, timeoutMs = 5000, env = process.env,
+} = {}) {
+  const secret = env.RECAPTCHA_SECRET;
   if (!secret) {
-    if (process.env.NODE_ENV === 'production') {
+    if (env.NODE_ENV === 'production') {
       reply.internalServerError('Server misconfiguration: reCAPTCHA is not configured.');
       throw new Error('recaptcha_not_configured');
     }
     console.warn('[SECURITY] RECAPTCHA_SECRET not set — skipping verification (non-production only).');
     return;
   }
-
-  const res = await fetch(
-    `https://www.google.com/recaptcha/api/siteverify?secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}`,
-    { method: 'POST' }
-  );
-  const json = await res.json();
-
-  const log = req?.log?.warn ? (obj, msg) => req.log.warn(obj, msg) : (obj, msg) => console.warn(msg, obj);
-
-  if (!json.success) {
-    log({ errorCodes: json['error-codes'] }, 'recaptcha: token invalid');
+  const reject = () => {
+    req?.log?.warn?.({ reason: 'invalid_response' }, 'recaptcha: verification failed');
     reply.badRequest('reCAPTCHA verification failed');
     throw new Error('recaptcha');
+  };
+  if (typeof token !== 'string' || !token.trim() || typeof expectedAction !== 'string' || !expectedAction) return reject();
+  let json;
+  try {
+    json = await withRequestDeadline(timeoutMs, async (signal, wait) => {
+      const res = await wait(fetchImpl('https://www.google.com/recaptcha/api/siteverify', {
+        method: 'POST', redirect: 'error', signal,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ secret, response: token }),
+      }));
+      if (!res.ok) { res.body?.cancel().catch(() => {}); throw new Error('provider_http_error'); }
+      return await wait(res.json());
+    });
+  } catch {
+    req?.log?.warn?.({ reason: 'provider_unavailable' }, 'recaptcha: verification unavailable');
+    reply.serviceUnavailable('reCAPTCHA verification temporarily unavailable');
+    throw new Error('recaptcha_unavailable');
   }
-  if (expectedAction && json.action !== expectedAction) {
-    log({ actual: json.action, expected: expectedAction }, 'recaptcha: action mismatch');
-    reply.badRequest('reCAPTCHA verification failed');
-    throw new Error('recaptcha');
-  }
-  if (json.hostname && !EXPECTED_HOSTNAMES.includes(json.hostname)) {
-    log({ hostname: json.hostname }, 'recaptcha: unexpected hostname — token from a different site');
-    reply.badRequest('reCAPTCHA verification failed');
-    throw new Error('recaptcha');
-  }
-  if (typeof json.score === 'number' && json.score < 0.5) {
-    log({ score: json.score }, 'recaptcha: score too low');
-    reply.badRequest('reCAPTCHA verification failed');
-    throw new Error('recaptcha');
-  }
+  const hostnames = (env.RECAPTCHA_EXPECTED_HOSTNAMES || 'voiceprotest.org,www.voiceprotest.org')
+    .split(',').map(h => h.trim()).filter(Boolean);
+  if (!json || typeof json !== 'object' || Array.isArray(json)
+      || json.success !== true || json.action !== expectedAction
+      || typeof json.hostname !== 'string' || !hostnames.includes(json.hostname)
+      || typeof json.score !== 'number' || !Number.isFinite(json.score)
+      || json.score < 0.5 || json.score > 1
+      || (json['error-codes'] !== undefined
+          && (!Array.isArray(json['error-codes']) || json['error-codes'].length !== 0))) return reject();
 }

@@ -5,8 +5,9 @@ import { parse } from '@vue/compiler-sfc';
 import { parse as parseTemplate } from '@vue/compiler-dom';
 
 const cases = [
-  ['MiGrupoScreen.vue', 2, [
+  ['MiGrupoScreen.vue', 3, [
     ['migrupo.emailLabel', 'genesisEmail'],
+    ['censusAuth.founderRecovery', 'founderRecovery'],
   ]],
 ];
 const locales = Object.fromEntries(['es', 'en', 'fr', 'zh'].map(code =>

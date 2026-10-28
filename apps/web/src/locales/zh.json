@@ -54,6 +54,7 @@
     "maxAnon": "最高可验证隐私",
     "wrongCountry": "此活动需要使用在{country}注册的SIM卡的电话号码。请使用该国的号码。",
     "otpError": "请输入全部6位数字",
+    "otpUnavailable": "暂时无法完成验证。请稍候重试；您可能需要重新获取验证码。",
     "otpIncorrect": "验证码不正确或已过期。如问题持续，请申请新验证码。",
     "sendError": "发送验证码时出错。请检查您的号码后重试。",
     "otpRateLimited": "出于安全原因，请等待几分钟后再请求新验证码。",

@@ -443,6 +443,7 @@ function startWebOtpListener() {
 onUnmounted(() => otpAbortController?.abort());
 
 async function verifyOTP() {
+  if (sending.value) return;
   otpAbortController?.abort();
   const code = otpDigits.value.join('');
   if (code.length < 6) { ui.showToast(t('auth.otpError')); return; }
@@ -463,12 +464,13 @@ async function verifyOTP() {
       device.setDeviceSecret(res.device_secret);
     }
     if (res.device_id && res.device_id !== deviceId) {
+      if (!res.device_secret) localStorage.removeItem('vc_device_secret');
       device.setDeviceId(res.device_id);
       sessionStorage.setItem('vc_device_id', res.device_id);
     }
     router.push('/verify');
   } catch (err) {
-    ui.showToast(t('auth.otpIncorrect'));
+    ui.showToast(t(err.status === 429 ? 'auth.otpRateLimited' : (!err.status || err.status >= 500) ? 'auth.otpUnavailable' : 'auth.otpIncorrect'));
   } finally {
     sending.value = false;
   }

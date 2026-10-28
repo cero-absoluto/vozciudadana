@@ -1,3 +1,4 @@
+import { PUBLIC_PROTEST_SELECT, publicProtestSchema, toPublicProtest } from '../lib/publicProtest.js';
 import { normalizeInstitutionalDomain } from '../lib/institutionalDomain.js';
 import { randomBytes, createHash } from 'node:crypto';
 import { supabase as defaultSupabase } from '../services/supabase.js';
@@ -363,6 +364,7 @@ export default async function protestRoutes(app, opts = {}) {
   // GET /api/protests — list active protests (optionally filter by scope/country)
   app.get('/', {
     schema: {
+      response: {200: {type:'array', items:publicProtestSchema}},
       querystring: {
         type: 'object',
         properties: {
@@ -377,7 +379,7 @@ export default async function protestRoutes(app, opts = {}) {
 
     let query = supabase
       .from('protests')
-      .select('*')
+      .select(PUBLIC_PROTEST_SELECT)
       .gt('ends_at', new Date().toISOString())
       .order('heat', { ascending: false })
       .limit(100);
@@ -386,15 +388,14 @@ export default async function protestRoutes(app, opts = {}) {
     if (country) query = query.eq('country', country.toUpperCase());
 
     const { data, error } = await query;
-    if (error) throw error;
-    if (Array.isArray(data)) return data.map(({ census_creator_key_hash, ...item }) => item);
-    const { census_creator_key_hash, ...publicData } = data;
-    return publicData;
+    if (error) return reply.header('Cache-Control','no-store').code(503).send({error:'Service temporarily unavailable'});
+    return (data ?? []).map(toPublicProtest);
   });
 
   // GET /api/protests/:id
   app.get('/:id', {
     schema: {
+      response: {200: publicProtestSchema},
       params: {
         type: 'object',
         properties: { id: { type: 'string', format: 'uuid' } },
@@ -404,14 +405,14 @@ export default async function protestRoutes(app, opts = {}) {
   }, async (req, reply) => {
     const { data, error } = await supabase
       .from('protests')
-      .select('*')
+      .select(PUBLIC_PROTEST_SELECT)
       .eq('id', req.params.id)
       .single();
 
+    if (error && error.code !== 'PGRST116') return reply.header('Cache-Control','no-store').code(503).send({error:'Service temporarily unavailable'});
     if (error) return reply.notFound('Protest not found');
-    if (Array.isArray(data)) return data.map(({ census_creator_key_hash, ...item }) => item);
-    const { census_creator_key_hash, ...publicData } = data;
-    return publicData;
+    if (!data) return reply.notFound('Protest not found');
+    return toPublicProtest(data);
   });
 
   // POST /api/protests — create a new protest
@@ -554,11 +555,14 @@ export default async function protestRoutes(app, opts = {}) {
     };
     const { data, error } = creatorKey
       ? await supabase.rpc('create_census_protest', { p_protest: record, p_creator_key_hash: createHash('sha256').update(creatorKey).digest('hex') })
-      : await supabase.from('protests').insert(record).select().single();
+      : await supabase.from('protests').insert(record).select(PUBLIC_PROTEST_SELECT).single();
 
-    if (error) throw error;
+    if (error) return reply.header('Cache-Control','no-store').code(503).send({error:'Service temporarily unavailable'});
+    if (!data || Array.isArray(data) || typeof data !== 'object' || typeof data.id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.id)) {
+      return reply.header('Cache-Control','no-store').code(503).send({error:'Service temporarily unavailable'});
+    }
     notifyIndexNow(supabase, data.id, req.log); // fire-and-forget, never blocks the response
-    const { census_creator_key_hash, ...publicData } = data;
+    const publicData = toPublicProtest(data);
     reply.header('Cache-Control', 'no-store');
     return reply.code(201).send({ ...publicData, ...(creatorKey ? { census_creator_key: creatorKey } : {}) });
   });
@@ -1112,6 +1116,7 @@ export default async function protestRoutes(app, opts = {}) {
   app.get('/:id/informe', {
     config: { cors: { origin: true } },
     schema: {
+      response: {200: {type:'object', properties:{protest:publicProtestSchema}, additionalProperties:true}},
       params: {
         type: 'object',
         properties: { id: { type: 'string', format: 'uuid' } },
@@ -1121,11 +1126,12 @@ export default async function protestRoutes(app, opts = {}) {
   }, async (req, reply) => {
     const { data: protest, error } = await supabase
       .from('protests')
-      .select('*')
+      .select(PUBLIC_PROTEST_SELECT)
       .eq('id', req.params.id)
       .single();
 
-    if (error) return reply.notFound('Convocatoria no encontrada');
+    if (error && error.code !== 'PGRST116') return reply.header('Cache-Control','no-store').code(503).send({error:'Service temporarily unavailable'});
+    if (error || !protest) return reply.notFound('Convocatoria no encontrada');
 
     const { data: adhesions } = await supabase
       .from('adhesions')
@@ -1255,7 +1261,7 @@ export default async function protestRoutes(app, opts = {}) {
     });
 
     return {
-      protest: (({ census_creator_key_hash, ...item }) => item)(protest),
+      protest: toPublicProtest(protest),
       total_adhesiones: protest.count,
       adhesiones_con_gps,
       adhesiones_sin_gps: protest.count - adhesiones_con_gps,

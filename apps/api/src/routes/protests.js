@@ -1,11 +1,13 @@
-import { supabase } from '../services/supabase.js';
-import { buildEvidentialScope } from '../lib/evidentialScope.js';
+import { normalizeInstitutionalDomain } from '../lib/institutionalDomain.js';
+import { randomBytes, createHash } from 'node:crypto';
+import { supabase as defaultSupabase } from '../services/supabase.js';
+import { buildEvidentialScope as defaultBuildEvidentialScope } from '../lib/evidentialScope.js';
 import { evaluateSource, BLOCKED_DOMAINS } from '../lib/sourceCheck.js';
-import { verifyRecaptcha } from '../lib/recaptcha.js';
-import { verifyParticipationToken } from '../lib/participationToken.js';
-import { notifyIndexNow } from '../lib/indexNow.js';
+import { verifyRecaptcha as defaultVerifyRecaptcha } from '../lib/recaptcha.js';
+import { verifyParticipationToken as defaultVerifyParticipationToken } from '../lib/participationToken.js';
+import { notifyIndexNow as defaultNotifyIndexNow } from '../lib/indexNow.js';
 import {
-  createVerifiedAdhesion, AlreadyJoinedError, ProtestNotFoundError,
+  createVerifiedAdhesion as defaultCreateVerifiedAdhesion, AlreadyJoinedError, ProtestNotFoundError,
   ProtestClosedError, BalanceExhaustedError, NationalCountryMismatchError,
   NationalReverificationRequiredError, NationalSharedCallingCodeError, NationalCountryUnresolvedError,
 } from '../lib/adhesionService.js';
@@ -344,8 +346,20 @@ const EMAIL_COST_EUR    = parseFloat(process.env.EMAIL_COST_EUR     || '0.01');
 const PLATFORM_FEE_PCT  = parseFloat(process.env.PLATFORM_FEE_PERCENT || '10') / 100;
 const MAX_DONATION_EUR  = parseFloat(process.env.MAX_DONATION_EUR   || '10');
 
+const defaultAdmissionRules = validateAdmissionRules;
+
 /** @param {import('fastify').FastifyInstance} app */
-export default async function protestRoutes(app) {
+export default async function protestRoutes(app, opts = {}) {
+  // These options are supplied by the server, never by an HTTP request.
+  const {
+    database: supabase = defaultSupabase,
+    verifyCaptcha: verifyRecaptcha = defaultVerifyRecaptcha,
+    admissionRules: validateAdmissionRules = defaultAdmissionRules,
+    notifyIndex: notifyIndexNow = defaultNotifyIndexNow,
+    participationVerifier: verifyParticipationToken = defaultVerifyParticipationToken,
+    adhesionCreator: createVerifiedAdhesion = defaultCreateVerifiedAdhesion,
+    evidentialScope: buildEvidentialScope = defaultBuildEvidentialScope,
+  } = opts.dependencies || {};
   // GET /api/protests — list active protests (optionally filter by scope/country)
   app.get('/', {
     schema: {
@@ -373,7 +387,9 @@ export default async function protestRoutes(app) {
 
     const { data, error } = await query;
     if (error) throw error;
-    return data;
+    if (Array.isArray(data)) return data.map(({ census_creator_key_hash, ...item }) => item);
+    const { census_creator_key_hash, ...publicData } = data;
+    return publicData;
   });
 
   // GET /api/protests/:id
@@ -393,7 +409,9 @@ export default async function protestRoutes(app) {
       .single();
 
     if (error) return reply.notFound('Protest not found');
-    return data;
+    if (Array.isArray(data)) return data.map(({ census_creator_key_hash, ...item }) => item);
+    const { census_creator_key_hash, ...publicData } = data;
+    return publicData;
   });
 
   // POST /api/protests — create a new protest
@@ -446,7 +464,7 @@ export default async function protestRoutes(app) {
   }, async (req, reply) => {
     const { title, description, demands, country, country_name, scope, region,
         focal_point, category, duration_h, starts_at, risk_level,
-        convocatoria_pais, convocatoria_region, convocatoria_institucion, dominio_email,
+        convocatoria_pais, convocatoria_region, convocatoria_institucion, dominio_email: rawDomain,
         convocatoria_osm_id, convocatoria_ciudad_nombre,
         convocatoria_lat, convocatoria_lon,
         fuente_url, tipo_abuso, requiere_censo,
@@ -454,6 +472,10 @@ export default async function protestRoutes(app) {
         recaptcha_token } = req.body;
 
     await verifyRecaptcha(recaptcha_token, 'create_protest', req, reply);
+    let dominio_email;
+    try { dominio_email = normalizeInstitutionalDomain(rawDomain); } catch { return reply.badRequest('INSTITUTIONAL_DOMAIN_INVALID'); }
+    if (requiere_censo && !dominio_email) return reply.badRequest('CENSUS_DOMAIN_REQUIRED');
+
 
     const ends_at = new Date(
       new Date(starts_at ?? Date.now()).getTime() + duration_h * 3_600_000
@@ -499,9 +521,8 @@ export default async function protestRoutes(app) {
       });
     }
 
-    const { data, error } = await supabase
-      .from('protests')
-      .insert({
+    const creatorKey = dominio_email && requiere_censo ? randomBytes(32).toString('hex') : null;
+    const record = {
         title, description, demands,
         country: country ? country.toUpperCase() : null,
         country_name, scope, region: region ?? null,
@@ -530,13 +551,16 @@ export default async function protestRoutes(app) {
         source_type:              sourceInfo.sourceType,
         source_confidence_score:  sourceInfo.confidenceScore,
         source_checked_at:        new Date().toISOString(),
-      })
-      .select()
-      .single();
+    };
+    const { data, error } = creatorKey
+      ? await supabase.rpc('create_census_protest', { p_protest: record, p_creator_key_hash: createHash('sha256').update(creatorKey).digest('hex') })
+      : await supabase.from('protests').insert(record).select().single();
 
     if (error) throw error;
     notifyIndexNow(supabase, data.id, req.log); // fire-and-forget, never blocks the response
-    return reply.code(201).send(data);
+    const { census_creator_key_hash, ...publicData } = data;
+    reply.header('Cache-Control', 'no-store');
+    return reply.code(201).send({ ...publicData, ...(creatorKey ? { census_creator_key: creatorKey } : {}) });
   });
 
   // POST /api/protests/:id/join — anonymous adhesion
@@ -617,7 +641,7 @@ export default async function protestRoutes(app) {
       .maybeSingle();
     if (protestErr || !protest) return reply.notFound('Protest not found');
 
-    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
+    const ip = req.ip;
     const idioma = req.headers['accept-language']?.split(',')[0] || null;
 
     let data;
@@ -644,6 +668,7 @@ export default async function protestRoutes(app) {
       if (err instanceof NationalReverificationRequiredError || err instanceof NationalSharedCallingCodeError || err instanceof NationalCountryUnresolvedError) {
         return reply.status(403).send({ code: err.code, error: err.message });
       }
+      if (err.code === 'CENSUS_MEMBERSHIP_REQUIRED' || err.message === 'CENSUS_MEMBERSHIP_REQUIRED') return reply.code(403).send({ error: 'CENSUS_MEMBERSHIP_REQUIRED' });
       throw err;
     }
 
@@ -1230,7 +1255,7 @@ export default async function protestRoutes(app) {
     });
 
     return {
-      protest,
+      protest: (({ census_creator_key_hash, ...item }) => item)(protest),
       total_adhesiones: protest.count,
       adhesiones_con_gps,
       adhesiones_sin_gps: protest.count - adhesiones_con_gps,

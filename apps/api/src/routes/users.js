@@ -1,3 +1,5 @@
+import {consumeOtpDeliveryQuota} from '../lib/requestQuotas.js';
+import {ipQuotaKey} from '../lib/ipQuotaKey.js';
 import { createHash, createHmac } from 'node:crypto';
 import { supabase } from '../services/supabase.js';
 import { sendOtp, verifyOtp } from '../services/twilio.js';
@@ -25,9 +27,9 @@ function hashPhone(phoneE164) {
 function hashIp(ip) {
   const secret = process.env.PHONE_HASH_SECRET;
   if (!secret) {
-    return createHash('sha256').update(ip || '').digest('hex').substring(0, 32);
+    return createHash('sha256').update(ipQuotaKey(ip)).digest('hex').substring(0, 32);
   }
-  return createHmac('sha256', secret).update(ip || '').digest('hex').substring(0, 32);
+  return createHmac('sha256', secret).update(ipQuotaKey(ip)).digest('hex').substring(0, 32);
 }
 
 /** @param {import('fastify').FastifyInstance} app */
@@ -54,9 +56,10 @@ export default async function userRoutes(app) {
 
     // ── 1. Verify reCAPTCHA first ──────────────────────────────────────────
     await verifyRecaptcha(recaptcha_token, 'request_otp', req, reply);
+    if(!await consumeOtpDeliveryQuota(req,reply))return;
 
     const phone_hash = hashPhone(phone);
-    const ip_hash    = hashIp(req.ip || req.headers['x-forwarded-for']);
+    const ip_hash    = hashIp(req.ip);
 
     // ── 2. Check progressive cooldown for this device ──────────────────────
     if (device_id) {

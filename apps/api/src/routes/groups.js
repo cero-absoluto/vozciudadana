@@ -1,425 +1,93 @@
+import { randomBytes, createHash } from 'node:crypto';
 import { supabase } from '../services/supabase.js';
+import { verifyCensusSession } from '../lib/censusSession.js';
 
-// Mask an email for display to vouchers in the trusted-census flow. Vouching
-// requires a human to recognise the candidate, so SOME identifying hint is
-// shown — but the raw address is NEVER persisted. We store only this masked
-// form (e.g. "j***@uu.nl"). Idempotent: masking an already-masked value is a
-// no-op, so it is safe regardless of what the client sends.
-function maskEmail(email) {
-  if (!email || typeof email !== 'string' || !email.includes('@')) return null;
-  const [local, domain] = email.split('@');
-  if (!local || !domain) return null;
-  return `${local.slice(0, 1)}***@${domain}`;
+const uuid = { type: 'string', format: 'uuid' };
+const object = (properties, required=[]) => ({type:'object', properties, required, additionalProperties:false});
+const params = object({id:uuid},['id']);
+const groupSelect='id,name,protest_id,max_vouches_per_member';
+const check = result => {if(result.error) throw result.error; return result.data;};
+function session(req, protestId, required=true) {
+  const header=req.headers.authorization;
+  const token=typeof header==='string' && header.startsWith('Bearer ') ? header.slice(7) : null;
+  const identity=verifyCensusSession(token,protestId);
+  if ((!identity && required) || (header && !identity)) throw Object.assign(new Error('CENSUS_AUTH_REQUIRED'),{statusCode:401});
+  return identity;
 }
-
-/** @param {import('fastify').FastifyInstance} app */
+function safeError(error) {
+  const code=String(error.message||'');
+  const known=['CENSUS_UNAVAILABLE','CREATOR_PROOF_REQUIRED','CENSUS_EXISTS','FOUNDER_ADHESION_REQUIRED','CENSUS_NOT_FOUND','CENSUS_CLOSED','MEMBER_REQUIRED','INVITE_INVALID','VOUCH_LIMIT','INVITE_LIMIT','CANDIDATE_INVALID'];
+  if(known.includes(code)) return Object.assign(new Error(code),{statusCode:code==='CENSUS_EXISTS'?409:403});
+  return error;
+}
+async function group(id) {
+  const data=check(await supabase.from('groups').select(groupSelect).eq('id',id).maybeSingle());
+  if(!data) throw Object.assign(new Error('CENSUS_NOT_FOUND'),{statusCode:404});
+  return data;
+}
+async function action(g,identity,type,extra={}) {
+  const result=await supabase.rpc('census_group_action',{p_group_id:g.id,p_actor_hash:identity.emailHash,p_action:type,...extra});
+  if(result.error) throw safeError(result.error);
+  return result.data;
+}
 export default async function gruposRoutes(app) {
-
-  // POST /api/grupos/crear
-  // Crea un grupo y designa al nodo génesis
-  app.post('/crear', {
-    schema: {
-      body: {
-        type: 'object',
-        required: ['protest_id', 'genesis_hash', 'name'],
-        properties: {
-          protest_id:   { type: 'string', format: 'uuid' },
-          genesis_hash: { type: 'string', minLength: 64, maxLength: 64 },
-          name:         { type: 'string', minLength: 1, maxLength: 120 },
-        },
-        additionalProperties: false,
-      },
-    },
-  }, async (req, reply) => {
-    const { protest_id, genesis_hash, name } = req.body;
-
-    // Crear el grupo
-    const { data: group, error: groupErr } = await supabase
-      .from('groups')
-      .insert({ protest_id, genesis_hash, name })
-      .select()
-      .single();
-
-    if (groupErr) throw groupErr;
-
-  // Insertar al nodo génesis como miembro acreditado
-    const { error: memberErr } = await supabase
-      .from('group_members')
-      .insert({
-        group_id:      group.id,
-        email_hash:    genesis_hash,
-        is_genesis:    true,
-        wave:          0,
-        accredited_at: new Date().toISOString(),
-      });
-
-    if (memberErr) throw memberErr;
-
-    return reply.code(201).send({ group_id: group.id });
+  app.post('/crear',{schema:{body:object({protest_id:uuid,name:{type:'string',minLength:1,maxLength:120},creator_key:{type:'string',pattern:'^[0-9a-f]{64}$'}},['protest_id','name','creator_key'])}},async(req,reply)=>{
+    const identity=session(req,req.body.protest_id);
+    const result=await supabase.rpc('found_census_group',{p_protest_id:req.body.protest_id,p_actor_hash:identity.emailHash,p_creator_key_hash:createHash('sha256').update(req.body.creator_key).digest('hex'),p_name:req.body.name});
+    if(result.error)throw safeError(result.error);
+    reply.header('Cache-Control','no-store');return reply.code(201).send(result.data);
   });
-  // POST /api/grupos/:id/solicitar
-  // Un nuevo miembro solicita unirse al grupo tras verificar su email
-  app.post('/:id/solicitar', {
-    schema: {
-      params: {
-        type: 'object',
-        properties: { id: { type: 'string', format: 'uuid' } },
-        required: ['id'],
-      },
-      body: {
-        type: 'object',
-        required: ['email_hash'],
-        properties: {
-          email_hash:   { type: 'string', minLength: 64, maxLength: 64 },
-          invite_token: { type: 'string', nullable: true },
-          candidate_email: { type: 'string', nullable: true },
-        },
-        additionalProperties: false,
-      },
-    },
-  }, async (req, reply) => {
-    const { id: group_id } = req.params;
-    const { email_hash, invite_token } = req.body;
-
-    // Verificar que el grupo existe
-    const { data: group, error: groupErr } = await supabase
-      .from('groups')
-      .select('id, vouch_threshold')
-      .eq('id', group_id)
-      .single();
-
-    if (groupErr || !group) return reply.notFound('Grupo no encontrado');
-
-    // Comprobar si ya es miembro
-    const { data: existing } = await supabase
-      .from('group_members')
-      .select('id, accredited_at')
-      .eq('group_id', group_id)
-      .eq('email_hash', email_hash)
-      .maybeSingle();
-
-    if (existing?.accredited_at) return reply.conflict('Ya eres miembro acreditado de este grupo');
-
-    // Insertar en group_members si no existe
-    // Obtener la onda del invitador si hay token
-   let inviterWave = null;
-    let inviteLink = null;
-    if (invite_token) {
-      const { data: foundLink } = await supabase
-        .from('invite_links')
-        .select('inviter_hash')
-        .eq('token', invite_token)
-        .maybeSingle();
-
-      if (foundLink) {
-        inviteLink = foundLink;
-        const { data: inviter } = await supabase
-          .from('group_members')
-          .select('wave')
-          .eq('group_id', group_id)
-          .eq('email_hash', inviteLink.inviter_hash)
-          .maybeSingle();
-        inviterWave = inviter?.wave ?? null;
+  app.post('/:id/solicitar',{schema:{params,body:object({invite_token:{type:'string',pattern:'^[0-9a-f]{64}$'}},['invite_token'])}},async(req,reply)=>{
+    const g=await group(req.params.id),identity=session(req,g.protest_id);
+    reply.header('Cache-Control','no-store');return action(g,identity,'request',{p_invite_token:req.body.invite_token,p_email_hint:identity.emailHint??null});
+  });
+  app.post('/:id/vouch',{schema:{params,body:object({candidate_id:uuid},['candidate_id'])}},async(req,reply)=>{
+    const g=await group(req.params.id),identity=session(req,g.protest_id);
+    reply.header('Cache-Control','no-store');return action(g,identity,'vouch',{p_candidate_id:req.body.candidate_id});
+  });
+  app.post('/:id/invite',{schema:{params,body:object({})}},async(req,reply)=>{
+    const g=await group(req.params.id),identity=session(req,g.protest_id);
+    const data=await action(g,identity,'invite',{p_invite_token:randomBytes(32).toString('hex')});
+    reply.header('Cache-Control','no-store');return {token:data.token,url:`${process.env.FRONTEND_URL||'https://voiceprotest.org'}/#/invite/${data.token}`};
+  });
+  app.get('/:id/estado',{schema:{params,querystring:object({})}},async(req,reply)=>{
+    const g=await group(req.params.id),identity=session(req,g.protest_id,false);
+    const counts=await supabase.from('group_members').select('id',{count:'exact',head:true}).eq('group_id',g.id).not('accredited_at','is',null);
+    if(counts.error)throw counts.error;
+    const response={group:{id:g.id,name:g.name,protest_id:g.protest_id},acreditados:counts.count||0,pendientes:0,objetivo:30,mis_vouches_restantes:0,mis_invitaciones_restantes:0,mi_estado:{acreditado:false,es_genesis:false,vouches_dados:0},solicitudes:[],requires_auth:!identity};
+    reply.header('Cache-Control','no-store');
+    if(!identity)return response;
+    const me=check(await supabase.from('group_members').select('id,is_genesis,vouches_given,vouches_received,invites_sent,accredited_at').eq('group_id',g.id).eq('email_hash',identity.emailHash).maybeSingle());
+    if(!me)return response;
+    response.mi_estado={acreditado:!!me.accredited_at,es_genesis:!!me.is_genesis,vouches_dados:me.vouches_given||0,vouches_recibidos:me.vouches_received||0};
+    if(!me.accredited_at)return response;
+    response.mis_invitaciones_restantes=Math.max(0,(me.is_genesis?20:10)-(me.invites_sent||0));
+    response.mis_vouches_restantes=Math.max(0,g.max_vouches_per_member-(me.vouches_given||0));
+    const pending=check(await supabase.from('vouch_requests').select('candidate_hash,candidate_email,requested_at').eq('group_id',g.id).eq('status','pending'))||[];
+    if(pending.length){
+      const hashes=pending.map(s=>s.candidate_hash);
+      const candidates=check(await supabase.from('group_members').select('id,email_hash,vouches_received,accredited_at').eq('group_id',g.id).in('email_hash',hashes))||[];
+      const votes=check(await supabase.from('vouches').select('candidate_hash').eq('group_id',g.id).eq('voucher_hash',identity.emailHash).in('candidate_hash',hashes))||[];
+      const byHash=new Map(candidates.map(c=>[c.email_hash,c])),mine=new Set(votes.map(v=>v.candidate_hash));
+      for(const s of pending){
+        const candidate=byHash.get(s.candidate_hash);
+        if(!candidate||candidate.accredited_at)continue;
+        response.solicitudes.push({id:candidate.id,candidate_id:candidate.id,candidate_email:s.candidate_email||null,requested_at:s.requested_at,vouches_recibidos:candidate.vouches_received||0,ya_avalado:mine.has(s.candidate_hash)});
       }
     }
-
-    // Si el invitador es de onda 0 (génesis), acreditar automáticamente
-    const autoAccredit = inviterWave === 0;
-    const candidateWave = inviterWave !== null ? inviterWave + 1 : 1;
-
-    // Insertar en group_members si no existe
-    if (!existing) {
-      await supabase.from('group_members').insert({
-        group_id,
-        email_hash,
-        is_genesis:    false,
-        wave:          candidateWave,
-        accredited_at: autoAccredit ? new Date().toISOString() : null,
-      });
-    }
-    // Si hay invitador de onda 1+, registrar 1 aval automático
-    if (inviterWave !== null && inviterWave > 0 && inviteLink) {
-      await supabase.from('vouches').insert({
-        group_id,
-        voucher_hash:   inviteLink.inviter_hash,
-        candidate_hash: email_hash,
-      });
-    }
-
-   // Crear solicitud de vouch solo si no fue acreditado automáticamente
-    if (!autoAccredit) {
-      const { data: existingReq } = await supabase
-        .from('vouch_requests')
-        .select('id')
-        .eq('group_id', group_id)
-        .eq('candidate_hash', email_hash)
-        .eq('status', 'pending')
-        .maybeSingle();
-
-      if (!existingReq) {
-        await supabase.from('vouch_requests').insert({
-          group_id,
-          candidate_hash:  email_hash,
-          candidate_email: maskEmail(req.body.candidate_email),
-          status:          'pending',
-        });
-      }
-    }
-    // Marcar el link de invitación como usado
-    if (invite_token) {
-      await supabase
-        .from('invite_links')
-        .update({ used_at: new Date().toISOString() })
-        .eq('token', invite_token);
-    }
-    return reply.code(201).send({ requested: true });
+    response.pendientes=response.solicitudes.length;
+    return response;
   });
-// POST /api/grupos/:id/vouch
-  // Un miembro acreditado avala a un candidato
-  app.post('/:id/vouch', {
-    schema: {
-      params: {
-        type: 'object',
-        properties: { id: { type: 'string', format: 'uuid' } },
-        required: ['id'],
-      },
-      body: {
-        type: 'object',
-        required: ['voucher_hash', 'candidate_hash'],
-        properties: {
-          voucher_hash:   { type: 'string', minLength: 64, maxLength: 64 },
-          candidate_hash: { type: 'string', minLength: 64, maxLength: 64 },
-        },
-        additionalProperties: false,
-      },
-    },
-  }, async (req, reply) => {
-    const { id: group_id } = req.params;
-    const { voucher_hash, candidate_hash } = req.body;
-
-    // Llamar a la función process_vouch de Supabase
-    const { data, error } = await supabase.rpc('process_vouch', {
-      p_group_id:      group_id,
-      p_voucher_hash:  voucher_hash,
-      p_candidate_hash: candidate_hash,
-    });
-
-    if (error) throw error;
-
-    // Si el candidato fue acreditado, actualizar vouch_requests
-    if (data?.accredited) {
-      await supabase
-        .from('vouch_requests')
-        .update({ status: 'accredited' })
-        .eq('group_id', group_id)
-        .eq('candidate_hash', candidate_hash);
-    }
-
-    return data;
+  app.get('/invite/:token',{schema:{params:object({token:{type:'string',pattern:'^[0-9a-f]{64}$'}},['token'])}},async(req,reply)=>{
+    const invite=check(await supabase.from('invite_links').select('group_id,used_at,expires_at').eq('token',req.params.token).maybeSingle());
+    if(!invite||invite.used_at||!invite.expires_at||!Number.isFinite(Date.parse(invite.expires_at))||Date.parse(invite.expires_at)<=Date.now())return reply.code(410).send({error:'INVITE_INVALID'});
+    const g=await group(invite.group_id);
+    const p=check(await supabase.from('protests').select('convocatoria_institucion,convocatoria_region,ends_at').eq('id',g.protest_id).single());
+    if(Date.parse(p.ends_at)<=Date.now())return reply.code(410).send({error:'INVITE_INVALID'});
+    reply.header('Cache-Control','no-store');return {valid:true,group_id:g.id,protest_id:g.protest_id,institucion:p.convocatoria_institucion||'',region:p.convocatoria_region||''};
   });
-  // GET /api/grupos/:id/estado
-  // Devuelve el estado del grupo
-  app.get('/:id/estado', {
-    schema: {
-      params: {
-        type: 'object',
-        properties: { id: { type: 'string', format: 'uuid' } },
-        required: ['id'],
-      },
-      querystring: {
-        type: 'object',
-        properties: {
-          email_hash: { type: 'string', minLength: 64, maxLength: 64 },
-        },
-        additionalProperties: false,
-      },
-    },
-  }, async (req, reply) => {
-    const { id: group_id } = req.params;
-    const { email_hash } = req.query;
-
-    // Obtener el grupo
-    const { data: group, error: groupErr } = await supabase
-      .from('groups')
-      .select('*')
-      .eq('id', group_id)
-      .single();
-
-    if (groupErr || !group) return reply.notFound('Grupo no encontrado');
-
-    // Contar miembros acreditados
-    const { count: acreditados } = await supabase
-      .from('group_members')
-      .select('id', { count: 'exact', head: true })
-      .eq('group_id', group_id)
-      .not('accredited_at', 'is', null);
-
-    // Solicitudes pendientes
-    const { data: solicitudes } = await supabase
-      .from('vouch_requests')
-      .select('id, candidate_hash, candidate_email, requested_at')
-      .eq('group_id', group_id)
-      .eq('status', 'pending');
-
-    // Enriquecer solicitudes con vouches recibidos
-    const solicitudesConVouches = await Promise.all(
-      (solicitudes || []).map(async s => {
-        const { count } = await supabase
-          .from('vouches')
-          .select('id', { count: 'exact', head: true })
-          .eq('group_id', group_id)
-          .eq('candidate_hash', s.candidate_hash);
-
-        const ya_avalado = email_hash ? await supabase
-          .from('vouches')
-          .select('id')
-          .eq('group_id', group_id)
-          .eq('voucher_hash', email_hash)
-          .eq('candidate_hash', s.candidate_hash)
-          .maybeSingle().then(r => !!r.data) : false;
-
-        return { ...s, vouches_recibidos: count || 0, ya_avalado, candidate_email: s.candidate_email || null};
-      })
-    );
-
-    // Mi estado como miembro
-    let miEstado = { acreditado: false, es_genesis: false, vouches_dados: 0 };
-    if (email_hash) {
-      const { data: miembro } = await supabase
-        .from('group_members')
-        .select('is_genesis, vouches_given, accredited_at')
-        .eq('group_id', group_id)
-        .eq('email_hash', email_hash)
-        .maybeSingle();
-
-      if (miembro) {
-        miEstado = {
-          acreditado:    !!miembro.accredited_at,
-          es_genesis:    miembro.is_genesis,
-          vouches_dados: miembro.vouches_given || 0,
-        };
-      }
-    }
-
-    return {
-      group,
-      acreditados:             acreditados || 0,
-      pendientes:              solicitudesConVouches.length,
-      objetivo:                30,
-      mis_vouches_restantes:   Math.max(0, group.max_vouches_per_member - miEstado.vouches_dados),
-      solicitudes:             solicitudesConVouches,
-      mi_estado:               miEstado,
-    };
-  });
-  // POST /api/grupos/:id/invite
-  // Genera un link de invitación personal
-  app.post('/:id/invite', {
-    schema: {
-      params: {
-        type: 'object',
-        properties: { id: { type: 'string', format: 'uuid' } },
-        required: ['id'],
-      },
-      body: {
-        type: 'object',
-        required: ['inviter_hash'],
-        properties: {
-          inviter_hash: { type: 'string', minLength: 64, maxLength: 64 },
-        },
-        additionalProperties: false,
-      },
-    },
-  }, async (req, reply) => {
-    const { id: group_id } = req.params;
-    const { inviter_hash } = req.body;
-
-   // Verificar que el invitador es miembro acreditado
-    const { data: miembro } = await supabase
-      .from('group_members')
-      .select('id, accredited_at, wave, invites_sent, is_genesis')
-      .eq('group_id', group_id)
-      .eq('email_hash', inviter_hash)
-      .maybeSingle();
-
-    if (!miembro?.accredited_at) return reply.forbidden('Solo los miembros acreditados pueden invitar');
-    // Comprobar límite de invitaciones según onda
-    const maxInvites = miembro.is_genesis ? 20 : 10;
-    if (miembro.invites_sent >= maxInvites) {
-      return reply.forbidden(`Has alcanzado el límite de ${maxInvites} invitaciones`);
-    }
-
-    // Incrementar contador de invitaciones
-    await supabase
-      .from('group_members')
-      .update({ invites_sent: miembro.invites_sent + 1 })
-      .eq('id', miembro.id);
-
-     // Crear link de invitación con caducidad 48h
-    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
-    const { data: invite, error } = await supabase
-      .from('invite_links')
-      .insert({ group_id, inviter_hash, expires_at: expiresAt })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    const baseUrl = process.env.FRONTEND_URL || 'https://voiceprotest.org';
-    return { token: invite.token, url: `${baseUrl}/#/invite/${invite.token}` };
-  });
-  // GET /api/grupos/invite/:token
-  // Valida un token de invitación y devuelve los datos del grupo
-  app.get('/invite/:token', {
-    schema: {
-      params: {
-        type: 'object',
-        properties: { token: { type: 'string' } },
-        required: ['token'],
-      },
-    },
-  }, async (req, reply) => {
-    const { token } = req.params;
-
-    const { data: invite, error } = await supabase
-      .from('invite_links')
-      .select('id, group_id, used_at, expires_at, groups(id, name, protest_id, protests(convocatoria_institucion, convocatoria_region))')
-      .eq('token', token)
-      .single();
-
-   if (error || !invite) return reply.notFound('Invitación no encontrada');
-    if (invite.used_at) return reply.badRequest('Este link ya ha sido usado');
-    if (new Date(invite.expires_at) < new Date()) return reply.badRequest('Este link ha caducado');
-
-    return {
-      valid:       true,
-      group_id:    invite.group_id,
-      protest_id:  invite.groups.protest_id,
-      institucion: invite.groups.protests?.convocatoria_institucion || 'Institución',
-      region:      invite.groups.protests?.convocatoria_region || '',
-    };
-  });
-  // GET /api/grupos/por-convocatoria/:protestId
-  // Busca el grupo asociado a una convocatoria
-  app.get('/convocatoria/:protestId', {
-    schema: {
-      params: {
-        type: 'object',
-        properties: { protestId: { type: 'string', format: 'uuid' } },
-        required: ['protestId'],
-      },
-    },
-  }, async (req, reply) => {
-    const { protestId } = req.params;
-
-    const { data: group, error } = await supabase
-      .from('groups')
-      .select('id, name, protest_id')
-      .eq('protest_id', protestId)
-      .maybeSingle();
-
-    if (error) throw error;
-    if (!group) return reply.notFound('No hay grupo para esta convocatoria');
-
-    return { group_id: group.id, name: group.name };
+  app.get('/convocatoria/:protestId',{schema:{params:object({protestId:uuid},['protestId'])}},async(req,reply)=>{
+    const g=check(await supabase.from('groups').select('id,name').eq('protest_id',req.params.protestId).maybeSingle());
+    if(!g)return reply.notFound('CENSUS_NOT_FOUND');return {group_id:g.id,name:g.name};
   });
 }

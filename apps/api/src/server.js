@@ -1,9 +1,14 @@
 import 'dotenv/config';
 import Fastify from 'fastify';
+import {registerHealthRoutes} from './routes/health.js';
+import {registerRequestQuotas} from './lib/requestQuotas.js';
+import { clientIpPolicyFromEnv } from './lib/clientIpPolicy.js';
 import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
 import helmet from '@fastify/helmet';
-import rateLimit from '@fastify/rate-limit';
+
+import { registerCensusRetention } from './lib/censusRetention.js';
+import { supabase } from './services/supabase.js';
 
 import protestRoutes    from './routes/protests.js';
 import institucionalRoutes from './routes/institucional.js';
@@ -32,10 +37,14 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
+const clientIpPolicy = clientIpPolicyFromEnv();
 const app = Fastify({
   logger: true,
+  trustProxy: clientIpPolicy.trustProxy,
   bodyLimit: 65_536, // 64 KB max request body
 });
+
+clientIpPolicy.install(app);
 
 await app.register(helmet);
 // ── CORS (VP-SEC-006 fix, 23 July 2026) ─────────────────────────────────────
@@ -62,11 +71,7 @@ await app.register(cors, {
   methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
 });
 await app.register(sensible);
-await app.register(rateLimit, {
-  global: true,
-  max: 120,
-  timeWindow: '1 minute',
-});
+await registerRequestQuotas(app);
 
 // Centralized error handler — log internals, return a safe message to clients
 app.setErrorHandler((err, req, reply) => {
@@ -96,7 +101,9 @@ app.register(ipinfoRoutes,      { prefix: '/api/ipinfo' });
 // any of these same paths still fall through to a normal 404, unchanged.
 app.register(reportsRoutes);
 
-app.get('/health', async () => ({ status: 'ok' }));
+registerCensusRetention(app, supabase);
+
+registerHealthRoutes(app);
 
 const port = Number(process.env.PORT) || 3000;
 await app.listen({ port, host: '0.0.0.0' });

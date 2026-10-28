@@ -1,3 +1,4 @@
+import { isValidClientIp, ipapiUrl } from '../lib/clientIp.js';
 /**
  * GET /api/geocode?lat=...&lon=...
  *
@@ -125,10 +126,10 @@ export async function ipinfoRoutes(app) {
   app.get('/', {
     config: { rateLimit: { max: 60, timeWindow: '1 minute' } },
   }, async (req, reply) => {
-    const forwarded = req.headers['x-forwarded-for'];
-    const ip = forwarded ? forwarded.split(',')[0].trim() : req.ip;
+    const ip = req.ip;
+    if (!isValidClientIp(ip)) return reply.send({});
     try {
-      const res = await fetch(`https://ipapi.co/${ip}/json/`, {
+      const res = await fetch(ipapiUrl(ip), {
         headers: { 'User-Agent': 'VoiceProtest/1.0 (voiceprotest.org)' },
         signal: AbortSignal.timeout(4000),
       });

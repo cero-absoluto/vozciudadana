@@ -1,3 +1,6 @@
+import {consumeOtpDeliveryQuota} from '../lib/requestQuotas.js';
+import {ipQuotaKey} from '../lib/ipQuotaKey.js';
+import { issueCensusSession } from '../lib/censusSession.js';
 import { createHash, createHmac, randomInt } from 'crypto';
 import { supabase } from '../services/supabase.js';
 import { Resend } from 'resend';
@@ -46,15 +49,12 @@ function hashOtp(protestId, emailHash, otp) {
   return createHmac('sha256', secret).update(`${protestId}:${emailHash}:${otp}`).digest('hex');
 }
 
-// Same construction as hashIp() in users.js — kept local here rather than
-// imported, since it is a two-line pure function and importing across
-// route files for something this small would be more indirection than
-// value. If a third route ever needs it, it should move to a shared lib.
+// Quota material uses the shared network key; raw IP remains location evidence.
 function hashIp(ip) {
   const secret = process.env.PHONE_HASH_SECRET;
   const base = secret
-    ? createHmac('sha256', secret).update(ip || '')
-    : createHash('sha256').update(ip || '');
+    ? createHmac('sha256', secret).update(ipQuotaKey(ip))
+    : createHash('sha256').update(ipQuotaKey(ip));
   return base.digest('hex').substring(0, 32);
 }
 
@@ -115,24 +115,29 @@ export default async function institucionalRoutes(app) {
           email:           { type: 'string', format: 'email' },
           protest_id:      { type: 'string', format: 'uuid' },
           recaptcha_token: { type: 'string', minLength: 1 },
+          purpose: { type: 'string', enum: ['adhesion', 'census'] },
         },
         additionalProperties: false,
       },
     },
   }, async (req, reply) => {
     const { email, protest_id, recaptcha_token } = req.body;
+    const census = req.body.purpose === 'census';
 
     await verifyRecaptcha(recaptcha_token, 'institutional_send_otp', req, reply);
+    if(!await consumeOtpDeliveryQuota(req,reply))return;
 
     // 1. Obtener la convocatoria
     const { data: protest, error: protestErr } = await supabase
       .from('protests')
-      .select('dominio_email, title')
+      .select('dominio_email, title, requiere_censo, ends_at')
       .eq('id', protest_id)
       .single();
 
     if (protestErr || !protest) return reply.notFound('Convocatoria no encontrada');
     if (!protest.dominio_email) return reply.badRequest('Esta convocatoria no tiene verificación institucional');
+
+    if (census && (!protest.requiere_censo || Date.parse(protest.ends_at) <= Date.now())) return reply.badRequest('CENSUS_UNAVAILABLE');
 
     // 2. Validar dominio
     const emailDomain = email.split('@')[1]?.toLowerCase();
@@ -142,48 +147,30 @@ export default async function institucionalRoutes(app) {
 
     // 3. Hash del email (HMAC — ver hashEmail)
     const emailHash = hashEmail(email);
-    const ipHash = hashIp(req.headers['x-forwarded-for']?.split(',')[0] || req.ip);
-
-    // 4. Rate limiting (VP-SEC-013 fix — atomic, multi-dimensional, race-free;
-    // replaces the SELECT-then-UPDATE/INSERT counter this used to be, which
-    // could let two near-simultaneous requests both read the same
-    // pre-increment count and both pass.)
-    const { data: limitCheck } = await supabase.rpc('check_institutional_otp_rate_limit', {
-      p_email_hash: emailHash,
-      p_protest_id: protest_id,
-      p_ip_hash:    ipHash,
-      p_domain:     emailDomain,
-    });
-    if (!limitCheck?.allowed) {
-      req.log.warn({ reason: limitCheck?.reason }, 'institutional OTP rate limit exceeded');
-      return reply.tooManyRequests('Demasiados intentos. Inténtalo de nuevo más tarde.');
-    }
+    const ipHash = hashIp(req.ip);
 
     // 5. Generar OTP — VP-SEC-011 fix: crypto.randomInt, not Math.random()
     // (which is not a cryptographically secure source of randomness).
     const otp = randomInt(100000, 1_000_000).toString();
-    const otpHash = hashOtp(protest_id, emailHash, otp);
+    const otpHash = census ? hashOtp('census:' + protest_id, emailHash, otp) : hashOtp(protest_id, emailHash, otp);
 
     // 6. Guardar únicamente el hash — VP-SEC-009/010 fix: no plaintext, and
     // 10 minutes instead of the previous 24 hours (a 6-digit code valid for
     // a full day is a needlessly wide window for something meant to prove
     // "you read this a moment ago").
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-    await supabase.from('email_otp_requests').insert({
-      email_hash: emailHash,
-      protest_id,
-      otp_hash: otpHash,
-      ip_hash: ipHash,
-      institutional_domain: emailDomain,
-      expires_at: expiresAt,
-      attempt_count: 0,
+    const { data: reserved, error: reservationError } = await supabase.rpc('reserve_institutional_otp', {
+      p_email_hash: emailHash, p_protest_id: protest_id, p_otp_hash: otpHash,
+      p_ip_hash: ipHash, p_domain: emailDomain, p_purpose: census ? 'census' : 'adhesion',
     });
+    if (reservationError) throw reservationError;
+    if (!reserved?.allowed) return reply.tooManyRequests('OTP_RATE_LIMITED');
+    if (typeof reserved.challenge_id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(reserved.challenge_id)) throw new Error('OTP_CHALLENGE_UNAVAILABLE');
 
     // 7. Enviar email con Resend
     const locale = getLocale(req);
     const t = EMAIL_TEXTS[locale];
 
-    await resend.emails.send({
+    const delivery = await resend.emails.send({
       from: 'Voice Protest <noreply@ceroabsoluto.es>',
       to: email,
       subject: t.subject(otp),
@@ -200,7 +187,9 @@ export default async function institucionalRoutes(app) {
       `,
     });
 
-    return { sent: true };
+    if (delivery.error) throw new Error('Email delivery failed');
+    reply.header('Cache-Control', 'no-store');
+    return { sent: true, challenge_id: reserved.challenge_id };
   });
 
   // POST /api/institucional/verify-otp
@@ -218,9 +207,11 @@ export default async function institucionalRoutes(app) {
     schema: {
       body: {
         type: 'object',
-        required: ['email', 'otp', 'protest_id'],
+        required: ['email', 'otp', 'protest_id', 'challenge_id'],
         properties: {
           email:      { type: 'string', format: 'email' },
+          challenge_id: { type: 'string', format: 'uuid' },
+          creator_key: { type: 'string', pattern: '^[0-9a-f]{64}$' },
           otp:        { type: 'string', minLength: 6, maxLength: 6, pattern: '^[0-9]{6}$' },
           protest_id: { type: 'string', format: 'uuid' },
         },
@@ -232,7 +223,7 @@ export default async function institucionalRoutes(app) {
 
     const emailHash = hashEmail(email);
     const submittedOtpHash = hashOtp(protest_id, emailHash, otp);
-    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
+    const ip = req.ip;
     const idioma = req.headers['accept-language']?.split(',')[0] || null;
 
     // Membership validity: 31 August of the current academic year — unchanged
@@ -244,7 +235,8 @@ export default async function institucionalRoutes(app) {
       data = await verifyInstitutionalOtpAndCreateAdhesion({
         emailHash, protestId: protest_id, submittedOtpHash,
         location: { ip, language: idioma },
-        institutionalExpiresAt,
+        institutionalExpiresAt, challengeId: req.body.challenge_id,
+        creatorKeyHash: req.body.creator_key ? createHash('sha256').update(req.body.creator_key).digest('hex') : undefined,
       });
     } catch (err) {
       // Every OTP-specific failure returns the same generic message
@@ -264,12 +256,32 @@ export default async function institucionalRoutes(app) {
       if (err instanceof ProtestNotFoundError) return reply.notFound(err.message);
       if (err instanceof ProtestClosedError) return reply.code(410).send({ error: err.code, reason: err.message });
       if (err instanceof BalanceExhaustedError) return reply.status(402).send({ code: 'SALDO_AGOTADO', error: err.message });
+      if (/CENSUS_MEMBERSHIP_REQUIRED|CREATOR_PROOF_REQUIRED/.test(err.message || '')) return reply.forbidden('CENSUS_MEMBERSHIP_REQUIRED');
       throw err;
     }
 
     // VP-SEC-015 fix: email_hash is no longer returned — the client never
     // needed it, and it is a persistent, potentially correlatable
     // identifier with no reason to leave the server.
-    return { receipt: data.id, verified: true };
+    reply.header('Cache-Control', 'no-store');
+    return { receipt: data.id, verified: true, census_session: issueCensusSession({ emailHash, protestId: protest_id, emailHint: email.slice(0,1) + '***@' + email.split('@')[1].toLowerCase() }) };
   });
+  // Authentication for census management: never calls the adhesion service.
+  app.post('/census-session', {
+    config: { rateLimit: { max: 5, timeWindow: '10 minutes' } },
+    schema: { body: { type: 'object', required: ['email','otp','protest_id','challenge_id'], additionalProperties: false,
+      properties: { challenge_id:{type:'string',format:'uuid'},email:{type:'string',format:'email',maxLength:254},otp:{type:'string',pattern:'^[0-9]{6}$'},protest_id:{type:'string',format:'uuid'} } } },
+  }, async (req,reply) => {
+    const {email,otp,protest_id}=req.body;
+    const {data:p,error}=await supabase.from('protests').select('dominio_email,requiere_censo,ends_at').eq('id',protest_id).maybeSingle();
+    if(error)throw error;
+    if(!p?.requiere_censo || !p.dominio_email || Date.parse(p.ends_at)<=Date.now() || email.split('@')[1].toLowerCase()!==p.dominio_email.toLowerCase())return reply.badRequest('CENSUS_VERIFICATION_FAILED');
+    const emailHash=hashEmail(email);
+    const result=await supabase.rpc('consume_census_otp',{p_email_hash:emailHash,p_protest_id:protest_id,p_otp_hash:hashOtp('census:'+protest_id,emailHash,otp),p_challenge_id:req.body.challenge_id});
+    if(result.error)throw result.error;
+    if(!result.data?.verified)return reply.badRequest('CENSUS_VERIFICATION_FAILED');
+    reply.header('Cache-Control','no-store');
+    return {verified:true,census_session:issueCensusSession({emailHash,protestId:protest_id,emailHint:email.slice(0,1)+'***@'+email.split('@')[1].toLowerCase()})};
+  });
+
 }

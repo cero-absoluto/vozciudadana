@@ -100,14 +100,14 @@ function throwMappedRpcError(error) {
 /**
  * Verify an institutional OTP and create the adhesion atomically
  * (VP-SEC-008 Despliegue B, 24 July 2026) — calls
- * verify_institutional_otp_and_create_adhesion(), which locks and consumes
- * the OTP and calls create_verified_adhesion() internally, in one
+ * verify_institutional_challenge_and_create_adhesion(), which locks and consumes
+ * the challenge-bound OTP and calls create_verified_adhesion() internally, in one
  * transaction: a failed adhesion rolls back the OTP consumption too.
  *
  * @param {{ emailHash: string, protestId: string, submittedOtpHash: string, location: LocationEvidenceInput, institutionalExpiresAt: string }} input
  * @returns {Promise<{ id: string, created_at: string }>}
  */
-export async function verifyInstitutionalOtpAndCreateAdhesion({ emailHash, protestId, submittedOtpHash, location, institutionalExpiresAt }) {
+export async function verifyInstitutionalOtpAndCreateAdhesion({ emailHash, protestId, submittedOtpHash, location, institutionalExpiresAt, creatorKeyHash, challengeId }) {
   const evidence = await resolveLocationEvidence({
     latitude: null, longitude: null, // institutional convocatorias never collect GPS
     accuracyMeters: null,
@@ -117,7 +117,9 @@ export async function verifyInstitutionalOtpAndCreateAdhesion({ emailHash, prote
 
   const nullifier = computeNullifier({ method: 'institutional_email_otp', subjectHash: emailHash, protestId });
 
-  const { data, error } = await supabase.rpc('verify_institutional_otp_and_create_adhesion', {
+  const { data, error } = await supabase.rpc(creatorKeyHash ? 'verify_census_founder_adhesion' : 'verify_institutional_challenge_and_create_adhesion', {
+    ...(creatorKeyHash ? { p_creator_key_hash: creatorKeyHash } : {}),
+    p_challenge_id: challengeId,
     p_email_hash:               emailHash,
     p_protest_id:               protestId,
     p_submitted_otp_hash:       submittedOtpHash,
@@ -132,6 +134,7 @@ export async function verifyInstitutionalOtpAndCreateAdhesion({ emailHash, prote
   });
 
   if (error) throwMappedRpcError(error);
+  if (data?.error) throwMappedRpcError({ message: data.error });
   return data;
 }
 

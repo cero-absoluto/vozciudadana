@@ -1,3 +1,4 @@
+import { isValidClientIp, ipapiUrl } from './clientIp.js';
 // ── LocationEvidenceService (VP-SEC-008 fix, Fase 2 — Despliegue A) ────────
 //
 // Extracted from what used to be inline in routes/protests.js's /join
@@ -65,9 +66,9 @@ export async function resolveLocationEvidence({ latitude, longitude, accuracyMet
     }
   }
 
-  if (!ciudad && ip) {
+  if (!ciudad && isValidClientIp(ip)) {
     try {
-      const geoRes = await fetch(`https://ipapi.co/${ip}/json/`, {
+      const geoRes = await fetch(ipapiUrl(ip), {
         headers: { 'User-Agent': 'VoiceProtest/1.0 (voiceprotest.org)' },
         signal: AbortSignal.timeout(4000),
       });

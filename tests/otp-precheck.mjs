@@ -28,6 +28,7 @@ const fakeQuery = (table) => {
   for (const m of ['select', 'is', 'insert', 'update']) q[m] = () => (m === 'insert' ? Promise.resolve({ error: null }) : chain());
   q.eq = (k, v) => { q._f[k] = v; return q; };
   q.maybeSingle = async () => {
+    if (table === 'protests') return {data:{scope:'global',country:null}};
     if (table === 'adhesions') { calls.adhesionsQueried++; return { data: stored.has(q._f.nullifier) ? { id: 'x' } : null }; }
     return { data: null };
   };

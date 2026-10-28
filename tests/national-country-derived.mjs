@@ -48,7 +48,7 @@ function exec(st) {
   if (table === 'otp_requests' && op === 'insert') calls.otpLog++;
   if (table === 'devices') {
     const find = () => [...db.devices.values()].find(d => Object.entries(filters).every(([k, v]) => d[k] === v)) ?? null;
-    if (op === 'upsert') { db.devices.set(payload.id, { ...(db.devices.get(payload.id) ?? {}), ...payload }); data = db.devices.get(payload.id); }
+    if (op === 'insert') { if(db.devices.has(payload.id) || [...db.devices.values()].some(d=>d.phone_hash===payload.phone_hash)) return Promise.resolve({data:null,error:{code:'23505'}}); db.devices.set(payload.id, { ...(db.devices.get(payload.id) ?? {}), ...payload }); data = db.devices.get(payload.id); }
     else if (op === 'update') { const row = find(); if (row) Object.assign(row, payload); }
     else if (op === 'select') data = find();
   } else if (table === 'protests' && op === 'select') data = protestFor(filters.id);
@@ -218,8 +218,9 @@ test('6c. aviso ANTES del SMS (request-otp): país no establecido en convocatori
   for (const [phone, protest] of [[PH.ES, NAT_ES], [PH.CA, NAT_CA], [PH.GB, NAT_GB], [PH.FR, NAT_ES], [PH.IT_MOBILE, GLOBAL], [PH.NONE, LOCAL], [PH.IT_MOBILE, null], [PH.IT_MOBILE, P(99)]]) {
     const before = calls.sendOtp;
     const r = await req(phone, protest);
-    assert.equal(r.statusCode, 200, `${phone} ${protest}`); assert.equal(body(r).sent, true);
-    assert.equal(calls.sendOtp, before + 1);
+    assert.equal(r.statusCode, protest===P(99)?404:200, `${phone} ${protest}`);
+    if(protest!==P(99)) assert.equal(body(r).sent,true);
+    assert.equal(calls.sendOtp, before + (protest===P(99)?0:1));
   }
 });
 
@@ -262,11 +263,13 @@ test('10. reautenticación de un dispositivo CON procedencia: entra en la nacion
   assert.equal(calls.verifyOtp, otpAfterVerify, 'sin OTP en la reautenticación');
 });
 
-test('11. mismo device_id con otro número legítimo: la fila toma la derivación del número NUEVO (no es 403 automático)', async () => {
+test('11. mismo device_id con otro número: nueva identidad sin sobrescribir la anterior', async () => {
   await verify(PH.FR, 'device-same-0001', 'FR');
   assert.equal(db.devices.get('device-same-0001').numbering_country, 'FR');
   const v2 = body(await verify(PH.ES, 'device-same-0001', 'FR')); // otro número, mismo device_id
-  const row = db.devices.get('device-same-0001');
+  assert.equal(db.devices.get('device-same-0001').numbering_country, 'FR');
+  assert.notEqual(v2.device_id,'device-same-0001');
+  const row = db.devices.get(v2.device_id);
   assert.equal(row.numbering_country, 'ES');
   assert.equal((await join(NAT_ES, v2.participation_token)).statusCode, 201);
 });

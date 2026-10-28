@@ -1,0 +1,352 @@
+{
+  "table": "public.protests",
+  "observed_date_utc": "2026-10-28",
+  "read_only": true,
+  "columns": [
+    "id",
+    "title",
+    "description",
+    "demands",
+    "country",
+    "country_name",
+    "scope",
+    "region",
+    "focal_point",
+    "category",
+    "risk_level",
+    "count",
+    "viral_count",
+    "heat",
+    "cities",
+    "starts_at",
+    "ends_at",
+    "created_at",
+    "updated_at",
+    "cities_count",
+    "convocatoria_pais",
+    "convocatoria_region",
+    "convocatoria_institucion",
+    "dominio_email",
+    "fuente_url",
+    "tipo_abuso",
+    "requiere_censo",
+    "hash_integridad",
+    "saldo_euros",
+    "donaciones_count",
+    "donaciones_total",
+    "ultima_donacion",
+    "target_wikidata_id",
+    "target_type",
+    "target_country",
+    "target_validation",
+    "source_domain",
+    "source_type",
+    "source_title",
+    "source_description",
+    "source_author",
+    "published_at",
+    "source_confidence_score",
+    "source_relevance_score",
+    "source_validation_status",
+    "source_validation_source",
+    "source_checked_at",
+    "source_error",
+    "status",
+    "integrity_version",
+    "integrity_calculated_at",
+    "convocatoria_osm_id",
+    "convocatoria_ciudad_nombre",
+    "convocatoria_lat",
+    "convocatoria_lon",
+    "indexnow_last_notified_at"
+  ],
+  "column_metadata": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": "NO"
+    },
+    {
+      "name": "title",
+      "type": "text",
+      "nullable": "NO"
+    },
+    {
+      "name": "description",
+      "type": "text",
+      "nullable": "NO"
+    },
+    {
+      "name": "demands",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "country",
+      "type": "character",
+      "nullable": "YES"
+    },
+    {
+      "name": "country_name",
+      "type": "text",
+      "nullable": "NO"
+    },
+    {
+      "name": "scope",
+      "type": "text",
+      "nullable": "NO"
+    },
+    {
+      "name": "region",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "focal_point",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "category",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "risk_level",
+      "type": "text",
+      "nullable": "NO"
+    },
+    {
+      "name": "count",
+      "type": "integer",
+      "nullable": "NO"
+    },
+    {
+      "name": "viral_count",
+      "type": "integer",
+      "nullable": "NO"
+    },
+    {
+      "name": "heat",
+      "type": "smallint",
+      "nullable": "NO"
+    },
+    {
+      "name": "cities",
+      "type": "integer",
+      "nullable": "NO"
+    },
+    {
+      "name": "starts_at",
+      "type": "timestamp with time zone",
+      "nullable": "NO"
+    },
+    {
+      "name": "ends_at",
+      "type": "timestamp with time zone",
+      "nullable": "NO"
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "nullable": "NO"
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "nullable": "NO"
+    },
+    {
+      "name": "cities_count",
+      "type": "integer",
+      "nullable": "YES"
+    },
+    {
+      "name": "convocatoria_pais",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "convocatoria_region",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "convocatoria_institucion",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "dominio_email",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "fuente_url",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "tipo_abuso",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "requiere_censo",
+      "type": "boolean",
+      "nullable": "YES"
+    },
+    {
+      "name": "hash_integridad",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "saldo_euros",
+      "type": "numeric",
+      "nullable": "YES"
+    },
+    {
+      "name": "donaciones_count",
+      "type": "integer",
+      "nullable": "YES"
+    },
+    {
+      "name": "donaciones_total",
+      "type": "numeric",
+      "nullable": "YES"
+    },
+    {
+      "name": "ultima_donacion",
+      "type": "timestamp with time zone",
+      "nullable": "YES"
+    },
+    {
+      "name": "target_wikidata_id",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "target_type",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "target_country",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "target_validation",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "source_domain",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "source_type",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "source_title",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "source_description",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "source_author",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "published_at",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "source_confidence_score",
+      "type": "integer",
+      "nullable": "YES"
+    },
+    {
+      "name": "source_relevance_score",
+      "type": "integer",
+      "nullable": "YES"
+    },
+    {
+      "name": "source_validation_status",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "source_validation_source",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "source_checked_at",
+      "type": "timestamp with time zone",
+      "nullable": "YES"
+    },
+    {
+      "name": "source_error",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "status",
+      "type": "text",
+      "nullable": "NO"
+    },
+    {
+      "name": "integrity_version",
+      "type": "integer",
+      "nullable": "YES"
+    },
+    {
+      "name": "integrity_calculated_at",
+      "type": "timestamp with time zone",
+      "nullable": "YES"
+    },
+    {
+      "name": "convocatoria_osm_id",
+      "type": "bigint",
+      "nullable": "YES"
+    },
+    {
+      "name": "convocatoria_ciudad_nombre",
+      "type": "text",
+      "nullable": "YES"
+    },
+    {
+      "name": "convocatoria_lat",
+      "type": "double precision",
+      "nullable": "YES"
+    },
+    {
+      "name": "convocatoria_lon",
+      "type": "double precision",
+      "nullable": "YES"
+    },
+    {
+      "name": "indexnow_last_notified_at",
+      "type": "timestamp with time zone",
+      "nullable": "YES"
+    }
+  ],
+  "rpc": {
+    "signature": "create_census_protest(jsonb,text)",
+    "result": "jsonb",
+    "set_returning": false,
+    "returns_public_row_object": true,
+    "creator_hash_stored_in_private_table": true
+  }
+}

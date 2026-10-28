@@ -1,3 +1,4 @@
+import { PUBLIC_PROTEST_SELECT } from '../lib/publicProtest.js';
 import { supabase } from '../services/supabase.js';
 
 // ── Discoverability — Phase 2 (Dynamic... no, actually Static — see note) ──
@@ -100,22 +101,23 @@ function renderReportHtml(protest) {
   const sourceLabel = SOURCE_LABELS[protest.source_type] || 'Sin verificar';
   const appLink = `${APP_URL}/#/${isClosed ? 'informe' : 'detail'}/${protest.id}`;
   const title = esc(protest.title);
-  const description = esc(
+  const rawDescription = (
     (protest.description || '').slice(0, 200) ||
     `${abuseLabel} — dirigida a ${protest.focal_point || 'una institución pública'}.`
   );
+  const description = esc(rawDescription);
   const canonical = `https://${REPORTS_HOST}/${protest.id}`;
 
   const statusLine = isClosed
-    ? `Cerrada · ${protest.count ?? 0} adhesiones verificadas`
-    : `Activa · ${protest.count ?? 0} adhesiones · cierra ${new Date(protest.ends_at).toLocaleString('es-ES')}`;
+    ? `Cerrada · ${esc(protest.count ?? 0)} adhesiones verificadas`
+    : `Activa · ${esc(protest.count ?? 0)} adhesiones · cierra ${new Date(protest.ends_at).toLocaleString('es-ES')}`;
 
   const schema = isClosed
     ? {
         '@context': 'https://schema.org',
         '@type': 'Dataset',
         name: protest.title,
-        description,
+        description: rawDescription,
         url: canonical,
         creator: { '@type': 'SoftwareApplication', name: 'Voice Protest', url: `${APP_URL}/` },
         license: 'https://www.gnu.org/licenses/agpl-3.0.html',
@@ -125,7 +127,7 @@ function renderReportHtml(protest) {
         '@context': 'https://schema.org',
         '@type': 'Event',
         name: protest.title,
-        description,
+        description: rawDescription,
         url: canonical,
         startDate: protest.starts_at,
         endDate: protest.ends_at,
@@ -150,21 +152,21 @@ function renderReportHtml(protest) {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${title} — Voice Protest</title>
 <meta name="description" content="${description}">
-<link rel="canonical" href="${canonical}">
+<link rel="canonical" href="${esc(canonical)}">
 <meta name="robots" content="index, follow">
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Voice Protest">
 <meta property="og:title" content="${title}">
 <meta property="og:description" content="${description}">
-<meta property="og:url" content="${canonical}">
+<meta property="og:url" content="${esc(canonical)}">
 <meta property="og:image" content="${APP_URL}/icon-512.png">
 
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="${title}">
 <meta name="twitter:description" content="${description}">
 
-<script type="application/ld+json">${JSON.stringify(schema)}</script>
+<script type="application/ld+json">${JSON.stringify(schema).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029')}</script>
 
 <style>
   :root { color-scheme: dark; }
@@ -200,7 +202,7 @@ function renderReportHtml(protest) {
       : `<div class="field-label">Fuente</div><div class="field-value">${esc(protest.fuente_url)} · ${esc(sourceLabel)}</div>`;
   })() : ''}
 
-  <a class="cta" href="${appLink}">${isClosed ? 'Ver el informe completo →' : 'Unirse a la convocatoria →'}</a>
+  <a class="cta" href="${esc(appLink)}">${isClosed ? 'Ver el informe completo →' : 'Unirse a la convocatoria →'}</a>
 
   <footer>Voice Protest · pre-incorporation project · AGPL-3.0 · <a href="${APP_URL}/">voiceprotest.org</a></footer>
 </body>
@@ -304,12 +306,16 @@ export default async function reportsRoutes(app) {
 
     const { data: protest, error } = await supabase
       .from('protests')
-      .select('*')
+      .select(PUBLIC_PROTEST_SELECT)
       .eq('id', req.params.id)
       .single();
 
     reply.type('text/html');
-    if (error || !protest) {
+    if (error && error.code !== 'PGRST116') {
+      reply.header('Cache-Control', 'no-store').code(503);
+      return '<!doctype html><title>Service unavailable</title><p>Service temporarily unavailable.</p>';
+    }
+    if (!protest || error) {
       setCached(req.params.id, renderNotFoundHtml(), 404);
       reply.code(404);
       return renderNotFoundHtml();

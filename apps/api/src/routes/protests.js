@@ -1,3 +1,4 @@
+import {credentialMatches} from '../lib/credentialMatches.js';
 import { PUBLIC_PROTEST_SELECT, publicProtestSchema, toPublicProtest } from '../lib/publicProtest.js';
 import { normalizeInstitutionalDomain } from '../lib/institutionalDomain.js';
 import { randomBytes, createHash } from 'node:crypto';
@@ -1026,7 +1027,7 @@ export default async function protestRoutes(app, opts = {}) {
   }, async (req, reply) => {
     const { importe, mensaje, admin_secret } = req.body;
 
-    if (admin_secret !== process.env.ADMIN_SECRET) {
+    if (!credentialMatches(admin_secret,process.env.ADMIN_SECRET)) {
       return reply.status(401).send({ error: 'No autorizado' });
     }
 

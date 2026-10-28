@@ -1,3 +1,4 @@
+import {credentialMatches} from '../lib/credentialMatches.js';
 import { supabase } from '../services/supabase.js';
 import { createHash } from 'crypto';
 
@@ -63,7 +64,7 @@ export default async function kofiWebhookRoutes(app) {
       app.log.error({code:'kofi_unconfigured'});
       return reply.status(500).send({ error: 'Webhook not configured' });
     }
-    if (payload.verification_token !== expectedToken) {
+    if (!payload || typeof payload!=='object' || Array.isArray(payload) || !credentialMatches(payload.verification_token,expectedToken)) {
       return reply.status(401).send({ error: 'Invalid verification token' });
     }
 

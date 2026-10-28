@@ -60,6 +60,12 @@ function hashIp(ip) {
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+function escapeEmailHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[char]);
+}
+
 const EMAIL_TEXTS = {
   es: {
     subject: (otp) => `Tu código de verificación: ${otp}`,
@@ -177,7 +183,7 @@ export default async function institucionalRoutes(app) {
       html: `
         <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:24px">
           <h2 style="color:#7C6FFF">${t.title}</h2>
-          <p>${t.body(protest.title)}</p>
+          <p>${t.body(escapeEmailHtml(protest.title))}</p>
           <div style="font-size:36px;font-weight:bold;letter-spacing:8px;color:#7C6FFF;margin:24px 0;text-align:center">
             ${otp}
           </div>

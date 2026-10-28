@@ -177,8 +177,9 @@ function hasMinimalConnection(sourceText, { title = '', demands = '', target_nam
 // endpoint, localhost, a private-network service) would be followed blindly,
 // since fetch's automatic redirect handling never re-validates the target.
 // Fixed here, once, for every caller of safeFetch — not duplicated per route.
-import dns from 'dns/promises';
 import net from 'net';
+import { withRequestDeadline } from './requestDeadline.js';
+import { resolveSourceAddresses } from './sourceDns.js';
 
 const MAX_REDIRECTS = 3;
 
@@ -210,10 +211,10 @@ function isPrivateOrReservedIp(ip) {
   return true; // couldn't parse — treat as unsafe rather than assume it's fine
 }
 
-async function resolveAndCheck(hostname) {
+async function resolveAndCheck(hostname, lookup, signal) {
   let records;
   try {
-    records = await dns.lookup(hostname, { all: true, verbatim: true });
+    records = await lookup(hostname, { signal });
   } catch {
     return { ok: false, reason: 'dns_error' };
   }
@@ -224,83 +225,70 @@ async function resolveAndCheck(hostname) {
   return { ok: true };
 }
 
-async function safeFetch(url, timeoutMs = 8000, maxBytes = 500_000) {
-  let currentUrl = url;
-
-  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-    let parsed;
-    try {
-      parsed = new URL(currentUrl);
-    } catch {
-      return { ok: false, reason: 'invalid_url' };
-    }
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-      return { ok: false, reason: 'blocked_scheme' };
-    }
-
-    const dnsCheck = await resolveAndCheck(parsed.hostname);
-    if (!dnsCheck.ok) return { ok: false, reason: dnsCheck.reason };
-
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-    let res;
-    try {
-      res = await fetch(parsed.href, {
-        signal: ctrl.signal,
-        headers: {
-          'User-Agent': 'VoiceProtest-SourceValidator/1.0 (+https://voiceprotest.org)',
-          'Accept': 'text/html,application/xhtml+xml',
-          'Accept-Language': 'en,es;q=0.9',
-        },
-        redirect: 'manual', // never follow automatically — every hop is re-validated above
-      });
-    } catch (e) {
-      clearTimeout(timer);
-      if (e.name === 'AbortError') return { ok: false, reason: 'timeout' };
-      return { ok: false, reason: 'fetch_error', message: e.message };
-    }
-    clearTimeout(timer);
-
-    if ([301, 302, 303, 307, 308].includes(res.status)) {
-      const location = res.headers.get('location');
-      if (!location) return { ok: false, reason: 'redirect_without_location' };
-      try {
-        currentUrl = new URL(location, parsed.href).href;
-      } catch {
-        return { ok: false, reason: 'invalid_redirect' };
+async function safeFetch(url, timeoutMs = 8000, maxBytes = 500_000, {
+  fetchImpl = globalThis.fetch, lookup = resolveSourceAddresses,
+} = {}) {
+  try {
+    return await withRequestDeadline(timeoutMs, async (signal, wait) => {
+      let currentUrl = url;
+      for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+        let parsed;
+        try { parsed = new URL(currentUrl); }
+        catch { return { ok: false, reason: 'invalid_url' }; }
+        if (!['http:', 'https:'].includes(parsed.protocol)) return { ok: false, reason: 'blocked_scheme' };
+        const dnsCheck = await wait(resolveAndCheck(parsed.hostname, lookup, signal));
+        if (!dnsCheck.ok) return { ok: false, reason: dnsCheck.reason };
+        signal.throwIfAborted();
+        const res = await wait(fetchImpl(parsed.href, {
+          signal,
+          headers: {
+            'User-Agent': 'VoiceProtest-SourceValidator/1.0 (+https://voiceprotest.org)',
+            'Accept': 'text/html,application/xhtml+xml',
+            'Accept-Language': 'en,es;q=0.9',
+          },
+          redirect: 'manual',
+        }));
+        let reader;
+        try {
+          if ([301, 302, 303, 307, 308].includes(res.status)) {
+            const location = res.headers.get('location');
+            if (!location) return { ok: false, reason: 'redirect_without_location' };
+            try { currentUrl = new URL(location, parsed.href).href; }
+            catch { return { ok: false, reason: 'invalid_redirect' }; }
+            continue;
+          }
+          const status = res.status;
+          if (status === 404 || status >= 500) return { ok: false, reason: status === 404 ? 'not_found' : 'server_error', status };
+          const paywallLike = [401, 403, 429].includes(status);
+          const type = res.headers.get('content-type') || '';
+          if (!type.includes('html') && !type.includes('text') && !type.includes('json')) return { ok: false, reason: 'non_html', status };
+          if (!res.body) return { ok: false, reason: 'fetch_error' };
+          reader = res.body.getReader();
+          const chunks = [];
+          let total = 0;
+          while (true) {
+            const { done, value } = await wait(reader.read());
+            if (done) break;
+            // Preserve bounded preview semantics; never buffer more than maxBytes.
+            const chunk = value.subarray(0, maxBytes - total);
+            chunks.push(chunk); total += chunk.length;
+            if (total >= maxBytes) break;
+          }
+          const bytes = new Uint8Array(total);
+          let offset = 0;
+          for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
+          return { ok: true, html: new TextDecoder().decode(bytes), status, finalUrl: res.url || parsed.href, paywallLike };
+        } finally {
+          // Also release redirect/error bodies. Do not let a stuck cancel extend the deadline.
+          if (reader) { reader.cancel().catch(() => {}); try { reader.releaseLock(); } catch {} }
+          else res.body?.cancel().catch(() => {});
+        }
       }
-      continue; // loop re-validates scheme + DNS on the new target before fetching it
-    }
-
-    const status = res.status;
-    if (status === 404 || status >= 500) {
-      return { ok: false, reason: status === 404 ? 'not_found' : 'server_error', status };
-    }
-    const paywallLike = [401, 403, 429].includes(status);
-
-    const contentType = res.headers.get('content-type') || '';
-    if (!contentType.includes('html') && !contentType.includes('text') && !contentType.includes('json')) {
-      return { ok: false, reason: 'non_html', status };
-    }
-
-    // Stream with size limit
-    const reader = res.body.getReader();
-    const chunks = [];
-    let total = 0;
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      total += value.length;
-      if (total > maxBytes) { reader.cancel(); break; }
-      chunks.push(value);
-    }
-    const html = new TextDecoder().decode(
-      new Uint8Array(chunks.reduce((acc, c) => [...acc, ...c], []))
-    );
-    return { ok: true, html, status, finalUrl: res.url || parsed.href, paywallLike };
+      return { ok: false, reason: 'too_many_redirects' };
+    });
+  } catch (error) {
+    return { ok: false, reason: error.name === 'TimeoutError' || error.name === 'AbortError' ? 'timeout' : 'fetch_error' };
   }
-
-  return { ok: false, reason: 'too_many_redirects' };
 }
 
 // ── Metadata extraction from HTML ─────────────────────────────────────────
@@ -353,6 +341,8 @@ function extractMeta(html, baseUrl) {
 
 // ── Wikidata domain lookup ─────────────────────────────────────────────────
 async function wikidataDomainLookup(domain) {
+  // Domain names are data, never SPARQL syntax. Invalid names need no lookup.
+  if (!/^[a-z0-9.-]+$/i.test(domain)) return null;
   try {
     const query = `SELECT ?typeLabel WHERE {
       ?item wdt:P856 ?url .

@@ -1,3 +1,4 @@
+import {OtpProviderError, runOtpProvider, otpProviderFailure} from '../lib/otpProvider.js';
 import {consumeOtpDeliveryQuota} from '../lib/requestQuotas.js';
 import {ipQuotaKey} from '../lib/ipQuotaKey.js';
 import { issueCensusSession } from '../lib/censusSession.js';
@@ -105,6 +106,8 @@ function getLocale(req) {
 /** @param {import('fastify').FastifyInstance} app */
 export default async function institucionalRoutes(app) {
 
+  app.addHook('onRequest', async (_req, reply) => { reply.header('Cache-Control', 'no-store'); });
+
   // POST /api/institucional/send-otp
   //
   // VP-SEC-012 fix (24 July 2026): this endpoint had no reCAPTCHA at all —
@@ -118,7 +121,7 @@ export default async function institucionalRoutes(app) {
         type: 'object',
         required: ['email', 'protest_id', 'recaptcha_token'],
         properties: {
-          email:           { type: 'string', format: 'email' },
+          email:           { type: 'string', format: 'email', maxLength:254 },
           protest_id:      { type: 'string', format: 'uuid' },
           recaptcha_token: { type: 'string', minLength: 1 },
           purpose: { type: 'string', enum: ['adhesion', 'census'] },
@@ -168,14 +171,16 @@ export default async function institucionalRoutes(app) {
       p_email_hash: emailHash, p_protest_id: protest_id, p_otp_hash: otpHash,
       p_ip_hash: ipHash, p_domain: emailDomain, p_purpose: census ? 'census' : 'adhesion',
     });
-    if (reservationError) throw reservationError;
+    if (reservationError || typeof reserved?.allowed !== 'boolean') return reply.code(503).send({error:'OTP_STATE_UNAVAILABLE',code:'otp_temporarily_unavailable'});
     if (!reserved?.allowed) return reply.tooManyRequests('OTP_RATE_LIMITED');
-    if (typeof reserved.challenge_id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(reserved.challenge_id)) throw new Error('OTP_CHALLENGE_UNAVAILABLE');
+    if (typeof reserved.challenge_id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(reserved.challenge_id)) return reply.code(503).send({error:'OTP_STATE_UNAVAILABLE',code:'otp_temporarily_unavailable'});
 
     // 7. Enviar email con Resend
     const locale = getLocale(req);
     const t = EMAIL_TEXTS[locale];
 
+    try {
+    await runOtpProvider(async signal => {
     const delivery = await resend.emails.send({
       from: 'Voice Protest <noreply@ceroabsoluto.es>',
       to: email,
@@ -191,9 +196,10 @@ export default async function institucionalRoutes(app) {
           <p style="color:#888;font-size:12px">${t.privacy}</p>
         </div>
       `,
+    }, {signal, redirect:'error'});
+    if (delivery?.error || typeof delivery?.data?.id !== 'string' || !delivery.data.id) throw new OtpProviderError();
     });
-
-    if (delivery.error) throw new Error('Email delivery failed');
+    } catch (error) { return otpProviderFailure(reply,error,'DELIVERY'); }
     reply.header('Cache-Control', 'no-store');
     return { sent: true, challenge_id: reserved.challenge_id };
   });
@@ -215,7 +221,7 @@ export default async function institucionalRoutes(app) {
         type: 'object',
         required: ['email', 'otp', 'protest_id', 'challenge_id'],
         properties: {
-          email:      { type: 'string', format: 'email' },
+          email:      { type: 'string', format: 'email', maxLength:254 },
           challenge_id: { type: 'string', format: 'uuid' },
           creator_key: { type: 'string', pattern: '^[0-9a-f]{64}$' },
           otp:        { type: 'string', minLength: 6, maxLength: 6, pattern: '^[0-9]{6}$' },

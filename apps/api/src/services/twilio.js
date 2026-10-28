@@ -1,4 +1,5 @@
 import twilio from 'twilio';
+import {OtpProviderError, runOtpProvider} from '../lib/otpProvider.js';
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken  = process.env.TWILIO_AUTH_TOKEN;
@@ -12,7 +13,7 @@ function getClient() {
     throw new Error('Twilio env vars not configured (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SID)');
   }
   if (!client) {
-    client        = twilio(accountSid, authToken);
+    client        = twilio(accountSid, authToken, {timeout: 8000, autoRetry: false});
     verifyService = client.verify.v2.services(verifySid);
   }
   return verifyService;
@@ -23,8 +24,15 @@ function getClient() {
  * @param {string} phoneE164 - Phone number in E.164 format, e.g. +34612345678
  */
 export async function sendOtp(phoneE164) {
-  const svc = getClient();
-  await svc.verifications.create({ to: phoneE164, channel: 'sms' });
+  return runOtpProvider(async () => {
+    try {
+      const result = await getClient().verifications.create({ to: phoneE164, channel: 'sms' });
+      if (result?.status !== 'pending') throw new OtpProviderError();
+    } catch (error) {
+      if ([60203, 60207, 60212].includes(error?.code) || error?.status === 429) throw new OtpProviderError('limited');
+      throw new OtpProviderError();
+    }
+  });
 }
 
 /**
@@ -34,7 +42,18 @@ export async function sendOtp(phoneE164) {
  * @returns {boolean} true if approved
  */
 export async function verifyOtp(phoneE164, code) {
-  const svc  = getClient();
-  const check = await svc.verificationChecks.create({ to: phoneE164, code });
-  return check.status === 'approved';
+  return runOtpProvider(async () => {
+    try {
+      const check = await getClient().verificationChecks.create({ to: phoneE164, code });
+      if (check?.status === 'approved') return true;
+      if (['pending', 'canceled', 'max_attempts_reached', 'deleted', 'failed', 'expired'].includes(check?.status)) return false;
+      throw new OtpProviderError();
+    } catch (error) {
+      // Verify removes expired, consumed and exhausted challenges. Never retry
+      // a check automatically: an approval can already have consumed the code.
+      if ((error?.status === 404 && error?.code === 20404) || error?.code === 60202) return false;
+      if ([60207, 60212].includes(error?.code) || error?.status === 429) throw new OtpProviderError('limited');
+      throw new OtpProviderError();
+    }
+  });
 }

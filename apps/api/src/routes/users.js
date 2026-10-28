@@ -1,6 +1,7 @@
+import {otpProviderFailure} from '../lib/otpProvider.js';
 import {consumeOtpDeliveryQuota} from '../lib/requestQuotas.js';
 import {ipQuotaKey} from '../lib/ipQuotaKey.js';
-import { createHash, createHmac } from 'node:crypto';
+import { createHash, createHmac, randomUUID } from 'node:crypto';
 import { supabase } from '../services/supabase.js';
 import { sendOtp, verifyOtp } from '../services/twilio.js';
 import { verifyRecaptcha } from '../lib/recaptcha.js';
@@ -35,6 +36,9 @@ function hashIp(ip) {
 /** @param {import('fastify').FastifyInstance} app */
 export default async function userRoutes(app) {
 
+  app.addHook('onRequest', async (_req, reply) => { reply.header('Cache-Control', 'no-store'); });
+  const databaseUnavailable = reply => reply.code(503).send({error:'OTP_STATE_UNAVAILABLE',code:'otp_temporarily_unavailable'});
+
   // POST /api/users/request-otp
   app.post('/request-otp', {
     config: { rateLimit: { max: 5, timeWindow: '5 minutes' } },
@@ -46,7 +50,7 @@ export default async function userRoutes(app) {
           phone:           { type: 'string', minLength: 8, maxLength: 16, pattern: '^\\+[1-9]\\d{7,14}$' },
           recaptcha_token: { type: 'string', minLength: 1 },
           device_id:       { type: 'string', minLength: 8, maxLength: 128, nullable: true },
-          protest_id:      { type: 'string', nullable: true },
+          protest_id:      { type: 'string', format: 'uuid', nullable: true },
         },
         additionalProperties: false,
       },
@@ -63,22 +67,24 @@ export default async function userRoutes(app) {
 
     // ── 2. Check progressive cooldown for this device ──────────────────────
     if (device_id) {
-      const { data: cooldown } = await supabase.rpc('get_otp_cooldown', { p_device_id: device_id });
+      const { data: cooldown, error: cooldownError } = await supabase.rpc('get_otp_cooldown', { p_device_id: device_id });
+      if (cooldownError || !Number.isFinite(cooldown) || cooldown < 0) return databaseUnavailable(reply);
       if (cooldown > 0) {
         return reply.tooManyRequests('For security reasons, please wait a few minutes before requesting another code.');
       }
     }
 
     // ── 3. Check rate limits (phone, device, IP, device+protest) ──────────
-    const { data: limitCheck } = await supabase.rpc('check_otp_rate_limit', {
+    const { data: limitCheck, error: limitError } = await supabase.rpc('check_otp_rate_limit', {
       p_phone_hash: phone_hash,
       p_device_id:  device_id || null,
       p_ip_hash:    ip_hash,
       p_protest_id: protest_id || null,
     });
 
-    if (!limitCheck?.allowed) {
-      req.log.warn({ reason: limitCheck?.reason }, 'OTP rate limit exceeded');
+    if (limitError || typeof limitCheck?.allowed !== 'boolean') return databaseUnavailable(reply);
+    if (!limitCheck.allowed) {
+      req.log.warn({code:'otp_rate_limited'}, 'OTP rate limit exceeded');
       return reply.code(429).send({ error: 'RATE_LIMITED', code: 'otp_rate_limited' });
     }
 
@@ -88,8 +94,10 @@ export default async function userRoutes(app) {
     // convocatoria's country (never on participation, so it reveals nothing about
     // it); no SMS is sent and nothing is logged. /join still decides admission.
     if (protest_id) {
-      const { data: target } = await supabase
+      const { data: target, error: targetError } = await supabase
         .from('protests').select('scope, country').eq('id', protest_id).maybeSingle();
+      if (targetError) return databaseUnavailable(reply);
+      if (!target) return reply.code(404).send({error:'PROTEST_NOT_FOUND'});
       if (target?.scope === 'national' && target.country) {
         const n = deriveNumberingCountry(phone);
         if (n.resolution !== NUMBERING_RESOLUTION.RESOLVED_UNSHARED && n.resolution !== NUMBERING_RESOLUTION.RESOLVED_SHARED_UNIQUE) {
@@ -126,10 +134,10 @@ export default async function userRoutes(app) {
         requested_at: new Date().toISOString(),
       });
 
-    if (error) throw error;
+    if (error) return databaseUnavailable(reply);
 
     // ── 6. Send SMS ───────────────────────────────────────────────────────
-    await sendOtp(phone);
+    try { await sendOtp(phone); } catch (error) { return otpProviderFailure(reply, error, 'DELIVERY'); }
     return { sent: true };
   });
 
@@ -163,17 +171,12 @@ export default async function userRoutes(app) {
   }, async (req, reply) => {
     const { phone, otp, device_id, country_code } = req.body;
 
-    const approved = await verifyOtp(phone, otp);
-    if (!approved) {
-      // Mark OTP as expired on failure
-      await supabase
-        .from('otp_requests')
-        .update({ status: 'expired' })
-        .eq('device_id', device_id)
-        .eq('status', 'sent');
-      return reply.unauthorized('OTP inválido o expirado');
-    }
-
+    let approved;
+    try { approved = await verifyOtp(phone, otp); }
+    catch (error) { return otpProviderFailure(reply, error, 'VERIFY'); }
+    // A wrong attempt does not expire other requests. Twilio owns challenge
+    // expiry/attempt counting; the local table is conservative quota history.
+    if (approved !== true) return reply.code(401).send({error:'OTP_INVALID'});
     const phone_hash = hashPhone(phone);
 
     // H7: the country used for national eligibility is derived HERE, from the
@@ -188,12 +191,14 @@ export default async function userRoutes(app) {
     };
 
     // Mark OTP as completed
-    await supabase
+    const {error: completionError} = await supabase
       .from('otp_requests')
       .update({ status: 'completed', completed_at: new Date().toISOString() })
       .eq('device_id', device_id)
       .eq('phone_hash', phone_hash)
       .eq('status', 'sent');
+
+    if (completionError) return databaseUnavailable(reply);
 
     // If phone already verified on another device, return it — a fresh
     // participation_token is still issued (a real OTP was just completed,
@@ -202,35 +207,52 @@ export default async function userRoutes(app) {
     // row, so it cannot vouch for it going forward — see the comment below.
     // H7: this fresh verification is also what gives a legacy row (verified
     // before the derivation existed, no reliable provenance) its provenance.
-    const { data: existing } = await supabase
+    const { data: existing, error: existingError } = await supabase
       .from('devices')
       .select('id')
       .eq('phone_hash', phone_hash)
       .maybeSingle();
 
+    if (existingError) return databaseUnavailable(reply);
     if (existing) {
       const { error: provErr } = await supabase
         .from('devices')
         .update(numberingColumns)
         .eq('id', existing.id);
-      if (provErr) throw provErr;
+      if (provErr) return databaseUnavailable(reply);
       const participation_token = signParticipationToken({ device_id: existing.id, phone_hash, purpose: 'join_protest' });
       return { verified: true, device_id: existing.id, participation_token };
     }
 
     const { secret: device_secret, hash: device_secret_hash } = generateDeviceSecret();
     const user_agent = req.headers['user-agent'] || null;
-    const { data, error } = await supabase
-      .from('devices')
-      .upsert({
-        id: device_id, phone_hash, verified_at: new Date().toISOString(), user_agent,
+    const insertDevice = id => supabase.from('devices').insert({
+        id, phone_hash, verified_at: new Date().toISOString(), user_agent,
         country_code: country_code ?? null, device_secret_hash,
         ...numberingColumns,
       })
-      .select()
+      .select('id')
       .single();
+    let {data, error} = await insertDevice(device_id);
 
-    if (error) throw error;
+    if (error?.code === '23505') {
+      // A concurrent request may have inserted this phone. Never overwrite an
+      // existing device id or rotate its possession secret via caller input.
+      const {data: canonical, error: canonicalError} = await supabase.from('devices')
+        .select('id').eq('phone_hash', phone_hash).maybeSingle();
+      if (canonicalError) return databaseUnavailable(reply);
+      if (!canonical) {
+        // A browser may verify a different phone while retaining its old id.
+        // Give the new identity a fresh id; never mutate the old identity.
+        ({data,error} = await insertDevice(randomUUID()));
+        if (error || !data?.id) return databaseUnavailable(reply);
+        return {verified:true,device_id:data.id,device_secret,participation_token:signParticipationToken({device_id:data.id,phone_hash,purpose:'join_protest'})};
+      }
+      const {error: provenanceError} = await supabase.from('devices').update(numberingColumns).eq('id',canonical.id);
+      if (provenanceError) return databaseUnavailable(reply);
+      return {verified:true,device_id:canonical.id,participation_token:signParticipationToken({device_id:canonical.id,phone_hash,purpose:'join_protest'})};
+    }
+    if (error || !data?.id) return databaseUnavailable(reply);
 
     const participation_token = signParticipationToken({ device_id: data.id, phone_hash, purpose: 'join_protest' });
     // device_secret is returned exactly once, here, at the moment it is
@@ -267,12 +289,13 @@ export default async function userRoutes(app) {
       },
     },
   }, async (req, reply) => {
-    const { data } = await supabase
+    const { data, error: deviceError } = await supabase
       .from('devices')
       .select('id, phone_hash, verified_at, device_secret_hash, country_code')
       .eq('id', req.params.id)
       .maybeSingle();
 
+    if (deviceError) return databaseUnavailable(reply);
     if (!data || !data.verified_at || !deviceSecretMatches(req.body.device_secret, data.device_secret_hash)) {
       // Same response whether the device doesn't exist, was never verified,
       // or the secret is wrong — distinguishing these would tell an

@@ -1,3 +1,5 @@
+import { getCensusSession, saveCensusSession, clearCensusSession } from './censusAccess.js';
+export { getCensusSession } from './censusAccess.js';
 /**
  * API client for the Voice Protest Fastify backend.
  *
@@ -14,10 +16,10 @@
 
 const BASE = import.meta.env.VITE_API_URL ?? '';
 
-async function request(method, path, body) {
+async function request(method, path, body, extraHeaders = {}) {
   const res = await fetch(`${BASE}${path}`, {
     method,
-    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...extraHeaders },
     body:    body ? JSON.stringify(body) : undefined,
   });
   const json = await res.json().catch(() => ({}));
@@ -72,8 +74,18 @@ export function fetchProtest(id) {
  *
  * Replaces: protests.createProtest() local push in stores/protests.js
  */
-export function createProtest(data) {
-  return request('POST', '/api/protests', data);
+export async function createProtest(data) {
+  if (data.requiere_censo && data.dominio_email) {
+    // Check storage before creating an event whose founder proof cannot be saved.
+    sessionStorage.setItem('vc_census_storage_probe', '1');
+    sessionStorage.removeItem('vc_census_storage_probe');
+  }
+  const result = await request('POST', '/api/protests', data);
+  if (result.census_creator_key) {
+    sessionStorage.setItem(`vc_census_creator:${result.id}`, result.census_creator_key);
+    delete result.census_creator_key;
+  }
+  return result;
 }
 
 /**
@@ -196,8 +208,10 @@ export function fetchCountryCodes() {
  * @param {{ email: string, protest_id: string }} payload
  * @returns {Promise<{ sent: boolean }>}
  */
-export function sendEmailOtp(payload) {
-  return request('POST', '/api/institucional/send-otp', payload);
+export async function sendEmailOtp(payload) {
+  const result = await request('POST', '/api/institucional/send-otp', payload);
+  if (result.challenge_id) sessionStorage.setItem(`vc_institutional_challenge:${payload.purpose === 'census' ? 'census' : 'adhesion'}:${payload.protest_id}:${payload.email.toLowerCase()}`, result.challenge_id);
+  return result;
 }
 
 /**
@@ -205,59 +219,70 @@ export function sendEmailOtp(payload) {
  * @param {{ email: string, otp: string, protest_id: string }} payload
  * @returns {Promise<{ receipt: string }>}
  */
-export function verifyEmailOtp(payload) {
-  return request('POST', '/api/institucional/verify-otp', payload);
+export async function verifyEmailOtp(payload) {
+  const result = await request('POST', '/api/institucional/verify-otp', { ...payload, challenge_id: sessionStorage.getItem(`vc_institutional_challenge:adhesion:${payload.protest_id}:${payload.email.toLowerCase()}`) || '' });
+  if (result.census_session) saveCensusSession(payload.protest_id, result.census_session);
+  return result;
+}
+export async function verifyCensusOtp(payload) {
+  const result = await request('POST', '/api/institucional/census-session', { ...payload, challenge_id: sessionStorage.getItem(`vc_institutional_challenge:census:${payload.protest_id}:${payload.email.toLowerCase()}`) || '' });
+  saveCensusSession(payload.protest_id, result.census_session);
+  return result;
+}
+async function censusRequest(method,path,body,protestId) {
+  const token = getCensusSession(protestId);
+  try { return await request(method,path,body,token ? { Authorization: `Bearer ${token}` } : {}); }
+  catch (e) { if (e.status === 401) clearCensusSession(protestId); throw e; }
 }
 // ── Grafo de vouches ───────────────────────────────────────────────────────────
 
 /**
  * Crear un grupo con nodo génesis.
- * @param {{ protest_id: string, genesis_hash: string, name: string }} payload
+ * @param {{ protest_id: string, creator_key: string, name: string }} payload
  * @returns {Promise<{ group_id: string }>}
  */
 export function crearGrupo(payload) {
-  return request('POST', '/api/grupos/crear', payload);
+  return censusRequest('POST', '/api/grupos/crear', payload, payload.protest_id);
 }
 
 /**
  * Solicitar unirse a un grupo.
  * @param {string} groupId
- * @param {{ email_hash: string }} payload
+ * @param {{ invite_token: string }} payload
  * @returns {Promise<{ requested: boolean }>}
  */
-export function solicitarUnirse(groupId, payload) {
-  return request('POST', `/api/grupos/${groupId}/solicitar`, payload);
+export function solicitarUnirse(groupId, payload, protestId) {
+  return censusRequest('POST', `/api/grupos/${groupId}/solicitar`, payload, protestId);
 }
 
 /**
  * Avalar a un candidato.
  * @param {string} groupId
- * @param {{ voucher_hash: string, candidate_hash: string }} payload
+ * @param {{ candidate_id: string }} payload
  * @returns {Promise<Object>}
  */
-export function darVouch(groupId, payload) {
-  return request('POST', `/api/grupos/${groupId}/vouch`, payload);
+export function darVouch(groupId, payload, protestId) {
+  return censusRequest('POST', `/api/grupos/${groupId}/vouch`, payload, protestId);
 }
 
 /**
  * Obtener el estado del grupo.
  * @param {string} groupId
- * @param {string} [emailHash]
+ * @param {string} protestId
  * @returns {Promise<Object>}
  */
-export function fetchGrupoEstado(groupId, emailHash) {
-  const qs = emailHash ? `?email_hash=${emailHash}` : '';
-  return request('GET', `/api/grupos/${groupId}/estado${qs}`);
+export function fetchGrupoEstado(groupId, protestId) {
+  return censusRequest('GET', `/api/grupos/${groupId}/estado`, undefined, protestId);
 }
 
 /**
  * Generar link de invitación personal.
  * @param {string} groupId
- * @param {{ inviter_hash: string }} payload
+ * @param {Object} payload
  * @returns {Promise<{ token: string, url: string }>}
  */
-export function generarInvite(groupId, payload) {
-  return request('POST', `/api/grupos/${groupId}/invite`, payload);
+export function generarInvite(groupId, payload, protestId) {
+  return censusRequest('POST', `/api/grupos/${groupId}/invite`, {}, protestId);
 }
 /**
  * Buscar el grupo asociado a una convocatoria.

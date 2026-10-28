@@ -33,7 +33,7 @@
           </button>
         </div>
         <div style="font-size:12px;color:var(--text3);text-align:center;line-height:1.6">
-          {{ $t('unirse.privacyNote') }}
+          {{ $t('censusAuth.privacy') }}
         </div>
       </div>
 
@@ -70,8 +70,8 @@
         <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:24px">
           {{ $t('unirse.successBody', { n: 2 - avalosRecibidos }) }}
         </div>
-        <button class="btn-primary" style="width:100%" @click="$router.push('/')">
-          {{ $t('unirse.goMap') }}
+        <button class="btn-primary" style="width:100%" @click="$router.push(`/grupo/${protestId}`)">
+          {{ $t('censusAuth.manage') }}
         </button>
       </div>
 
@@ -84,8 +84,8 @@
         <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:24px">
           {{ $t('unirse.step4Body') }}
         </div>
-        <button class="btn-primary" style="width:100%" @click="$router.push('/')">
-          {{ $t('unirse.goMap') }}
+        <button class="btn-primary" style="width:100%" @click="$router.push(`/grupo/${protestId}`)">
+          {{ $t('censusAuth.manage') }}
         </button>
       </div>
       
@@ -100,6 +100,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useProtestsStore } from '@/stores/protests.js';
 import { useUiStore } from '@/stores/ui.js';
 import * as api from '@/services/api.js';
+import { censusRecaptcha } from '@/services/censusAccess.js';
 
 const { t } = useI18n();
 
@@ -130,7 +131,7 @@ async function solicitarOtp() {
   }
   loading.value = true;
   try {
-    await api.sendEmailOtp({ email: email.value, protest_id: protestId });
+    await api.sendEmailOtp({ email: email.value, protest_id: protestId, purpose: 'census', recaptcha_token: await censusRecaptcha() });
     paso.value = 2;
   } catch (e) {
     emailError.value = t('unirse.errorSend');
@@ -147,51 +148,16 @@ async function verificarOtp() {
   }
   loading.value = true;
   try {
-    // 1. Verificar OTP y registrar adhesión institucional.
-    //    El servidor devuelve el email_hash (HMAC); el cliente no lo calcula.
-    const res = await api.verifyEmailOtp({ email: email.value, otp: otp.value, protest_id: protestId });
-
-    // 2. Usar el hash del servidor (HMAC), no SHA-256 en cliente
-    const emailHash = res.email_hash;
-    sessionStorage.setItem('vc_email_hash', emailHash);
-
-    // 3. Solicitar unirse al grupo. El email crudo viaja solo en tránsito; el
-    //    backend lo enmascara (j***@dominio) y nunca persiste el correo en claro.
-   const groupId = sessionStorage.getItem('vc_group_id');
+    await api.verifyCensusOtp({ email: email.value, otp: otp.value, protest_id: protestId });
+    const group = await api.fetchGrupoPorConvocatoria(protestId);
     const inviteToken = route.query.invite || sessionStorage.getItem('vc_invite_token');
-    if (groupId) {
-      await api.solicitarUnirse(groupId, { 
-        email_hash:    emailHash, 
-        invite_token:  inviteToken || null,
-        candidate_email: email.value,
-      });
+    const result = await api.solicitarUnirse(group.group_id, { invite_token: inviteToken || '' }, protestId);
+    sessionStorage.removeItem('vc_invite_token');
+    paso.value = result.accredited ? 4 : 3;
+    avalosRecibidos.value = result.accredited ? 2 : 1;
 
-         }
-
-   // Comprobar si fue acreditado automáticamente
-    const groupId2 = sessionStorage.getItem('vc_group_id');
-    if (groupId2) {
-      try {
-        const estado = await api.fetchGrupoEstado(groupId2, emailHash);
-        if (estado.mi_estado?.acreditado) {
-          paso.value = 4;
-       } else {
-          // Obtener avales recibidos para mostrar mensaje correcto
-          try {
-            const est = await api.fetchGrupoEstado(groupId2, emailHash);
-            const sol = est.solicitudes?.find(s => s.candidate_hash === emailHash);
-            avalosRecibidos.value = sol?.vouches_recibidos || 0;
-          } catch { avalosRecibidos.value = 0; }
-          paso.value = 3;
-        }
-      } catch {
-        paso.value = 3;
-      }
-    } else {
-      paso.value = 3;
-    }
   } catch (e) {
-     console.log('Error verificarOtp:', e);
+
     otpError.value = t('unirse.errOtpWrong');
   } finally {
     loading.value = false;

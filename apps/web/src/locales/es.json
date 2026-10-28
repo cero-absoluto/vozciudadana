@@ -1020,5 +1020,18 @@
     "unknown": "Horario no disponible",
     "joiningSince": "Abierta a adhesiones desde el {date}",
     "joiningOpen": "Abierta a adhesiones"
+},
+  "censusAuth": {
+    "founderRecovery": "Ya me adherí: verificar solo el acceso para iniciar el censo.",
+    "loggedIn": "Acceso al censo verificado",
+    "loginTitle": "Acceder al censo",
+    "loginBody": "Verifica tu correo para gestionar el censo. Este acceso no crea una adhesión.",
+    "pending": "Pendiente de acreditación",
+    "joinProtest": "Adherirme a la protesta",
+    "creatorOnly": "Solo quien creó la convocatoria puede iniciar su censo desde el mismo navegador. Debe verificar el correo y adherirse. La clave de creación se conserva en esta pestaña hasta iniciar el censo.",
+    "founderBody": "Al confirmar verificas tu correo, te adhieres a la protesta e inicias su censo. No cierres esta pestaña hasta terminar.",
+    "founderConfirm": "Verificar, adherirme e iniciar el censo",
+    "privacy": "El servidor verifica tu correo y conserva su huella protegida. Solo los miembros acreditados que pueden avalarte ven una pista enmascarada de tu dirección.",
+    "manage": "Gestionar mi censo"
 }
 }

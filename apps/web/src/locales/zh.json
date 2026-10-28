@@ -1020,5 +1020,18 @@
     "unknown": "暂无时间信息",
     "joiningSince": "自{date}起接受报名",
     "joiningOpen": "接受报名中"
+},
+  "censusAuth": {
+    "founderRecovery": "我已参与：仅验证访问权限以建立名册。",
+    "loggedIn": "名册访问已验证",
+    "loginTitle": "访问成员名册",
+    "loginBody": "验证邮箱以管理名册。登录不会产生新的参与记录。",
+    "pending": "等待成员认证",
+    "joinProtest": "参与抗议",
+    "creatorOnly": "只有召集创建者可以在同一浏览器中建立名册，且必须先验证邮箱并参与。创建密钥在建立名册前保存在此标签页中。",
+    "founderBody": "确认将验证邮箱、参与抗议并建立名册。完成前请勿关闭此标签页。",
+    "founderConfirm": "验证、参与并建立名册",
+    "privacy": "服务器验证邮箱并保存受保护的指纹。只有可以担保您的认证成员才能看到经过掩码处理的邮箱提示。",
+    "manage": "管理我的名册"
 }
 }

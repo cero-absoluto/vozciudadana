@@ -964,7 +964,7 @@ async function submit() {
       // isn't available, the backend rejects with a clear error in
       // production rather than silently letting the request through.
     }
-    await protests.createProtest((() => {
+    const created = await protests.createProtest((() => {
       // institutionalMode is a UI-only flag — never sent to the backend
       // (the create schema uses additionalProperties:false).
       const { institutionalMode, ...formData } = form;
@@ -995,7 +995,7 @@ async function submit() {
       country_name: PAIS_NOMBRES[form.convocatoria_pais] || form.convocatoria_pais || 'regional',
     }; })());
 
-    router.push('/');
+    router.push(created.requiere_censo && created.dominio_email ? `/grupo/${created.id}?iniciar=true` : '/');
     setTimeout(() => {
       ui.showToast(t('create.createdSaldo'));
     }, 800);

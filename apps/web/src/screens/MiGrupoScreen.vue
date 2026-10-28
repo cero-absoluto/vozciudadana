@@ -20,26 +20,29 @@
         <button type="button" class="btn-primary" @click="loadGroup">{{ $t('migrupo.retry') }}</button>
       </div>
       <!-- Sin grupo — crear censo -->
-      <div v-if="!groupId && !cargando && !loadError">
-        <div v-if="!creandoGrupo" style="text-align:center;padding:40px 20px">
+      <div v-if="(!groupId || needsAuth) && !cargando && !loadError">
+        <div v-if="!creandoGrupo && !groupId" style="text-align:center;padding:40px 20px">
           <div style="font-size:48px;margin-bottom:16px">🌱</div>
           <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin-bottom:8px">
           {{ $t('migrupo.noExistsTitle') }}
           </div>
           <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:24px">
-          {{ $t('migrupo.noExistsBody') }}
+          {{ $t('censusAuth.creatorOnly') }}
           </div>
-          <button class="btn-primary" style="width:100%;margin-bottom:8px" @click="creandoGrupo = true">
+          <button class="btn-primary" style="width:100%;margin-bottom:8px" :disabled="!hasCreatorKey" @click="creandoGrupo = true">
           🌱 {{ $t('migrupo.initCensus') }}
           </button>
         </div>
         <div v-if="creandoGrupo" class="block" style="text-align:left;margin-top:20px">
           <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;margin-bottom:12px">
-          📧 {{ $t('migrupo.verifyEmail') }}
+          📧 {{ groupId ? $t('censusAuth.loginTitle') : $t('migrupo.verifyEmail') }}
           </div>
           <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
-          {{ $t('migrupo.genesisIntro', { domain: protest?.dominio_email }) }}
+          {{ groupId ? $t('censusAuth.loginBody') : $t('censusAuth.founderBody') }}
           </div>
+          <label for="census-founder-recovery" v-if="!groupId && !genesisOtpVisible" style="display:flex;gap:8px;margin-bottom:12px;font-size:13px;line-height:1.5">
+            <input id="census-founder-recovery" type="checkbox" v-model="founderRecovery"> {{ $t('censusAuth.founderRecovery') }}
+          </label>
           <div v-if="!genesisOtpVisible">
             <div class="fg">
               <label for="census-email">{{ $t('migrupo.emailLabel') }}</label>
@@ -61,13 +64,13 @@
           <div v-if="genesisOtpError" style="font-size:12px;color:var(--accent3);margin-top:6px">{{ genesisOtpError }}</div>
           <button class="btn-primary" style="width:100%;margin-top:12px"
             :disabled="loadingGenesis" @click="verificarOtpGenesis">
-              {{ loadingGenesis ? $t('migrupo.verifying') : $t('migrupo.verifyCreate') }}
+              {{ loadingGenesis ? $t('migrupo.verifying') : (groupId ? $t('censusAuth.loginTitle') : $t('censusAuth.founderConfirm')) }}
           </button>
         </div>
       </div>
        
       <!-- Con grupo — mostrar estado -->
-      <div v-if="groupId && !cargando && !loadError">
+      <div v-if="groupId && !needsAuth && !cargando && !loadError">
 
       <!-- Estado del censo -->
       <div class="block" style="margin-bottom:12px">
@@ -103,7 +106,7 @@
         <div style="display:flex;align-items:center;gap:8px;padding:8px 0">
           <div style="width:10px;height:10px;border-radius:50%;background:var(--accent2)"></div>
           <div style="font-size:12px;font-weight:500">
-            {{ miEstado.es_genesis ? '⭐ ' + $t('migrupo.genesis') : '✓ ' + $t('migrupo.accredited') }}
+            {{ miEstado.es_genesis ? '⭐ ' + $t('migrupo.genesis') : miEstado.acreditado ? '✓ ' + $t('migrupo.accredited') : $t('censusAuth.pending') }}
           </div>
         </div>
         <div style="font-size:13px;color:var(--text2)">
@@ -111,8 +114,9 @@
         </div>
       </div>
 
+      <button v-if="miEstado.acreditado" class="btn-primary" @click="router.push(`/verify-institucional/${protestId}`)">{{ $t('censusAuth.joinProtest') }}</button>
       <!-- Solicitudes pendientes -->
-      <div class="block" style="margin-bottom:12px">
+      <div v-if="miEstado.acreditado" class="block" style="margin-bottom:12px">
         <div class="block-title">{{ $t('migrupo.pendingTitle', { count: solicitudes.length }) }}</div>
         <div v-if="solicitudes.length === 0" style="font-size:13px;color:var(--text2);padding:8px 0">
           {{ $t('migrupo.noPending') }}
@@ -137,7 +141,7 @@
       </div>
 
       <!-- Invitar -->
-      <div class="block" style="margin-bottom:20px">
+      <div v-if="miEstado.acreditado" class="block" style="margin-bottom:20px">
         <div class="block-title">{{ $t('migrupo.inviteTitle') }}</div>
         <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6">
           {{ $t('migrupo.inviteDesc') }}
@@ -146,7 +150,7 @@
           {{ $t('migrupo.inviteWarning') }}
         </div>
         <div style="font-size:12px;padding:6px 8px;background:rgba(124,111,255,.06);border:.5px solid var(--border);border-radius:var(--r);color:var(--text2);margin-bottom:10px;line-height:1.5">
-          {{ $t('migrupo.invitesLeft', { n: grupo.mis_vouches_restantes }) }}
+          {{ $t('migrupo.invitesLeft', { n: grupo.mis_invitaciones_restantes }) }}
         </div>
         <div v-if="linkInvitacion" style="background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:8px 10px;font-family:monospace;font-size:12px;color:var(--accent);word-break:break-all;margin-bottom:8px">
           {{ linkInvitacion }}
@@ -175,6 +179,7 @@ import { useProtestsStore } from '@/stores/protests.js';
 import { useUiStore } from '@/stores/ui.js';
 import { useI18n } from 'vue-i18n';
 import * as api from '@/services/api.js';
+import { censusRecaptcha } from '@/services/censusAccess.js';
 
 const { t, locale } = useI18n();
 
@@ -190,7 +195,9 @@ const linkInvitacion = ref('');
 const groupId = ref(null);
 const cargando = ref(false);
 const loadError = ref(false);
-const emailHash = ref(sessionStorage.getItem('vc_email_hash') || '');
+const needsAuth = ref(false);
+const founderRecovery = ref(false);
+const hasCreatorKey = computed(() => !!sessionStorage.getItem(`vc_census_creator:${protestId}`));
 const creandoGrupo = ref(false);
 const genesisEmail = ref('');
 const genesisOtp = ref('');
@@ -209,7 +216,7 @@ async function enviarOtpGenesis() {
   }
   loadingGenesis.value = true;
   try {
-    await api.sendEmailOtp({ email: genesisEmail.value, protest_id: protestId });
+    await api.sendEmailOtp({ email: genesisEmail.value, protest_id: protestId, recaptcha_token: await censusRecaptcha(), purpose: groupId.value || founderRecovery.value || api.getCensusSession?.(protestId) ? 'census' : 'adhesion' });
     genesisOtpVisible.value = true;
   } catch (e) {
     genesisError.value = t('migrupo.errorSend');
@@ -226,21 +233,26 @@ async function verificarOtpGenesis() {
   }
   loadingGenesis.value = true;
   try {
-    const res = await api.verifyEmailOtp({ email: genesisEmail.value, otp: genesisOtp.value, protest_id: protestId });
-    const hash = res.email_hash;  // server-side HMAC, not client SHA-256
-    const data = await api.crearGrupo({
-      protest_id:   protestId,
-      genesis_hash: hash,
-      name:         protest.value?.convocatoria_institucion || 'Grupo',
-    });
-    groupId.value = data.group_id;
-    emailHash.value = hash;
-    sessionStorage.setItem('vc_group_id', data.group_id);
-    sessionStorage.setItem('vc_email_hash', hash);
+    const existingGroup = !!groupId.value;
+    if (groupId.value) {
+      await api.verifyCensusOtp({ email: genesisEmail.value, otp: genesisOtp.value, protest_id: protestId });
+    } else {
+      if (founderRecovery.value || api.getCensusSession?.(protestId)) await api.verifyCensusOtp({ email: genesisEmail.value, otp: genesisOtp.value, protest_id: protestId });
+      else await api.verifyEmailOtp({ email: genesisEmail.value, otp: genesisOtp.value, protest_id: protestId, creator_key: sessionStorage.getItem(`vc_census_creator:${protestId}`) || '' });
+      const data = await api.crearGrupo({
+        protest_id: protestId,
+        creator_key: sessionStorage.getItem(`vc_census_creator:${protestId}`) || '',
+        name: protest.value?.convocatoria_institucion || 'Grupo',
+      });
+      groupId.value = data.group_id;
+      sessionStorage.removeItem(`vc_census_creator:${protestId}`);
+      sessionStorage.setItem('vc_group_id', data.group_id);
+    }
+    needsAuth.value = false;
     await cargarEstado();
     creandoGrupo.value = false;
     genesisOtpVisible.value = false;
-    ui.showToast(t('migrupo.toastCreated'));
+    ui.showToast(t(existingGroup ? 'censusAuth.loggedIn' : 'migrupo.toastCreated'));
   } catch (e) {
     genesisOtpError.value = t('migrupo.errorCreateGroup');
   } finally {
@@ -252,6 +264,7 @@ const grupo = ref({
   acreditados: 0,
   pendientes: 0,
   mis_vouches_restantes: 5,
+  mis_invitaciones_restantes: 0,
   objetivo: 30,
 });
 
@@ -276,41 +289,47 @@ async function cargarEstado() {
   if (!groupId.value) return;
   loadError.value = false;
   try {
-    const data = await api.fetchGrupoEstado(groupId.value, emailHash.value);
+    const data = await api.fetchGrupoEstado(groupId.value, protestId);
     grupo.value = {
       acreditados:           data.acreditados,
       pendientes:            data.pendientes,
       mis_vouches_restantes: data.mis_vouches_restantes,
+      mis_invitaciones_restantes: data.mis_invitaciones_restantes || 0,
       objetivo:              data.objetivo,
     };
+    needsAuth.value = !!data.requires_auth;
+    if (needsAuth.value) creandoGrupo.value = true;
     miEstado.value = data.mi_estado;
     solicitudes.value = data.solicitudes;
   } catch (e) {
+    if (e.status === 401) { needsAuth.value = true; creandoGrupo.value = true; return; }
     ui.showToast(t('migrupo.toastLoadError'));
     loadError.value = true;
   }
 }
 
 async function darVouch(solicitud) {
-  if (!groupId.value || !emailHash.value) return;
+  if (!groupId.value || needsAuth.value) return;
   try {
     await api.darVouch(groupId.value, {
-      voucher_hash:   emailHash.value,
-      candidate_hash: solicitud.candidate_hash,
-    });
+      candidate_id: solicitud.candidate_id,
+    }, protestId);
     ui.showToast(t('migrupo.toastVouched'));
     await cargarEstado();
   } catch (e) {
+    if (e.status === 401) { needsAuth.value = true; creandoGrupo.value = true; genesisOtpVisible.value = false; }
     ui.showToast(t('migrupo.toastVouchError'));
   }
 }
 
 async function generarLink() {
-  if (!groupId.value || !emailHash.value) return;
+  linkInvitacion.value = '';
+  if (!groupId.value || needsAuth.value) return;
   try {
-    const data = await api.generarInvite(groupId.value, { inviter_hash: emailHash.value });
+    const data = await api.generarInvite(groupId.value, {}, protestId);
     linkInvitacion.value = data.url;
   } catch (e) {
+    if (e.status === 401) { needsAuth.value = true; creandoGrupo.value = true; genesisOtpVisible.value = false; }
     ui.showToast(t('migrupo.toastLinkError'));
   }
 }
@@ -364,7 +383,7 @@ async function loadGroup() {
     }
     await cargarEstado();
     // Si viene con ?iniciar=true, mostrar directamente el formulario
-    if (route.query.iniciar === 'true' && !groupId.value && !loadError.value) {
+    if (route.query.iniciar === 'true' && !groupId.value && !loadError.value && hasCreatorKey.value) {
       creandoGrupo.value = true;
     }
   } catch {

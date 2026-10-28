@@ -1020,5 +1020,18 @@
     "unknown": "Schedule unavailable",
     "joiningSince": "Open for joining since {date}",
     "joiningOpen": "Open for joining"
+},
+  "censusAuth": {
+    "founderRecovery": "I have already joined: verify access only to start the census.",
+    "loggedIn": "Census access verified",
+    "loginTitle": "Access the census",
+    "loginBody": "Verify your email to manage the census. Signing in does not create an adhesion.",
+    "pending": "Awaiting accreditation",
+    "joinProtest": "Join the protest",
+    "creatorOnly": "Only the convocatoria creator can start its census from the same browser. They must verify their email and join. The creation key remains in this tab until the census is started.",
+    "founderBody": "Confirming verifies your email, joins the protest and starts its census. Keep this tab open until you finish.",
+    "founderConfirm": "Verify, join and start the census",
+    "privacy": "The server verifies your email and keeps its protected fingerprint. Only accredited members who can endorse you see a masked hint of your address.",
+    "manage": "Manage my census"
 }
 }

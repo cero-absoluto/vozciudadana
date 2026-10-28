@@ -1020,5 +1020,18 @@
     "unknown": "Horaires indisponibles",
     "joiningSince": "Ouverte aux adhésions depuis le {date}",
     "joiningOpen": "Ouverte aux adhésions"
+},
+  "censusAuth": {
+    "founderRecovery": "J’ai déjà adhéré : vérifier uniquement l’accès pour ouvrir le registre.",
+    "loggedIn": "Accès au registre vérifié",
+    "loginTitle": "Accéder au registre",
+    "loginBody": "Vérifiez votre adresse pour gérer le registre. Cet accès ne crée pas d’adhésion.",
+    "pending": "En attente d’accréditation",
+    "joinProtest": "Rejoindre la manifestation",
+    "creatorOnly": "Seule la personne qui a créé la mobilisation peut ouvrir son registre depuis le même navigateur. Elle doit vérifier son adresse et adhérer. La clé reste dans cet onglet jusqu’à l’ouverture du registre.",
+    "founderBody": "La confirmation vérifie votre adresse, enregistre votre adhésion et ouvre le registre. Gardez cet onglet ouvert jusqu’à la fin.",
+    "founderConfirm": "Vérifier, adhérer et ouvrir le registre",
+    "privacy": "Le serveur vérifie votre adresse et conserve son empreinte protégée. Seuls les membres accrédités pouvant vous soutenir voient un indice masqué de votre adresse.",
+    "manage": "Gérer mon registre"
 }
 }

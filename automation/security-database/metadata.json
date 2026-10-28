@@ -1,0 +1,1642 @@
+{
+  "observed_at_utc": "2026-10-28T15:37:04.728Z",
+  "metadata_only": true,
+  "tables": [
+    {
+      "rls": true,
+      "name": "institutional_members",
+      "anon_delete": true,
+      "anon_insert": true,
+      "anon_select": true,
+      "anon_update": true,
+      "auth_delete": true,
+      "auth_insert": true,
+      "auth_select": true,
+      "auth_update": true
+    },
+    {
+      "rls": true,
+      "name": "groups",
+      "anon_delete": false,
+      "anon_insert": false,
+      "anon_select": false,
+      "anon_update": false,
+      "auth_delete": false,
+      "auth_insert": false,
+      "auth_select": false,
+      "auth_update": false
+    },
+    {
+      "rls": true,
+      "name": "email_otp_rate_limit",
+      "anon_delete": true,
+      "anon_insert": true,
+      "anon_select": true,
+      "anon_update": true,
+      "auth_delete": true,
+      "auth_insert": true,
+      "auth_select": true,
+      "auth_update": true
+    },
+    {
+      "rls": true,
+      "name": "devices",
+      "anon_delete": true,
+      "anon_insert": true,
+      "anon_select": true,
+      "anon_update": true,
+      "auth_delete": true,
+      "auth_insert": true,
+      "auth_select": true,
+      "auth_update": true
+    },
+    {
+      "rls": true,
+      "name": "group_members",
+      "anon_delete": false,
+      "anon_insert": false,
+      "anon_select": false,
+      "anon_update": false,
+      "auth_delete": false,
+      "auth_insert": false,
+      "auth_select": false,
+      "auth_update": false
+    },
+    {
+      "rls": true,
+      "name": "country_codes",
+      "anon_delete": true,
+      "anon_insert": true,
+      "anon_select": true,
+      "anon_update": true,
+      "auth_delete": true,
+      "auth_insert": true,
+      "auth_select": true,
+      "auth_update": true
+    },
+    {
+      "rls": true,
+      "name": "push_subscriptions",
+      "anon_delete": false,
+      "anon_insert": false,
+      "anon_select": false,
+      "anon_update": false,
+      "auth_delete": false,
+      "auth_insert": false,
+      "auth_select": false,
+      "auth_update": false
+    },
+    {
+      "rls": true,
+      "name": "admin_log",
+      "anon_delete": true,
+      "anon_insert": true,
+      "anon_select": true,
+      "anon_update": true,
+      "auth_delete": true,
+      "auth_insert": true,
+      "auth_select": true,
+      "auth_update": true
+    },
+    {
+      "rls": true,
+      "name": "invite_links",
+      "anon_delete": false,
+      "anon_insert": false,
+      "anon_select": false,
+      "anon_update": false,
+      "auth_delete": false,
+      "auth_insert": false,
+      "auth_select": false,
+      "auth_update": false
+    },
+    {
+      "rls": true,
+      "name": "source_validations",
+      "anon_delete": true,
+      "anon_insert": true,
+      "anon_select": true,
+      "anon_update": true,
+      "auth_delete": true,
+      "auth_insert": true,
+      "auth_select": true,
+      "auth_update": true
+    },
+    {
+      "rls": true,
+      "name": "donaciones",
+      "anon_delete": false,
+      "anon_insert": false,
+      "anon_select": true,
+      "anon_update": false,
+      "auth_delete": false,
+      "auth_insert": false,
+      "auth_select": true,
+      "auth_update": false
+    },
+    {
+      "rls": true,
+      "name": "protests",
+      "anon_delete": true,
+      "anon_insert": true,
+      "anon_select": true,
+      "anon_update": true,
+      "auth_delete": true,
+      "auth_insert": true,
+      "auth_select": true,
+      "auth_update": true
+    },
+    {
+      "rls": true,
+      "name": "otp_requests",
+      "anon_delete": true,
+      "anon_insert": true,
+      "anon_select": true,
+      "anon_update": true,
+      "auth_delete": true,
+      "auth_insert": true,
+      "auth_select": true,
+      "auth_update": true
+    },
+    {
+      "rls": true,
+      "name": "platform_fund",
+      "anon_delete": true,
+      "anon_insert": true,
+      "anon_select": true,
+      "anon_update": true,
+      "auth_delete": true,
+      "auth_insert": true,
+      "auth_select": true,
+      "auth_update": true
+    },
+    {
+      "rls": true,
+      "name": "gps_update_tokens",
+      "anon_delete": true,
+      "anon_insert": true,
+      "anon_select": true,
+      "anon_update": true,
+      "auth_delete": true,
+      "auth_insert": true,
+      "auth_select": true,
+      "auth_update": true
+    },
+    {
+      "rls": true,
+      "name": "financial_movements",
+      "anon_delete": true,
+      "anon_insert": true,
+      "anon_select": true,
+      "anon_update": true,
+      "auth_delete": true,
+      "auth_insert": true,
+      "auth_select": true,
+      "auth_update": true
+    },
+    {
+      "rls": true,
+      "name": "kofi_protest_map",
+      "anon_delete": true,
+      "anon_insert": true,
+      "anon_select": true,
+      "anon_update": true,
+      "auth_delete": true,
+      "auth_insert": true,
+      "auth_select": true,
+      "auth_update": true
+    },
+    {
+      "rls": true,
+      "name": "email_otp_requests",
+      "anon_delete": true,
+      "anon_insert": true,
+      "anon_select": true,
+      "anon_update": true,
+      "auth_delete": true,
+      "auth_insert": true,
+      "auth_select": true,
+      "auth_update": true
+    },
+    {
+      "rls": true,
+      "name": "integrity_records",
+      "anon_delete": true,
+      "anon_insert": true,
+      "anon_select": true,
+      "anon_update": true,
+      "auth_delete": true,
+      "auth_insert": true,
+      "auth_select": true,
+      "auth_update": true
+    },
+    {
+      "rls": true,
+      "name": "census_otp_requests",
+      "anon_delete": false,
+      "anon_insert": false,
+      "anon_select": false,
+      "anon_update": false,
+      "auth_delete": false,
+      "auth_insert": false,
+      "auth_select": false,
+      "auth_update": false
+    },
+    {
+      "rls": true,
+      "name": "vouches",
+      "anon_delete": false,
+      "anon_insert": false,
+      "anon_select": false,
+      "anon_update": false,
+      "auth_delete": false,
+      "auth_insert": false,
+      "auth_select": false,
+      "auth_update": false
+    },
+    {
+      "rls": true,
+      "name": "vouch_requests",
+      "anon_delete": false,
+      "anon_insert": false,
+      "anon_select": false,
+      "anon_update": false,
+      "auth_delete": false,
+      "auth_insert": false,
+      "auth_select": false,
+      "auth_update": false
+    },
+    {
+      "rls": true,
+      "name": "adhesions",
+      "anon_delete": true,
+      "anon_insert": true,
+      "anon_select": true,
+      "anon_update": true,
+      "auth_delete": true,
+      "auth_insert": true,
+      "auth_select": true,
+      "auth_update": true
+    },
+    {
+      "rls": true,
+      "name": "otp_quota_buckets",
+      "anon_delete": false,
+      "anon_insert": false,
+      "anon_select": false,
+      "anon_update": false,
+      "auth_delete": false,
+      "auth_insert": false,
+      "auth_select": false,
+      "auth_update": false
+    }
+  ],
+  "functions": [
+    {
+      "config": null,
+      "definer": false,
+      "signature": "calculate_integrity_hash(uuid)",
+      "anon_execute": true,
+      "auth_execute": true
+    },
+    {
+      "config": null,
+      "definer": false,
+      "signature": "calcular_hash_integridad()",
+      "anon_execute": true,
+      "auth_execute": true
+    },
+    {
+      "config": [
+        "search_path=public, pg_temp"
+      ],
+      "definer": false,
+      "signature": "create_verified_adhesion(uuid,text,text,text,text,text,text,text,text,text,text,bigint,boolean,integer,text,text,timestamp with time zone)",
+      "anon_execute": true,
+      "auth_execute": true
+    },
+    {
+      "config": null,
+      "definer": false,
+      "signature": "apply_gps_reinforcement(uuid,boolean,bigint,text,text,text,text,integer,text)",
+      "anon_execute": false,
+      "auth_execute": false
+    },
+    {
+      "config": null,
+      "definer": false,
+      "signature": "check_otp_rate_limit(text,text,text,uuid)",
+      "anon_execute": true,
+      "auth_execute": true
+    },
+    {
+      "config": null,
+      "definer": false,
+      "signature": "get_otp_cooldown(text)",
+      "anon_execute": true,
+      "auth_execute": true
+    },
+    {
+      "config": null,
+      "definer": false,
+      "signature": "transfer_protest_surplus_to_platform_fund()",
+      "anon_execute": true,
+      "auth_execute": true
+    },
+    {
+      "config": null,
+      "definer": false,
+      "signature": "check_donation_limit(uuid,numeric)",
+      "anon_execute": true,
+      "auth_execute": true
+    },
+    {
+      "config": null,
+      "definer": true,
+      "signature": "update_cities_count(uuid)",
+      "anon_execute": false,
+      "auth_execute": false
+    },
+    {
+      "config": null,
+      "definer": true,
+      "signature": "increment_protest_count(uuid)",
+      "anon_execute": false,
+      "auth_execute": false
+    },
+    {
+      "config": null,
+      "definer": false,
+      "signature": "increment_viral_count(uuid)",
+      "anon_execute": true,
+      "auth_execute": true
+    },
+    {
+      "config": null,
+      "definer": false,
+      "signature": "set_updated_at()",
+      "anon_execute": true,
+      "auth_execute": true
+    },
+    {
+      "config": null,
+      "definer": true,
+      "signature": "get_cities_count(uuid)",
+      "anon_execute": true,
+      "auth_execute": true
+    },
+    {
+      "config": null,
+      "definer": true,
+      "signature": "process_vouch(uuid,text,text)",
+      "anon_execute": false,
+      "auth_execute": false
+    },
+    {
+      "config": null,
+      "definer": false,
+      "signature": "verify_institutional_otp_and_create_adhesion(text,uuid,text,text,text,text,text,text,text,text,timestamp with time zone)",
+      "anon_execute": false,
+      "auth_execute": false
+    },
+    {
+      "config": null,
+      "definer": false,
+      "signature": "calculate_integrity_hash_v2(uuid)",
+      "anon_execute": true,
+      "auth_execute": true
+    },
+    {
+      "config": [
+        "search_path=\"\""
+      ],
+      "definer": false,
+      "signature": "reserve_census_otp(text,uuid,text,text,text)",
+      "anon_execute": false,
+      "auth_execute": false
+    },
+    {
+      "config": [
+        "search_path=\"\""
+      ],
+      "definer": false,
+      "signature": "consume_census_otp(text,uuid,text,uuid)",
+      "anon_execute": false,
+      "auth_execute": false
+    },
+    {
+      "config": [
+        "search_path=\"\""
+      ],
+      "definer": false,
+      "signature": "found_census_group(uuid,text,text,text)",
+      "anon_execute": false,
+      "auth_execute": false
+    },
+    {
+      "config": [
+        "search_path=\"\""
+      ],
+      "definer": false,
+      "signature": "census_group_action(uuid,text,text,uuid,text,text)",
+      "anon_execute": false,
+      "auth_execute": false
+    },
+    {
+      "config": [
+        "search_path=\"\""
+      ],
+      "definer": false,
+      "signature": "check_institutional_otp_rate_limit(text,uuid,text,text)",
+      "anon_execute": false,
+      "auth_execute": false
+    },
+    {
+      "config": [
+        "search_path=\"\""
+      ],
+      "definer": false,
+      "signature": "reserve_institutional_otp(text,uuid,text,text,text,text)",
+      "anon_execute": false,
+      "auth_execute": false
+    },
+    {
+      "config": [
+        "search_path=\"\""
+      ],
+      "definer": false,
+      "signature": "enforce_census_admission()",
+      "anon_execute": false,
+      "auth_execute": false
+    },
+    {
+      "config": [
+        "search_path=\"\""
+      ],
+      "definer": false,
+      "signature": "verify_census_founder_adhesion(text,uuid,text,text,text,text,text,text,text,text,timestamp with time zone,text,uuid)",
+      "anon_execute": false,
+      "auth_execute": false
+    },
+    {
+      "config": [
+        "search_path=\"\""
+      ],
+      "definer": false,
+      "signature": "verify_institutional_challenge_and_create_adhesion(text,uuid,text,text,text,text,text,text,text,text,timestamp with time zone,uuid)",
+      "anon_execute": false,
+      "auth_execute": false
+    },
+    {
+      "config": [
+        "search_path=\"\""
+      ],
+      "definer": false,
+      "signature": "create_census_protest(jsonb,text)",
+      "anon_execute": false,
+      "auth_execute": false
+    },
+    {
+      "config": [
+        "search_path=\"\""
+      ],
+      "definer": false,
+      "signature": "erase_anonymized_identity()",
+      "anon_execute": false,
+      "auth_execute": false
+    },
+    {
+      "config": [
+        "search_path=\"\""
+      ],
+      "definer": false,
+      "signature": "save_owned_push_subscription(text,text,text,text,uuid,text,text)",
+      "anon_execute": false,
+      "auth_execute": false
+    },
+    {
+      "config": [
+        "search_path=\"\"",
+        "lock_timeout=1500ms"
+      ],
+      "definer": false,
+      "signature": "consume_shared_otp_quota(text,text,text)",
+      "anon_execute": false,
+      "auth_execute": false
+    },
+    {
+      "config": [
+        "search_path=\"\"",
+        "lock_timeout=1500ms"
+      ],
+      "definer": false,
+      "signature": "reserve_sms_otp(text,text,text,uuid)",
+      "anon_execute": false,
+      "auth_execute": false
+    }
+  ],
+  "policies": [
+    {
+      "cmd": "ALL",
+      "name": "institutional_members_service_only",
+      "qual": "true",
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "institutional_members"
+    },
+    {
+      "cmd": "ALL",
+      "name": "groups_service_only",
+      "qual": "true",
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "groups"
+    },
+    {
+      "cmd": "ALL",
+      "name": "email_otp_rate_limit_service_only",
+      "qual": "true",
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "email_otp_rate_limit"
+    },
+    {
+      "cmd": "ALL",
+      "name": "devices_service_all",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "check": null,
+      "roles": [
+        "public"
+      ],
+      "table": "devices"
+    },
+    {
+      "cmd": "ALL",
+      "name": "group_members_service_only",
+      "qual": "true",
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "group_members"
+    },
+    {
+      "cmd": "SELECT",
+      "name": "country_codes_public_read",
+      "qual": "true",
+      "check": null,
+      "roles": [
+        "public"
+      ],
+      "table": "country_codes"
+    },
+    {
+      "cmd": "ALL",
+      "name": "country_codes_service_write",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "check": null,
+      "roles": [
+        "public"
+      ],
+      "table": "country_codes"
+    },
+    {
+      "cmd": "ALL",
+      "name": "push_service_only",
+      "qual": "true",
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "push_subscriptions"
+    },
+    {
+      "cmd": "ALL",
+      "name": "admin_log_service_only",
+      "qual": "true",
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "admin_log"
+    },
+    {
+      "cmd": "ALL",
+      "name": "invite_links_service_only",
+      "qual": "true",
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "invite_links"
+    },
+    {
+      "cmd": "ALL",
+      "name": "source_validations_service_only",
+      "qual": "true",
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "source_validations"
+    },
+    {
+      "cmd": "SELECT",
+      "name": "donaciones_public_read",
+      "qual": "true",
+      "check": null,
+      "roles": [
+        "public"
+      ],
+      "table": "donaciones"
+    },
+    {
+      "cmd": "INSERT",
+      "name": "donaciones_service_insert",
+      "qual": null,
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "donaciones"
+    },
+    {
+      "cmd": "SELECT",
+      "name": "protests_public_read",
+      "qual": "true",
+      "check": null,
+      "roles": [
+        "public"
+      ],
+      "table": "protests"
+    },
+    {
+      "cmd": "ALL",
+      "name": "protests_service_write",
+      "qual": "true",
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "protests"
+    },
+    {
+      "cmd": "ALL",
+      "name": "otp_requests_service_only",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "check": null,
+      "roles": [
+        "public"
+      ],
+      "table": "otp_requests"
+    },
+    {
+      "cmd": "ALL",
+      "name": "platform_fund_service_only",
+      "qual": "true",
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "platform_fund"
+    },
+    {
+      "cmd": "ALL",
+      "name": "gps_tokens_service_write",
+      "qual": "true",
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "gps_update_tokens"
+    },
+    {
+      "cmd": "ALL",
+      "name": "financial_movements_service_only",
+      "qual": "true",
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "financial_movements"
+    },
+    {
+      "cmd": "ALL",
+      "name": "kofi_protest_map_service_only",
+      "qual": "true",
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "kofi_protest_map"
+    },
+    {
+      "cmd": "ALL",
+      "name": "email_otp_requests_service_only",
+      "qual": "true",
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "email_otp_requests"
+    },
+    {
+      "cmd": "ALL",
+      "name": "integrity_records_service_only",
+      "qual": "true",
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "integrity_records"
+    },
+    {
+      "cmd": "ALL",
+      "name": "vouches_service_only",
+      "qual": "true",
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "vouches"
+    },
+    {
+      "cmd": "ALL",
+      "name": "vouch_requests_service_only",
+      "qual": "true",
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "vouch_requests"
+    },
+    {
+      "cmd": "ALL",
+      "name": "adhesions_service_all",
+      "qual": "(auth.role() = 'service_role'::text)",
+      "check": null,
+      "roles": [
+        "public"
+      ],
+      "table": "adhesions"
+    },
+    {
+      "cmd": "ALL",
+      "name": "otp_quota_service_only",
+      "qual": "true",
+      "check": "true",
+      "roles": [
+        "service_role"
+      ],
+      "table": "otp_quota_buckets"
+    }
+  ],
+  "constraints": [
+    {
+      "name": "adhesions_device_id_fkey",
+      "table": "adhesions",
+      "validated": true,
+      "definition": "FOREIGN KEY (device_id) REFERENCES devices(id)"
+    },
+    {
+      "name": "adhesions_live_identity_required",
+      "table": "adhesions",
+      "validated": false,
+      "definition": "CHECK (((anonymized_at IS NOT NULL) OR ((nullifier IS NOT NULL) AND (nullifier ~ '[^[:space:]]'::text) AND (identity_subject_hash IS NOT NULL) AND (identity_subject_hash ~ '[^[:space:]]'::text) AND (verification_method IS NOT NULL) AND ((verification_method <> 'phone_otp'::text) OR ((device_id IS NOT NULL) AND (device_id ~ '[^[:space:]]'::text)))))) NOT VALID"
+    },
+    {
+      "name": "adhesions_nullifier_key",
+      "table": "adhesions",
+      "validated": true,
+      "definition": "UNIQUE (nullifier)"
+    },
+    {
+      "name": "adhesions_pais_code_check",
+      "table": "adhesions",
+      "validated": true,
+      "definition": "CHECK (((pais_code IS NULL) OR (pais_code ~ '^[A-Z]{2}$'::text)))"
+    },
+    {
+      "name": "adhesions_pkey",
+      "table": "adhesions",
+      "validated": true,
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "adhesions_protest_id_device_id_key",
+      "table": "adhesions",
+      "validated": true,
+      "definition": "UNIQUE (protest_id, device_id)"
+    },
+    {
+      "name": "adhesions_protest_id_fkey",
+      "table": "adhesions",
+      "validated": true,
+      "definition": "FOREIGN KEY (protest_id) REFERENCES protests(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "adhesions_verification_method_check",
+      "table": "adhesions",
+      "validated": true,
+      "definition": "CHECK (((verification_method IS NULL) OR (verification_method = ANY (ARRAY['phone_otp'::text, 'institutional_email_otp'::text, 'qr'::text, 'eid'::text]))))"
+    },
+    {
+      "name": "gps_update_tokens_adhesion_id_fkey",
+      "table": "gps_update_tokens",
+      "validated": true,
+      "definition": "FOREIGN KEY (adhesion_id) REFERENCES adhesions(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "gps_update_tokens_pkey",
+      "table": "gps_update_tokens",
+      "validated": true,
+      "definition": "PRIMARY KEY (token)"
+    },
+    {
+      "name": "gps_update_tokens_protest_id_fkey",
+      "table": "gps_update_tokens",
+      "validated": true,
+      "definition": "FOREIGN KEY (protest_id) REFERENCES protests(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "gps_update_tokens_used_requires_expires_after_creation",
+      "table": "gps_update_tokens",
+      "validated": true,
+      "definition": "CHECK ((expires_at >= created_at))"
+    }
+  ],
+  "gps_functions": [
+    {
+      "anon": false,
+      "auth": false,
+      "service": true,
+      "signature": "apply_gps_reinforcement(uuid,boolean,bigint,text,text,text,text,integer,text)",
+      "definition": "CREATE OR REPLACE FUNCTION public.apply_gps_reinforcement(p_adhesion_id uuid, p_gps_confirmed boolean, p_adhesion_osm_id bigint, p_ciudad text, p_region text, p_pais text, p_pais_code text, p_fiabilidad integer, p_senales text)\n RETURNS TABLE(id uuid)\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n  RETURN QUERY\r\n  UPDATE public.adhesions a\r\n  SET\r\n    gps_confirmed   = p_gps_confirmed,\r\n    adhesion_osm_id = COALESCE(p_adhesion_osm_id, a.adhesion_osm_id),\r\n    ciudad          = COALESCE(p_ciudad, a.ciudad),\r\n    region          = COALESCE(p_region, a.region),\r\n    pais            = COALESCE(p_pais, a.pais),\r\n    pais_code       = COALESCE(p_pais_code, a.pais_code),\r\n    fiabilidad      = p_fiabilidad,\r\n    senales         = p_senales\r\n  FROM public.protests p\r\n  WHERE a.id = p_adhesion_id\r\n    AND p.id = a.protest_id\r\n    AND p.ends_at > clock_timestamp()\r\n  RETURNING a.id;\r\nEND;\r\n$function$\n"
+    }
+  ],
+  "roles": [
+    {
+      "role": "authenticated",
+      "bypassrls": false
+    },
+    {
+      "role": "anon",
+      "bypassrls": false
+    },
+    {
+      "role": "service_role",
+      "bypassrls": true
+    }
+  ],
+  "views": null,
+  "columns": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "table": "adhesions",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "name": "protest_id",
+      "type": "uuid",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "name": "device_id",
+      "type": "text",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "phone_hash",
+      "type": "text",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "doc_hash",
+      "type": "text",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "table": "adhesions",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "name": "ciudad",
+      "type": "text",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "region",
+      "type": "text",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "pais",
+      "type": "text",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "idioma",
+      "type": "text",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "nullifier",
+      "type": "text",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "umbral_publicacion",
+      "type": "integer",
+      "table": "adhesions",
+      "default": "10",
+      "nullable": "YES"
+    },
+    {
+      "name": "closed_at",
+      "type": "timestamp with time zone",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "hash_integridad",
+      "type": "text",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "fiabilidad",
+      "type": "integer",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "senales",
+      "type": "text",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "deleted_at",
+      "type": "timestamp with time zone",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "gps_confirmed",
+      "type": "boolean",
+      "table": "adhesions",
+      "default": "false",
+      "nullable": "YES"
+    },
+    {
+      "name": "public_commitment",
+      "type": "text",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "adhesion_osm_id",
+      "type": "bigint",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "gps_lat",
+      "type": "double precision",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "gps_lng",
+      "type": "double precision",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "gps_accuracy",
+      "type": "double precision",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "anonymized_at",
+      "type": "timestamp with time zone",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "pais_code",
+      "type": "text",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "identity_subject_hash",
+      "type": "text",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "verification_method",
+      "type": "text",
+      "table": "adhesions",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "iso2",
+      "type": "character",
+      "table": "country_codes",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "name": "dial_code",
+      "type": "integer",
+      "table": "country_codes",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "name": "flag",
+      "type": "text",
+      "table": "country_codes",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "name": "name",
+      "type": "text",
+      "table": "country_codes",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "name": "id",
+      "type": "uuid",
+      "table": "donaciones",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "name": "protest_id",
+      "type": "uuid",
+      "table": "donaciones",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "importe",
+      "type": "numeric",
+      "table": "donaciones",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "name": "mensaje",
+      "type": "text",
+      "table": "donaciones",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "table": "donaciones",
+      "default": "now()",
+      "nullable": "YES"
+    },
+    {
+      "name": "importe_convocatoria",
+      "type": "numeric",
+      "table": "donaciones",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "importe_plataforma",
+      "type": "numeric",
+      "table": "donaciones",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "fee_percent",
+      "type": "integer",
+      "table": "donaciones",
+      "default": "10",
+      "nullable": "YES"
+    },
+    {
+      "name": "proveedor",
+      "type": "text",
+      "table": "donaciones",
+      "default": "'manual'::text",
+      "nullable": "YES"
+    },
+    {
+      "name": "moneda",
+      "type": "text",
+      "table": "donaciones",
+      "default": "'EUR'::text",
+      "nullable": "YES"
+    },
+    {
+      "name": "importe_original",
+      "type": "numeric",
+      "table": "donaciones",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "importe_excedente",
+      "type": "numeric",
+      "table": "donaciones",
+      "default": "0",
+      "nullable": "YES"
+    },
+    {
+      "name": "over_limit",
+      "type": "boolean",
+      "table": "donaciones",
+      "default": "false",
+      "nullable": "YES"
+    },
+    {
+      "name": "token",
+      "type": "text",
+      "table": "gps_update_tokens",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "name": "adhesion_id",
+      "type": "uuid",
+      "table": "gps_update_tokens",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "name": "protest_id",
+      "type": "uuid",
+      "table": "gps_update_tokens",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "name": "used",
+      "type": "boolean",
+      "table": "gps_update_tokens",
+      "default": "false",
+      "nullable": "NO"
+    },
+    {
+      "name": "expires_at",
+      "type": "timestamp with time zone",
+      "table": "gps_update_tokens",
+      "default": "(now() + '24:00:00'::interval)",
+      "nullable": "NO"
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "table": "gps_update_tokens",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "name": "id",
+      "type": "uuid",
+      "table": "protests",
+      "default": "gen_random_uuid()",
+      "nullable": "NO"
+    },
+    {
+      "name": "title",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "name": "description",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "name": "demands",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "country",
+      "type": "character",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "country_name",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "name": "scope",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "name": "region",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "focal_point",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "category",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "risk_level",
+      "type": "text",
+      "table": "protests",
+      "default": "'low'::text",
+      "nullable": "NO"
+    },
+    {
+      "name": "count",
+      "type": "integer",
+      "table": "protests",
+      "default": "0",
+      "nullable": "NO"
+    },
+    {
+      "name": "viral_count",
+      "type": "integer",
+      "table": "protests",
+      "default": "0",
+      "nullable": "NO"
+    },
+    {
+      "name": "heat",
+      "type": "smallint",
+      "table": "protests",
+      "default": "5",
+      "nullable": "NO"
+    },
+    {
+      "name": "cities",
+      "type": "integer",
+      "table": "protests",
+      "default": "1",
+      "nullable": "NO"
+    },
+    {
+      "name": "starts_at",
+      "type": "timestamp with time zone",
+      "table": "protests",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "name": "ends_at",
+      "type": "timestamp with time zone",
+      "table": "protests",
+      "default": null,
+      "nullable": "NO"
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "table": "protests",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "table": "protests",
+      "default": "now()",
+      "nullable": "NO"
+    },
+    {
+      "name": "cities_count",
+      "type": "integer",
+      "table": "protests",
+      "default": "0",
+      "nullable": "YES"
+    },
+    {
+      "name": "convocatoria_pais",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "convocatoria_region",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "convocatoria_institucion",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "dominio_email",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "fuente_url",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "tipo_abuso",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "requiere_censo",
+      "type": "boolean",
+      "table": "protests",
+      "default": "false",
+      "nullable": "YES"
+    },
+    {
+      "name": "hash_integridad",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "saldo_euros",
+      "type": "numeric",
+      "table": "protests",
+      "default": "0.00",
+      "nullable": "YES"
+    },
+    {
+      "name": "donaciones_count",
+      "type": "integer",
+      "table": "protests",
+      "default": "0",
+      "nullable": "YES"
+    },
+    {
+      "name": "donaciones_total",
+      "type": "numeric",
+      "table": "protests",
+      "default": "0.00",
+      "nullable": "YES"
+    },
+    {
+      "name": "ultima_donacion",
+      "type": "timestamp with time zone",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "target_wikidata_id",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "target_type",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "target_country",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "target_validation",
+      "type": "text",
+      "table": "protests",
+      "default": "'NEEDS_REVIEW'::text",
+      "nullable": "YES"
+    },
+    {
+      "name": "source_domain",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "source_type",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "source_title",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "source_description",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "source_author",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "published_at",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "source_confidence_score",
+      "type": "integer",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "source_relevance_score",
+      "type": "integer",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "source_validation_status",
+      "type": "text",
+      "table": "protests",
+      "default": "'NEEDS_REVIEW'::text",
+      "nullable": "YES"
+    },
+    {
+      "name": "source_validation_source",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "source_checked_at",
+      "type": "timestamp with time zone",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "source_error",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "status",
+      "type": "text",
+      "table": "protests",
+      "default": "'active'::text",
+      "nullable": "NO"
+    },
+    {
+      "name": "integrity_version",
+      "type": "integer",
+      "table": "protests",
+      "default": "1",
+      "nullable": "YES"
+    },
+    {
+      "name": "integrity_calculated_at",
+      "type": "timestamp with time zone",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "convocatoria_osm_id",
+      "type": "bigint",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "convocatoria_ciudad_nombre",
+      "type": "text",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "convocatoria_lat",
+      "type": "double precision",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "convocatoria_lon",
+      "type": "double precision",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    },
+    {
+      "name": "indexnow_last_notified_at",
+      "type": "timestamp with time zone",
+      "table": "protests",
+      "default": null,
+      "nullable": "YES"
+    }
+  ]
+}

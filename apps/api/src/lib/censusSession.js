@@ -16,12 +16,12 @@ function key() {
 
 /** Call only after successful server-side email verification, never from a hash supplied by the client. */
 export function issueCensusSession({ emailHash, protestId, emailHint }, now = Date.now()) {
-  if (!HASH.test(emailHash ?? '') || !UUID.test(protestId ?? '') || !Number.isSafeInteger(now) || now < 0) {
+  if (typeof emailHash!=='string' || typeof protestId!=='string' || !HASH.test(emailHash) || !UUID.test(protestId) || !Number.isSafeInteger(now) || now < 0 || !Number.isSafeInteger(now + CENSUS_SESSION_TTL_MS)) {
     throw new TypeError('Invalid verified census identity');
   }
   const payload = { purpose: PURPOSE, emailHash, protestId, iat: now, exp: now + CENSUS_SESSION_TTL_MS };
   if (emailHint !== undefined) {
-    if (typeof emailHint !== 'string' || !/^[^@]\*\*\*@[^@]+$/.test(emailHint) || emailHint.length > 254) throw new TypeError('Invalid email hint');
+    if (typeof emailHint !== 'string' || !/^[^@]\*\*\*@[^@]+$/.test(emailHint) || emailHint.length > 257) throw new TypeError('Invalid email hint');
     payload.emailHint = emailHint;
   }
   const iv = randomBytes(12);
@@ -33,7 +33,7 @@ export function issueCensusSession({ emailHash, protestId, emailHint }, now = Da
 
 /** Returns only authenticated claims for this convocatoria, with no embedded membership/role grants. */
 export function verifyCensusSession(token, expectedProtestId, now = Date.now()) {
-  if (typeof token !== 'string' || token.length > 2048 || !UUID.test(expectedProtestId ?? '') || !Number.isSafeInteger(now)) return null;
+  if (typeof token !== 'string' || token.length > 2048 || typeof expectedProtestId!=='string' || !UUID.test(expectedProtestId) || !Number.isSafeInteger(now)) return null;
   const parts = token.split('.');
   if (parts.length !== 4 || parts[0] !== 'v1' || parts.slice(1).some(p => !B64.test(p))) return null;
   try {
@@ -45,9 +45,10 @@ export function verifyCensusSession(token, expectedProtestId, now = Date.now()) 
     decipher.setAAD(Buffer.from(PURPOSE + ':v1'));
     decipher.setAuthTag(tag);
     const payload = JSON.parse(Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8'));
-    if (payload?.purpose !== PURPOSE || payload.protestId !== expectedProtestId || !HASH.test(payload.emailHash ?? '')) return null;
+    if (!payload || typeof payload!=='object' || Array.isArray(payload) || Object.keys(payload).some(k=>!['purpose','emailHash','protestId','iat','exp','emailHint'].includes(k))) return null;
+    if (payload?.purpose !== PURPOSE || payload.protestId !== expectedProtestId || typeof payload.emailHash!=='string' || !HASH.test(payload.emailHash)) return null;
     if (!Number.isSafeInteger(payload.iat) || !Number.isSafeInteger(payload.exp) || payload.iat < 0 || payload.iat > now || payload.exp <= now || payload.exp - payload.iat !== CENSUS_SESSION_TTL_MS) return null;
-    if (payload.emailHint !== undefined && (typeof payload.emailHint !== 'string' || !/^[^@]\*\*\*@[^@]+$/.test(payload.emailHint))) return null;
+    if (payload.emailHint !== undefined && (typeof payload.emailHint !== 'string' || payload.emailHint.length>257 || !/^[^@]\*\*\*@[^@]+$/.test(payload.emailHint))) return null;
     return { ...(payload.emailHint ? { emailHint: payload.emailHint } : {}), emailHash: payload.emailHash, protestId: payload.protestId, expiresAt: payload.exp };
   } catch { return null; }
 }

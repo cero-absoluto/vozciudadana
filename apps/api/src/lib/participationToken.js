@@ -24,13 +24,13 @@ import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 // — it's what lets a returning device skip re-typing a phone number), but
 // *authorization to join* now expires in minutes, separately, every time.
 
-const PARTICIPATION_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
+export const PARTICIPATION_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 function must(name) {
   const v = process.env[name];
   if (!v) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error(`[SECURITY] ${name} is required in production`);
+    if (!['test','development'].includes(process.env.NODE_ENV)) {
+      throw new Error(`[SECURITY] ${name} is required outside explicit development/test`);
     }
     return 'dev-secret';
   }
@@ -44,56 +44,51 @@ function b64url(buf) {
 /**
  * Sign a participation token binding a device_id to a phone_hash for one
  * specific purpose, expiring shortly. The payload is plain (not encrypted)
- * — phone_hash is already a one-way hash, not the raw phone number, so
- * there is nothing here more sensitive than what the token consumer (our
- * own backend) already handles elsewhere. What matters is that the
+ * — it contains a pseudonymous phone hash and must still be treated as
+ * a bearer credential, not as anonymous or encrypted data. What matters is that the
  * signature makes it unforgeable without PARTICIPATION_TOKEN_SECRET.
  */
-export function signParticipationToken({ device_id, phone_hash, purpose }) {
-  const payload = {
-    device_id,
-    phone_hash,
-    purpose,
-    iat: Date.now(),
-    exp: Date.now() + PARTICIPATION_TOKEN_TTL_MS,
-  };
-  const payloadB64 = b64url(JSON.stringify(payload));
-  const sig = createHmac('sha256', must('PARTICIPATION_TOKEN_SECRET'))
-    .update(payloadB64)
-    .digest('base64url');
+const PURPOSE='join_protest';
+const HASH=/^[0-9a-f]{64}$/;
+const B64=/^[A-Za-z0-9_-]+$/;
+const CLAIMS=['device_id','phone_hash','purpose','iat','exp'];
+// Older issuers sampled Date.now twice; accept at most 1s of that sampling gap.
+// The signed exp is never extended. New issuers use a single sample.
+const LEGACY_SAMPLING_GAP_MS=1000;
+function validClaims(payload,now) {
+  return payload!==null && typeof payload==='object' && !Array.isArray(payload)
+    && Object.keys(payload).length===CLAIMS.length && CLAIMS.every(key=>Object.hasOwn(payload,key))
+    && typeof payload.device_id==='string' && payload.device_id.length>=1 && payload.device_id.length<=128
+    && typeof payload.phone_hash==='string' && HASH.test(payload.phone_hash) && payload.purpose===PURPOSE
+    && Number.isSafeInteger(now) && now>=0 && Number.isSafeInteger(payload.iat) && payload.iat>=0 && payload.iat<=now
+    && Number.isSafeInteger(payload.exp) && payload.exp>now
+    && payload.exp-payload.iat>=PARTICIPATION_TOKEN_TTL_MS
+    && payload.exp-payload.iat<=PARTICIPATION_TOKEN_TTL_MS+LEGACY_SAMPLING_GAP_MS;
+}
+export function signParticipationToken({device_id,phone_hash,purpose},now=Date.now()) {
+  const payload={device_id,phone_hash,purpose,iat:now,exp:now+PARTICIPATION_TOKEN_TTL_MS};
+  if(!validClaims(payload,now))throw new TypeError('Invalid verified participation identity');
+  const payloadB64=b64url(JSON.stringify(payload));
+  const sig=createHmac('sha256',must('PARTICIPATION_TOKEN_SECRET')).update(payloadB64).digest('base64url');
   return `${payloadB64}.${sig}`;
 }
 
-/**
- * Verify a participation token and return its payload, or null if invalid,
- * expired, or issued for a different purpose. Never throws on a bad token
- * — a forged or expired token is an ordinary rejection, not a server error.
- */
-export function verifyParticipationToken(token, { expectedPurpose } = {}) {
-  if (typeof token !== 'string' || !token.includes('.')) return null;
-  const [payloadB64, sig] = token.split('.');
-  if (!payloadB64 || !sig) return null;
-
-  const expectedSig = createHmac('sha256', must('PARTICIPATION_TOKEN_SECRET'))
-    .update(payloadB64)
-    .digest('base64url');
-
-  const a = Buffer.from(sig);
-  const b = Buffer.from(expectedSig);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-
-  let payload;
+/** Return authenticated claims only; malformed/untrusted token input is an ordinary rejection. */
+export function verifyParticipationToken(token,{expectedPurpose,now=Date.now()}={}) {
+  if(typeof token!=='string'||token.length>2048||(expectedPurpose!==undefined&&expectedPurpose!==PURPOSE))return null;
+  const parts=token.split('.');
+  if(parts.length!==2||!B64.test(parts[0])||!/^[A-Za-z0-9_-]{43}$/.test(parts[1]))return null;
+  const [payloadB64,sig]=parts;
+  const signature=Buffer.from(sig,'base64url');
+  if(signature.length!==32||signature.toString('base64url')!==sig)return null;
+  const expected=createHmac('sha256',must('PARTICIPATION_TOKEN_SECRET')).update(payloadB64).digest();
+  if(!timingSafeEqual(signature,expected))return null;
   try {
-    payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
-  } catch {
-    return null;
-  }
-
-  if (!payload.device_id || !payload.phone_hash) return null;
-  if (typeof payload.exp !== 'number' || Date.now() > payload.exp) return null;
-  if (expectedPurpose && payload.purpose !== expectedPurpose) return null;
-
-  return payload;
+    const bytes=Buffer.from(payloadB64,'base64url');
+    if(bytes.toString('base64url')!==payloadB64)return null;
+    const payload=JSON.parse(bytes.toString('utf8'));
+    return validClaims(payload,now)?payload:null;
+  }catch{return null;}
 }
 
 /**
@@ -114,7 +109,7 @@ export function hashDeviceSecret(secret) {
 }
 
 export function deviceSecretMatches(providedSecret, storedHash) {
-  if (!providedSecret || !storedHash) return false;
+  if (typeof providedSecret!=='string'||!HASH.test(providedSecret)||typeof storedHash!=='string'||!HASH.test(storedHash)) return false;
   const computed = hashDeviceSecret(providedSecret);
   const a = Buffer.from(computed);
   const b = Buffer.from(storedHash);

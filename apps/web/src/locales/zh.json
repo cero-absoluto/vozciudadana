@@ -388,6 +388,7 @@
     "toastNationalReverification": "要加入这项全国性征集，我们需要重新验证您的手机，仅需一次。正在为您跳转到验证页面。",
     "notiOn": "🔔 通知已启用",
     "notiOff": "🔔 关闭时通知我",
+    "notiError": "无法启用通知，请重试。",
     "gpsReinforceTitle": "还没有分享您的位置？",
     "gpsReinforceBody": "强化您的参与——让人无法说你们不是本地人。您的精确坐标不会被保存。",
     "gpsReinforceAccept": "📍 启用位置",

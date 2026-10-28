@@ -388,6 +388,7 @@
     "toastNationalReverification": "Pour rejoindre cette convocatoria nationale, nous devons vérifier à nouveau votre téléphone, une seule fois. Nous vous redirigeons vers la vérification.",
     "notiOn": "🔔 Notifications activées",
     "notiOff": "🔔 Me notifier à la clôture",
+    "notiError": "Impossible d’activer les notifications. Réessayez.",
     "gpsReinforceTitle": "Vous n'avez pas encore partagé votre position ?",
     "gpsReinforceBody": "Renforcez votre adhésion — pour que personne ne puisse dire que vous n'êtes pas d'ici. Vos coordonnées exactes ne sont jamais conservées.",
     "gpsReinforceAccept": "📍 Activer la localisation",

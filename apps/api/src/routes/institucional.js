@@ -150,7 +150,7 @@ export default async function institucionalRoutes(app) {
     // 2. Validar dominio
     const emailDomain = email.split('@')[1]?.toLowerCase();
     if (emailDomain !== protest.dominio_email.toLowerCase()) {
-      return reply.badRequest(`El email debe ser del dominio @${protest.dominio_email}`);
+      return reply.badRequest('INSTITUTIONAL_DOMAIN_MISMATCH');
     }
 
     if(!await consumeOtpDeliveryQuota(req,reply))return;

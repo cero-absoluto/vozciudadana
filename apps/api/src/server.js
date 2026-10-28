@@ -1,3 +1,5 @@
+import {privacyFastifyOptions,registerPrivacyRequestLogging} from './lib/privacyLogging.js';
+import {registerSafeErrorHandler} from './lib/safeErrors.js';
 import 'dotenv/config';
 import Fastify from 'fastify';
 import {registerHealthRoutes} from './routes/health.js';
@@ -39,7 +41,7 @@ if (process.env.NODE_ENV === 'production') {
 
 const clientIpPolicy = clientIpPolicyFromEnv();
 const app = Fastify({
-  logger: true,
+  ...privacyFastifyOptions(),
   trustProxy: clientIpPolicy.trustProxy,
   bodyLimit: 65_536, // 64 KB max request body
 });
@@ -73,14 +75,8 @@ await app.register(cors, {
 await app.register(sensible);
 await registerRequestQuotas(app,{supabase});
 
-// Centralized error handler — log internals, return a safe message to clients
-app.setErrorHandler((err, req, reply) => {
-  req.log.error({ err, url: req.url }, 'request error');
-  const status = err.statusCode ?? 500;
-  // Pass through validation errors (400) and known HTTP errors unchanged
-  if (status < 500) return reply.status(status).send({ error: err.message });
-  reply.status(500).send({ error: 'Internal server error' });
-});
+registerPrivacyRequestLogging(app);
+registerSafeErrorHandler(app);
 
 app.register(protestRoutes,     { prefix: '/api/protests' });
 app.register(institucionalRoutes, { prefix: '/api/institucional' });

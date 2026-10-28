@@ -60,7 +60,7 @@ export default async function kofiWebhookRoutes(app) {
     // ── Verify the request is genuinely from Ko-fi ──────────────────────
     const expectedToken = process.env.KOFI_VERIFICATION_TOKEN;
     if (!expectedToken) {
-      app.log.error('KOFI_VERIFICATION_TOKEN not configured — rejecting webhook');
+      app.log.error({code:'kofi_unconfigured'});
       return reply.status(500).send({ error: 'Webhook not configured' });
     }
     if (payload.verification_token !== expectedToken) {
@@ -93,8 +93,7 @@ export default async function kofiWebhookRoutes(app) {
     const importe_excedente  = over_limit ? parseFloat((importe - MAX_DONATION_EUR).toFixed(2)) : 0;
 
     if (over_limit) {
-      app.log.warn({ importe, MAX_DONATION_EUR, importe_excedente },
-        'Ko-fi webhook: donation exceeds policy limit — capping at MAX_DONATION_EUR, excess marked for manual review');
+      app.log.warn({code:'kofi_over_limit'});
     }
 
     // protest_id resolution — three-step lookup in priority order:
@@ -125,7 +124,7 @@ export default async function kofiWebhookRoutes(app) {
     if (!protestId) protestId = process.env.KOFI_DEFAULT_PROTEST_ID || null;
 
     if (!protestId) {
-      app.log.warn({ directLinkCode }, 'Ko-fi webhook: no matching protest_id found — crediting platform fund only');
+      app.log.warn({code:'kofi_target_unresolved'});
     }
 
     // Non-identifying technical reference: hash the Ko-fi transaction id so
@@ -178,7 +177,7 @@ export default async function kofiWebhookRoutes(app) {
           over_limit,
         });
       } else {
-        app.log.warn(`Ko-fi webhook: protest_id ${protestId} not found — crediting platform fund only`);
+        app.log.warn({code:'kofi_target_missing'});
       }
     }
 

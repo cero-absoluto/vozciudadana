@@ -73,9 +73,9 @@ export async function notifyIndexNow(supabase, protestId, log) {
     // this confirms receipt, not that any engine has crawled or indexed it.
     await supabase.from('protests').update({ indexnow_last_notified_at: new Date().toISOString() }).eq('id', protestId);
 
-    if (log) log.info({ protestId, status: res.status }, 'IndexNow notified');
+    if (log) log.info({code:'indexnow_accepted',statusCode:res.status});
   } catch (err) {
     // Never let a discoverability side-effect fail the actual request.
-    if (log) log.warn({ err: err.message, protestId }, 'IndexNow notification failed (non-blocking)');
+    if (log) log.warn({code:'indexnow_failed'});
   }
 }

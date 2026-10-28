@@ -68,12 +68,13 @@ const from = (table) => {
   return b;
 };
 const rpc = async (name, args) => {
+  if(name==='reserve_sms_otp'){calls.otpLog++;return {data:{allowed:true,request_id:'11111111-1111-4111-8111-111111111111'},error:null};}
   if (name === 'get_otp_cooldown') return { data: 0, error: null };
   if (name === 'check_otp_rate_limit') return { data: { allowed: true }, error: null };
   if (name === 'create_verified_adhesion') { db.adhesions.push(args); return { data: { id: 'adh-1', created_at: '2026-01-01T00:00:00Z', ciudad: null, region: null, pais: null, adhesion_osm_id: null }, error: null }; }
   return { data: null, error: null };
 };
-mock.module('../apps/api/src/services/supabase.js', { namedExports: { supabase: { from, rpc } } });
+mock.module('../apps/api/src/services/supabase.js', { namedExports: { supabase: { from, rpc:(...args)=>Object.assign(rpc(...args),{abortSignal(){return this;}}) } } });
 mock.module('../apps/api/src/services/twilio.js', { namedExports: {
   sendOtp: async () => { calls.sendOtp++; },
   verifyOtp: async (_p, code) => { calls.verifyOtp++; return code === OTP; },

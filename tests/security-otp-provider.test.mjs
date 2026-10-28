@@ -18,6 +18,14 @@ test('Twilio send uses bounded socket timeout and disables automatic retry',asyn
 });
 for(const status of ['pending','expired','canceled','max_attempts_reached','deleted','failed'])test('Twilio check '+status+' never approves',async()=>assert.equal(await fixture({result:{status}}).verifyOtp('+34600000001','123456'),false));
 test('only approved status authenticates',async()=>assert.equal(await fixture({result:{status:'approved'}}).verifyOtp('+34600000001','123456'),true));
+test('provider exhaustion emits only an optional identity-free signal',async()=>{
+ for(const options of [{result:{status:'max_attempts_reached'}},{error:{status:429,code:60202}}]){
+  let signals=0;assert.equal(await fixture(options).verifyOtp('+34600000001','123456',{onMaxAttempts:(...args)=>{assert.equal(args.length,0);signals++;}}),false);assert.equal(signals,1);
+ }
+});
+test('telemetry failure never changes a rejected authentication result',async()=>{
+ assert.equal(await fixture({error:{status:429,code:60202}}).verifyOtp('+34600000001','123456',{onMaxAttempts:()=>{throw new Error('synthetic telemetry failure');}}),false);
+});
 for(const error of [{status:404,code:20404},{status:429,code:60202}])test('consumed/expired/exhausted challenge is generic invalid '+error.code,async()=>{
  const f=fixture({error});assert.equal(await f.verifyOtp('+34600000001','123456'),false);assert.equal(f.calls.length,1);
 });

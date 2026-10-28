@@ -1,5 +1,6 @@
 import {otpProviderFailure} from '../lib/otpProvider.js';
-import {consumeOtpDeliveryQuota} from '../lib/requestQuotas.js';
+import {reserveSmsOtp} from '../lib/otpQuotas.js';
+import {consumeOtpDeliveryQuota,consumeOtpVerificationQuota} from '../lib/requestQuotas.js';
 import {ipQuotaKey} from '../lib/ipQuotaKey.js';
 import { createHash, createHmac, randomUUID } from 'node:crypto';
 import { supabase } from '../services/supabase.js';
@@ -60,33 +61,9 @@ export default async function userRoutes(app) {
 
     // ── 1. Verify reCAPTCHA first ──────────────────────────────────────────
     await verifyRecaptcha(recaptcha_token, 'request_otp', req, reply);
-    if(!await consumeOtpDeliveryQuota(req,reply))return;
 
     const phone_hash = hashPhone(phone);
     const ip_hash    = hashIp(req.ip);
-
-    // ── 2. Check progressive cooldown for this device ──────────────────────
-    if (device_id) {
-      const { data: cooldown, error: cooldownError } = await supabase.rpc('get_otp_cooldown', { p_device_id: device_id });
-      if (cooldownError || !Number.isFinite(cooldown) || cooldown < 0) return databaseUnavailable(reply);
-      if (cooldown > 0) {
-        return reply.tooManyRequests('For security reasons, please wait a few minutes before requesting another code.');
-      }
-    }
-
-    // ── 3. Check rate limits (phone, device, IP, device+protest) ──────────
-    const { data: limitCheck, error: limitError } = await supabase.rpc('check_otp_rate_limit', {
-      p_phone_hash: phone_hash,
-      p_device_id:  device_id || null,
-      p_ip_hash:    ip_hash,
-      p_protest_id: protest_id || null,
-    });
-
-    if (limitError || typeof limitCheck?.allowed !== 'boolean') return databaseUnavailable(reply);
-    if (!limitCheck.allowed) {
-      req.log.warn({code:'otp_rate_limited'}, 'OTP rate limit exceeded');
-      return reply.code(429).send({ error: 'RATE_LIMITED', code: 'otp_rate_limited' });
-    }
 
     // ── 3b. National convocatoria whose country cannot be established ──────
     // A fresh SMS cannot change what the numbering data say about this number, so
@@ -108,6 +85,8 @@ export default async function userRoutes(app) {
       }
     }
 
+    if(!await consumeOtpDeliveryQuota(req,reply))return;
+
     // ── 4. No per-number participation check before the SMS ────────────────
     // This step used to look up `HMAC(phone_hash + protest_id)` in adhesions and
     // answer a distinguishable `{ sent: false }` for numbers that had already
@@ -122,19 +101,20 @@ export default async function userRoutes(app) {
     // device_secret / locks flow. Cost: an already-adhered number on another
     // device still receives an SMS. See docs/proposals/ for the alternatives.
 
-    // ── 5. Log OTP request ────────────────────────────────────────────────
-    const { error } = await supabase
-      .from('otp_requests')
-      .insert({
-        phone_hash,
-        device_id:   device_id || null,
-        ip_hash,
-        protest_id:  protest_id || null,
-        status:      'sent',
-        requested_at: new Date().toISOString(),
-      });
-
-    if (error) return databaseUnavailable(reply);
+    // One database transaction checks all SMS limits and reserves the attempt.
+    // An uncertain/failed provider call never refunds this conservative budget.
+    let reservation;
+    try { reservation = await reserveSmsOtp(supabase,{
+      p_phone_hash:phone_hash,p_device_id:device_id||null,p_ip_hash:ip_hash,p_protest_id:protest_id||null,
+    }); } catch { return databaseUnavailable(reply); }
+    if(reservation?.error || typeof reservation?.data?.allowed!=='boolean') return databaseUnavailable(reply);
+    if(!reservation.data.allowed){
+      const delay=reservation.data.retry_after;
+      if(!Number.isInteger(delay)||delay<1||delay>86400)return databaseUnavailable(reply);
+      reply.header('Retry-After',String(delay));
+      return reply.code(429).send({error:'RATE_LIMITED',code:'otp_rate_limited'});
+    }
+    if(typeof reservation.data.request_id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(reservation.data.request_id)) return databaseUnavailable(reply);
 
     // ── 6. Send SMS ───────────────────────────────────────────────────────
     try { await sendOtp(phone); } catch (error) { return otpProviderFailure(reply, error, 'DELIVERY'); }
@@ -171,13 +151,14 @@ export default async function userRoutes(app) {
   }, async (req, reply) => {
     const { phone, otp, device_id, country_code } = req.body;
 
+    const phone_hash = hashPhone(phone);
+    if(!await consumeOtpVerificationQuota(req,reply,phone_hash))return;
     let approved;
-    try { approved = await verifyOtp(phone, otp); }
+    try { approved = await verifyOtp(phone, otp, {onMaxAttempts:()=>req.log.warn({code:'otp_provider_max_attempts'},'OTP provider attempt limit reached')}); }
     catch (error) { return otpProviderFailure(reply, error, 'VERIFY'); }
     // A wrong attempt does not expire other requests. Twilio owns challenge
     // expiry/attempt counting; the local table is conservative quota history.
     if (approved !== true) return reply.code(401).send({error:'OTP_INVALID'});
-    const phone_hash = hashPhone(phone);
 
     // H7: the country used for national eligibility is derived HERE, from the
     // number that was just verified — never from the client-declared

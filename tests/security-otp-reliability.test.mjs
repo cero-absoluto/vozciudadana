@@ -5,6 +5,8 @@ import vm from 'node:vm';
 import {createHash,createHmac,randomUUID} from 'node:crypto';
 import Fastify from 'fastify';
 import sensible from '@fastify/sensible';
+import {consumeSharedOtpQuota} from '../apps/api/src/lib/otpQuotas.js';
+import {consumeOtpVerificationQuota as verificationGuard} from '../apps/api/src/lib/requestQuotas.js';
 import {OtpProviderError,otpProviderFailure} from '../apps/api/src/lib/otpProvider.js';
 const phone='+34600000001', id='synthetic-device-1';
 const source=readFileSync(new URL('../apps/api/src/routes/users.js',import.meta.url),'utf8').replace(/^import [\s\S]*?;\n/gm,'').replace('export default async function userRoutes','async function userRoutes');
@@ -32,14 +34,15 @@ async function fixture(options={}) {
   const q={select(){return q;},eq(k,v){state.filters[k]=v;return q;},update(p){state.op='update';state.payload=p;return q;},insert(p){state.op='insert';state.payload=p;return q;},maybeSingle:run,single:run,then(a,b){return run().then(a,b);}};return q;
  },async rpc(name){calls.push({rpc:name});return options.rpcError?{error:{message:'private db'}}:name==='get_otp_cooldown'?{data:options.cooldown??0}:{data:options.limit??{allowed:true}};}};
  const context={createHash,createHmac,randomUUID,otpProviderFailure,supabase:db,ipQuotaKey:x=>x,process:{env:{PHONE_HASH_SECRET:'synthetic-key'}},console,
-  consumeOtpDeliveryQuota:async()=>true,verifyRecaptcha:async()=>{},deriveNumberingCountry:()=>({country:'ES',resolution:'resolved_unshared',metaVersion:'synthetic'}),
-  sendOtp:async()=>{calls.push({send:true});if(options.providerError)throw options.providerError;},verifyOtp:async()=>{calls.push({verify:true});if(options.providerError)throw options.providerError;return options.approved??true;},
+  reserveSmsOtp:async(_db,args)=>{calls.push({reservation:true,args});return options.rpcError||options.reservationError||options.errorAt==='otp_requests:insert'?{error:{message:'private database'}}:{data:options.reservation??(options.cooldown>0||options.limit?.allowed===false?{allowed:false,retry_after:120}:{allowed:true,request_id:'11111111-1111-4111-8111-111111111111'})};},
+  consumeOtpVerificationQuota:verificationGuard,consumeOtpDeliveryQuota:async()=>true,verifyRecaptcha:async()=>{},deriveNumberingCountry:()=>({country:'ES',resolution:'resolved_unshared',metaVersion:'synthetic'}),
+  sendOtp:async()=>{calls.push({send:true});if(options.providerError)throw options.providerError;},verifyOtp:async()=>{calls.push({verify:true});if(options.providerError)throw options.providerError;return options.providerResults?.shift()??options.approved??true;},
   generateDeviceSecret:()=>({secret:'synthetic-secret-new',hash:'synthetic-hash-new'}),signParticipationToken:args=>'token:'+args.device_id,deviceSecretMatches:()=>false};
  vm.createContext(context);vm.runInContext(source+';globalThis.register=userRoutes;',context);
- const app=Fastify();await app.register(sensible);await app.register(context.register);await app.ready();
- return {app,calls,devices,hash,send:()=>app.inject({method:'POST',url:'/request-otp',payload:{phone,device_id:id,recaptcha_token:'synthetic'}}),verify:()=>app.inject({method:'POST',url:'/verify-otp',payload:{phone,device_id:id,otp:'123456'}})};
+ const app=Fastify();if(options.quotaDb)app.decorate('consumeOtpVerificationQuota',(req,rep,phoneHash)=>consumeSharedOtpQuota(req,rep,options.quotaDb,{action:'verify',phoneHash}));if(options.verificationDenied)app.decorate('consumeOtpVerificationQuota',async(_req,rep)=>{rep.code(options.verificationDenied).send({error:'quota'});return false;});await app.register(sensible);await app.register(context.register);await app.ready();
+ return {app,calls,devices,hash,send:()=>app.inject({method:'POST',url:'/request-otp',payload:{phone,device_id:id,recaptcha_token:'synthetic'}}),verify:(remoteAddress='203.0.113.1')=>app.inject({method:'POST',url:'/verify-otp',remoteAddress,payload:{phone,device_id:id,otp:'123456'}})};
 }
-for(const scenario of [{rpcError:true},{cooldown:'0'},{limit:{}},{errorAt:'otp_requests:insert'}]) test('OTP send fails closed on broken database state '+JSON.stringify(scenario),async()=>{
+for(const scenario of [{rpcError:true},{reservation:{}},{reservation:{allowed:true}},{reservation:{allowed:true,request_id:'------------------------------------'}},{reservationError:true}]) test('OTP send fails closed on broken database state '+JSON.stringify(scenario),async()=>{
  const f=await fixture(scenario);try{const r=await f.send();assert.equal(r.statusCode,503);assert.equal(f.calls.some(c=>c.send),false);assert.ok(!r.body.includes('private'));assert.equal(r.headers['cache-control'],'no-store');}finally{await f.app.close();}
 });
 test('OTP cooldown and quota denial do not call provider',async()=>{
@@ -67,4 +70,15 @@ test('caller-controlled collision preserves old identity and issues a new id',as
 });
 test('concurrent phone insertion reuses canonical id without returning a secret',async()=>{
  const f=await fixture({concurrentPhone:true});try{const r=await f.verify();assert.equal(r.statusCode,200);assert.equal(r.json().device_id,'canonical-device');assert.equal(r.json().device_secret,undefined);assert.equal(f.devices.get('canonical-device').device_secret_hash,'existing-hash');}finally{await f.app.close();}
+});
+
+test('shared verification rejection precedes Twilio and identity reads in actual SMS handler',async()=>{
+ for(const status of [429,503]){const f=await fixture({verificationDenied:status});try{const r=await f.verify();assert.equal(r.statusCode,status);assert.equal(f.calls.length,0);}finally{await f.app.close();}}
+});
+
+test('attacker subject/network exhaustion does not block valid mocked verification from another network',async()=>{
+ const previous=process.env.PHONE_HASH_SECRET;process.env.PHONE_HASH_SECRET='synthetic-quota-secret';
+ const counts=new Map(),quotaDb={rpc(_name,args){return {abortSignal(){const n=counts.get(args.p_subject_hash)||0;if(n>=5)return Promise.resolve({data:{allowed:false,retry_after:600}});counts.set(args.p_subject_hash,n+1);return Promise.resolve({data:{allowed:true}});}};}};
+ const f=await fixture({quotaDb,providerResults:[false,false,false,false,false,true]});
+ try{for(let i=0;i<5;i++)assert.equal((await f.verify('203.0.113.1')).statusCode,401);assert.equal((await f.verify('203.0.113.1')).statusCode,429);const victim=await f.verify('203.0.113.2');assert.equal(victim.statusCode,200);assert.equal(victim.json().verified,true);assert.equal(f.calls.filter(c=>c.verify).length,6);}finally{await f.app.close();if(previous===undefined)delete process.env.PHONE_HASH_SECRET;else process.env.PHONE_HASH_SECRET=previous;}
 });

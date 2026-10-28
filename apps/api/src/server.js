@@ -71,7 +71,7 @@ await app.register(cors, {
   methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
 });
 await app.register(sensible);
-await registerRequestQuotas(app);
+await registerRequestQuotas(app,{supabase});
 
 // Centralized error handler — log internals, return a safe message to clients
 app.setErrorHandler((err, req, reply) => {

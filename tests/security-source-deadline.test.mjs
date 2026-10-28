@@ -90,7 +90,13 @@ test('resolver accepts absent IPv6 but rejects an unchecked failing family',asyn
     else await assert.rejects(run(),/dns_error/);
   }
 });
-test('literal addresses are checked without DNS and malformed SPARQL domains are never queried',async()=>{
-  assert.deepEqual(await resolveSourceAddresses('[::1]',{resolverFactory(){throw Error('no DNS expected');}}),[{address:'::1',family:6}]);
+test('resolver refactor does not newly admit bracketed IPv6 literals and malformed SPARQL domains are never queried',async()=>{
+  for(const literal of ['[::1]','[::ffff:7f00:1]','[::ffff:a9fe:a9fe]','[2606:4700::1111]']) {
+    await assert.rejects(()=>resolveSourceAddresses(literal,{resolverFactory(){throw Error('no DNS expected');}}),/dns_error/);
+    let fetched=false;
+    const result=await safeFetch('http://'+literal+'/',100,500,{fetchImpl:async()=>{fetched=true;}});
+    assert.equal(result.ok,false);assert.equal(fetched,false);
+  }
+  assert.deepEqual(await resolveSourceAddresses('93.184.216.34'),[{address:'93.184.216.34',family:4}]);
   assert.equal(await wikidataDomainLookup('a"b.com'),null);
 });

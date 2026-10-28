@@ -7,8 +7,11 @@ export async function resolveSourceAddresses(hostname, { signal,
   resolverFactory = () => new Resolver({ timeout: 5000, tries: 1 }),
 } = {}) {
   signal?.throwIfAborted();
-  const literal = hostname.replace(/^\[|\]$/g, '');
-  if (isIP(literal)) return [{ address: literal, family: isIP(literal) }];
+  // Preserve the old rejection of bracketed IPv6 URL literals until S3's
+  // address parser is replaced. In particular do not newly admit mapped
+  // hex-form loopback addresses through this resolver refactor.
+  if (hostname.startsWith('[')) throw new Error('dns_error');
+  if (isIP(hostname)) return [{ address: hostname, family: isIP(hostname) }];
   const resolver = resolverFactory();
   const cancel = () => resolver.cancel();
   signal?.addEventListener('abort', cancel, { once: true });

@@ -38,7 +38,7 @@ mock.module('../apps/api/src/services/supabase.js', {
   namedExports: {
     supabase: {
       from: fakeQuery,
-      rpc: async (name) => (name === 'get_otp_cooldown' ? { data: 0 } : { data: { allowed: true } }),
+      rpc: () => Object.assign(Promise.resolve({data:{allowed:true,request_id:'11111111-1111-4111-8111-111111111111'}}),{abortSignal(){return this;}}),
     },
   },
 });

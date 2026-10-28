@@ -1,5 +1,5 @@
 import {OtpProviderError, runOtpProvider, otpProviderFailure} from '../lib/otpProvider.js';
-import {consumeOtpDeliveryQuota} from '../lib/requestQuotas.js';
+import {consumeOtpDeliveryQuota,consumeOtpVerificationQuota} from '../lib/requestQuotas.js';
 import {ipQuotaKey} from '../lib/ipQuotaKey.js';
 import { issueCensusSession } from '../lib/censusSession.js';
 import { createHash, createHmac, randomInt } from 'crypto';
@@ -134,7 +134,6 @@ export default async function institucionalRoutes(app) {
     const census = req.body.purpose === 'census';
 
     await verifyRecaptcha(recaptcha_token, 'institutional_send_otp', req, reply);
-    if(!await consumeOtpDeliveryQuota(req,reply))return;
 
     // 1. Obtener la convocatoria
     const { data: protest, error: protestErr } = await supabase
@@ -153,6 +152,8 @@ export default async function institucionalRoutes(app) {
     if (emailDomain !== protest.dominio_email.toLowerCase()) {
       return reply.badRequest(`El email debe ser del dominio @${protest.dominio_email}`);
     }
+
+    if(!await consumeOtpDeliveryQuota(req,reply))return;
 
     // 3. Hash del email (HMAC — ver hashEmail)
     const emailHash = hashEmail(email);
@@ -233,6 +234,7 @@ export default async function institucionalRoutes(app) {
   }, async (req, reply) => {
     const { email, otp, protest_id } = req.body;
 
+    if(!await consumeOtpVerificationQuota(req,reply))return;
     const emailHash = hashEmail(email);
     const submittedOtpHash = hashOtp(protest_id, emailHash, otp);
     const ip = req.ip;
@@ -285,6 +287,7 @@ export default async function institucionalRoutes(app) {
       properties: { challenge_id:{type:'string',format:'uuid'},email:{type:'string',format:'email',maxLength:254},otp:{type:'string',pattern:'^[0-9]{6}$'},protest_id:{type:'string',format:'uuid'} } } },
   }, async (req,reply) => {
     const {email,otp,protest_id}=req.body;
+    if(!await consumeOtpVerificationQuota(req,reply))return;
     const {data:p,error}=await supabase.from('protests').select('dominio_email,requiere_censo,ends_at').eq('id',protest_id).maybeSingle();
     if(error)throw error;
     if(!p?.requiere_censo || !p.dominio_email || Date.parse(p.ends_at)<=Date.now() || email.split('@')[1].toLowerCase()!==p.dominio_email.toLowerCase())return reply.badRequest('CENSUS_VERIFICATION_FAILED');

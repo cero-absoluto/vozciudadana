@@ -54,6 +54,7 @@
     "maxAnon": "Maximum verifiable privacy",
     "wrongCountry": "This event requires a phone number with a SIM registered in {country}. Use a number from that country.",
     "otpError": "Enter all 6 digits",
+    "otpUnavailable": "Verification could not be completed. Wait a moment and try again; you may need to request another code.",
     "otpIncorrect": "Incorrect or expired code. Request a new one if the problem persists.",
     "sendError": "Error sending the code. Check your number and try again.",
     "otpRateLimited": "For security reasons, please wait a few minutes before requesting another code.",

@@ -54,6 +54,7 @@
     "maxAnon": "Confidentialité maximale vérifiable",
     "wrongCountry": "Cet événement requiert un numéro de téléphone avec une SIM enregistrée en {country}. Utilisez un numéro de ce pays.",
     "otpError": "Saisissez les 6 chiffres",
+    "otpUnavailable": "La vérification n’a pas pu aboutir. Patientez puis réessayez ; vous devrez peut-être demander un nouveau code.",
     "otpIncorrect": "Code incorrect ou expiré. Demandez-en un nouveau si le problème persiste.",
     "sendError": "Erreur lors de l'envoi du code. Vérifiez votre numéro et réessayez.",
     "otpRateLimited": "Pour des raisons de sécurité, veuillez patienter quelques minutes avant de demander un nouveau code.",

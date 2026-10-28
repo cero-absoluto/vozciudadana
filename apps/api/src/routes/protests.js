@@ -1,3 +1,4 @@
+import {withRequestDeadline} from '../lib/requestDeadline.js';
 import {credentialMatches} from '../lib/credentialMatches.js';
 import { PUBLIC_PROTEST_SELECT, publicProtestSchema, toPublicProtest } from '../lib/publicProtest.js';
 import { normalizeInstitutionalDomain } from '../lib/institutionalDomain.js';
@@ -362,6 +363,7 @@ export default async function protestRoutes(app, opts = {}) {
     adhesionCreator: createVerifiedAdhesion = defaultCreateVerifiedAdhesion,
     evidentialScope: buildEvidentialScope = defaultBuildEvidentialScope,
   } = opts.dependencies || {};
+  const gpsInFlight=new Set(); // Per-process provider protection only; the DB remains the global single-use boundary.
   // GET /api/protests — list active protests (optionally filter by scope/country)
   app.get('/', {
     schema: {
@@ -792,13 +794,14 @@ export default async function protestRoutes(app, opts = {}) {
   // - Token expires after 24h
   // - Fiabilidad recalculated with GPS signal
   app.patch('/:id/adhesion', {
+    config:{rateLimit:{max:20,timeWindow:'1 minute'}},
     schema: {
       params: { type: 'object', properties: { id: { type: 'string', format: 'uuid' } }, required: ['id'] },
       body: {
         type: 'object',
         required: ['gps_update_token', 'gps_lat', 'gps_lng'],
         properties: {
-          gps_update_token: { type: 'string' },
+          gps_update_token: { type: 'string', format:'uuid' },
           gps_lat:          { type: 'number' },
           gps_lng:          { type: 'number' },
           gps_accuracy:     { type: 'number', nullable: true },
@@ -818,15 +821,17 @@ export default async function protestRoutes(app, opts = {}) {
     }
 
     // Validate token — must exist, not used, not expired, match protest
-    const { data: tokenRow } = await supabase
+    const { data: tokenRow, error: tokenError } = await supabase
       .from('gps_update_tokens')
       .select('adhesion_id, used, expires_at, protest_id')
       .eq('token', gps_update_token)
       .maybeSingle();
 
+    if (tokenError) return reply.header('Cache-Control','no-store').code(503).send({error:'GPS update unavailable'});
     if (!tokenRow) return reply.status(404).send({ error: 'Token not found' });
     if (tokenRow.used) return reply.status(409).send({ error: 'Token already used' });
-    if (new Date(tokenRow.expires_at) < new Date()) return reply.status(410).send({ error: 'Token expired' });
+    if (!Number.isFinite(Date.parse(tokenRow.expires_at))) return reply.header('Cache-Control','no-store').code(503).send({error:'GPS update unavailable'});
+    if (new Date(tokenRow.expires_at) <= new Date()) return reply.status(410).send({ error: 'Token expired' });
     if (tokenRow.protest_id !== req.params.id) return reply.status(403).send({ error: 'Token mismatch' });
 
     // Fetch the protest scope — needed to reverse-geocode at the correct OSM
@@ -836,22 +841,28 @@ export default async function protestRoutes(app, opts = {}) {
     // reinforcement on REGIONAL convocatorias derived a municipality osm_id
     // that could never match the region's convocatoria_osm_id — participants
     // physically inside the region were misclassified as gps_nacional.)
-    const { data: patchProtest } = await supabase
+    const { data: patchProtest, error: patchError } = await supabase
       .from('protests')
       .select('scope, ends_at')
       .eq('id', tokenRow.protest_id)
       .maybeSingle();
+    if (patchError) return reply.header('Cache-Control','no-store').code(503).send({error:'GPS update unavailable'});
     if (!patchProtest) return reply.notFound('Protest not found');
 
     // Fast-fail only — NOT the security boundary (Credibility First Gate 1,
     // GPS post-closure evidence freeze). This exists purely to avoid an
     // unnecessary 6-second Nominatim round trip on a request the database
     // will reject anyway. The authoritative, race-proof guard is the
-    // clock_timestamp()-based check inside apply_gps_reinforcement() below.
+    // clock_timestamp()-based check inside consume_gps_reinforcement() below.
     if (new Date(patchProtest.ends_at) <= new Date()) {
       return reply.status(410).send({ error: 'PROTEST_CLOSED', reason: 'GPS reinforcement window closed at protest end time' });
     }
 
+    const inFlightKey=req.params.id+':'+gps_update_token;
+    if(gpsInFlight.has(inFlightKey))return reply.header('Retry-After','2').header('Cache-Control','no-store').code(429).send({error:'GPS_UPDATE_IN_PROGRESS'});
+    if(gpsInFlight.size>=256)return reply.header('Cache-Control','no-store').code(503).send({error:'GPS update unavailable'});
+    gpsInFlight.add(inFlightKey);
+    try {
     // Reverse geocode GPS coordinates via Nominatim (backend proxy — user IP not exposed)
     const zoomLevel = patchProtest?.scope === 'regional' ? 6 : 10;
     let adhesion_osm_id = null;
@@ -870,89 +881,35 @@ export default async function protestRoutes(app, opts = {}) {
       req.log.info({code:'gps_geocode_completed'});
     } catch { /* silencioso — GPS update proceeds without osm_id */ }
 
-    // Recalculate fiabilidad with GPS signal
-    // GPS + SIM = 92%, GPS + SIM + IP = 95%
-    const { data: adhesion } = await supabase
-      .from('adhesions')
-      .select('senales, fiabilidad')
-      .eq('id', tokenRow.adhesion_id)
-      .maybeSingle();
-
-    let nuevaFiabilidad = adhesion?.fiabilidad || 75;
-    let senales = adhesion?.senales ? adhesion.senales.split(',') : [];
-    if (!senales.includes('gps')) {
-      senales.push('gps');
-      if (senales.includes('sim') && senales.includes('ip')) nuevaFiabilidad = 95;
-      else if (senales.includes('sim')) nuevaFiabilidad = 92;
-      else nuevaFiabilidad = 60;
-    }
-
-    // Update adhesion — single write.
-    //
-    // Bug fixed 24 July 2026 (found via a real test case: joined without
-    // GPS — ciudad/region set from IP fallback to a wrong city hundreds of
-    // km away, a known failure mode already documented in the Methodology
-    // — then confirmed GPS on the reinforcement card). This UPDATE
-    // previously deliberately left ciudad/region/pais untouched, on the
-    // assumption "they were set correctly at join time from IP" — an
-    // assumption already contradicted by the project's own documented
-    // empirical finding about mobile-carrier IP geolocation, before this
-    // line was even written. The result: gps_confirmed flipped to true and
-    // adhesion_osm_id updated to the correct region, while the human-
-    // readable ciudad/region text silently kept showing the old, wrong,
-    // IP-derived city — an internal inconsistency between the machine-
-    // matched OSM id and the displayed place name. Now both update together,
-    // from the same reverse-geocode call, so they can never disagree.
-    //
-    // GPS coordinates (gps_lat/gps_lng/gps_accuracy) are still NEVER stored:
-    // those columns were removed in migration 20260607_gps_confirmed.sql to
-    // align the database with the privacy policy. GPS is used here only to
-    // reverse-geocode and derive osm_id/ciudad/region/pais; the coordinates
-    // themselves are discarded immediately after this call.
-    // Only overwrite the geographic text fields if this reverse-geocode call
-    // actually returned something — if Nominatim timed out or failed (the
-    // catch above), ciudad/region/pais/pais_code are all still null here,
-    // and silently including them in the update would overwrite whatever
-    // was already correctly stored with nothing. Omitting them from the
-    // object entirely (rather than passing null) leaves the existing
-    // database values untouched in that case.
-    const geoFields = (ciudad || region || pais) ? { ciudad, region, pais, pais_code } : {};
-
-    // Single atomic call (Credibility First Gate 1, GPS post-closure
-    // evidence freeze): the ends_at guard and the write happen inside one
-    // Postgres statement inside apply_gps_reinforcement() — using
-    // clock_timestamp(), not now()/transaction_timestamp(), which stays
-    // fixed at transaction start and would not catch a request that began
-    // before ends_at but reaches this write after it — so no gap remains
-    // between "we checked" and "we wrote" regardless of how long steps
-    // above (in particular, the up-to-6-second Nominatim call) took.
-    const { data: applied, error: rpcErr } = await supabase.rpc('apply_gps_reinforcement', {
-      p_adhesion_id:     tokenRow.adhesion_id,
-      p_gps_confirmed:   true,
-      p_adhesion_osm_id: adhesion_osm_id,
-      p_ciudad:          ciudad,
-      p_region:          region,
-      p_pais:            pais,
-      p_pais_code:       pais_code,
-      p_fiabilidad:      nuevaFiabilidad,
-      p_senales:         senales.join(','),
-    });
-    if (rpcErr) {
+    // Token consumption, authoritative confidence calculation and write are one database transaction.
+    // Never retry after an uncertain response: the transaction may already have committed.
+    let result;
+    try {
+      result=await withRequestDeadline(5000,async(signal,wait)=>wait(supabase.rpc('consume_gps_reinforcement',{
+        p_token:gps_update_token,p_protest_id:req.params.id,
+        p_adhesion_osm_id:Number.isSafeInteger(adhesion_osm_id)&&adhesion_osm_id>0?adhesion_osm_id:null,
+        p_ciudad:typeof ciudad==='string'&&ciudad.length<=512?ciudad:null,
+        p_region:typeof region==='string'&&region.length<=512?region:null,
+        p_pais:typeof pais==='string'&&pais.length<=512?pais:null,
+        p_pais_code:typeof pais_code==='string'&&/^[A-Z]{2}$/.test(pais_code)?pais_code:null,
+      }).abortSignal(signal)));
+    }catch{result={error:true};}
+    if(result?.error || !result?.data || typeof result.data!=='object' || Array.isArray(result.data)) {
       req.log.error({code:'gps_update_failed'});
-      return reply.status(500).send({ error: 'GPS update failed' });
+      return reply.header('Cache-Control','no-store').code(503).send({error:'GPS update unavailable'});
     }
-    if (!applied || applied.length === 0) {
-      // ends_at passed between the fast-fail check above and this write
-      // (or that check was skipped/stale) — the atomic database guard
-      // caught it. Nothing was mutated; the token is NOT marked used.
-      return reply.status(410).send({ error: 'PROTEST_CLOSED', reason: 'GPS reinforcement window closed at protest end time' });
+    const applied=result.data;
+    if(applied.ok===false){
+      const outcomes={TOKEN_NOT_FOUND:[404,'Token not found'],TOKEN_USED:[409,'Token already used'],TOKEN_EXPIRED:[410,'Token expired'],TOKEN_MISMATCH:[403,'Token mismatch'],ADHESION_UNAVAILABLE:[404,'Token not found'],PROTEST_NOT_FOUND:[404,'Protest not found'],PROTEST_CLOSED:[410,'PROTEST_CLOSED'],GPS_INPUT_INVALID:[400,'GPS input invalid'],GPS_STATE_UNAVAILABLE:[503,'GPS update unavailable']};
+      const outcome=Object.hasOwn(outcomes,applied.code)?outcomes[applied.code]:[503,'GPS update unavailable'];
+      return reply.header('Cache-Control','no-store').code(outcome[0]).send({error:outcome[1]});
     }
-
-    // Invalidate token — one-time use — only reached on a genuinely applied write.
-    await supabase.from('gps_update_tokens').update({ used: true }).eq('token', gps_update_token);
-
+    if(applied.ok!==true || !Number.isInteger(applied.fiabilidad) || applied.fiabilidad<0 || applied.fiabilidad>100 || !(applied.adhesion_osm_id===null || Number.isSafeInteger(applied.adhesion_osm_id)&&applied.adhesion_osm_id>0))return reply.header('Cache-Control','no-store').code(503).send({error:'GPS update unavailable'});
+    const nuevaFiabilidad=applied.fiabilidad;
+    adhesion_osm_id=applied.adhesion_osm_id;
     req.log.info({code:'gps_update_completed'});
     return { ok: true, fiabilidad: nuevaFiabilidad, adhesion_osm_id };
+    } finally {gpsInFlight.delete(inFlightKey);}
   });
 
   // POST /api/protests/:id/viral — record a share

@@ -1,0 +1,426 @@
+{
+  "tables": [
+    {
+      "name": "institutional_members",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "groups",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "email_otp_rate_limit",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "devices",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "group_members",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "country_codes",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "push_subscriptions",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "admin_log",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "invite_links",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "source_validations",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "donaciones",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "protests",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "otp_requests",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "platform_fund",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "gps_update_tokens",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "financial_movements",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "kofi_protest_map",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "email_otp_requests",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "integrity_records",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "census_otp_requests",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "vouches",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "vouch_requests",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "adhesions",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "otp_quota_buckets",
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ]
+    }
+  ],
+  "collation": {
+    "ctype": "en_US.UTF-8",
+    "collate": "en_US.UTF-8",
+    "provider": "i"
+  },
+  "functions": [
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "calculate_integrity_hash(uuid)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "calcular_hash_integridad()"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "create_verified_adhesion(uuid,text,text,text,text,text,text,text,text,text,text,bigint,boolean,integer,text,text,timestamp with time zone)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "apply_gps_reinforcement(uuid,boolean,bigint,text,text,text,text,integer,text)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "check_otp_rate_limit(text,text,text,uuid)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "get_otp_cooldown(text)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "transfer_protest_surplus_to_platform_fund()"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "check_donation_limit(uuid,numeric)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "update_cities_count(uuid)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "increment_protest_count(uuid)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "increment_viral_count(uuid)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "set_updated_at()"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "get_cities_count(uuid)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "process_vouch(uuid,text,text)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "verify_institutional_otp_and_create_adhesion(text,uuid,text,text,text,text,text,text,text,text,timestamp with time zone)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "calculate_integrity_hash_v2(uuid)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "reserve_census_otp(text,uuid,text,text,text)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "consume_census_otp(text,uuid,text,uuid)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "found_census_group(uuid,text,text,text)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "census_group_action(uuid,text,text,uuid,text,text)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "check_institutional_otp_rate_limit(text,uuid,text,text)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "reserve_institutional_otp(text,uuid,text,text,text,text)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "enforce_census_admission()"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "verify_census_founder_adhesion(text,uuid,text,text,text,text,text,text,text,text,timestamp with time zone,text,uuid)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "verify_institutional_challenge_and_create_adhesion(text,uuid,text,text,text,text,text,text,text,text,timestamp with time zone,uuid)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "create_census_protest(jsonb,text)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "erase_anonymized_identity()"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "save_owned_push_subscription(text,text,text,text,uuid,text,text)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "consume_shared_otp_quota(text,text,text)"
+    },
+    {
+      "owner": "postgres",
+      "grantors": [
+        "postgres"
+      ],
+      "signature": "reserve_sms_otp(text,text,text,uuid)"
+    }
+  ],
+  "current_role": "postgres",
+  "trigger_functions": [
+    {
+      "signature": "enforce_census_admission()",
+      "definition": "CREATE OR REPLACE FUNCTION public.enforce_census_admission()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\nDECLARE p public.protests%ROWTYPE; proof voiceprotest_private.census_creator_proofs%ROWTYPE;\nBEGIN\n SELECT * INTO p FROM public.protests WHERE id=NEW.protest_id FOR UPDATE;\n IF TG_OP='UPDATE' THEN\n  IF (p.requiere_censo OR EXISTS(SELECT 1 FROM public.protests WHERE id=OLD.protest_id AND requiere_censo))\n   AND (NEW.protest_id IS DISTINCT FROM OLD.protest_id OR NEW.verification_method IS DISTINCT FROM OLD.verification_method OR NEW.identity_subject_hash IS DISTINCT FROM OLD.identity_subject_hash)\n   AND NOT (NEW.protest_id IS NOT DISTINCT FROM OLD.protest_id AND NEW.verification_method IS NOT DISTINCT FROM OLD.verification_method AND NEW.identity_subject_hash IS NULL AND NEW.anonymized_at IS NOT NULL)\n  THEN RAISE EXCEPTION 'ADHESION_IDENTITY_IMMUTABLE'; END IF;\n  RETURN NEW;\n END IF;\n SELECT * INTO proof FROM voiceprotest_private.census_creator_proofs WHERE protest_id=p.id;\n IF p.requiere_censo THEN\n  IF NEW.verification_method='institutional_email_otp' AND EXISTS(\n   SELECT 1 FROM public.groups g JOIN public.group_members m ON m.group_id=g.id\n   WHERE g.protest_id=p.id AND m.email_hash=NEW.identity_subject_hash AND m.accredited_at IS NOT NULL\n  ) THEN RETURN NEW; END IF;\n  IF NEW.verification_method='institutional_email_otp' AND proof.used_at IS NULL AND proof.key_hash IS NOT NULL\n   AND current_setting('voiceprotest.creator_proof',true)=proof.key_hash\n   AND (proof.founder_hash IS NULL OR proof.founder_hash=NEW.identity_subject_hash)\n   AND NOT EXISTS(SELECT 1 FROM public.groups WHERE protest_id=p.id)\n  THEN RETURN NEW; END IF;\n  RAISE EXCEPTION 'CENSUS_MEMBERSHIP_REQUIRED';\n END IF;\n RETURN NEW;\nEND $function$\n"
+    },
+    {
+      "signature": "erase_anonymized_identity()",
+      "definition": "CREATE OR REPLACE FUNCTION public.erase_anonymized_identity()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\nBEGIN\n IF NEW.anonymized_at IS NOT NULL THEN\n  NEW:=jsonb_populate_record(NEW,'{\"identity_subject_hash\":null,\"institutional_email_hash\":null,\"phone_hash\":null,\"device_id\":null,\"nullifier\":null,\"doc_hash\":null,\"public_commitment\":null,\"adhesion_osm_id\":null,\"gps_lat\":null,\"gps_lng\":null,\"gps_accuracy\":null,\"ciudad\":null,\"region\":null,\"idioma\":null,\"senales\":null}'::jsonb);\n END IF;\n RETURN NEW;\nEND $function$\n"
+    }
+  ],
+  "triggers": [
+    {
+      "name": "trg_protests_updated_at",
+      "table": "protests",
+      "function": "set_updated_at()",
+      "definition": "CREATE TRIGGER trg_protests_updated_at BEFORE UPDATE ON public.protests FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+    },
+    {
+      "name": "trg_transfer_protest_surplus_to_platform_fund",
+      "table": "protests",
+      "function": "transfer_protest_surplus_to_platform_fund()",
+      "definition": "CREATE TRIGGER trg_transfer_protest_surplus_to_platform_fund AFTER UPDATE ON public.protests FOR EACH ROW EXECUTE FUNCTION transfer_protest_surplus_to_platform_fund()"
+    },
+    {
+      "name": "a_erase_anonymized_identity",
+      "table": "adhesions",
+      "function": "erase_anonymized_identity()",
+      "definition": "CREATE TRIGGER a_erase_anonymized_identity BEFORE INSERT OR UPDATE ON public.adhesions FOR EACH ROW EXECUTE FUNCTION erase_anonymized_identity()"
+    },
+    {
+      "name": "census_admission_guard",
+      "table": "adhesions",
+      "function": "enforce_census_admission()",
+      "definition": "CREATE TRIGGER census_admission_guard BEFORE INSERT OR UPDATE OF protest_id, verification_method, identity_subject_hash ON public.adhesions FOR EACH ROW EXECUTE FUNCTION enforce_census_admission()"
+    }
+  ]
+}

@@ -9,10 +9,10 @@
   "scripts": {
     "dev:web": "npm run dev --workspace=apps/web",
     "dev:api": "npm run dev --workspace=apps/api",
-    "build":   "npm run build --workspace=apps/web",
+    "build": "npm run build --workspace=apps/web",
     "preview": "npm run preview --workspace=apps/web"
   },
   "engines": {
-    "node": ">=20"
+    "node": "24.x"
   }
 }

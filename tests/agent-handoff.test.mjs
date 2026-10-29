@@ -423,7 +423,7 @@ const wf = fs.readFileSync(new URL('../automation/coordination/candidate/agent-h
 const code = wf.replace(/^[ \t]*#.*$/gm, '').replace(/[ \t]+#.*$/gm, '');
 test('W1 installed handoff equals the candidate; existing workflows remain present', () => {
   const dir = fs.readdirSync(new URL('../.github/workflows/', import.meta.url));
-  assert.deepEqual(dir.sort(), ['actions-preflight.yml', 'agent-handoff.yml', 'deploy.yml']);
+  assert.deepEqual(dir.sort(), ['actions-preflight.yml', 'agent-handoff.yml', 'dependency-policy.yml', 'deploy.yml']);
   assert.equal(fs.readFileSync(new URL('../.github/workflows/agent-handoff.yml', import.meta.url), 'utf8'), wf);
 });
 test('W2 workflow: sin pull_request_target ni pull_request_review ni schedule; solo issue_comment; sin comodines de bots ni usuarios sin escritura', () => {

@@ -7,11 +7,12 @@ import Fastify from 'fastify';
 import sensible from '@fastify/sensible';
 import {consumeOtpVerificationQuota} from '../apps/api/src/lib/requestQuotas.js';
 import {runOtpProvider,OtpProviderError,otpProviderFailure} from '../apps/api/src/lib/otpProvider.js';
+import {institutionalSecret} from '../apps/api/src/lib/institutionalSecret.js';
 const source=readFileSync(new URL('../apps/api/src/routes/institucional.js',import.meta.url),'utf8').replace(/^import [\s\S]*?;\n/gm,'').replace('export default async function institucionalRoutes','async function institucionalRoutes');
 async function fixture(options={}){
  let sends=0;
  const q={select(){return q;},eq(){return q;},single:async()=>({data:{dominio_email:'example.invalid',title:'Synthetic',requiere_censo:true,ends_at:'2099-01-01'}})};
- const context={consumeOtpVerificationQuota,createHash,createHmac,randomInt,OtpProviderError,otpProviderFailure,runOtpProvider:op=>runOtpProvider(op,{timeoutMs:20}),ipQuotaKey:x=>x,
+ const context={institutionalSecret:name=>institutionalSecret(name,context.process.env),consumeOtpVerificationQuota,createHash,createHmac,randomInt,OtpProviderError,otpProviderFailure,runOtpProvider:op=>runOtpProvider(op,{timeoutMs:20}),ipQuotaKey:x=>x,
   process:{env:{PHONE_HASH_SECRET:'synthetic-key',EMAIL_OTP_SECRET:'synthetic-key'}},console,verifyRecaptcha:async()=>{},consumeOtpDeliveryQuota:async()=>true,
   supabase:{from:()=>q,rpc:async()=>options.reservation||{data:{allowed:true,challenge_id:'33333333-3333-4333-8333-333333333333'}}},
   Resend:class {constructor(){this.emails={send:async(_payload,opts)=>{sends++;assert.ok(opts.signal instanceof AbortSignal);assert.equal(opts.redirect,'error');if(options.hang)return new Promise(()=>{});if(options.throwError)throw new Error('private recipient');return options.delivery??{data:{id:'synthetic-delivery'}};}};}}};

@@ -1,3 +1,5 @@
+import {nextInstitutionalExpiry} from '../lib/institutionalExpiry.js';
+import {institutionalSecret} from '../lib/institutionalSecret.js';
 import {OtpProviderError, runOtpProvider, otpProviderFailure} from '../lib/otpProvider.js';
 import {consumeOtpDeliveryQuota,consumeOtpVerificationQuota} from '../lib/requestQuotas.js';
 import {ipQuotaKey} from '../lib/ipQuotaKey.js';
@@ -20,7 +22,7 @@ import {
 // plain SHA-256, or they are trivially recoverable by dictionary attack. Reuses
 // PHONE_HASH_SECRET, which is conceptually an identity-hash secret, not phone-specific.
 function hashEmail(email) {
-  const secret = process.env.PHONE_HASH_SECRET;
+  const secret = institutionalSecret('PHONE_HASH_SECRET');
   if (!secret) {
     if (process.env.NODE_ENV === 'production') {
       throw new Error('[SECURITY] PHONE_HASH_SECRET is required in production. Server cannot start without it.');
@@ -39,7 +41,7 @@ function hashEmail(email) {
 // verify_institutional_otp_and_create_adhesion(), which never sees the
 // secret; only this function does.
 function hashOtp(protestId, emailHash, otp) {
-  const secret = process.env.EMAIL_OTP_SECRET;
+  const secret = institutionalSecret('EMAIL_OTP_SECRET');
   if (!secret) {
     if (process.env.NODE_ENV === 'production') {
       throw new Error('[SECURITY] EMAIL_OTP_SECRET is required in production. Server cannot start without it.');
@@ -52,7 +54,7 @@ function hashOtp(protestId, emailHash, otp) {
 
 // Quota material uses the shared network key; raw IP remains location evidence.
 function hashIp(ip) {
-  const secret = process.env.PHONE_HASH_SECRET;
+  const secret = institutionalSecret('PHONE_HASH_SECRET');
   const base = secret
     ? createHmac('sha256', secret).update(ipQuotaKey(ip))
     : createHash('sha256').update(ipQuotaKey(ip));
@@ -240,9 +242,8 @@ export default async function institucionalRoutes(app) {
     const ip = req.ip;
     const idioma = req.headers['accept-language']?.split(',')[0] || null;
 
-    // Membership validity: 31 August of the current academic year — unchanged
-    // from the previous behaviour.
-    const institutionalExpiresAt = new Date(new Date().getFullYear(), 7, 31).toISOString();
+    // Future academic boundary, independent of server timezone; no historical rewrite.
+    const institutionalExpiresAt = nextInstitutionalExpiry();
 
     let data;
     try {

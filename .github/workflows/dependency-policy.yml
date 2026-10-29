@@ -1,0 +1,20 @@
+name: Dependency publication policy
+on:
+  pull_request:
+    branches: [main]
+permissions: {}
+jobs:
+  dependency-policy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - run: npm ci --ignore-scripts --no-audit --no-fund --prefix automation/preflight/tools
+      - run: node automation/security-supply-chain/check.mjs

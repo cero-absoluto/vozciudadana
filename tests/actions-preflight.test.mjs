@@ -333,7 +333,7 @@ test('PI5 la biblioteca `yaml` fijada (tools/) es la que interpreta: versión ex
   const own = fs.readFileSync(`${root}automation/preflight/preflight.mjs`, 'utf8'); assert.doesNotMatch(own, /workflow-uses/); assert.ok(!fs.existsSync(`${root}automation/preflight/workflow-uses.mjs`), 'sin analizador propio');
   for (const file of ['.github/workflows/deploy.yml', 'automation/preflight/candidate/actions-preflight.yml']) { const a = analyzeUses(fs.readFileSync(`${root}${file}`, 'utf8')); assert.ok(a.pinned.length + a.unpinned.length > 0, file); }
   assert.equal(analyzeUses(fs.readFileSync(`${root}automation/preflight/candidate/actions-preflight.yml`, 'utf8')).unpinned.length, 0);
-  assert.deepEqual(analyzeUses(fs.readFileSync(`${root}.github/workflows/deploy.yml`, 'utf8')).unpinned.sort(), ['actions/checkout@v4', 'actions/setup-node@v4', 'peaceiris/actions-gh-pages@v4'], 'el despliegue existente usa tags: lo detecta (no es parte de este PR)');
+  assert.deepEqual(analyzeUses(fs.readFileSync(`${root}.github/workflows/deploy.yml`, 'utf8')).unpinned.sort(), [], 'S15 fija también las acciones del despliegue a commits exactos');
 });
 test('PI6 saltos de línea Unicode U+0085/U+2028/U+2029 y casos de ambigüedad: se rechazan antes de parsear; hallazgo r4322043722 reproducido', () => {
   const cand = wfDoc(goodStep);
@@ -357,7 +357,7 @@ const wf = fs.readFileSync(wfPath, 'utf8'); const code = wf.replace(/^[ \t]*#.*$
 const jobsOf = (c) => Object.fromEntries([...c.matchAll(/^  ([\w-]+):\n([\s\S]*?)(?=^  [\w-]+:\n|(?![\s\S]))/gm)].filter((m) => !/^(workflow_dispatch|inputs|pr_number|switch_wait_seconds)$/.test(m[1])).map((m) => [m[1], m[2]]));
 test('WF1 candidato inerte, manual y de solo lectura: fuera de .github/workflows; solo workflow_dispatch; sin escrituras, secretos, id-token ni acción de Claude', () => {
   // Tras la incorporación autorizada (#39): el workflow manual instalado es idéntico al candidato y no hay ningún workflow del modelo.
-  assert.deepEqual(fs.readdirSync(`${root}.github/workflows`).sort(), ['actions-preflight.yml', 'agent-handoff.yml', 'deploy.yml']);
+  assert.deepEqual(fs.readdirSync(`${root}.github/workflows`).sort(), ['actions-preflight.yml', 'agent-handoff.yml', 'dependency-policy.yml', 'deploy.yml']);
   assert.ok(fs.readFileSync(`${root}.github/workflows/actions-preflight.yml`).equals(fs.readFileSync(wfPath)), 'instalado idéntico al candidato');
   for (const f of fs.readdirSync(`${root}.github/workflows`).filter(f => f !== 'agent-handoff.yml')) assert.doesNotMatch(fs.readFileSync(`${root}.github/workflows/${f}`, 'utf8'), /anthropics\/claude-code-action@|claude_code_oauth_token|anthropic_api_key|ANTHROPIC_API_KEY/, `${f} sin workflow del modelo (la credencial ficticia FICTICIO- del paso env-a no cuenta)`);
   assert.match(code, /^on:\n  workflow_dispatch:\n/m); assert.doesNotMatch(code, /\n  (push|pull_request\w*|issue_comment|schedule|workflow_run):/);
@@ -395,7 +395,7 @@ test('WF5 actionlint (si está instalado) no encuentra problemas en el candidato
 test('DP1 el preflight no activa deploy; los cambios de producto sí se detectan', () => {
   const deploy = fs.readFileSync(`${root}.github/workflows/deploy.yml`, 'utf8');
   const paths = [...(/^    paths:\n((?:      - .*\n)+)/m.exec(deploy)?.[1] ?? '').matchAll(/- '([^']+)'/g)].map((m) => m[1]);
-  assert.deepEqual(paths.sort(), ['.github/workflows/deploy.yml', 'apps/web/**', 'package.json']); assert.match(deploy, /branches: \[main\]/);
+  assert.deepEqual(paths.sort(), ['.github/workflows/dependency-policy.yml', '.github/workflows/deploy.yml', '.npmrc', 'apps/api/.npmrc', 'apps/api/package-lock.json', 'apps/api/package.json', 'apps/api/railway.json', 'apps/web/**', 'automation/preflight/tools/**', 'automation/security-database/native/package-lock.json', 'automation/security-network-push/native/package-lock.json', 'automation/security-quotas/native/package-lock.json', 'automation/security-supply-chain/**', 'package-lock.json', 'package.json']); assert.match(deploy, /branches: \[main\]/);
   const re = (g) => new RegExp(`^${g.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*/g, '\u0000').replace(/\*/g, '[^/]*').replace(/\u0000/g, '.*')}$`);
   const railway = ['/apps/api/**']; // watchPatterns de Railway: ajuste de cuenta, no está en el repositorio (no verificable aquí)
   const changed = new Set(['automation/preflight/preflight.mjs', 'automation/preflight/PLAN.md', 'automation/preflight/pins.json', 'automation/preflight/candidate/actions-preflight.yml', 'automation/preflight/fixtures/patch-a.patch', 'automation/preflight/fixtures/patch-b.patch', 'automation/coordination/controller.mjs', 'automation/coordination/policy.json', 'tests/actions-preflight.test.mjs']);

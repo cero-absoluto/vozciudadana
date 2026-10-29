@@ -1,0 +1,451 @@
+{
+  "base_commit": "00625c7d836cec6b2c336b938970e8da0c4fec69",
+  "audited_at_utc": "2026-10-29T06:29:13.323737+00:00",
+  "before": {
+    "info": 0,
+    "low": 4,
+    "moderate": 2,
+    "high": 16,
+    "critical": 1,
+    "total": 23
+  },
+  "after_by_lock": {
+    "root": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "preflight": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "database_native": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "network_native": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "quota_native": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "api_standalone": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    }
+  },
+  "changed_versions": [
+    {
+      "path": "node_modules/@babel/helper-string-parser",
+      "from": "7.29.7",
+      "to": "7.29.11"
+    },
+    {
+      "path": "node_modules/@babel/parser",
+      "from": "7.29.7",
+      "to": "7.29.11"
+    },
+    {
+      "path": "node_modules/@babel/types",
+      "from": "7.29.7",
+      "to": "7.29.11"
+    },
+    {
+      "path": "node_modules/@esbuild/aix-ppc64",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/android-arm",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/android-arm64",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/android-x64",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/darwin-arm64",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/darwin-x64",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/freebsd-arm64",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/freebsd-x64",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/linux-arm",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/linux-arm64",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/linux-ia32",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/linux-loong64",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/linux-mips64el",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/linux-ppc64",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/linux-riscv64",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/linux-s390x",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/linux-x64",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/netbsd-x64",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/openbsd-x64",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/sunos-x64",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/win32-arm64",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/win32-ia32",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@esbuild/win32-x64",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/@intlify/core-base",
+      "from": "9.14.5",
+      "to": "11.4.16"
+    },
+    {
+      "path": "node_modules/@intlify/message-compiler",
+      "from": "9.14.5",
+      "to": "11.4.16"
+    },
+    {
+      "path": "node_modules/@intlify/shared",
+      "from": "9.14.5",
+      "to": "11.4.16"
+    },
+    {
+      "path": "node_modules/@jridgewell/sourcemap-codec",
+      "from": "1.5.5",
+      "to": "1.6.0"
+    },
+    {
+      "path": "node_modules/@vue/compiler-core",
+      "from": "3.5.38",
+      "to": "3.5.44"
+    },
+    {
+      "path": "node_modules/@vue/compiler-dom",
+      "from": "3.5.38",
+      "to": "3.5.44"
+    },
+    {
+      "path": "node_modules/@vue/compiler-sfc",
+      "from": "3.5.38",
+      "to": "3.5.44"
+    },
+    {
+      "path": "node_modules/@vue/compiler-ssr",
+      "from": "3.5.38",
+      "to": "3.5.44"
+    },
+    {
+      "path": "node_modules/@vue/reactivity",
+      "from": "3.5.38",
+      "to": "3.5.44"
+    },
+    {
+      "path": "node_modules/@vue/runtime-core",
+      "from": "3.5.38",
+      "to": "3.5.44"
+    },
+    {
+      "path": "node_modules/@vue/runtime-dom",
+      "from": "3.5.38",
+      "to": "3.5.44"
+    },
+    {
+      "path": "node_modules/@vue/server-renderer",
+      "from": "3.5.38",
+      "to": "3.5.44"
+    },
+    {
+      "path": "node_modules/@vue/shared",
+      "from": "3.5.38",
+      "to": "3.5.44"
+    },
+    {
+      "path": "node_modules/axios",
+      "from": "1.18.0",
+      "to": "1.21.0"
+    },
+    {
+      "path": "node_modules/dompurify",
+      "from": "2.5.9",
+      "to": "3.4.17"
+    },
+    {
+      "path": "node_modules/entities",
+      "from": "4.5.0",
+      "to": "7.0.1"
+    },
+    {
+      "path": "node_modules/esbuild",
+      "from": "0.21.5",
+      "to": "0.25.12"
+    },
+    {
+      "path": "node_modules/fast-uri",
+      "from": "3.1.2",
+      "to": "3.1.9"
+    },
+    {
+      "path": "node_modules/fastify/node_modules/fast-uri",
+      "from": "4.2.2",
+      "to": "4.2.3"
+    },
+    {
+      "path": "node_modules/find-my-way",
+      "from": "9.6.0",
+      "to": "9.10.0"
+    },
+    {
+      "path": "node_modules/follow-redirects",
+      "from": "1.16.0",
+      "to": "1.16.2"
+    },
+    {
+      "path": "node_modules/jspdf",
+      "from": "2.5.2",
+      "to": "4.2.1"
+    },
+    {
+      "path": "node_modules/nanoid",
+      "from": "3.3.12",
+      "to": "3.3.20"
+    },
+    {
+      "path": "node_modules/postcss",
+      "from": "8.5.15",
+      "to": "8.5.32"
+    },
+    {
+      "path": "node_modules/qs",
+      "from": "6.15.2",
+      "to": "6.17.1"
+    },
+    {
+      "path": "node_modules/resend",
+      "from": "3.5.0",
+      "to": "6.35.0"
+    },
+    {
+      "path": "node_modules/source-map-js",
+      "from": "1.2.1",
+      "to": "1.2.2"
+    },
+    {
+      "path": "node_modules/vite",
+      "from": "5.4.21",
+      "to": "6.4.5"
+    },
+    {
+      "path": "node_modules/vue",
+      "from": "3.5.38",
+      "to": "3.5.44"
+    },
+    {
+      "path": "node_modules/vue-i18n",
+      "from": "9.14.5",
+      "to": "11.4.16"
+    }
+  ],
+  "added_lock_entries": [
+    "node_modules/@esbuild/netbsd-arm64",
+    "node_modules/@esbuild/openbsd-arm64",
+    "node_modules/@esbuild/openharmony-arm64",
+    "node_modules/@intlify/devtools-types",
+    "node_modules/@stablelib/base64",
+    "node_modules/@types/pako",
+    "node_modules/@types/trusted-types",
+    "node_modules/fast-png",
+    "node_modules/fast-sha256",
+    "node_modules/fdir",
+    "node_modules/iobuffer",
+    "node_modules/pako",
+    "node_modules/picomatch",
+    "node_modules/postal-mime",
+    "node_modules/standardwebhooks",
+    "node_modules/tinyglobby"
+  ],
+  "removed_lock_entries": [
+    "node_modules/@isaacs/cliui",
+    "node_modules/@one-ini/wasm",
+    "node_modules/@pkgjs/parseargs",
+    "node_modules/@react-email/render",
+    "node_modules/@selderee/plugin-htmlparser2",
+    "node_modules/@vue/compiler-core/node_modules/entities",
+    "node_modules/abbrev",
+    "node_modules/ansi-regex",
+    "node_modules/ansi-styles",
+    "node_modules/atob",
+    "node_modules/balanced-match",
+    "node_modules/brace-expansion",
+    "node_modules/btoa",
+    "node_modules/color-convert",
+    "node_modules/color-name",
+    "node_modules/config-chain",
+    "node_modules/cross-spawn",
+    "node_modules/deepmerge",
+    "node_modules/dom-serializer",
+    "node_modules/domelementtype",
+    "node_modules/domhandler",
+    "node_modules/domutils",
+    "node_modules/eastasianwidth",
+    "node_modules/editorconfig",
+    "node_modules/editorconfig/node_modules/commander",
+    "node_modules/emoji-regex",
+    "node_modules/foreground-child",
+    "node_modules/glob",
+    "node_modules/html-to-text",
+    "node_modules/htmlparser2",
+    "node_modules/ini",
+    "node_modules/is-fullwidth-code-point",
+    "node_modules/isexe",
+    "node_modules/jackspeak",
+    "node_modules/js-beautify",
+    "node_modules/js-cookie",
+    "node_modules/js-tokens",
+    "node_modules/leac",
+    "node_modules/loose-envify",
+    "node_modules/lru-cache",
+    "node_modules/minimatch",
+    "node_modules/minipass",
+    "node_modules/nopt",
+    "node_modules/package-json-from-dist",
+    "node_modules/parseley",
+    "node_modules/path-key",
+    "node_modules/path-scurry",
+    "node_modules/peberminta",
+    "node_modules/proto-list",
+    "node_modules/react",
+    "node_modules/react-dom",
+    "node_modules/react-promise-suspense",
+    "node_modules/react-promise-suspense/node_modules/fast-deep-equal",
+    "node_modules/scheduler",
+    "node_modules/selderee",
+    "node_modules/shebang-command",
+    "node_modules/shebang-regex",
+    "node_modules/signal-exit",
+    "node_modules/string-width",
+    "node_modules/string-width-cjs",
+    "node_modules/string-width-cjs/node_modules/ansi-regex",
+    "node_modules/string-width-cjs/node_modules/emoji-regex",
+    "node_modules/string-width-cjs/node_modules/strip-ansi",
+    "node_modules/strip-ansi",
+    "node_modules/strip-ansi-cjs",
+    "node_modules/strip-ansi-cjs/node_modules/ansi-regex",
+    "node_modules/which",
+    "node_modules/wrap-ansi",
+    "node_modules/wrap-ansi-cjs",
+    "node_modules/wrap-ansi-cjs/node_modules/ansi-regex",
+    "node_modules/wrap-ansi-cjs/node_modules/ansi-styles",
+    "node_modules/wrap-ansi-cjs/node_modules/emoji-regex",
+    "node_modules/wrap-ansi-cjs/node_modules/string-width",
+    "node_modules/wrap-ansi-cjs/node_modules/strip-ansi"
+  ],
+  "limits": [
+    "Audit counts refer to known registry advisories at the recorded scan, not proof of safety.",
+    "Native PostgreSQL binary maintenance remains a separate S14 item.",
+    "Runtime, browser and credentialed external providers are not live-tested by preparation."
+  ],
+  "api_standalone_validation": {
+    "root_workspace_files_present": false,
+    "install": "npm ci --ignore-scripts --no-audit --no-fund --offline",
+    "packages_installed": 148,
+    "root_registry_identities_match": true,
+    "cli_build_plan_completed": false,
+    "cli_build_plan_limitation": "Railpack 0.43.0 could not resolve toolchain versions in this local runtime; an empty schema-only plan was rejected as evidence. No container or live build was executed."
+  }
+}

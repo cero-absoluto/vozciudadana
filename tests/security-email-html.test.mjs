@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import {runOtpProvider,OtpProviderError,otpProviderFailure} from '../apps/api/src/lib/otpProvider.js';
 import { createHash, createHmac, randomInt } from 'node:crypto';
+import {institutionalSecret} from '../apps/api/src/lib/institutionalSecret.js';
 
 const source=readFileSync(new URL('../apps/api/src/routes/institucional.js',import.meta.url),'utf8')
   .replace(/^import [\s\S]*?;\n/gm,'').replace('export default async function institucionalRoutes','async function institucionalRoutes');
@@ -11,7 +12,7 @@ for(const language of ['es','en','fr','zh']) test('institutional '+language+' em
   const malicious=`<a href="https://evil.invalid/?a=1&b=2">'Title'</a>`;
   let delivery;
   const q={select(){return q;},eq(){return q;},single:async()=>({data:{dominio_email:'example.invalid',title:malicious,requiere_censo:true,ends_at:'2099-01-01'}})};
-  const context={runOtpProvider,OtpProviderError,otpProviderFailure,createHash,createHmac,randomInt,ipQuotaKey:x=>x,consumeOtpDeliveryQuota:async()=>true,verifyRecaptcha:async()=>{},
+  const context={institutionalSecret:name=>institutionalSecret(name,context.process.env),runOtpProvider,OtpProviderError,otpProviderFailure,createHash,createHmac,randomInt,ipQuotaKey:x=>x,consumeOtpDeliveryQuota:async()=>true,verifyRecaptcha:async()=>{},
     process:{env:{PHONE_HASH_SECRET:'synthetic-key',EMAIL_OTP_SECRET:'synthetic-otp-key'}},
     supabase:{from:()=>q,rpc:async()=>({data:{allowed:true,challenge_id:'33333333-3333-3333-3333-333333333333'}})},
     Resend:class{constructor(){this.emails={send:async data=>{delivery=data;return {error:null,data:{id:"synthetic-delivery"}};}};}},console};

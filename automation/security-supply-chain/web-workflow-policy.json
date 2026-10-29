@@ -1,0 +1,124 @@
+{
+  "name": "Deploy web to GitHub Pages",
+  "on": {
+    "push": {
+      "branches": [
+        "main"
+      ],
+      "paths": [
+        "apps/web/**",
+        "package.json",
+        "package-lock.json",
+        "apps/api/package.json",
+        "apps/api/package-lock.json",
+        "apps/api/railway.json",
+        ".npmrc",
+        "apps/api/.npmrc",
+        "automation/security-database/native/package-lock.json",
+        "automation/security-network-push/native/package-lock.json",
+        "automation/security-quotas/native/package-lock.json",
+        "automation/security-supply-chain/**",
+        "automation/preflight/tools/**",
+        ".github/workflows/deploy.yml",
+        ".github/workflows/dependency-policy.yml"
+      ]
+    },
+    "workflow_dispatch": null
+  },
+  "permissions": {},
+  "concurrency": {
+    "group": "deploy-web-pages",
+    "cancel-in-progress": false
+  },
+  "jobs": {
+    "build": {
+      "runs-on": "ubuntu-24.04",
+      "timeout-minutes": 15,
+      "permissions": {
+        "contents": "read"
+      },
+      "outputs": {
+        "artifact_id": "${{ steps.bundle.outputs.artifact-id }}"
+      },
+      "steps": [
+        {
+          "name": "Checkout exact commit without persistent credentials",
+          "uses": "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10",
+          "with": {
+            "ref": "${{ github.sha }}",
+            "persist-credentials": false
+          }
+        },
+        {
+          "name": "Setup supported Node",
+          "uses": "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "with": {
+            "node-version": 24,
+            "cache": "npm"
+          }
+        },
+        {
+          "name": "Install locked dependencies without lifecycle scripts",
+          "run": "npm ci --ignore-scripts --no-audit --no-fund"
+        },
+        {
+          "name": "Install isolated policy parser without lifecycle scripts",
+          "run": "npm ci --ignore-scripts --no-audit --no-fund --prefix automation/preflight/tools"
+        },
+        {
+          "name": "Check publication boundary and locked package identities",
+          "run": "node automation/security-supply-chain/check.mjs"
+        },
+        {
+          "name": "Build",
+          "run": "npm run build",
+          "env": {
+            "VITE_RECAPTCHA_KEY": "${{ vars.VITE_RECAPTCHA_KEY }}",
+            "VITE_API_URL": "${{ vars.VITE_API_URL }}"
+          }
+        },
+        {
+          "name": "Retain static output for this run",
+          "id": "bundle",
+          "uses": "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+          "with": {
+            "name": "web-dist-${{ github.sha }}",
+            "path": "apps/web/dist",
+            "if-no-files-found": "error",
+            "include-hidden-files": true,
+            "retention-days": 1
+          }
+        }
+      ]
+    },
+    "deploy": {
+      "needs": "build",
+      "if": "github.ref == 'refs/heads/main'",
+      "runs-on": "ubuntu-24.04",
+      "timeout-minutes": 10,
+      "permissions": {
+        "contents": "write"
+      },
+      "steps": [
+        {
+          "name": "Download the immutable artifact produced by this run",
+          "uses": "actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333",
+          "with": {
+            "artifact-ids": "${{ needs.build.outputs.artifact_id }}",
+            "merge-multiple": true,
+            "path": "web-dist"
+          }
+        },
+        {
+          "name": "Deploy static files to GitHub Pages",
+          "uses": "peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e",
+          "with": {
+            "github_token": "${{ secrets.GITHUB_TOKEN }}",
+            "publish_dir": "web-dist",
+            "cname": ""
+          }
+        }
+      ]
+    }
+  }
+}

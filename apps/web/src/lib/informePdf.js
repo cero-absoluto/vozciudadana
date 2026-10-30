@@ -94,7 +94,7 @@ export async function buildInformePdf({ data: d, integrity, protestId, abuseLabe
   const uiStrings = [
     t('informe.chainTitle'), t('informe.chain1'), t('informe.chain2'), t('informe.chain3'),
     t('informe.chain4Title'), t('informe.chain4'), t('informe.geoIpCaveat'), t('informe.placeNamesNote'),
-    t('informe.geoLocalVerified'), t('informe.geoNational'), t('informe.geoInternational'), t('informe.geoMatchIn', { territory: geoTerritory }), t('informe.geoOtherGps'), t('informe.geoUnknown'), t('informe.geoCoverage', { analyzed: dg?.total ?? 0, total: d.total_adhesiones }), t('informe.geoMatchLimit'),
+    t('informe.geoLocalVerified'), t('informe.geoRegionalVerified'), t('informe.geoNational'), t('informe.geoInternational'), t('informe.geoMatchIn', { territory: geoTerritory }), t('informe.geoOtherGps'), t('informe.geoUnknown'), t('informe.geoAnalyzedTotal'), t('informe.geoCounterTotal'), t('informe.geoCounterMismatch', { analyzed: d.total_analizado ?? dg?.total ?? 0, total: d.total_adhesiones }), t('informe.geoCoverage', { analyzed: dg?.total ?? 0, total: d.total_adhesiones }), t('informe.geoMatchLimit'),
     t('informe.limitsNote'), t('informe.verifyUnavailable'), t('informe.historicalDiscrepancy'),
     t('informe.recordedHashLabel', { version: 1 }), t('informe.snapshotHashLabel', { version: 2 }),
     ...['docTitle', 'generated', 'recipient', 'institution', 'country', 'convocation', 'start', 'end', 'abuseType',
@@ -215,13 +215,15 @@ export async function buildInformePdf({ data: d, integrity, protestId, abuseLabe
     if (dg.nacionales_sin_gps > 0) kv(t('informe.geoNational'), dg.nacionales_sin_gps);
     if (dg.sin_pais > 0) kv(t('informe.geoUnknown'), dg.sin_pais);
     if (dg.internacionales > 0) kv(t('informe.geoInternational'), dg.internacionales);
-    kv(tp('totalVerified'), d.total_adhesiones);
+    kv(t('informe.geoAnalyzedTotal'), dg.total);
+    kv(t('informe.geoCounterTotal'), d.total_adhesiones);
   } else if (d.protest.dominio_email) {
     kv(tp('verifiedMembers', { domain: d.protest.dominio_email }), d.total_adhesiones, true);
   } else {
     kv(tp('verifiedAdhesions'), d.total_adhesiones);
     kv(tp('distinctCountries'), d.paises_distintos);
   }
+  if (d.report_coverage && !d.report_coverage.counter_matches) note(t('informe.geoCounterMismatch', { analyzed: d.report_coverage.analyzed, total: d.report_coverage.counter_total }));
   if (d.ciudades_distintas > 0) kv(tp('distinctCities'), d.ciudades_distintas);
   kv(tp('firstAdhesion'), formatPdfDateTime(d.primera_adhesion, locale));
   kv(tp('lastAdhesion'), formatPdfDateTime(d.ultima_adhesion, locale));
@@ -233,7 +235,7 @@ export async function buildInformePdf({ data: d, integrity, protestId, abuseLabe
   h2('4. ' + tp('geoDistribution').toUpperCase());
   if (dg) {
     para(t('informe.geoMatchIn', { territory: geoTerritory }) + ':', { isContent: true });
-    if (dg.gps_local > 0) para('  ' + t('informe.geoLocalVerified') + ': ' + dg.gps_local);
+    if (dg.gps_local > 0) para('  ' + t(dg.scope === 'regional' ? 'informe.geoRegionalVerified' : 'informe.geoLocalVerified') + ': ' + dg.gps_local);
     if (dg.nacionales_sin_gps > 0) para('  ' + t('informe.geoNational') + ': ' + dg.nacionales_sin_gps);
     if (dg.internacionales > 0) para('  ' + t('informe.geoInternational') + ': ' + dg.internacionales);
     if (dg.gps_nacional > 0) para('  ' + t('informe.geoOtherGps') + ': ' + dg.gps_nacional);

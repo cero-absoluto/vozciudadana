@@ -49,8 +49,8 @@
             <div class="ir-hero-label">
               {{ data.protest.scope === 'local' ? $t('informe.heroLabelLocal', { territorio: data.protest.convocatoria_ciudad_nombre }) : $t('informe.heroLabelRegional', { territorio: data.protest.convocatoria_ciudad_nombre }) }}
             </div>
-            <div class="ir-hero-sub" v-if="data.total_adhesiones > data.desglose_geografico_local.gps_local">
-              {{ $t('informe.heroSubLocal', { total: data.total_adhesiones, nacional: data.desglose_geografico_local.nacionales_sin_gps }) }}
+            <div class="ir-hero-sub" v-if="data.desglose_geografico_local.total > data.desglose_geografico_local.gps_local">
+              {{ $t('informe.heroSubLocal', { total: data.desglose_geografico_local.total, nacional: data.desglose_geografico_local.nacionales_sin_gps }) }}
             </div>
           </template>
 
@@ -70,6 +70,8 @@
 
           <div class="ir-hero-demand">{{ data.protest.demands }}</div>
         </div>
+
+        <p v-if="data.report_coverage && !data.report_coverage.counter_matches" class="ir-caption" role="status">{{ $t('informe.geoCounterMismatch', { analyzed: data.report_coverage.analyzed, total: data.report_coverage.counter_total }) }}</p>
 
         <div class="ir-divider"></div>
 
@@ -1024,8 +1026,9 @@ function formatDateTime(iso) {
 }
 
 function pct(count) {
-  if (!data.value?.total_adhesiones) return 0;
-  return Math.round((count / data.value.total_adhesiones) * 100);
+  const total = data.value?.total_analizado ?? data.value?.total_adhesiones;
+  if (!total) return 0;
+  return Math.round((count / total) * 100);
 }
 
 function pctLocal(count) {

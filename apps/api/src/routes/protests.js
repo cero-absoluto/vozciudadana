@@ -1,3 +1,4 @@
+import { readReportAdhesions } from '../lib/reportAdhesions.js';
 import { matchesDeclaredTerritory, geographicBreakdown } from '../lib/territorialEvidence.js';
 import { parseGpsGeocoderResponse } from '../lib/gpsGeocoder.js';
 import {withRequestDeadline} from '../lib/requestDeadline.js';
@@ -1069,14 +1070,11 @@ export default async function protestRoutes(app, opts = {}) {
     if (error && error.code !== 'PGRST116') return reply.header('Cache-Control','no-store').code(503).send({error:'Service temporarily unavailable'});
     if (error || !protest) return reply.notFound('Convocatoria no encontrada');
 
-    const { data: adhesions, error: adhesionError } = await supabase
-      .from('adhesions')
-      .select('ciudad, region, pais, pais_code, idioma, created_at, gps_confirmed, fiabilidad, senales, adhesion_osm_id')
-      .eq('protest_id', req.params.id)
-      .is('deleted_at', null)
-      .order('created_at', { ascending: true });
-
-    if (adhesionError || !Array.isArray(adhesions)) return reply.header('Cache-Control','no-store').code(503).send({error:'Service temporarily unavailable'});
+    let adhesions;
+    try { adhesions = await readReportAdhesions(supabase, req.params.id); }
+    catch { return reply.header('Cache-Control','no-store').code(503).send({error:'Service temporarily unavailable'}); }
+    const reportCoverage = { complete: true, analyzed: adhesions.length, counter_total: protest.count,
+      counter_matches: adhesions.length === protest.count };
 
     const ciudades = [...new Set(adhesions.map(a => a.ciudad).filter(Boolean))];
     // Do not manufacture a country code from the first letters of a place name.
@@ -1135,8 +1133,10 @@ export default async function protestRoutes(app, opts = {}) {
     return {
       protest: toPublicProtest(protest),
       total_adhesiones: protest.count,
+      total_analizado: adhesions.length,
+      report_coverage: reportCoverage,
       adhesiones_con_gps,
-      adhesiones_sin_gps: protest.count - adhesiones_con_gps,
+      adhesiones_sin_gps: adhesions.length - adhesiones_con_gps,
       ciudades_distintas: ciudades.length,
       paises_distintos: paises.length,
       idiomas_distintos: idiomas.length,

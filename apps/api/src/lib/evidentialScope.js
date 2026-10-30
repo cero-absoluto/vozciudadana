@@ -179,9 +179,9 @@ export const EVIDENTIAL_SCOPE_EN = {
   'demonstrates.country_breakdown': () =>
     `The country of each participant is recorded and shown in the geographic breakdown.`,
   'demonstrates.local_verified_municipality': (p) =>
-    `${p.count} of ${p.total} adhesions were geographically verified: GPS placed the participant inside the declared municipality${p.territory ? ` (${p.territory})` : ''}, matched against its OpenStreetMap entity.`,
+    `${p.count} of ${p.total} analyzed adhesions have declared GPS whose geocoded municipality name and country match the declared territory${p.territory ? ` (${p.territory})` : ''}.`,
   'demonstrates.local_verified_region': (p) =>
-    `${p.count} of ${p.total} adhesions were geographically verified: GPS placed the participant inside the declared region${p.territory ? ` (${p.territory})` : ''}, matched against its OpenStreetMap entity.`,
+    `${p.count} of ${p.total} analyzed adhesions have declared GPS whose geocoded region name and country match the declared territory${p.territory ? ` (${p.territory})` : ''}.`,
   'demonstrates.institutional_affiliation': (p) =>
     `Each participant holds a verified email address in the institutional domain ${p.domain}, evidencing affiliation with that institution.`,
   'demonstrates.census_vouching': () =>
@@ -206,8 +206,8 @@ export const EVIDENTIAL_SCOPE_EN = {
   'methods.email_otp': (p) => `Institutional email one-time-password verification (domain ${p.domain}).`,
   'methods.census_vouching': () => `Peer vouching within the institutional census.`,
   'methods.sim_country': () => `SIM country-of-registration signal.`,
-  'methods.gps_osm_municipality': (p) => `GPS reverse-geocoded against the OpenStreetMap entity of the declared municipality${p.territory ? ` (${p.territory})` : ''}.`,
-  'methods.gps_osm_region': (p) => `GPS reverse-geocoded against the OpenStreetMap entity of the declared region${p.territory ? ` (${p.territory})` : ''}.`,
+  'methods.gps_osm_municipality': (p) => `Declared coordinates compared by geocoded municipality name and country${p.territory ? ` (${p.territory})` : ''}.`,
+  'methods.gps_osm_region': (p) => `Declared coordinates compared by geocoded region name and country${p.territory ? ` (${p.territory})` : ''}.`,
   'methods.ip': () => `Approximate IP geolocation, used as a secondary signal (not stored in plain text).`,
 
   'admission.public_institution': (p) => `Recipient is a public institution, verified on Wikidata (${p.wikidata}).`,

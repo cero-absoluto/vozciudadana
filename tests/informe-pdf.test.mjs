@@ -273,3 +273,18 @@ for(const ui of L)test('PDF renders the same five geographic cohorts and analyze
  for(const key of ['geoNational','geoInternational','geoOtherGps','geoUnknown'])assert.ok(all.includes(txt.stripUndrawable(t('informe.'+key)).replace(/\s/g,'')),key);
  assert.ok(all.includes(txt.stripUndrawable(t('informe.geoCoverage',{analyzed:5,total:20})).replace(/\s/g,'')),'coverage');
 });
+
+for(const ui of L)test('regional PDF names region agreement without claiming municipality evidence: '+ui,async()=>{
+ const c=structuredClone(FIXTURES[ui]);c.data.protest.scope='regional';c.data.desglose_geografico_local={...c.data.desglose_geografico_local,scope:'regional'};
+ const r=await build(c),all=r.drawn.join(' ').replace(/\s/g,'');
+ assert.ok(all.includes(txt.stripUndrawable(loc[ui].informe.geoRegionalVerified).replace(/\s/g,'')));
+ assert.ok(!all.includes(txt.stripUndrawable(loc[ui].informe.geoLocalVerified).replace(/\s/g,'')));
+});
+
+for(const ui of L)test('PDF cohort total names the analyzed rows separately from the stored counter: '+ui,async()=>{
+ const c=structuredClone(FIXTURES[ui]);c.data.total_adhesiones=1;c.data.total_analizado=5;c.data.report_coverage={complete:true,analyzed:5,counter_total:1,counter_matches:false};c.data.desglose_geografico_local={...c.data.desglose_geografico_local,total:5,gps_local:1,gps_nacional:1,nacionales_sin_gps:1,internacionales:1,sin_pais:1};
+ const r=await build(c);
+ const analyzed=r.drawn.indexOf(txt.stripUndrawable(loc[ui].informe.geoAnalyzedTotal)+':');
+ const stored=r.drawn.indexOf(txt.stripUndrawable(loc[ui].informe.geoCounterTotal)+':');
+ assert.ok(analyzed>=0);assert.equal(r.drawn[analyzed+1],'5');assert.ok(stored>=0);assert.equal(r.drawn[stored+1],'1');
+});

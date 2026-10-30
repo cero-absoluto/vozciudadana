@@ -15,3 +15,20 @@ test('unknown country remains unknown and five cohorts form an exhaustive partit
 test('regional comparison uses the region, not the municipality',()=>{
  assert.equal(matchesDeclaredTerritory({...protest,scope:'regional'},{gps_confirmed:true,ciudad:'Synthetic',region:'Elsewhere',pais_code:'ES'}),false);
 });
+
+test('missing place names never prove local agreement, even with same country and numeric OSM id',()=>{
+ const a={gps_confirmed:true,pais_code:'ES',adhesion_osm_id:123};
+ assert.equal(matchesDeclaredTerritory(protest,a),false);
+ assert.equal(geographicBreakdown(protest,[a]).gps_nacional,1);
+});
+for(const code of [null,'','ES\n','es','ESP','ÉS'])test('unusable country stays unknown: '+JSON.stringify(code),()=>{
+ const r=geographicBreakdown(protest,[{gps_confirmed:true,ciudad:'Synthetic',pais_code:code}]);assert.equal(r.sin_pais,1);assert.equal(r.gps_local,0);
+});
+test('country-known rows with an unknown target country are not silently domestic',()=>{
+ const r=geographicBreakdown({...protest,country:null},[{gps_confirmed:false,pais_code:'ES'}]);assert.equal(r.sin_pais,1);
+});
+
+test('accent, case and repeated whitespace normalization preserves meaningful qualifiers',()=>{
+ assert.equal(matchesDeclaredTerritory({...protest,convocatoria_ciudad_nombre:'San José'},{gps_confirmed:true,ciudad:'  SÁN   jose  ',pais_code:'ES'}),true);
+ assert.equal(matchesDeclaredTerritory(protest,{gps_confirmed:true,ciudad:'Synthetic, Other Region',pais_code:'ES'}),false);
+});

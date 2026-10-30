@@ -2,7 +2,7 @@
 // an entity match (node/way/relation have separate ID spaces). Require the
 // declared country and territorial name; describe this as a geocoder match.
 const validCountry = value => typeof value === 'string' && value.length === 2 && /^[A-Z]{2}$/.test(value);
-const normalize = value => typeof value === 'string' ? value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase() : null;
+const normalize = value => typeof value === 'string' ? value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ').toLowerCase() : null;
 export function matchesDeclaredTerritory(protest, evidence) {
   if (!['local','regional'].includes(protest.scope) || evidence.gps_confirmed !== true || !validCountry(protest.country) || !validCountry(evidence.pais_code) || evidence.pais_code !== protest.country) return false;
   const name = protest.scope === 'local' ? evidence.ciudad : evidence.region;

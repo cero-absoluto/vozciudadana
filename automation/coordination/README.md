@@ -1,4 +1,4 @@
-# Recuperación del relevo existente — 30/10/2026
+# Relevo existente recuperado y comprobado — 30/10/2026
 
 El circuito ya funcionó en PR #128: Claude produjo `4369d24d`, se solicitó revisión
 Codex de ese HEAD y el estado terminó en OWNER_REVIEW. No se reconstruye el agente.
@@ -32,9 +32,10 @@ protección frente a un administrador que cambie main. Se mantiene esa frontera 
 la protección obligatoria de rama continúa siendo un pendiente distinto de S15.
 Las pruebas no garantizan aislamiento absoluto de la red ni de todo el proceso.
 
-La puesta en marcha se declarará recuperada únicamente después de observar una tarea
-sintética real con parche publicado, pruebas/build y revisión Codex del nuevo SHA hasta
-OWNER_REVIEW. El piloto no se fusionará ni desplegará en producción.
+Recuperación observada en PR #149: Claude implementó `5e6862e35e5d74f4111df10dac146cd2456c9e39`,
+pasaron todos los jobs del run `41045624656` y Codex revisó ese SHA sin hallazgos.
+El controlador terminó en OWNER_REVIEW a las 11:09:28Z, sin correcciones. El piloto
+no se fusionó ni desplegó. Evidencia completa: `docs/handoff-recovery-20261030.md`.
 
 ---
 

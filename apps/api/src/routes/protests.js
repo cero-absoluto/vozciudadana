@@ -1,3 +1,4 @@
+import { parseGpsGeocoderResponse } from '../lib/gpsGeocoder.js';
 import {withRequestDeadline} from '../lib/requestDeadline.js';
 import {credentialMatches} from '../lib/credentialMatches.js';
 import { PUBLIC_PROTEST_SELECT, publicProtestSchema, toPublicProtest } from '../lib/publicProtest.js';
@@ -867,21 +868,17 @@ export default async function protestRoutes(app, opts = {}) {
     try {
     // Reverse geocode GPS coordinates via Nominatim (backend proxy — user IP not exposed)
     const zoomLevel = patchProtest?.scope === 'regional' ? 6 : 10;
-    let adhesion_osm_id = null;
-    let ciudad = null, region = null, pais = null, pais_code = null;
+    let adhesion_osm_id, ciudad, region, pais, pais_code;
     try {
       const geoRes = await fetch(
         `https://nominatim.openstreetmap.org/reverse?lat=${gps_lat}&lon=${gps_lng}&format=json&zoom=${zoomLevel}`,
         { headers: { 'Accept-Language': 'es', 'User-Agent': 'VoiceProtest/1.0' }, signal: AbortSignal.timeout(6000) }
       );
-      const geoData = await geoRes.json();
-      ciudad = geoData.address?.city || geoData.address?.town || geoData.address?.village || null;
-      region = geoData.address?.state || geoData.address?.county || null;
-      pais   = geoData.address?.country || null;
-      pais_code = geoData.address?.country_code?.toUpperCase() || null;
-      if (geoData.osm_id) adhesion_osm_id = parseInt(geoData.osm_id);
+      ({ adhesion_osm_id, ciudad, region, pais, pais_code } = await parseGpsGeocoderResponse(geoRes, patchProtest.scope));
       req.log.info({code:'gps_geocode_completed'});
-    } catch { /* silencioso — GPS update proceeds without osm_id */ }
+    } catch {
+      return reply.header('Cache-Control','no-store').code(503).send({error:'GPS evidence unavailable'});
+    }
 
     // Token consumption, authoritative confidence calculation and write are one database transaction.
     // Never retry after an uncertain response: the transaction may already have committed.

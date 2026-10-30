@@ -1,3 +1,4 @@
+import { parseGpsGeocoderResponse } from './gpsGeocoder.js';
 import { isValidClientIp, ipapiUrl } from './clientIp.js';
 // ── LocationEvidenceService (VP-SEC-008 fix, Fase 2 — Despliegue A) ────────
 //
@@ -49,17 +50,8 @@ export async function resolveLocationEvidence({ latitude, longitude, accuracyMet
         `https://nominatim.openstreetmap.org/reverse?lat=${gps_lat}&lon=${gps_lng}&format=json&zoom=${zoomLevel}`,
         { headers: { 'Accept-Language': 'es', 'User-Agent': 'VozCiudadana/1.0' }, signal: AbortSignal.timeout(6000) }
       );
-      const geoData = await geoRes.json();
-      ciudad = geoData.address?.city || geoData.address?.town || geoData.address?.village ||
-               geoData.address?.suburb || geoData.address?.hamlet ||
-               geoData.address?.locality || geoData.address?.municipality || null;
-      region = geoData.address?.state || geoData.address?.county || null;
-      pais   = geoData.address?.country || null;
-      pais_code = geoData.address?.country_code?.toUpperCase() || null;
-
-      if (geoData.osm_id && (scope === 'local' || scope === 'regional')) {
-        adhesion_osm_id = parseInt(geoData.osm_id);
-      }
+      const parsed = await parseGpsGeocoderResponse(geoRes, scope);
+      ({ ciudad, region, pais, pais_code, adhesion_osm_id } = parsed);
       gps_confirmed = true;
     } catch {
       // Nominatim slow/unavailable — degrade to IP below, never block.

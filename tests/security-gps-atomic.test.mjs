@@ -10,7 +10,7 @@ const {default:routes}=await import('../apps/api/src/routes/protests.js');
 function fixture(response={data:{ok:true,fiabilidad:95,adhesion_osm_id:123}}){const calls=[];const database={from(table){calls.push({table});const q={select(){return q;},eq(){return q;},maybeSingle:async()=>({data:table==='gps_update_tokens'?{adhesion_id:aid,protest_id:pid,used:false,expires_at:'2999-01-01'}:{scope:'local',ends_at:'2999-01-01'}})};return q;},rpc(name,args){const call={name,args};calls.push(call);return {abortSignal(signal){call.signal=signal;return Promise.resolve(response);}};}};return {calls,database};}
 async function appFor(f){const app=Fastify();await app.register(sensible);await app.register(rateLimit,{global:false});registerSafeErrorHandler(app);await app.register(routes,{dependencies:{database:f.database}});return app;}
 const patch=app=>app.inject({method:'PATCH',url:`/${pid}/adhesion`,payload:{gps_update_token:token,gps_lat:40,gps_lng:-3,gps_accuracy:10}});
-function geography(){return mock.method(globalThis,'fetch',async()=>({json:async()=>({osm_id:123,address:{city:'Synthetic City',country:'Synthetic Country',country_code:'es'}})}));}
+function geography(){return mock.method(globalThis,'fetch',async()=>({ok:true,json:async()=>({osm_id:123,address:{city:'Synthetic City',country:'Synthetic Country',country_code:'es'}})}));}
 test('GPS route uses one bounded atomic RPC, no separate token update or stale confidence read',async()=>{
  const geo=geography(),f=fixture(),app=await appFor(f);try{const r=await patch(app);assert.equal(r.statusCode,200,r.body);assert.deepEqual(r.json(),{ok:true,fiabilidad:95,adhesion_osm_id:123});assert.deepEqual(f.calls.filter(c=>c.table).map(c=>c.table),['gps_update_tokens','protests']);const rpc=f.calls.find(c=>c.name);assert.equal(rpc.name,'consume_gps_reinforcement');assert.equal(rpc.args.p_token,token);assert.equal(rpc.args.p_protest_id,pid);assert.equal(rpc.args.p_adhesion_id,undefined);assert.equal(rpc.args.p_fiabilidad,undefined);assert.ok(rpc.signal.aborted);}finally{geo.mock.restore();await app.close();}
 });
@@ -25,7 +25,7 @@ test('malformed GPS token is rejected before database or external geocode',async
 });
 
 test('parallel PATCH requests with one token make only one per-process reverse-geocode call',async()=>{
- let fetches=0,release,announce;const started=new Promise(resolve=>announce=resolve),gate=new Promise(resolve=>release=resolve);const geo=mock.method(globalThis,'fetch',async()=>{fetches++;announce();await gate;return {json:async()=>({osm_id:123,address:{city:'Synthetic'}})};});const f=fixture(),app=await appFor(f);
+ let fetches=0,release,announce;const started=new Promise(resolve=>announce=resolve),gate=new Promise(resolve=>release=resolve);const geo=mock.method(globalThis,'fetch',async()=>{fetches++;announce();await gate;return {ok:true,json:async()=>({osm_id:123,address:{city:'Synthetic',country_code:'es'}})};});const f=fixture(),app=await appFor(f);
  try{await app.ready();const leader=patch(app);await started;const followers=await Promise.all(Array.from({length:19},()=>patch(app)));assert.equal(fetches,1);assert.ok(followers.every(r=>r.statusCode===429));release();assert.equal((await leader).statusCode,200);assert.equal(f.calls.filter(c=>c.name).length,1);}finally{release();geo.mock.restore();await app.close();}
 });
 test('failed RPC releases the per-process in-flight slot for a later request',async()=>{
@@ -39,4 +39,15 @@ for (const risk of ['high','critical']) test('IDV-02 GPS reinforcement rejects '
 test('IDV-02 transaction policy rejection is controlled after a concurrent policy change',async()=>{
  const f=fixture({error:{message:'VP_GPS_NOT_ALLOWED'}}),geo=geography(),app=await appFor(f);
  try{const r=await patch(app);assert.equal(r.statusCode,403);assert.equal(r.json().error,'GPS_NOT_ALLOWED');}finally{geo.mock.restore();await app.close();}
+});
+
+for (const [name,response] of [
+ ['HTTP error',{ok:false,json:async()=>({address:{city:'Synthetic',country_code:'es'}})}],
+ ['provider error',{ok:true,json:async()=>({error:'Unavailable'})}],
+ ['missing country',{ok:true,json:async()=>({address:{city:'Synthetic'}})}],
+ ['invalid JSON',{ok:true,json:async()=>{throw new SyntaxError('invalid');}}],
+]) test('IDV-03 failed geocoder does not consume token; retry succeeds: '+name,async()=>{
+ let fail=true;const geo=mock.method(globalThis,'fetch',async()=>fail?response:{ok:true,json:async()=>({osm_id:123,address:{city:'Synthetic',country_code:'es'}})});
+ const f=fixture(),app=await appFor(f);
+ try {const r=await patch(app);assert.equal(r.statusCode,503,r.body);assert.equal(r.headers['cache-control'],'no-store');assert.equal(f.calls.filter(c=>c.name).length,0);fail=false;assert.equal((await patch(app)).statusCode,200);assert.equal(f.calls.filter(c=>c.name).length,1);}finally{geo.mock.restore();await app.close();}
 });

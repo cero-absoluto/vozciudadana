@@ -72,9 +72,10 @@ export default async function userRoutes(app) {
     // it); no SMS is sent and nothing is logged. /join still decides admission.
     if (protest_id) {
       const { data: target, error: targetError } = await supabase
-        .from('protests').select('scope, country').eq('id', protest_id).maybeSingle();
+        .from('protests').select('scope, country, dominio_email').eq('id', protest_id).maybeSingle();
       if (targetError) return databaseUnavailable(reply);
       if (!target) return reply.code(404).send({error:'PROTEST_NOT_FOUND'});
+      if (target.dominio_email) return reply.code(403).send({code:'INSTITUTIONAL_VERIFICATION_REQUIRED',error:'INSTITUTIONAL_VERIFICATION_REQUIRED'});
       if (target?.scope === 'national' && target.country) {
         const n = deriveNumberingCountry(phone);
         if (n.resolution !== NUMBERING_RESOLUTION.RESOLVED_UNSHARED && n.resolution !== NUMBERING_RESOLUTION.RESOLVED_SHARED_UNIQUE) {

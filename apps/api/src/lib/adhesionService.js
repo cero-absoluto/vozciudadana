@@ -72,6 +72,8 @@ export class WrongOtpError extends AdhesionError {
 }
 
 const RPC_ERROR_MAP = {
+  VP_INSTITUTIONAL_VERIFICATION_REQUIRED: class extends AdhesionError { constructor() { super('INSTITUTIONAL_VERIFICATION_REQUIRED'); } },
+  VP_GPS_NOT_ALLOWED: class extends AdhesionError { constructor() { super('GPS_NOT_ALLOWED'); } },
   VP_PROTEST_NOT_FOUND:            ProtestNotFoundError,
   VP_PROTEST_CLOSED:               ProtestClosedError,
   VP_BALANCE_EXHAUSTED:            BalanceExhaustedError,
@@ -193,11 +195,15 @@ export async function createVerifiedAdhesion(input) {
   // forgetting a restriction a route author didn't think to duplicate.
   const { data: protest, error: protestErr } = await supabase
     .from('protests')
-    .select('scope, country, convocatoria_osm_id, convocatoria_ciudad_nombre, dominio_email')
+    .select('scope, country, convocatoria_osm_id, convocatoria_ciudad_nombre, dominio_email, risk_level')
     .eq('id', protestId)
     .maybeSingle();
 
   if (protestErr || !protest) throw new ProtestNotFoundError();
+
+  if (protest.dominio_email && identity.method !== 'institutional_email_otp') {
+    throw new AdhesionError('INSTITUTIONAL_VERIFICATION_REQUIRED', 'Institutional email verification is required');
+  }
 
   // National eligibility (H7): the country comes from the server-side
   // derivation of the number the OTP provider verified (lib/numberingCountry.js),
@@ -222,8 +228,8 @@ export async function createVerifiedAdhesion(input) {
   // external services (Nominatim, ipapi.co) that must never hold a
   // PostgreSQL transaction open while they respond.
   const evidence = await resolveLocationEvidence({
-    latitude: location?.latitude ?? null,
-    longitude: location?.longitude ?? null,
+    latitude: !protest.dominio_email && !['high', 'critical'].includes(protest.risk_level) ? location?.latitude ?? null : null,
+    longitude: !protest.dominio_email && !['high', 'critical'].includes(protest.risk_level) ? location?.longitude ?? null : null,
     accuracyMeters: location?.accuracyMeters ?? null,
     ip: location?.ip ?? null,
     scope: protest.scope,

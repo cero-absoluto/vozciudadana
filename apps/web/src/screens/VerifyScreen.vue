@@ -172,6 +172,7 @@ const target = lastId
     return;
   }
   if (target) {
+    const gpsAllowed = !target.dominio_email && !['high', 'critical'].includes(target.risk_level);
     try {
       const participationToken = sessionStorage.getItem('vc_participation_token');
       const smsSent   = sessionStorage.getItem('vc_sms_sent') === 'true';
@@ -184,9 +185,9 @@ const target = lastId
     participation_token: participationToken,
     sms_sent:        smsSent,
     recaptcha_token: token || 'dev',
-   gps_lat:         ui.gpsLat ?? (localStorage.getItem('vc_gps_lat') ? parseFloat(localStorage.getItem('vc_gps_lat')) : null) ?? (device.gpsReady ? device.gpsLat : null),
-   gps_lng:         ui.gpsLng ?? (localStorage.getItem('vc_gps_lng') ? parseFloat(localStorage.getItem('vc_gps_lng')) : null) ?? (device.gpsReady ? device.gpsLng : null),
-   gps_accuracy:    ui.gpsAccuracy ?? (localStorage.getItem('vc_gps_accuracy') ? parseFloat(localStorage.getItem('vc_gps_accuracy')) : null) ?? (device.gpsReady ? device.gpsAccuracy : null),
+   gps_lat: gpsAllowed ? (ui.gpsLat ?? (localStorage.getItem('vc_gps_lat') ? parseFloat(localStorage.getItem('vc_gps_lat')) : null) ?? (device.gpsReady ? device.gpsLat : null)) : null,
+   gps_lng: gpsAllowed ? (ui.gpsLng ?? (localStorage.getItem('vc_gps_lng') ? parseFloat(localStorage.getItem('vc_gps_lng')) : null) ?? (device.gpsReady ? device.gpsLng : null)) : null,
+   gps_accuracy: gpsAllowed ? (ui.gpsAccuracy ?? (localStorage.getItem('vc_gps_accuracy') ? parseFloat(localStorage.getItem('vc_gps_accuracy')) : null) ?? (device.gpsReady ? device.gpsAccuracy : null)) : null,
    ip_ciudad:  localStorage.getItem('vc_geo_ciudad') || device.ipCity || null,
    ip_pais:    localStorage.getItem('vc_geo_pais') || device.ipCountryName || null,
    ip_region:  localStorage.getItem('vc_geo_region') || device.ipRegion || null,
@@ -201,7 +202,7 @@ const target = lastId
   // UI for it was removed — see the Audit Trail, 16 and 21 July 2026.
   hadGpsAtJoin.value = !!(ui.gpsLat ?? (localStorage.getItem('vc_gps_lat') ? parseFloat(localStorage.getItem('vc_gps_lat')) : null) ?? (device.gpsReady ? device.gpsLat : null));
   gpsUpdateToken.value = joinRes.gps_update_token || null;
-  showGpsReinforce.value = !hadGpsAtJoin.value && !!gpsUpdateToken.value;
+  showGpsReinforce.value = gpsAllowed && !hadGpsAtJoin.value && !!gpsUpdateToken.value;
 });
     } catch (e) {
       // Message + destination come from lib/joinRejection.js: fixed translated
@@ -235,6 +236,9 @@ const target = lastId
 const reinforcing = ref(false);
 async function reinforceGps() {
   if (reinforcing.value) return;
+  const id = sessionStorage.getItem('vc_last_joined');
+  const target = protests.protests.find(p => String(p.id) === String(id));
+  if (!target || target.dominio_email || ['high', 'critical'].includes(target.risk_level)) return;
   reinforcing.value = true;
   try {
     const pos = await new Promise((resolve, reject) =>

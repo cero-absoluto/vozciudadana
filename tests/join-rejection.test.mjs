@@ -158,3 +158,9 @@ test('H7 derived-country codes: own kinds, fixed keys, never server text, never 
   assert.match(loc.en.verify.toastNationalUnresolved, /does not mean your number belongs to another country/);
 });
 
+
+test('IDV-01 final rejection gives institutional email guidance, never a generic error',()=>{
+ const r=classifyJoinRejection(E(403,{code:'INSTITUTIONAL_VERIFICATION_REQUIRED',error:'INSTITUTIONAL_VERIFICATION_REQUIRED'}));
+ assert.equal(r.toastKey,'verify.toastInstitutionalRequired');assert.equal(joinRejectionPath(r,'P1'),'/');
+ for(const l of L)assert.ok(loc[l].verify.toastInstitutionalRequired);
+});

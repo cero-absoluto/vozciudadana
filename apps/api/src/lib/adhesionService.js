@@ -236,7 +236,8 @@ export async function createVerifiedAdhesion(input) {
   });
 
   const tieneGps    = evidence.gps_confirmed;
-  const tieneIpPais = !!evidence.pais_code;
+  // A country supplied by GPS is not independent IP corroboration.
+  const tieneIpPais = evidence.ip_country_confirmed === true;
   let fiabilidad = 60;
   let senalesArr = ['ip'];
   const idSignal = identitySignalLabel(identity.method);

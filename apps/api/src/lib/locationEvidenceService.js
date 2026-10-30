@@ -27,6 +27,7 @@ import { isValidClientIp, ipapiUrl } from './clientIp.js';
  * @property {string|null} pais_code
  * @property {number|null} adhesion_osm_id
  * @property {boolean} gps_confirmed
+ * @property {boolean} ip_country_confirmed
  */
 
 /**
@@ -42,6 +43,7 @@ export async function resolveLocationEvidence({ latitude, longitude, accuracyMet
 
   let ciudad = null, region = null, pais = null, pais_code = null, adhesion_osm_id = null;
   let gps_confirmed = false;
+  let ip_country_confirmed = false;
 
   if (gps_lat != null && gps_lng != null) {
     try {
@@ -58,20 +60,24 @@ export async function resolveLocationEvidence({ latitude, longitude, accuracyMet
     }
   }
 
-  if (!ciudad && isValidClientIp(ip)) {
+  if (!gps_confirmed && isValidClientIp(ip)) {
     try {
       const geoRes = await fetch(ipapiUrl(ip), {
         headers: { 'User-Agent': 'VoiceProtest/1.0 (voiceprotest.org)' },
         signal: AbortSignal.timeout(4000),
       });
+      if (!geoRes.ok) throw new Error('IP geocoder unavailable');
       const geo = await geoRes.json();
+      if (!geo || typeof geo !== 'object' || Array.isArray(geo) || geo.error) throw new Error('Invalid IP evidence');
       ciudad = geo.city || null;
       region = geo.region || null;
       pais   = geo.country_name || null;
       // ipapi returns names in ENGLISH ("Spain") while convocatoria.country_name
       // is stored in Spanish ("España") — never compare names, only ISO codes.
-      pais_code = (geo.country_code || geo.country || '').toUpperCase() || null;
+      const countryCode = geo.country_code || geo.country;
+      pais_code = typeof countryCode === 'string' ? countryCode.toUpperCase() : null;
       if (pais_code && !/^[A-Z]{2}$/.test(pais_code)) pais_code = null;
+      ip_country_confirmed = !!pais_code;
     } catch {
       // ipapi slow/unavailable too — the adhesion proceeds with no
       // geographic signal at all, which is an honest, lower-confidence
@@ -79,5 +85,6 @@ export async function resolveLocationEvidence({ latitude, longitude, accuracyMet
     }
   }
 
-  return { ciudad, region, pais, pais_code, adhesion_osm_id, gps_confirmed };
+  const place = value => typeof value === 'string' && value.trim() && value.length <= 512 ? value.trim() : null;
+  return { ciudad: place(ciudad), region: place(region), pais: place(pais), pais_code, adhesion_osm_id, gps_confirmed, ip_country_confirmed };
 }

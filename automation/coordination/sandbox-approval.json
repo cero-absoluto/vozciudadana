@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "status": "approved",
+  "owner_id": 280877387,
+  "bundle_sha256": "18c3bf86b1a5e31c425fe55a00cd7157d67dd9f7579f98f78a9551e9dc35c349",
+  "evidence": {
+    "pilot_status": "success",
+    "pilot_url": "https://github.com/cero-absoluto/voiceprotest-private-review/actions/runs/41044420980",
+    "source_commit": "7c1f7d2fac1163d6d5078f969851794d7175f5e1",
+    "date": "2026-10-30",
+    "authorization": "Owner authorized recovery of the previously working handoff in the active ChatGPT session."
+  },
+  "limitations": [
+    "Specific synthetic tool and artifact boundary tests, not an absolute network or OS isolation guarantee.",
+    "Only existing frontend/test edit scope; no automatic merge or production deployment."
+  ]
+}

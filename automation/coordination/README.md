@@ -1,3 +1,45 @@
+# Recuperación del relevo existente — 30/10/2026
+
+El circuito ya funcionó en PR #128: Claude produjo `4369d24d`, se solicitó revisión
+Codex de ese HEAD y el estado terminó en OWNER_REVIEW. No se reconstruye el agente.
+
+El candidato conserva controlador, máximo de dos correcciones, política de rutas,
+verificación sin credenciales, publicador con lease y petición autenticada a Codex.
+No habilita merge ni despliegue automáticos, API/SQL ni nuevas credenciales.
+
+Cambios de recuperación:
+
+- La guardia añadida en S16 comparaba un commit completo con una variable de cuenta.
+  Ahora `verify-approval.mjs` comprueba la huella de los ocho archivos de control
+  contra `sandbox-approval.json`, versionado en la rama de confianza. Un cambio de
+  documentación no invalida la aprobación; un cambio de controlador/workflow sí.
+- Los checkouts de confianza usan el SHA exacto que ejecuta el workflow. La comprobación
+  se ejecuta antes de recoger la tarea o iniciar el paso con credencial del modelo.
+- Se limita explícitamente el catálogo de herramientas y se deniega lectura de directorios
+  temporales y ubicaciones habituales de credenciales/procesos. La tarea se entrega en
+  `.handoff-input`, excluido del artefacto. No hay checkout con credenciales persistentes.
+- Un preflight inline de confianza rechaza enlaces simbólicos y la ruta reservada antes
+  de descargar la tarea y antes de autenticar el modelo. No ejecuta scripts del PR.
+
+Ensayo privado de la acción fijada: run `41044420980`, success, commit privado
+`7c1f7d2fac1163d6d5078f969851794d7175f5e1`. Se comprobaron edición y creación
+permitidas, denegación de escritura externa, hooks/MCP/shell no ejecutados y canario
+sintético externo no expuesto, incluida la ruta por enlace. No se inspeccionaron
+secretos reales. Las pruebas específicas locales de coordinación son 72.
+
+La aprobación es un registro de confianza del repositorio: no una firma externa ni
+protección frente a un administrador que cambie main. Se mantiene esa frontera previa;
+la protección obligatoria de rama continúa siendo un pendiente distinto de S15.
+Las pruebas no garantizan aislamiento absoluto de la red ni de todo el proceso.
+
+La puesta en marcha se declarará recuperada únicamente después de observar una tarea
+sintética real con parche publicado, pruebas/build y revisión Codex del nuevo SHA hasta
+OWNER_REVIEW. El piloto no se fusionará ni desplegará en producción.
+
+---
+
+## Documentación histórica
+
 # Flujo Claude implementa → Codex audita — propuesta actual
 
 Para tareas nuevas, ChatGPT concreta el objetivo y prepara una PR de soporte desde main

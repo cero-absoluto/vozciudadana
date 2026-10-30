@@ -456,20 +456,18 @@ test('W5 aislamiento de credenciales: el secreto del modelo aparece una vez, en 
   assert.ok((code.match(/persist-credentials: false/g) ?? []).length >= 4, 'ningún checkout deja credenciales en .git');
 });
 test('W6 confianza del controlador: decide y publish toman código de la rama por defecto; el PR solo se lee como datos; concurrencia 1 por PR sin cancelar', () => {
-  assert.match(code, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/g);
+  assert.ok((code.match(/ref: \$\{\{ github\.workflow_sha \}\}/g) ?? []).length >= 4, 'trusted jobs pin the actual workflow commit');
   assert.match(code, /group: agent-handoff-pr-\$\{\{ github\.event\.issue\.number \}\}\n\s+cancel-in-progress: false/);
   assert.match(code, /github\.event\.comment\.user\.id == 199175422/); assert.equal(policy.auditor.id, 199175422);
   assert.match(code, /vars\.AGENT_HANDOFF_ENABLED == 'true'/);
   assert.deepEqual([...code.matchAll(/run: .*(npm|pnpm|yarn|npx).*/g)].map((m) => m[0]), ['run: npm ci --ignore-scripts --no-audit --no-fund', 'run: npm ci --ignore-scripts --no-audit --no-fund --prefix automation/preflight/tools', 'run: npm run build --workspace=apps/web'], 'solo verify instala con lockfile congelado y compila sin credenciales');
 });
 
-test('handoff credential access is gated by approval of the exact workflow commit', () => {
-  const expression = code.match(/^    if: >-\n([\s\S]*?)\n    runs-on:/m)[1];
-  assert.match(expression, /vars\.AGENT_HANDOFF_SANDBOX_REVIEWED_SHA == github\.workflow_sha &&/);
-  for (const reviewed of ['', 'stale-sha', H1, H0]) {
-    const evaluate = expression.replace(/github\.event\.issue\.pull_request/g,'true').replace(/vars\.AGENT_HANDOFF_ENABLED/g,"'true'").replace(/vars\.AGENT_HANDOFF_SANDBOX_REVIEWED_SHA/g,JSON.stringify(reviewed)).replace(/github\.workflow_sha/g,JSON.stringify(H0)).replace(/startsWith\([^)]*\)/g,'true').replace(/github\.event\.comment\.user\.id/g,'0');
-    assert.equal(Function('return ('+evaluate+')')(), reviewed===H0);
-  }
+test('handoff approval runs before task collection and model credential access', () => {
+  const decide = code.slice(code.indexOf('  decide:'), code.indexOf('  claude:'));
+  assert.ok(decide.indexOf('node automation/coordination/verify-approval.mjs') < decide.indexOf('- id: gather'));
+  assert.doesNotMatch(decide, /continue-on-error|AGENT_HANDOFF_SANDBOX_REVIEWED_SHA|== github.workflow_sha/);
+  assert.match(code, /needs: decide/);
 });
 
 // ── Defensas redundantes (cada capa se prueba por separado) ─────────────────────────────────────────────
@@ -569,7 +567,9 @@ test('W7 el job del modelo no tiene shell, git ni red, ni carga config del PR; p
   const bootstrap = '        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends bubblewrap';
   assert.equal(claude.split(bootstrap).length, 2, 'instalación fija de bubblewrap exactamente una vez');
   assert.ok(claude.indexOf(bootstrap) < claude.indexOf('uses: actions/checkout@'), 'bootstrap antes del código del PR');
-  assert.doesNotMatch(claude.replace(bootstrap, ''), /^\s+run:/m, 'ningún otro run en el job del modelo');
+  assert.match(claude, /Reject source symlinks before model and artifact collection/);
+  assert.ok(claude.indexOf('Source symlinks are not allowed') < claude.indexOf('secrets.CLAUDE_CODE_OAUTH_TOKEN'));
+  assert.doesNotMatch(claude.replace(bootstrap, '').replace(/      - name: Reject source symlinks[\s\S]*?          PYTHON\n/, ''), /^\s+run:/m, 'solo preflight inline de confianza antes del modelo');
   assert.match(claude, /CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: '1'/); assert.doesNotMatch(claude, /git diff|node --test/);
   assert.match(claude, /--allowedTools "Read,Glob,Grep,Edit\(apps\/web\/src\/\*\*\),Edit\(tests\/\*\*\)"/); assert.doesNotMatch(claude, /Write\(/, 'las reglas Write(ruta) no se evalúan: solo Edit(ruta)');
   assert.match(claude, /--setting-sources user --strict-mcp-config --disable-slash-commands/);
@@ -852,7 +852,7 @@ test('W8 el PAT de revisión queda confinado al paso de petición y el publicado
   assert.equal((code.match(/secrets\.CODEX_REVIEW_GITHUB_TOKEN/g) ?? []).length, 1);
   assert.doesNotMatch(code.split('\n  review:\n')[0], /CODEX_REVIEW_GITHUB_TOKEN/);
   assert.match(review, /pull-requests: read/);
-  assert.match(review, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
+  assert.match(review, /ref: \$\{\{ github\.workflow_sha \}\}/);
   assert.doesNotMatch(review, /download-artifact|npm|CLAUDE_CODE|contents: write|ref:.*needs\./);
   assert.match(review, /run: node automation\/coordination\/request-review\.mjs/);
   assert.match(code, /review_head: \$\{\{ steps\.publish\.outputs\.review_head \}\}/);

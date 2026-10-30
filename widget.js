@@ -1,14 +1,16 @@
 (function () {
   // --- Config ---
-  const API = 'https://vozciudadanaapi-production.up.railway.app';
+  const API = 'https://api.voiceprotest.org';
   const APP = 'https://voiceprotest.org';
   const REFRESH = 30000; // refresh every 30 seconds
 
   // --- Get protest ID from script tag ---
   const scripts = document.querySelectorAll('script[src*="widget.js"]');
-  const src = scripts[scripts.length - 1].src;
+  const script = document.currentScript || scripts[scripts.length - 1];
+  if (!script?.src) return;
+  const src = script.src;
   const id = new URL(src).searchParams.get('id');
-  if (!id) return console.warn('[VoiceProtest widget] Missing ?id= parameter');
+  if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return console.warn('[VoiceProtest widget] Invalid id');
 
   // --- Styles ---
   const style = document.createElement('style');
@@ -146,12 +148,13 @@
   `;
 
   // Insert after the script tag
-  scripts[scripts.length - 1].insertAdjacentElement('afterend', container);
+  script.insertAdjacentElement('afterend', container);
 
+  const count = value => Number.isSafeInteger(value) && value >= 0 ? value : 0;
   // --- Fetch and update ---
   function update() {
     fetch(`${API}/api/protests/${id}/informe`)
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error('Widget unavailable'); return r.json(); })
       .then(d => {
         const p = d.protest;
         const el = id => document.getElementById(id);
@@ -163,14 +166,16 @@
           (scopeMap[p.scope] || p.scope || '') + (p.country_name ? ' · ' + p.country_name : '');
 
         // Animate counter
-        const target = d.total_adhesiones || 0;
+        const target = count(d.total_adhesiones);
         const current = parseInt(el(`vc-count-${id}`).textContent.replace(/,/g, '')) || 0;
         animateCount(el(`vc-count-${id}`), current, target);
 
-        el(`vc-meta-${id}`).innerHTML =
-          `<span>📍 ${d.ciudades_distintas || 0} cities</span>` +
-          `<span>🌐 ${d.paises_distintos || 0} countries</span>` +
-          `<span>✅ 100% verified</span>`;
+        const meta = el(`vc-meta-${id}`);
+        meta.replaceChildren(...[
+          `📍 ${count(d.ciudades_distintas)} cities`,
+          `🌐 ${count(d.paises_distintos)} countries`,
+          '✅ Verified',
+        ].map(text => { const span = document.createElement('span'); span.textContent = text; return span; }));
       })
       .catch(() => {
         const el = document.getElementById(`vc-title-${id}`);

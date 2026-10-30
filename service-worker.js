@@ -1,5 +1,5 @@
 // Bumped on each strategy change so the activate handler purges the old cache.
-const CACHE_NAME = 'vozciudadana-v5';
+const CACHE_NAME = 'vozciudadana-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -8,28 +8,33 @@ const ASSETS = [
   './icon-512.png',
 ];
 
+const cacheableResponse = response => response?.ok
+  && !/no-store|private/i.test(response.headers.get('cache-control') || '');
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-  );
-  self.skipWaiting();
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => Promise.all(ASSETS.map(async asset => {
+    const response = await fetch(asset, {cache:'reload',credentials:'omit'});
+    if (!response.ok) throw new Error('Public shell unavailable');
+    if (cacheableResponse(response)) await cache.put(asset,response);
+  }))).then(() => self.skipWaiting()));
 });
-
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
-      )
-    )
-  );
-  self.clients.claim();
+  event.waitUntil(caches.keys().then(keys => Promise.all(
+    keys.filter(key => key.startsWith('vozciudadana-') && key !== CACHE_NAME).map(key => caches.delete(key))
+  )).then(() => self.clients.claim()));
 });
 
 self.addEventListener('fetch', event => {
   // Only handle GET requests to the same origin
   if (event.request.method !== 'GET') return;
-  if (!event.request.url.startsWith(self.location.origin)) return;
+  let url;
+  try { url = new URL(event.request.url); } catch { return; }
+  if (url.origin !== self.location.origin || url.username || url.password) return;
+  // Cache only public shell/static paths, without proof/query parameters.
+  const publicPath = url.pathname === '/' || url.pathname === '/index.html'
+    || url.pathname === '/manifest.json' || /^\/assets\/[a-zA-Z0-9_.-]+\.(js|css)$/.test(url.pathname)
+    || url.pathname === '/fonts/pdf-sans-subset.ttf' || /^\/(?:icon-\d+|apple-touch-icon|favicon(?:-\d+x\d+)?)\.(png|svg|ico)$/.test(url.pathname);
+  if (!publicPath || url.search || event.request.headers.get('authorization')
+    || ['no-store','reload'].includes(event.request.cache)) return;
 
   const offlineResponse = () => new Response('Network unavailable and no cached response.', {
     status: 503,
@@ -42,13 +47,13 @@ self.addEventListener('fetch', event => {
   const network = fetch(event.request).catch(() => null);
   event.waitUntil(
     network.then(async response => {
-      if (!response?.ok) return;
+      if (!cacheableResponse(response)) return;
       const clone = response.clone();
       const cache = await caches.open(CACHE_NAME);
       await cache.put(event.request, clone);
     }).catch(() => {})
   );
-  const cachedResponse = () => caches.match(event.request).catch(() => undefined);
+  const cachedResponse = () => caches.open(CACHE_NAME).then(cache => cache.match(event.request)).catch(() => undefined);
 
   // Network-first for page navigations / HTML. This keeps index.html fresh so
   // it always references the current (hashed) JS/CSS after a deploy — no more
@@ -59,7 +64,7 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       network.then(async response => response
         || await cachedResponse()
-        || await caches.match('./index.html').catch(() => undefined)
+        || await caches.open(CACHE_NAME).then(cache => cache.match('./index.html')).catch(() => undefined)
         || offlineResponse())
     );
     return;
@@ -74,23 +79,25 @@ self.addEventListener('fetch', event => {
   );
 });
 
-// ── PUSH NOTIFICATIONS ────────────────────────────────────────────────
+// Push input is data. Never allow it to open another origin or load remote icons.
+function notificationUrl(value) {
+  try {
+    const url = new URL(typeof value === 'string' ? value : '/', self.location.origin);
+    return url.origin === self.location.origin && ['https:','http:'].includes(url.protocol)
+      && !url.username && !url.password ? url.href : self.location.origin + '/';
+  } catch { return self.location.origin + '/'; }
+}
 self.addEventListener('push', event => {
   if (!event.data) return;
-  const data = event.data.json();
-  event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body:    data.body,
-      icon:    data.icon  || '/icon-192.png',
-      badge:   data.badge || '/icon-72.png',
-      data:    { url: data.url },
-      vibrate: [200, 100, 200],
-    })
-  );
+  let data;
+  try { data = event.data.json(); } catch { return; }
+  if (!data || typeof data !== 'object' || typeof data.title !== 'string' || typeof data.body !== 'string') return;
+  event.waitUntil(self.registration.showNotification(data.title.slice(0,160), {
+    body: data.body.slice(0,1024), icon: '/icon-192.png', badge: '/icon-72.png',
+    data: {url:notificationUrl(data.url)}, vibrate:[200,100,200],
+  }));
 });
-
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const url = event.notification.data?.url || 'https://voiceprotest.org';
-  event.waitUntil(clients.openWindow(url));
+  event.waitUntil(clients.openWindow(notificationUrl(event.notification.data?.url)));
 });

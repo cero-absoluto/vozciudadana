@@ -326,3 +326,10 @@ test('IDV-04 actual admission persists only the geographic signals obtained',asy
   }
  }finally{globalThis.fetch=originalFetch;}
 });
+
+for(const country of ['ES','FR'])test('IDV-05 actual join receipt requires geographic country as well as place name: '+country,async()=>{
+ const id=P(country==='ES'?30:31);PROTESTS[id]={id,scope:'local',country:'ES',convocatoria_osm_id:123,convocatoria_ciudad_nombre:'Synthetic'};
+ const v=body(await verify(PH.ES,'device-idv05-'+country));const previousFetch=globalThis.fetch;
+ globalThis.fetch=async()=>({ok:true,json:async()=>({osm_id:123,address:{city:'Synthetic',country_code:country.toLowerCase()}})});
+ try{const r=await app.inject({method:'POST',url:`/api/protests/${id}/join`,payload:{participation_token:v.participation_token,recaptcha_token:'dev',gps_lat:40,gps_lng:-3}});assert.equal(r.statusCode,201,r.body);assert.equal(r.json().local_verified,country==='ES');assert.equal(r.json().geo_scope_source,country==='ES'?'gps_geocoder_name_country':null);}finally{globalThis.fetch=previousFetch;}
+});

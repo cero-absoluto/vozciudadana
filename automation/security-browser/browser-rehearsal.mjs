@@ -7,6 +7,13 @@ import {FIXTURES} from '../../tests/helpers/informe-fixtures.mjs';
 const {chromium}=await import(process.env.S16_PLAYWRIGHT_MODULE||'playwright');
 const root=resolve('apps/web/dist'),checks=[],requests=[],errors=[],unexpected=[];
 const SECOND_ID='22222222-2222-4222-8222-222222222222';
+if(process.env.IDV_GEOGRAPHY_REHEARSAL==='1')for(const fixture of Object.values(FIXTURES)) {
+ fixture.data={...fixture.data,total_adhesiones:20,total_analizado:5,
+  report_coverage:{complete:true,analyzed:5,counter_total:20,counter_matches:false},
+  desglose_geografico_local:{...fixture.data.desglose_geografico_local,total:5,gps_local:1,gps_nacional:1,nacionales_sin_gps:1,internacionales:1,sin_pais:1},
+  desglose_fiabilidad:{alta:{count:3},media:{count:2},base:{count:0}}};
+}
+
 const browser=await chromium.launch({headless:true,...(process.env.S16_CHROMIUM_EXECUTABLE?{executablePath:process.env.S16_CHROMIUM_EXECUTABLE}:{})});
 try{
  for(const locale of ['es','en','fr','zh']){
@@ -24,7 +31,7 @@ try{
     assert.equal(route.request().method(),'GET','No provider/business mutation is allowed in this rehearsal');
     if(u.pathname.endsWith('/integrity-data'))return route.fulfill({status:503,contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:'{"error":"synthetic-unavailable"}'});
     const second=u.pathname.includes(SECOND_ID);
-    const data=u.pathname.endsWith('/informe')?(second?{...FIXTURES[locale].data,total_adhesiones:27,protest:{...FIXTURES[locale].data.protest,id:SECOND_ID,title:'S16 second report',hash_integridad:null,fuente_url:'javascript:alert(1)'}}:FIXTURES[locale].data):u.pathname==='/api/ipinfo'?{country_code:'ES',country_name:'Spain',city:'Synthetic'}:[];
+    const data=u.pathname.endsWith('/informe')?(second?{...FIXTURES[locale].data,total_adhesiones:27,report_coverage:FIXTURES[locale].data.report_coverage?{...FIXTURES[locale].data.report_coverage,counter_total:27}:undefined,protest:{...FIXTURES[locale].data.protest,id:SECOND_ID,title:'S16 second report',hash_integridad:null,fuente_url:'javascript:alert(1)'}}:FIXTURES[locale].data):u.pathname==='/api/ipinfo'?{country_code:'ES',country_name:'Spain',city:'Synthetic'}:[];
     return route.fulfill({status:200,contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify(data)});
    }
    if(u.hostname==='cdn.jsdelivr.net')return route.fulfill({status:200,contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({type:'Topology',objects:{countries:{type:'GeometryCollection',geometries:[]}},arcs:[]})});
@@ -43,6 +50,23 @@ try{
   checks.push({id:'bootstrap_'+locale,ok:true});
   await page.goto('https://voiceprotest.org/#/informe/'+FIXTURES[locale].data.protest.id);
   await page.locator('.ir-btn-pdf').waitFor();
+  if(process.env.IDV_GEOGRAPHY_REHEARSAL==='1') {
+   const reportText=await page.locator('.ir-doc').innerText();
+   for(const key of ['geoNational','geoInternational','geoOtherGps','geoUnknown'])assert.ok(reportText.includes(messages.informe[key]),locale+': '+key);
+   const dg=FIXTURES[locale].data.desglose_geografico_local;
+   const widths=await page.locator('.ir-geo-breakdown .ir-geo-bar-fill').evaluateAll(nodes=>nodes.map(n=>Number.parseFloat(n.style.width)));
+   assert.deepEqual(widths,[dg.gps_local,dg.nacionales_sin_gps,dg.internacionales,dg.gps_nacional,dg.sin_pais].map(n=>Math.round(n/dg.total*100)));
+   assert.equal(widths.reduce((a,b)=>a+b,0),100);
+   const qualityWidths=await page.locator('.ir-quality-band .ir-geo-bar-fill').evaluateAll(nodes=>nodes.map(n=>Number.parseFloat(n.style.width)));
+   assert.deepEqual(qualityWidths,[60,40]);
+   const notice=messages.informe.geoCounterMismatch.replaceAll('{analyzed}','5').replaceAll('{total}','20');
+   assert.ok(reportText.replace(/\s+/g,' ').includes(notice.replace(/\s+/g,' ')));
+   const hero=messages.informe.heroSubLocal.replaceAll('{total}','5').replaceAll('{nacional}','1');
+   assert.ok(reportText.replace(/\s+/g,' ').includes(hero.replace(/\s+/g,' ')));
+
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false,'mobile horizontal overflow');
+   checks.push({id:'geographic_cohorts_and_denominator_'+locale,ok:true});
+  }
   const download=page.waitForEvent('download',{timeout:10000});await page.locator('.ir-btn-pdf').click();
   assert.ok((await download).suggestedFilename().endsWith('.pdf'));
   assert.deepEqual(await page.evaluate(()=>window.__policyViolations),[]);

@@ -270,5 +270,6 @@ export async function createVerifiedAdhesion(input) {
 
   if (error) throwMappedRpcError(error);
 
-  return data;
+  // Carry the evidence actually resolved by this service to the receipt route.
+  return { ...data, gps_confirmed: evidence.gps_confirmed, pais_code: evidence.pais_code, ciudad: evidence.ciudad, region: evidence.region };
 }

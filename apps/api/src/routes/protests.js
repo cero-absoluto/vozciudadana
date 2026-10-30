@@ -1,3 +1,5 @@
+import { readReportAdhesions } from '../lib/reportAdhesions.js';
+import { matchesDeclaredTerritory, geographicBreakdown } from '../lib/territorialEvidence.js';
 import { parseGpsGeocoderResponse } from '../lib/gpsGeocoder.js';
 import {withRequestDeadline} from '../lib/requestDeadline.js';
 import {credentialMatches} from '../lib/credentialMatches.js';
@@ -644,7 +646,7 @@ export default async function protestRoutes(app, opts = {}) {
     // adhesion exist," which is what the service decides.
     const { data: protest, error: protestErr } = await supabase
       .from('protests')
-      .select('scope, saldo_euros, convocatoria_osm_id, convocatoria_ciudad_nombre, risk_level, dominio_email')
+      .select('scope, saldo_euros, convocatoria_osm_id, convocatoria_ciudad_nombre, country, risk_level, dominio_email')
       .eq('id', req.params.id)
       .maybeSingle();
     if (protestErr || !protest) return reply.notFound('Protest not found');
@@ -749,33 +751,10 @@ export default async function protestRoutes(app, opts = {}) {
       }
     }
 
-    // ── Territorial match (separate axis from geographic confidence) ────────
-    // local_verified answers "is this participant physically inside the
-    // convocatoria's declared territory?" — derived from the GPS→OSM entity,
-    // NOT from the device confidence score (which only measures signal quality).
-    // The two must never be conflated by readers of the report.
+    // Compatibility field: country/name agreement from declared GPS geocoding,
+    // not polygon containment, residence or certified physical presence.
     const isTerritorial = (protest.scope === 'local' || protest.scope === 'regional') && protest.convocatoria_osm_id != null;
-
-    // local_verified: primary check is OSM ID match (most precise).
-    // Fallback: name match against convocatoria_ciudad_nombre — handles cases
-    // where Nominatim returns a different OSM object ID for the same territory
-    // depending on zoom level or object type (relation vs node vs way).
-    let local_verified = null;
-    if (isTerritorial && data.adhesion_osm_id != null) {
-      if (data.adhesion_osm_id === protest.convocatoria_osm_id) {
-        // Primary: exact OSM ID match
-        local_verified = true;
-      } else if (protest.convocatoria_ciudad_nombre && (data.region || data.ciudad)) {
-        // Fallback: normalize and compare region name
-        const normalize = s => s?.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-        const territoryName = protest.scope === 'local' ? (data.ciudad || data.region) : data.region;
-        local_verified = normalize(territoryName) === normalize(protest.convocatoria_ciudad_nombre);
-      } else {
-        local_verified = false;
-      }
-    } else if (isTerritorial) {
-      local_verified = false;
-    }
+    const local_verified = isTerritorial ? matchesDeclaredTerritory(protest, data) : null;
 
     return reply.code(201).send({
       receipt: data.id,
@@ -784,7 +763,7 @@ export default async function protestRoutes(app, opts = {}) {
       convocatoria_ciudad_nombre: protest.convocatoria_ciudad_nombre ?? null,
       local_verified,
       geo_scope_match:  isTerritorial ? (protest.scope === 'local' ? 'municipality' : 'region') : null,
-      geo_scope_source: (isTerritorial && data.adhesion_osm_id != null) ? 'gps_osm' : null,
+      geo_scope_source: local_verified ? 'gps_geocoder_name_country' : null,
       gps_update_token,
     });
   });
@@ -1091,22 +1070,15 @@ export default async function protestRoutes(app, opts = {}) {
     if (error && error.code !== 'PGRST116') return reply.header('Cache-Control','no-store').code(503).send({error:'Service temporarily unavailable'});
     if (error || !protest) return reply.notFound('Convocatoria no encontrada');
 
-    const { data: adhesions } = await supabase
-      .from('adhesions')
-      .select('ciudad, region, pais, pais_code, idioma, created_at, gps_confirmed, fiabilidad, senales, adhesion_osm_id')
-      .eq('protest_id', req.params.id)
-      .is('deleted_at', null)
-      .order('created_at', { ascending: true });
+    let adhesions;
+    try { adhesions = await readReportAdhesions(supabase, req.params.id); }
+    catch { return reply.header('Cache-Control','no-store').code(503).send({error:'Service temporarily unavailable'}); }
+    const reportCoverage = { complete: true, analyzed: adhesions.length, counter_total: protest.count,
+      counter_matches: adhesions.length === protest.count };
 
     const ciudades = [...new Set(adhesions.map(a => a.ciudad).filter(Boolean))];
-    // Use pais_code (ISO) preferentially — more reliable than pais name.
-    // For GPS-confirmed adhesions, the GPS country takes priority over IP country
-    // since IP geolocation can misclassify WiFi connections (e.g. Santander WiFi
-    // appearing as a foreign country). Falls back to pais name for legacy rows.
-    const getPaisCode = (a) => {
-      if (a.gps_confirmed && a.pais_code) return a.pais_code;
-      return a.pais_code || (a.pais ? a.pais.slice(0,2).toUpperCase() : null);
-    };
+    // Do not manufacture a country code from the first letters of a place name.
+    const getPaisCode = a => typeof a.pais_code === 'string' && a.pais_code.length === 2 && /^[A-Z]{2}$/.test(a.pais_code) ? a.pais_code : null;
     const paises = [...new Set(adhesions.map(getPaisCode).filter(Boolean))];
     const idiomas = [...new Set(adhesions.map(a => a.idioma).filter(Boolean))];
 
@@ -1117,70 +1089,10 @@ export default async function protestRoutes(app, opts = {}) {
 
     const adhesiones_con_gps = adhesions.filter(a => a.gps_confirmed === true).length;
 
-    // ── Local scope geographic breakdown ──────────────────────────────────
-    // For local protests, classify adhesions into three tiers:
-    // 1. GPS confirmed within the declared municipality (osm_id match)
-    // 2. National participants (SIM from same country, no local GPS)
-    // 3. International participants (SIM from different country)
-    let desglose_geografico_local = null;
-    if ((protest.scope === 'local' || protest.scope === 'regional') && protest.convocatoria_osm_id) {
-      // OSM ID match (primary) OR region name match (fallback for same-territory
-      // different-object cases where Nominatim returns a different ID at zoom=6)
-      const normalize = s => s?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-      const isLocalVerified = (a) => {
-        if (!a.gps_confirmed) return false;
-        if (a.adhesion_osm_id && a.adhesion_osm_id === protest.convocatoria_osm_id) return true;
-        if (protest.convocatoria_ciudad_nombre) {
-          // For local scope: compare city name; for regional: compare region name
-          const territoryName = protest.scope === 'local' ? (a.ciudad || a.region) : a.region;
-          if (territoryName) return normalize(territoryName) === normalize(protest.convocatoria_ciudad_nombre);
-        }
-        return false;
-      };
-      const gps_local = adhesions.filter(isLocalVerified).length;
-      const gps_nacional = adhesions.filter(a =>
-        a.gps_confirmed && !isLocalVerified(a)
-      ).length;
-      // Country match by ISO code, never by localized name.
-      // (Bug fixed July 2026: adhesion `pais` arrives in English from ipapi
-      // ("Spain") or Spanish from Nominatim ("España"), while
-      // protest.country_name is Spanish — name comparison misclassified every
-      // no-GPS domestic participant as international. protest.country holds
-      // the ISO code selected at creation.)
-      const sameCountry = (a) => {
-        if (a.pais_code && protest.country) return a.pais_code === protest.country;
-        // Legacy rows without pais_code: best-effort name comparison
-        return a.pais === protest.country_name;
-      };
-      const nacionales_sin_gps = adhesions.filter(a =>
-        !a.gps_confirmed && (sameCountry(a) || (!a.pais && !a.pais_code))
-      ).length;
-      const internacionales = adhesions.filter(a =>
-        (a.pais || a.pais_code) && !sameCountry(a) && !a.gps_confirmed
-      ).length;
-
-      desglose_geografico_local = {
-        // For regional scope, this is the region name; for local, the municipality name
-        municipio: protest.convocatoria_ciudad_nombre,
-        scope: protest.scope,
-        gps_local,
-        gps_nacional,
-        nacionales_sin_gps,
-        internacionales,
-        total: adhesions.length,
-        // Explicit, named territorial-verification field. Kept deliberately
-        // separate from any confidence/fiabilidad metric: local_verified means
-        // "GPS placed the participant inside the convocatoria's declared OSM
-        // entity", NOT "high signal confidence". Journalists, participants and
-        // auditors must not read a confidence percentage as territorial belonging.
-        local_verified: {
-          count:            gps_local,
-          total:            adhesions.length,
-          geo_scope_match:  protest.scope === 'local' ? 'municipality' : 'region',
-          geo_scope_source: 'gps_osm',
-        },
-      };
-    }
+    // Five disjoint cohorts over the rows read for this report. The stored
+    // aggregate count is exposed separately; it is not this denominator.
+    const desglose_geografico_local = (protest.scope === 'local' || protest.scope === 'regional') && protest.convocatoria_osm_id
+      ? geographicBreakdown(protest, adhesions) : null;
 
     const fiabilidad_alta    = adhesions.filter(a => a.fiabilidad >= 85).length;
     const fiabilidad_media   = adhesions.filter(a => a.fiabilidad >= 75 && a.fiabilidad < 85).length;
@@ -1221,8 +1133,10 @@ export default async function protestRoutes(app, opts = {}) {
     return {
       protest: toPublicProtest(protest),
       total_adhesiones: protest.count,
+      total_analizado: adhesions.length,
+      report_coverage: reportCoverage,
       adhesiones_con_gps,
-      adhesiones_sin_gps: protest.count - adhesiones_con_gps,
+      adhesiones_sin_gps: adhesions.length - adhesiones_con_gps,
       ciudades_distintas: ciudades.length,
       paises_distintos: paises.length,
       idiomas_distintos: idiomas.length,

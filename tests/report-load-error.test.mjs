@@ -6,7 +6,7 @@ import {publicReportId} from '../apps/web/src/lib/publicReportId.js';
 const VALID_ID='11111111-1111-4111-8111-111111111111';
 const source=fs.readFileSync('apps/web/src/screens/InformeScreen.vue','utf8');
 const script=source.match(/<script setup>([\s\S]*?)<\/script>/)[1].replace(/^import .*;\n/gm,'').replaceAll('import.meta.env.VITE_API_URL',"'https://mock.invalid'");
-function harness(fetch,id=VALID_ID){let mounted;const context={URL,publicReportId,ref:v=>({value:v}),computed:f=>({get value(){return f();}}),onMounted:f=>{mounted=f;},useRoute:()=>({params:{id}}),useI18n:()=>({t:k=>k,locale:{value:'en'}}),fetch};vm.createContext(context);vm.runInContext(script+'\nglobalThis.state={loading,error,notFound,data,loadReport,safeSourceUrl};',context);return {state:context.state,mount:()=>mounted()};}
+function harness(fetch,id=VALID_ID){let mounted;const context={URL,publicReportId,ref:v=>({value:v}),computed:f=>({get value(){return f();}}),onMounted:f=>{mounted=f;},useRoute:()=>({params:{id}}),useI18n:()=>({t:k=>k,locale:{value:'en'}}),fetch};vm.createContext(context);vm.runInContext(script+'\nglobalThis.state={loading,error,notFound,data,loadReport,safeSourceUrl,pctLocal,pct};',context);return {state:context.state,mount:()=>mounted()};}
 test('report reserves not-found state for HTTP 404',async()=>{
  for(const status of [404,429,500,503]){const h=harness(async()=>({ok:false,status}));await h.mount();assert.equal(h.state.notFound.value,status===404);assert.equal(h.state.error.value,status!==404);assert.equal(h.state.loading.value,false);assert.equal(h.state.data.value,null);}
 });
@@ -31,3 +31,11 @@ test('report source links allow absolute HTTP(S) only, without embedded credenti
   const h=harness(async()=>({ok:true,json:async()=>({protest:{fuente_url:url}})}));await h.mount();assert.equal(!!h.state.safeSourceUrl.value,allowed,url);
  }
 });
+
+test('geographic percentages use all analyzed cohorts even if stored total differs',()=>{
+ const h=harness(async()=>{});h.state.data.value={total_adhesiones:20,desglose_geografico_local:{total:5,gps_local:1,gps_nacional:1,nacionales_sin_gps:1,internacionales:1,sin_pais:1}};
+ assert.equal(h.state.pctLocal(1),20);assert.equal(h.state.pctLocal(0),0);
+ h.state.data.value.desglose_geografico_local.total=0;assert.equal(h.state.pctLocal(1),0);
+});
+
+test('quality percentages use analyzed rows when the stored counter is smaller',()=>{const h=harness(async()=>{});h.state.data.value={total_analizado:20,total_adhesiones:1};assert.equal(h.state.pct(10),50);assert.equal(h.state.pct(20),100);});

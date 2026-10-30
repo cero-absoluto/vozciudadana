@@ -49,8 +49,8 @@
             <div class="ir-hero-label">
               {{ data.protest.scope === 'local' ? $t('informe.heroLabelLocal', { territorio: data.protest.convocatoria_ciudad_nombre }) : $t('informe.heroLabelRegional', { territorio: data.protest.convocatoria_ciudad_nombre }) }}
             </div>
-            <div class="ir-hero-sub" v-if="data.total_adhesiones > data.desglose_geografico_local.gps_local">
-              {{ $t('informe.heroSubLocal', { total: data.total_adhesiones, nacional: data.desglose_geografico_local.nacionales_sin_gps }) }}
+            <div class="ir-hero-sub" v-if="data.desglose_geografico_local.total > data.desglose_geografico_local.gps_local">
+              {{ $t('informe.heroSubLocal', { total: data.desglose_geografico_local.total, nacional: data.desglose_geografico_local.nacionales_sin_gps }) }}
             </div>
           </template>
 
@@ -70,6 +70,8 @@
 
           <div class="ir-hero-demand">{{ data.protest.demands }}</div>
         </div>
+
+        <p v-if="data.report_coverage && !data.report_coverage.counter_matches" class="ir-caption" role="status">{{ $t('informe.geoCounterMismatch', { analyzed: data.report_coverage.analyzed, total: data.report_coverage.counter_total }) }}</p>
 
         <div class="ir-divider"></div>
 
@@ -135,6 +137,18 @@
             <div v-if="data.desglose_geografico_local.internacionales > 0" class="ir-geo-bar-bg">
               <div class="ir-geo-bar-fill" :style="{width: pctLocal(data.desglose_geografico_local.internacionales) + '%', background: 'var(--accent)'}"></div>
             </div>
+          </div>
+
+          <div v-if="data.desglose_geografico_local" class="ir-geo-breakdown">
+            <template v-for="key in ['gps_nacional', 'sin_pais']" :key="key">
+              <div class="ir-geo-row" style="margin-top:12px">
+                <div class="ir-geo-label">{{ $t('informe.' + (key === 'sin_pais' ? 'geoUnknown' : 'geoOtherGps')) }}</div>
+                <div class="ir-geo-count">{{ data.desglose_geografico_local[key] || 0 }}</div>
+              </div>
+              <div class="ir-geo-bar-bg"><div class="ir-geo-bar-fill" :style="{width: pctLocal(data.desglose_geografico_local[key] || 0) + '%', background: 'var(--accent4)'}"></div></div>
+            </template>
+            <p class="ir-caption">{{ $t('informe.geoCoverage', { analyzed: data.desglose_geografico_local.total, total: data.total_adhesiones }) }}</p>
+            <p class="ir-caption">{{ $t('informe.geoMatchLimit') }}</p>
           </div>
 
           <!-- Distribución geográfica general -->
@@ -1012,13 +1026,14 @@ function formatDateTime(iso) {
 }
 
 function pct(count) {
-  if (!data.value?.total_adhesiones) return 0;
-  return Math.round((count / data.value.total_adhesiones) * 100);
+  const total = data.value?.total_analizado ?? data.value?.total_adhesiones;
+  if (!total) return 0;
+  return Math.round((count / total) * 100);
 }
 
 function pctLocal(count) {
   const dg = data.value?.desglose_geografico_local;
-  const total = dg ? (dg.gps_local + dg.nacionales_sin_gps + dg.internacionales) : data.value?.total_adhesiones;
+  const total = dg ? dg.total : data.value?.total_adhesiones;
   if (!total) return 0;
   return Math.round((count / total) * 100);
 }

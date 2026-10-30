@@ -6,7 +6,7 @@ const base = {
   total_adhesiones: 1234, paises_distintos: 3, ciudades_distintas: 15, adhesiones_con_gps: 410,
   primera_adhesion: '2026-07-16T19:00:00Z', ultima_adhesion: '2026-07-31T10:00:00Z',
   desglose_fiabilidad: { alta: { count: 410, descripcion: '' }, media: { count: 600, descripcion: '' }, base: { count: 224, descripcion: '' } },
-  desglose_geografico_local: { municipio: null, scope: 'local', gps_local: 410, gps_nacional: 25, nacionales_sin_gps: 700, internacionales: 99 },
+  desglose_geografico_local: { municipio: null, scope: 'local', gps_local: 410, gps_nacional: 25, nacionales_sin_gps: 700, internacionales: 62, sin_pais: 37, total: 1234 },
   velocidad: { adhesiones_por_dia: [] },
 };
 

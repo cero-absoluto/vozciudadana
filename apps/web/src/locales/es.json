@@ -397,7 +397,8 @@
     "gpsReinforceSuccess": "¡Gracias! Tu ubicación ya refuerza el informe.",
     "toastAlready": "Ya te has unido a esta protesta con este número de teléfono.",
     "toastSinSaldo": "Esta protesta no tiene fondos. Apóyala para habilitar adhesiones.",
-    "notiInfo": "Si activas las notificaciones, tu navegador quedará vinculado a esta protesta para enviarte el resultado. Esto reduce ligeramente tu pseudonimato. Si prefieres máxima privacidad, no actives las notificaciones."
+    "notiInfo": "Si activas las notificaciones, tu navegador quedará vinculado a esta protesta para enviarte el resultado. Esto reduce ligeramente tu pseudonimato. Si prefieres máxima privacidad, no actives las notificaciones.",
+    "toastInstitutionalRequired": "Esta convocatoria requiere verificar tu correo institucional. Vuelve a la convocatoria y utiliza la opción de correo."
   },
   "about": {
     "heroTitle": "La herramienta. Sin trucos.",
@@ -1022,7 +1023,7 @@
     "unknown": "Horario no disponible",
     "joiningSince": "Abierta a adhesiones desde el {date}",
     "joiningOpen": "Abierta a adhesiones"
-},
+  },
   "censusAuth": {
     "founderRecovery": "Ya me adherí: verificar solo el acceso para iniciar el censo.",
     "loggedIn": "Acceso al censo verificado",
@@ -1035,5 +1036,5 @@
     "founderConfirm": "Verificar, adherirme e iniciar el censo",
     "privacy": "El servidor verifica tu correo y conserva su huella protegida. Solo los miembros acreditados que pueden avalarte ven una pista enmascarada de tu dirección.",
     "manage": "Gestionar mi censo"
-}
+  }
 }

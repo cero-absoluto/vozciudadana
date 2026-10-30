@@ -283,3 +283,33 @@ test('12. otros métodos no se tocan: el método institucional no pasa por esta 
     location: {}, documentHash: null, institutionalMembership: null,
   }));
 });
+test('IDV institutional email is required even without a census', async () => {
+  const id=P(20);PROTESTS[id]={id,scope:'local',country:'ES',dominio_email:'university.invalid',requiere_censo:false};
+  const v=body(await verify(PH.ES,'device-idv-institution'));
+  const before=db.adhesions.length;
+  const response=await join(id,v.participation_token);
+  assert.equal(response.statusCode,403);assert.equal(body(response).code,'INSTITUTIONAL_VERIFICATION_REQUIRED');assert.equal(db.adhesions.length,before);
+});
+test('IDV high and critical risk ignore supplied GPS before any provider call', async () => {
+ const {createVerifiedAdhesion}=await import('../apps/api/src/lib/adhesionService.js');
+ for (const risk of ['high','critical']) {
+  const id=P(risk==='high'?21:22);PROTESTS[id]={id,scope:'local',country:'ES',risk_level:risk};
+  let calls=0;globalThis.fetch=async()=>{calls++;throw new Error('unexpected network');};
+  await createVerifiedAdhesion({protestId:id,identity:{subjectHash:'a'.repeat(64),method:'phone_otp'},location:{latitude:43,longitude:-3}});
+  assert.equal(calls,0);assert.equal(db.adhesions.at(-1).p_gps_confirmed,false);assert.equal(db.adhesions.at(-1).p_senales,'sim');
+ }
+});
+
+test('IDV-01 institutional request-otp rejects before SMS, quota reservation and participation lookup',async()=>{
+ const id=P(23);PROTESTS[id]={id,scope:'local',dominio_email:'synthetic.invalid',requiere_censo:false};
+ const r=await app.inject({method:'POST',url:'/api/users/request-otp',payload:{phone:PH.ES,device_id:'device-idv-request',protest_id:id,recaptcha_token:'dev'}});
+ assert.equal(r.statusCode,403);assert.equal(r.json().code,'INSTITUTIONAL_VERIFICATION_REQUIRED');
+ assert.equal(calls.sendOtp,0);assert.equal(calls.otpLog,0);assert.equal(calls.adhesionReads,0);
+});
+test('IDV-02 join succeeds without issuing a GPS reinforcement token at high or critical risk',async()=>{
+ for(const risk of ['high','critical']){
+  const id=P(risk==='high'?24:25);PROTESTS[id]={id,scope:'local',country:'ES',risk_level:risk};
+  const v=body(await verify(PH.ES,'device-idv-'+risk));const response=await join(id,v.participation_token);
+  assert.equal(response.statusCode,201);assert.equal(response.json().gps_update_token,null);
+ }
+});

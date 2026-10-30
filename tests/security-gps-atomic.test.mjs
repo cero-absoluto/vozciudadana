@@ -31,3 +31,12 @@ test('parallel PATCH requests with one token make only one per-process reverse-g
 test('failed RPC releases the per-process in-flight slot for a later request',async()=>{
  const geo=geography(),f=fixture({error:{message:'PRIVATE'}}),app=await appFor(f);try{for(let i=0;i<2;i++)assert.equal((await patch(app)).statusCode,503);assert.equal(f.calls.filter(c=>c.name).length,2);}finally{geo.mock.restore();await app.close();}
 });
+
+for (const risk of ['high','critical']) test('IDV-02 GPS reinforcement rejects '+risk+' risk before geocoding',async()=>{
+ const f=fixture();const from=f.database.from;f.database.from=function(table){const q=from(table);if(table==='protests')q.maybeSingle=async()=>({data:{scope:'local',ends_at:'2999-01-01',risk_level:risk}});return q;};
+ const geo=geography(),app=await appFor(f);try{assert.equal((await patch(app)).statusCode,403);assert.equal(geo.mock.callCount(),0);assert.equal(f.calls.filter(c=>c.name).length,0);}finally{geo.mock.restore();await app.close();}
+});
+test('IDV-02 transaction policy rejection is controlled after a concurrent policy change',async()=>{
+ const f=fixture({error:{message:'VP_GPS_NOT_ALLOWED'}}),geo=geography(),app=await appFor(f);
+ try{const r=await patch(app);assert.equal(r.statusCode,403);assert.equal(r.json().error,'GPS_NOT_ALLOWED');}finally{geo.mock.restore();await app.close();}
+});

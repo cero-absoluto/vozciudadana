@@ -643,7 +643,7 @@ export default async function protestRoutes(app, opts = {}) {
     // adhesion exist," which is what the service decides.
     const { data: protest, error: protestErr } = await supabase
       .from('protests')
-      .select('scope, saldo_euros, convocatoria_osm_id, convocatoria_ciudad_nombre')
+      .select('scope, saldo_euros, convocatoria_osm_id, convocatoria_ciudad_nombre, risk_level, dominio_email')
       .eq('id', req.params.id)
       .maybeSingle();
     if (protestErr || !protest) return reply.notFound('Protest not found');
@@ -667,6 +667,7 @@ export default async function protestRoutes(app, opts = {}) {
         institutionalMembership: null,
       });
     } catch (err) {
+      if (['INSTITUTIONAL_VERIFICATION_REQUIRED', 'GPS_NOT_ALLOWED'].includes(err.code)) return reply.code(403).send({ code: err.code, error: err.code });
       if (err instanceof AlreadyJoinedError) return reply.code(409).send({ error: err.code, reason: err.message });
       if (err instanceof ProtestNotFoundError) return reply.notFound(err.message);
       if (err instanceof ProtestClosedError) return reply.code(410).send({ error: err.code, reason: err.message });
@@ -729,7 +730,7 @@ export default async function protestRoutes(app, opts = {}) {
     // 'local-only' family, after the button visibility and the reverse-geocode
     // zoom; full chain now audited end to end.)
     let gps_update_token = null;
-    if (protest.scope === 'local' || protest.scope === 'regional') {
+    if (!protest.dominio_email && !['high', 'critical'].includes(protest.risk_level) && (protest.scope === 'local' || protest.scope === 'regional')) {
       const { randomUUID } = await import('crypto');
       gps_update_token = randomUUID();
       const { error: tokErr } = await supabase.from('gps_update_tokens').insert({
@@ -843,11 +844,12 @@ export default async function protestRoutes(app, opts = {}) {
     // physically inside the region were misclassified as gps_nacional.)
     const { data: patchProtest, error: patchError } = await supabase
       .from('protests')
-      .select('scope, ends_at')
+      .select('scope, ends_at, risk_level, dominio_email')
       .eq('id', tokenRow.protest_id)
       .maybeSingle();
     if (patchError) return reply.header('Cache-Control','no-store').code(503).send({error:'GPS update unavailable'});
     if (!patchProtest) return reply.notFound('Protest not found');
+    if (patchProtest.dominio_email || ['high', 'critical'].includes(patchProtest.risk_level)) return reply.header('Cache-Control','no-store').code(403).send({error:'GPS_NOT_ALLOWED'});
 
     // Fast-fail only — NOT the security boundary (Credibility First Gate 1,
     // GPS post-closure evidence freeze). This exists purely to avoid an
@@ -894,6 +896,7 @@ export default async function protestRoutes(app, opts = {}) {
         p_pais_code:typeof pais_code==='string'&&/^[A-Z]{2}$/.test(pais_code)?pais_code:null,
       }).abortSignal(signal)));
     }catch{result={error:true};}
+    if (result?.error?.message === 'VP_GPS_NOT_ALLOWED') return reply.header('Cache-Control','no-store').code(403).send({error:'GPS_NOT_ALLOWED'});
     if(result?.error || !result?.data || typeof result.data!=='object' || Array.isArray(result.data)) {
       req.log.error({code:'gps_update_failed'});
       return reply.header('Cache-Control','no-store').code(503).send({error:'GPS update unavailable'});

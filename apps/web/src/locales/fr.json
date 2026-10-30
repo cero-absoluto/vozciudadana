@@ -397,7 +397,8 @@
     "gpsReinforceSuccess": "Merci ! Votre position renforce désormais le rapport.",
     "toastAlready": "Vous avez déjà rejoint cette protestation avec ce numéro de téléphone.",
     "toastSinSaldo": "Cette protestation n'a pas de fonds. Soutenez-la pour activer les adhésions.",
-    "notiInfo": "Si vous activez les notifications, votre navigateur sera lié à cette protestation pour vous envoyer le résultat. Cela réduit légèrement votre pseudonymat."
+    "notiInfo": "Si vous activez les notifications, votre navigateur sera lié à cette protestation pour vous envoyer le résultat. Cela réduit légèrement votre pseudonymat.",
+    "toastInstitutionalRequired": "Cette mobilisation exige la vérification de votre courriel institutionnel. Revenez à la mobilisation et utilisez cette option."
   },
   "about": {
     "heroTitle": "L'outil. Sans artifices.",
@@ -1022,7 +1023,7 @@
     "unknown": "Horaires indisponibles",
     "joiningSince": "Ouverte aux adhésions depuis le {date}",
     "joiningOpen": "Ouverte aux adhésions"
-},
+  },
   "censusAuth": {
     "founderRecovery": "J’ai déjà adhéré : vérifier uniquement l’accès pour ouvrir le registre.",
     "loggedIn": "Accès au registre vérifié",
@@ -1035,5 +1036,5 @@
     "founderConfirm": "Vérifier, adhérer et ouvrir le registre",
     "privacy": "Le serveur vérifie votre adresse et conserve son empreinte protégée. Seuls les membres accrédités pouvant vous soutenir voient un indice masqué de votre adresse.",
     "manage": "Gérer mon registre"
-}
+  }
 }

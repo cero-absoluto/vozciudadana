@@ -55,6 +55,10 @@ export function classifyJoinRejection(err) {
   const status = err?.status;
   const message = typeof err?.message === 'string' ? err.message : undefined;
 
+  if (status === 403 && identifier(err) === 'INSTITUTIONAL_VERIFICATION_REQUIRED') {
+    return { kind: 'institutional_required', toastKey: 'verify.toastInstitutionalRequired', destination: 'home' };
+  }
+
   // --- server-derived national country (H7). Exact codes only; checked before the
   // loose 409/402 predicates. None of these says the person belongs to another country. ---
   if (err?.code === 'NATIONAL_COUNTRY_SHARED_CODE') {

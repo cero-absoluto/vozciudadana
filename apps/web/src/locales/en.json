@@ -397,7 +397,8 @@
     "gpsReinforceSuccess": "Thank you! Your location now strengthens the report.",
     "toastAlready": "You have already joined this protest with this phone number.",
     "toastSinSaldo": "This protest has no funds. Support it to enable adhesions.",
-    "notiInfo": "If you enable notifications, your browser will be linked to this protest to send you the result. This slightly reduces your pseudonymity. If you prefer maximum privacy, do not enable notifications."
+    "notiInfo": "If you enable notifications, your browser will be linked to this protest to send you the result. This slightly reduces your pseudonymity. If you prefer maximum privacy, do not enable notifications.",
+    "toastInstitutionalRequired": "This event requires institutional email verification. Return to the event and use the email option."
   },
   "about": {
     "heroTitle": "The tool. No tricks.",
@@ -1022,7 +1023,7 @@
     "unknown": "Schedule unavailable",
     "joiningSince": "Open for joining since {date}",
     "joiningOpen": "Open for joining"
-},
+  },
   "censusAuth": {
     "founderRecovery": "I have already joined: verify access only to start the census.",
     "loggedIn": "Census access verified",
@@ -1035,5 +1036,5 @@
     "founderConfirm": "Verify, join and start the census",
     "privacy": "The server verifies your email and keeps its protected fingerprint. Only accredited members who can endorse you see a masked hint of your address.",
     "manage": "Manage my census"
-}
+  }
 }

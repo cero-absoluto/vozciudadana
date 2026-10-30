@@ -5,6 +5,7 @@
 // of the number cannot be established for a national convocatoria. Fixed keys only:
 // server text is never shown.
 const PRE_SMS_KEYS = Object.freeze({
+  INSTITUTIONAL_VERIFICATION_REQUIRED: 'verify.toastInstitutionalRequired',
   NATIONAL_COUNTRY_SHARED_CODE: 'verify.toastNationalSharedCode',
   NATIONAL_COUNTRY_UNRESOLVED: 'verify.toastNationalUnresolved',
 });

@@ -272,8 +272,10 @@ onMounted(async () => {
 // pre-adhesión: el dato viaja en la misma llamada de adhesión que hace
 // VerifyScreen, solo cambia el instante dentro de este flujo.
 async function requestGpsFlow() {
-  const riskLevel = sessionStorage.getItem('vc_risk_level') || 'low';
-  const scope = sessionStorage.getItem('vc_protest_scope') || 'national';
+  const target = joiningProtest.value;
+  if (!target || target.dominio_email) return;
+  const riskLevel = target.risk_level;
+  const scope = target.scope;
   if (!((scope === 'regional' || scope === 'local') &&
         (riskLevel === 'low' || riskLevel === 'med') &&
         !device.gpsReady)) {
@@ -324,6 +326,11 @@ async function requestGpsFlow() {
 async function sendSMS() {
   if (sending.value) return;
   sending.value = true;
+  if (joiningProtest.value?.dominio_email) {
+    ui.showToast(t('verify.toastInstitutionalRequired'));
+    sending.value = false;
+    return;
+  }
   const protestScope = sessionStorage.getItem('vc_protest_scope') || 'national';
   if (protestScope === 'national') {
     const lastId = sessionStorage.getItem('vc_last_joined');

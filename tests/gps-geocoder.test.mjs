@@ -35,3 +35,9 @@ test('IDV-04 successful IP country is marked with its real provenance',async()=>
  const f=mock.method(globalThis,'fetch',async()=>({ok:true,json:async()=>({country_code:'ES'})}));
  try {const result=await resolveLocationEvidence({ip:'8.8.8.8',scope:'global'});assert.equal(result.gps_confirmed,false);assert.equal(result.ip_country_confirmed,true);}finally{f.mock.restore();}
 });
+
+for(const code of ['ES\n','ÉS'])test('strict two-character country code rejects '+JSON.stringify(code),async()=>{
+ await assert.rejects(parseGpsGeocoderResponse({ok:true,json:async()=>({address:{city:'Synthetic',country_code:code}})},'local'));
+ const f=mock.method(globalThis,'fetch',async()=>({ok:true,json:async()=>({country_code:code})}));
+ try{assert.equal((await resolveLocationEvidence({ip:'8.8.8.8',scope:'global'})).ip_country_confirmed,false);}finally{f.mock.restore();}
+});

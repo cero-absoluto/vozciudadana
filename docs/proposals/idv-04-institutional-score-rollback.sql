@@ -2,7 +2,9 @@
 BEGIN;
 SET LOCAL lock_timeout='1500ms';
 SET LOCAL statement_timeout='10s';
-DO $guard$ BEGIN IF md5(pg_get_functiondef('public.verify_institutional_challenge_and_create_adhesion(text,uuid,text,text,text,text,text,text,text,text,timestamp with time zone,uuid)'::regprocedure)) IS DISTINCT FROM 'd8e31ef25d9fba467752dc9f9ae911e4' THEN RAISE EXCEPTION 'VP_IDV04_ROLLBACK_DRIFT'; END IF; END $guard$;
+DO $guard$ BEGIN
+ IF (SELECT prosecdef OR pg_get_userbyid(proowner)<>'postgres' OR proacl::text IS DISTINCT FROM '{postgres=X/postgres,service_role=X/postgres}' FROM pg_proc WHERE oid='public.verify_institutional_challenge_and_create_adhesion(text,uuid,text,text,text,text,text,text,text,text,timestamp with time zone,uuid)'::regprocedure) THEN RAISE EXCEPTION 'VP_IDV04_PRIVILEGE_DRIFT'; END IF;
+ IF md5(pg_get_functiondef('public.verify_institutional_challenge_and_create_adhesion(text,uuid,text,text,text,text,text,text,text,text,timestamp with time zone,uuid)'::regprocedure)) IS DISTINCT FROM 'd8e31ef25d9fba467752dc9f9ae911e4' THEN RAISE EXCEPTION 'VP_IDV04_ROLLBACK_DRIFT'; END IF; END $guard$;
 CREATE OR REPLACE FUNCTION public.verify_institutional_challenge_and_create_adhesion(p_email_hash text, p_protest_id uuid, p_submitted_otp_hash text, p_identity_subject_hash text, p_nullifier text, p_ciudad text, p_region text, p_pais text, p_pais_code text, p_idioma text, p_institutional_expires_at timestamp with time zone, p_challenge_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql

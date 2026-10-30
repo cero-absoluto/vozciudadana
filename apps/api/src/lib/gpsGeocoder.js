@@ -11,7 +11,7 @@ export async function parseGpsGeocoderResponse(response, scope) {
   const code = typeof address.country_code === 'string' ? address.country_code.toUpperCase() : '';
   const ciudad = ['city','town','village','suburb','hamlet','locality','municipality'].map(key => place(address[key])).find(Boolean) || null;
   const region = place(address.state) || place(address.county);
-  if (!/^[A-Z]{2}$/.test(code) || !(ciudad || region)) throw new Error('Incomplete geocoder evidence');
+  if (code.length !== 2 || !/^[A-Z]{2}$/.test(code) || !(ciudad || region)) throw new Error('Incomplete geocoder evidence');
   const osmId = typeof data.osm_id === 'number' || typeof data.osm_id === 'string' && /^\d+$/.test(data.osm_id) ? Number(data.osm_id) : null;
   return {
     ciudad, region, pais: place(address.country), pais_code: code,

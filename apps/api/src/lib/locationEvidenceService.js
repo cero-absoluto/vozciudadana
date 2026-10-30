@@ -76,7 +76,7 @@ export async function resolveLocationEvidence({ latitude, longitude, accuracyMet
       // is stored in Spanish ("España") — never compare names, only ISO codes.
       const countryCode = geo.country_code || geo.country;
       pais_code = typeof countryCode === 'string' ? countryCode.toUpperCase() : null;
-      if (pais_code && !/^[A-Z]{2}$/.test(pais_code)) pais_code = null;
+      if (pais_code && (pais_code.length !== 2 || !/^[A-Z]{2}$/.test(pais_code))) pais_code = null;
       ip_country_confirmed = !!pais_code;
     } catch {
       // ipapi slow/unavailable too — the adhesion proceeds with no

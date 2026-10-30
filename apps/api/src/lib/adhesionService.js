@@ -130,7 +130,7 @@ export async function verifyInstitutionalOtpAndCreateAdhesion({ emailHash, prote
     p_ciudad:                   evidence.ciudad,
     p_region:                   evidence.region,
     p_pais:                     evidence.pais,
-    p_pais_code:                evidence.pais_code,
+    p_pais_code:                evidence.ip_country_confirmed === true ? evidence.pais_code : null,
     p_idioma:                   location?.language ?? null,
     p_institutional_expires_at: institutionalExpiresAt,
   });

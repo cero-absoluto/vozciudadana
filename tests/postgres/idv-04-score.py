@@ -49,9 +49,18 @@ def consumed(f):return conn.execute('SELECT consumed_at FROM email_otp_requests 
 # Reproduce baseline overclaim before applying exact migration.
 assert last_row(call(fixture()))==(90,'email_otp,ip',False)
 pre=conn.execute("SELECT proowner,proacl,prosecdef FROM pg_proc WHERE oid=('public.'||%s)::regprocedure",(sig,)).fetchone()
+assert conn.execute("SELECT proacl::text FROM pg_proc WHERE oid=('public.'||%s)::regprocedure",(sig,)).fetchone()[0]=='{postgres=X/postgres,service_role=X/postgres}'
+conn.execute('CREATE ROLE idv04_test_owner')
+fn='public.'+sig
+for change,restore in [('GRANT EXECUTE ON FUNCTION '+fn+' TO anon','REVOKE EXECUTE ON FUNCTION '+fn+' FROM anon'),('ALTER FUNCTION '+fn+' OWNER TO idv04_test_owner','ALTER FUNCTION '+fn+' OWNER TO postgres'),('ALTER FUNCTION '+fn+' SECURITY DEFINER','ALTER FUNCTION '+fn+' SECURITY INVOKER')]:
+ conn.execute(change)
+ try:conn.execute((ROOT/'docs/proposals/idv-04-institutional-score.sql').read_text())
+ except psycopg.Error as e:assert 'VP_IDV04_PRIVILEGE_DRIFT' in str(e);conn.execute('ROLLBACK')
+ else:raise AssertionError('privilege drift not detected')
+ conn.execute(restore)
 conn.execute((ROOT/'docs/proposals/idv-04-institutional-score.sql').read_text())
 post=conn.execute("SELECT proowner,proacl,prosecdef FROM pg_proc WHERE oid=('public.'||%s)::regprocedure",(sig,)).fetchone();assert pre==post
-for code,score,signals in [(None,75,'email_otp'),('',75,'email_otp'),('ESP',75,'email_otp'),('es',75,'email_otp'),('ES',85,'email_otp,ip')]:
+for code,score,signals in [(None,75,'email_otp'),('',75,'email_otp'),('ESP',75,'email_otp'),('es',75,'email_otp'),('ES\n',75,'email_otp'),('ÉS',75,'email_otp'),('ES',85,'email_otp,ip')]:
  f=fixture();assert last_row(call(f,code))==(score,signals,False);assert consumed(f) is not None
 # Error semantics, retry, and rollback preserve challenge behavior.
 f=fixture();assert call(f,otp='wrong')['error']=='VP_WRONG_OTP';assert consumed(f) is None
@@ -70,9 +79,19 @@ try:conn.execute((ROOT/'docs/proposals/idv-04-institutional-score.sql').read_tex
 except psycopg.Error as e:assert 'VP_IDV04_BASELINE_DRIFT' in str(e);conn.execute('ROLLBACK')
 else:raise AssertionError('drift guard not enforced')
 md5=conn.execute("SELECT md5(pg_get_functiondef(('public.'||%s)::regprocedure))",(sig,)).fetchone()[0]
+conn.execute('ALTER FUNCTION '+fn+' STABLE')
+try:conn.execute((ROOT/'docs/proposals/idv-04-institutional-score-rollback.sql').read_text())
+except psycopg.Error as e:assert 'VP_IDV04_ROLLBACK_DRIFT' in str(e);conn.execute('ROLLBACK')
+else:raise AssertionError('rollback drift not detected')
+conn.execute('ALTER FUNCTION '+fn+' VOLATILE')
+conn.execute('GRANT EXECUTE ON FUNCTION '+fn+' TO anon')
+try:conn.execute((ROOT/'docs/proposals/idv-04-institutional-score-rollback.sql').read_text())
+except psycopg.Error as e:assert 'VP_IDV04_PRIVILEGE_DRIFT' in str(e);conn.execute('ROLLBACK')
+else:raise AssertionError('rollback privilege drift not detected')
+conn.execute('REVOKE EXECUTE ON FUNCTION '+fn+' FROM anon')
 conn.execute((ROOT/'docs/proposals/idv-04-institutional-score-rollback.sql').read_text())
 assert conn.execute("SELECT md5(pg_get_functiondef(('public.'||%s)::regprocedure))",(sig,)).fetchone()[0]=='51bc6c14aa8d5127a7467681b3bd844d'
 conn.execute((ROOT/'docs/proposals/idv-04-institutional-score.sql').read_text())
 assert last_row(call(fixture()))==(75,'email_otp',False)
-print(json.dumps({'status':'PASS','postgres':conn.execute('SELECT version()').fetchone()[0],'applied_md5':md5,'groups':['baseline reproduction','IP country matrix','ACL owner invoker unchanged','wrong OTP retry and replay','expired and exhausted challenges','admission rollback preserves OTP','census rejection','founder bootstrap','accredited member','drift guard','rollback and reapply']}))
+print(json.dumps({'status':'PASS','postgres':conn.execute('SELECT version()').fetchone()[0],'applied_md5':md5,'groups':['baseline reproduction','IP country matrix','ACL owner invoker unchanged','wrong OTP retry and replay','expired and exhausted challenges','admission rollback preserves OTP','census rejection','founder bootstrap','accredited member','drift guard','rollback and reapply','owner ACL and definer drift','rollback definition and ACL drift']}))
 conn.close()

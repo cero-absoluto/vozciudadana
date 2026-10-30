@@ -25,7 +25,7 @@ Ensayo privado de la acción fijada: run `41044420980`, success, commit privado
 `7c1f7d2fac1163d6d5078f969851794d7175f5e1`. Se comprobaron edición y creación
 permitidas, denegación de escritura externa, hooks/MCP/shell no ejecutados y canario
 sintético externo no expuesto, incluida la ruta por enlace. No se inspeccionaron
-secretos reales. Las pruebas específicas locales de coordinación son 71.
+secretos reales. Las pruebas específicas locales de coordinación son 72.
 
 La aprobación es un registro de confianza del repositorio: no una firma externa ni
 protección frente a un administrador que cambie main. Se mantiene esa frontera previa;

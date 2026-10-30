@@ -14,12 +14,27 @@ test('symlink substitution and missing control files fail closed',()=>{for(const
 test('trusted preflight rejects a synthetic symlink before artifact collection',async()=>{
   const {spawnSync}=await import('node:child_process');
   const workflow=fs.readFileSync(new URL('../.github/workflows/agent-handoff.yml',import.meta.url),'utf8');
-  const block=workflow.split("python3 - <<'PYTHON'\n")[1].split('          PYTHON')[0].split('\n').map(line=>line.replace(/^          /,'')).join('\n');
+  const block=workflow.split("python3 -I - <<'PYTHON'\n")[1].split('          PYTHON')[0].split('\n').map(line=>line.replace(/^          /,'')).join('\n');
   const root=fs.mkdtempSync(path.join(os.tmpdir(),'handoff-links-'));
   try{
     fs.writeFileSync(path.join(root,'regular.txt'),'synthetic');
-    assert.equal(spawnSync('python3',['-c',block],{cwd:root}).status,0);
+    assert.equal(spawnSync('python3',['-I','-c',block],{cwd:root}).status,0);
     fs.symlinkSync(path.join(root,'regular.txt'),path.join(root,'source-link'));
-    assert.notEqual(spawnSync('python3',['-c',block],{cwd:root}).status,0);
+    assert.notEqual(spawnSync('python3',['-I','-c',block],{cwd:root}).status,0);
   }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('preflight imports cannot be shadowed by a PR pathlib module',async()=>{
+ const {spawnSync}=await import('node:child_process');
+ const workflow=fs.readFileSync(new URL('../.github/workflows/agent-handoff.yml',import.meta.url),'utf8');
+ const block=workflow.split("python3 -I - <<'PYTHON'\n")[1].split('          PYTHON')[0].split('\n').map(line=>line.replace(/^          /,'')).join('\n');
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'handoff-python-'));
+ try{
+  fs.writeFileSync(path.join(root,'pathlib.py'),"open('untrusted-module-ran','w').write('synthetic')\nraise RuntimeError('PR module executed')\n");
+  assert.notEqual(spawnSync('python3',['-c','from pathlib import Path'],{cwd:root}).status,0);
+  assert.ok(fs.existsSync(path.join(root,'untrusted-module-ran')),'negative control demonstrates import injection');
+  fs.unlinkSync(path.join(root,'untrusted-module-ran'));
+  assert.equal(spawnSync('python3',['-I','-c',block],{cwd:root}).status,0);
+  assert.equal(fs.existsSync(path.join(root,'untrusted-module-ran')),false);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
 });

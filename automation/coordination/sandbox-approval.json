@@ -2,7 +2,7 @@
   "version": 1,
   "status": "approved",
   "owner_id": 280877387,
-  "bundle_sha256": "f20dbb38bab53277b350e4a77a8e5a9baac092a1852210db9414d7f2fc3aac8b",
+  "bundle_sha256": "18c3bf86b1a5e31c425fe55a00cd7157d67dd9f7579f98f78a9551e9dc35c349",
   "evidence": {
     "pilot_status": "success",
     "pilot_url": "https://github.com/cero-absoluto/voiceprotest-private-review/actions/runs/41044420980",

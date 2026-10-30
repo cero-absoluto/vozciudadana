@@ -84,7 +84,7 @@ jobs:
       # Trusted inline preflight, before any model credential. Never execute PR scripts.
       - name: Reject source symlinks before model and artifact collection
         run: |
-          python3 - <<'PYTHON'
+          python3 -I - <<'PYTHON'
           import os
           from pathlib import Path
           if Path('.handoff-input').exists() or Path('.handoff-input').is_symlink():

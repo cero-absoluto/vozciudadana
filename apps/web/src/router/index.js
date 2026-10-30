@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
+import {reportRouteGuard} from '../lib/publicReportId.js';
 
 import HomeScreen   from '@/screens/HomeScreen.vue';
 import DetailScreen from '@/screens/DetailScreen.vue';
@@ -24,7 +25,7 @@ const routes = [
   { path: '/verify-institucional/:protestId', component: VerifyInstitucionalScreen },
   { path: '/create',    component: CreateScreen },
   { path: '/about',     component: AboutScreen },
-  { path: '/informe/:id', component: InformeScreen },
+  { path: '/informe/:id', name:'public-report', component: InformeScreen },
   { path: '/grupo/:protestId', component: MiGrupoScreen },
 { path: '/grupo/:protestId/unirse', component: UnirseGrupoScreen },
 { path: '/invite/:token', component: InviteScreen },
@@ -38,6 +39,8 @@ export const router = createRouter({
   history: createWebHashHistory(),
   routes,
 });
+
+router.beforeEach(reportRouteGuard);
 
 // Phase 1 (Static Foundations, 16 July 2026): robots.txt cannot exclude
 // these routes from indexing — with hash-based routing, everything after

@@ -28,6 +28,7 @@ jobs:
     if: >-
       github.event.issue.pull_request &&
       vars.AGENT_HANDOFF_ENABLED == 'true' &&
+      vars.AGENT_HANDOFF_SANDBOX_REVIEWED_SHA == github.workflow_sha &&
       (startsWith(github.event.comment.body, '/handoff ') || github.event.comment.user.id == 199175422)
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -213,6 +214,9 @@ jobs:
         working-directory: work
       - run: npm run build --workspace=apps/web
         working-directory: work
+        env:
+          VITE_API_URL: https://api.voiceprotest.org
+          VITE_RECAPTCHA_KEY: synthetic-no-provider
 
   publish:
     outputs:

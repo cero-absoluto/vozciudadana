@@ -89,9 +89,9 @@
             <span class="ir-field-val" style="color:var(--accent4)">{{ tipoAbusoLabel }}</span>
           </div>
 
-          <div v-if="data.protest.fuente_url" class="ir-field">
+          <div v-if="safeSourceUrl" class="ir-field">
             <span class="ir-field-label">{{ $t('informe.fuente') }}</span>
-            <a :href="data.protest.fuente_url" target="_blank" class="ir-link">{{ data.protest.fuente_url }}</a>
+            <a :href="safeSourceUrl" target="_blank" rel="noopener noreferrer nofollow" class="ir-link">{{ data.protest.fuente_url }}</a>
           </div>
         </section>
 
@@ -331,9 +331,9 @@
             <span class="ir-mono">{{ $route.params.id }}</span>
           </div>
           <div class="ir-footer-row">
-            <button onclick="window.open('https://github.com/cero-absoluto/vozciudadana','_blank')" class="ir-github-btn">
+            <a href="https://github.com/cero-absoluto/vozciudadana" target="_blank" rel="noopener noreferrer" class="ir-github-btn">
               {{ $t('informe.selloSourceBtn') }}
-            </button>
+            </a>
           </div>
         </div>
 
@@ -872,6 +872,7 @@
 </style>
 
 <script setup>
+import {publicReportId} from '../lib/publicReportId.js';
 import { ref, computed, onMounted } from 'vue';
 import { hasIntegrityDiscrepancy, verifyIntegrityPayload } from '@/lib/integrityVerification.js';
 import { useI18n } from 'vue-i18n';
@@ -880,6 +881,7 @@ import { buildInformePdf, dateLocaleTag, freezeTranslator, PdfFontError } from '
 import { localizedCountry } from '@/constants.js';
 
 const route = useRoute();
+const reportId = computed(()=>publicReportId(route.params.id));
 const { t, locale } = useI18n({ useScope: 'global' });
 
 const ABUSE_MAP = {
@@ -918,6 +920,12 @@ const hasGeoData = computed(() => {
 });
 
 const data = ref(null);
+const safeSourceUrl = computed(() => {
+  try {
+    const url = new URL(data.value?.protest?.fuente_url);
+    return ['https:', 'http:'].includes(url.protocol) && !url.username && !url.password ? url.href : '';
+  } catch { return ''; }
+});
 const integrityData = ref(null);
 const integrityLoading = ref(false);
 const integrityUnavailable = ref(false);
@@ -933,10 +941,11 @@ const showEmbed = ref(false);
 const copied = ref(false);
 
 async function loadIntegrityData() {
+  if(!reportId.value){integrityUnavailable.value=true;return;}
   integrityLoading.value = true;
   integrityUnavailable.value = false;
   try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/public/protests/${route.params.id}/integrity-data`);
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/public/protests/${encodeURIComponent(reportId.value)}/integrity-data`);
     if (!res.ok) throw new Error();
     const payload = await res.json();
     if (payload.protest_id !== route.params.id) throw new Error();
@@ -962,8 +971,8 @@ async function verifyIntegrity() {
   finally { verifyState.value = 'idle'; }
 }
 
-const embedCode = computed(() =>
-  `<script src="https://www.voiceprotest.org/widget.js?id=${route.params.id}"><\/script>`
+const embedCode = computed(() => reportId.value ?
+  `<script src="https://www.voiceprotest.org/widget.js?id=${encodeURIComponent(reportId.value)}"><\/script>` : ''
 );
 
 function copyEmbed() {
@@ -974,13 +983,14 @@ function copyEmbed() {
 }
 
 async function loadReport() {
+  if(!reportId.value){loading.value=false;notFound.value=true;data.value=null;return;}
   if (loading.value) return;
   loading.value = true;
   error.value = false;
   notFound.value = false;
   data.value = null;
   try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/protests/${route.params.id}/informe`);
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/protests/${encodeURIComponent(reportId.value)}/informe`);
     if (res.status === 404) { notFound.value = true; return; }
     if (!res.ok) throw new Error();
     data.value = await res.json();

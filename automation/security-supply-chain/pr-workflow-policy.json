@@ -33,6 +33,10 @@
         },
         {
           "run": "node automation/security-supply-chain/check.mjs"
+        },
+        {
+          "name": "Test browser policy without credentials or providers",
+          "run": "node --test tests/security-browser-boundary.test.mjs tests/service-worker-fetch.test.mjs"
         }
       ]
     }

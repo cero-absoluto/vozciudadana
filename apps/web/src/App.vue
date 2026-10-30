@@ -2,7 +2,7 @@
   <div id="app-shell">
     <AppTopbar />
     <main class="app-main">
-      <RouterView />
+      <RouterView :key="$route.path" />
     </main>
     <BottomNav />
     <ShareModal />

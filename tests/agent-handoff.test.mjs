@@ -463,6 +463,15 @@ test('W6 confianza del controlador: decide y publish toman código de la rama po
   assert.deepEqual([...code.matchAll(/run: .*(npm|pnpm|yarn|npx).*/g)].map((m) => m[0]), ['run: npm ci --ignore-scripts --no-audit --no-fund', 'run: npm ci --ignore-scripts --no-audit --no-fund --prefix automation/preflight/tools', 'run: npm run build --workspace=apps/web'], 'solo verify instala con lockfile congelado y compila sin credenciales');
 });
 
+test('handoff credential access is gated by approval of the exact workflow commit', () => {
+  const expression = code.match(/^    if: >-\n([\s\S]*?)\n    runs-on:/m)[1];
+  assert.match(expression, /vars\.AGENT_HANDOFF_SANDBOX_REVIEWED_SHA == github\.workflow_sha &&/);
+  for (const reviewed of ['', 'stale-sha', H1, H0]) {
+    const evaluate = expression.replace(/github\.event\.issue\.pull_request/g,'true').replace(/vars\.AGENT_HANDOFF_ENABLED/g,"'true'").replace(/vars\.AGENT_HANDOFF_SANDBOX_REVIEWED_SHA/g,JSON.stringify(reviewed)).replace(/github\.workflow_sha/g,JSON.stringify(H0)).replace(/startsWith\([^)]*\)/g,'true').replace(/github\.event\.comment\.user\.id/g,'0');
+    assert.equal(Function('return ('+evaluate+')')(), reviewed===H0);
+  }
+});
+
 // ── Defensas redundantes (cada capa se prueba por separado) ─────────────────────────────────────────────
 const baseFacts = (over = {}) => ({ repository: REPO, switch: { enabled: true }, actorPermission: null, event: { name: 'issue_comment', action: 'edited', isPullRequest: true, actor: CODEX, body: '' },
   pr: { number: 7, state: 'open', merged: false, draft: true, headSha: H0, headRef: 'feature/x', headRepo: REPO, baseRepo: REPO, baseRef: 'main', isFork: false },

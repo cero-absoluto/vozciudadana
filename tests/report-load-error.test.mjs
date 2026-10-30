@@ -2,9 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import {publicReportId} from '../apps/web/src/lib/publicReportId.js';
+const VALID_ID='11111111-1111-4111-8111-111111111111';
 const source=fs.readFileSync('apps/web/src/screens/InformeScreen.vue','utf8');
 const script=source.match(/<script setup>([\s\S]*?)<\/script>/)[1].replace(/^import .*;\n/gm,'').replaceAll('import.meta.env.VITE_API_URL',"'https://mock.invalid'");
-function harness(fetch){let mounted;const context={ref:v=>({value:v}),computed:f=>({get value(){return f();}}),onMounted:f=>{mounted=f;},useRoute:()=>({params:{id:'p'}}),useI18n:()=>({t:k=>k,locale:{value:'en'}}),fetch};vm.createContext(context);vm.runInContext(script+'\nglobalThis.state={loading,error,notFound,data,loadReport};',context);return {state:context.state,mount:()=>mounted()};}
+function harness(fetch,id=VALID_ID){let mounted;const context={URL,publicReportId,ref:v=>({value:v}),computed:f=>({get value(){return f();}}),onMounted:f=>{mounted=f;},useRoute:()=>({params:{id}}),useI18n:()=>({t:k=>k,locale:{value:'en'}}),fetch};vm.createContext(context);vm.runInContext(script+'\nglobalThis.state={loading,error,notFound,data,loadReport,safeSourceUrl};',context);return {state:context.state,mount:()=>mounted()};}
 test('report reserves not-found state for HTTP 404',async()=>{
  for(const status of [404,429,500,503]){const h=harness(async()=>({ok:false,status}));await h.mount();assert.equal(h.state.notFound.value,status===404);assert.equal(h.state.error.value,status!==404);assert.equal(h.state.loading.value,false);assert.equal(h.state.data.value,null);}
 });
@@ -20,4 +22,12 @@ test('report preserves integrity-data loading after a successful report fetch',a
 test('report renders separate not-found and retryable error states in all languages',()=>{
  const template=source.split('<script setup>')[0];assert.match(template,/v-else-if="notFound"/);assert.match(template,/v-else-if="error"/);assert.match(template,/@click="loadReport"/);
  for(const locale of ['es','en','fr','zh']){const m=JSON.parse(fs.readFileSync('apps/web/src/locales/'+locale+'.json','utf8'));for(const k of ['loadError','retry'])assert.ok(typeof m.informe[k]==='string'&&m.informe[k].trim());}
+});
+
+test('malformed report id does not issue a fetch',async()=>{let calls=0;const h=harness(async()=>{calls++;throw Error();},'../bad');await h.mount();assert.equal(calls,0);assert.equal(h.state.notFound.value,true);assert.equal(h.state.loading.value,false);});
+
+test('report source links allow absolute HTTP(S) only, without embedded credentials',async()=>{
+ for(const [url,allowed] of [['javascript:alert(1)',false],['data:text/html,x',false],['//evil.invalid/x',false],['https://user:password@example.org',false],['HTTPS://example.org/path',true],['http://example.org',true]]){
+  const h=harness(async()=>({ok:true,json:async()=>({protest:{fuente_url:url}})}));await h.mount();assert.equal(!!h.state.safeSourceUrl.value,allowed,url);
+ }
 });

@@ -639,7 +639,7 @@ async function selectTarget(s) {
   await validateTarget(s.id, s.label);
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://vozciudadanaapi-production.up.railway.app';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://api.voiceprotest.org';
 let sourceDebounce = null;
 
 // Verb-check logic ported EXACTLY from PROHIBITED_VERB_ROOTS /

@@ -154,14 +154,14 @@ function incrementViral() {
 }
 
 function shareWA() {
-  window.open(`https://wa.me/?text=${encodeURIComponent(fullMsg.value)}`, '_blank');
+  window.open(`https://wa.me/?text=${encodeURIComponent(fullMsg.value)}`, '_blank', 'noopener,noreferrer');
   incrementViral(); ui.showShareModal = false;
   ui.showToast(t('share.toastWA'));
 }
 function shareTG() {
   const url = encodeURIComponent(eventUrl.value);
   const msg = encodeURIComponent(fullMsg.value);
-  window.open(`https://t.me/share/url?url=${url}&text=${msg}`, '_blank');
+  window.open(`https://t.me/share/url?url=${url}&text=${msg}`, '_blank', 'noopener,noreferrer');
   incrementViral(); ui.showShareModal = false;
   ui.showToast(t('share.toastTG'));
 }

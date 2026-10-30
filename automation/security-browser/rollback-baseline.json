@@ -1,0 +1,181 @@
+{
+  "commit": "5008ef372ebade1e9e6a7155c649bfadc748629e",
+  "source": "Known verified S15 public static artifact",
+  "files": [
+    {
+      "path": ".nojekyll",
+      "git_blob_sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "CNAME",
+      "git_blob_sha": "9a5d6c09bb475ad3f2e51b3120472f8d38c22261",
+      "sha256": "9fa14928be984be9cfea6805e46158c3d07778826c401bf693309a7ec975fa94"
+    },
+    {
+      "path": "apple-touch-icon.png",
+      "git_blob_sha": "ef0956090b85e30e724cdcf6f496ada89b1c549a",
+      "sha256": "c5e2a2460b639a51b4bb43effca191ec5e4d23af46f2b4ff7e57d06683340ce3"
+    },
+    {
+      "path": "assets/html2canvas.esm-QH1iLAAe.js",
+      "git_blob_sha": "de72ecb1165272ce353f2a2f5c659cc5e8836d4f",
+      "sha256": "061c08e50c0dc57b8d5e6531f0b8237a52a68b233260d49ab2f2c2906ad112c4"
+    },
+    {
+      "path": "assets/index-Br0Fii-O.js",
+      "git_blob_sha": "a78d9ef52d1c8035ef771a3756f76895aaae0faa",
+      "sha256": "509dce40c9469d18a9790fb1bed165142104bc1a587b68c8705dcb5b898027df"
+    },
+    {
+      "path": "assets/index-CnAw73G2.css",
+      "git_blob_sha": "3b0a4e1eb465570dbeefd3c3b6e79fc95bf3c368",
+      "sha256": "ce8bf9180893c117783e518c967deed6bc3fad0bd5e28ca532809c8c4d84c803"
+    },
+    {
+      "path": "assets/index.es-MOubImSx.js",
+      "git_blob_sha": "de567370c8ac11958cb4b3dfda3b0a03b1143208",
+      "sha256": "00a55c93c81c3a9b8c81e23bd80b6473e3d35683b0f41d8afed180da8d3ec19f"
+    },
+    {
+      "path": "assets/purify.es-CAi2OJFm.js",
+      "git_blob_sha": "d36816e03b2d5577e58d27b41c7407a8764918e4",
+      "sha256": "8e143ee7bcdf076d62676183aacc62568c9adb8042c57d4fef7d62e1ca7c345a"
+    },
+    {
+      "path": "en/quienes-somos.html",
+      "git_blob_sha": "25e5b2280fe16ec9a642e7a573345f2322728aa6",
+      "sha256": "47bd9759a88d2726716f8603e51d0a0c620d5f15fe90ba9727c67d02e0738540"
+    },
+    {
+      "path": "favicon-96x96.png",
+      "git_blob_sha": "960cfc2d604ca83de6771c2fb9aaa4f9e87428a4",
+      "sha256": "3fb847022ee067c798e930b505214a71becf0b12bf840f268ee4d8f598306b51"
+    },
+    {
+      "path": "favicon.ico",
+      "git_blob_sha": "5f923779cf464e18c301f7b852d3653095097b94",
+      "sha256": "d886701fa9d8474a6f8c427f683ae630a8c442bfaa9dab30064e8807e8619901"
+    },
+    {
+      "path": "favicon.svg",
+      "git_blob_sha": "699da82e3e78095f7667a4befe2f972c676ddfe5",
+      "sha256": "fcdb61d3576670b1db77983b319b3fd96ccee88822361ae1251c41bf216c9912"
+    },
+    {
+      "path": "fonts/OFL-NotoSans.txt",
+      "git_blob_sha": "6843f31878c9945e1e71e1baa275546b4eefead8",
+      "sha256": "cee9892f9f0cc8fe882c9e9537ee6a89621d86ee7ceaf70b02e2b2b1c25c061a"
+    },
+    {
+      "path": "fonts/OFL-NotoSansSC.txt",
+      "git_blob_sha": "1c9f43281b8f216c5461fe9ac729afbade7724e4",
+      "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9"
+    },
+    {
+      "path": "fonts/README.md",
+      "git_blob_sha": "f6031dd951ec82add8c56ecfc09303afa31074bc",
+      "sha256": "ce7d58fcdedc7e4a4a9d790e49be499501b49d54df2e895b9206e02f110d4106"
+    },
+    {
+      "path": "fonts/pdf-sans-subset.ttf",
+      "git_blob_sha": "fefc027b45e67e7ee600273df524ca96933f64f3",
+      "sha256": "865b564e4a78d202ea772025dc603656e676c233832bb9910afd319fafc2c2f0"
+    },
+    {
+      "path": "fr/quienes-somos.html",
+      "git_blob_sha": "c273209e03da0eb30d92f68cae5ca367da5a5b1f",
+      "sha256": "03f2a93d8f720836cb7b631a0a2c3bb5912c2696c4065c8a30898f52cc6d16d2"
+    },
+    {
+      "path": "icon-128.png",
+      "git_blob_sha": "a55368b435e27ce05b57eb7dd32515b797cb7788",
+      "sha256": "927192798bd6f5bc8c8633420e99b196e751371f3dac698596ca9159ea035234"
+    },
+    {
+      "path": "icon-192.png",
+      "git_blob_sha": "e0d7aa40215fd7fb55642815430dfd4743dafb97",
+      "sha256": "d1e9433c481b7e15fba40f6e12c7092264a4d8d45ee8133dec75e62649022d6f"
+    },
+    {
+      "path": "icon-512.png",
+      "git_blob_sha": "d572a1346060daeeec5bc6e2b251f6166c8f4a18",
+      "sha256": "565032ee60c42d8aa3c2951557ec97fcf0892fab00acf800ecef31ad8af75c11"
+    },
+    {
+      "path": "icon-72.png",
+      "git_blob_sha": "2a78693d5931c9c4c3461638da980b54089c8aca",
+      "sha256": "54af4b44ae2c531c9f37c083636783585e5024f54a6ae7c01a33ad9a8708c957"
+    },
+    {
+      "path": "icon-96.png",
+      "git_blob_sha": "b1f64cbfdce4d5a6f1391d1eac6395e430d8dd82",
+      "sha256": "5f8d4333656e8949c87d480b74ad0fa9f33d8e8fb6c4c6e1fbf5d92df8784141"
+    },
+    {
+      "path": "icons/icon-128.png",
+      "git_blob_sha": "a55368b435e27ce05b57eb7dd32515b797cb7788",
+      "sha256": "927192798bd6f5bc8c8633420e99b196e751371f3dac698596ca9159ea035234"
+    },
+    {
+      "path": "icons/icon-192.png",
+      "git_blob_sha": "1d80fed9acbd4fddbff76a2acb56a5f2e5f1b2bb",
+      "sha256": "4189be36c311e992f6d0d4af9bdc2a9dec87569e0ceb6f5f430d686c1846e441"
+    },
+    {
+      "path": "icons/icon-512.png",
+      "git_blob_sha": "1b8d8f6230d9bc74fe9001769d4cedca21b62018",
+      "sha256": "ad6741ddbf5ade0bd940f3fc02ca3c1d5fde5d7bbcf1c78c826c6d2c1a619644"
+    },
+    {
+      "path": "icons/icon-72.png",
+      "git_blob_sha": "2a78693d5931c9c4c3461638da980b54089c8aca",
+      "sha256": "54af4b44ae2c531c9f37c083636783585e5024f54a6ae7c01a33ad9a8708c957"
+    },
+    {
+      "path": "icons/icon-96.png",
+      "git_blob_sha": "b1f64cbfdce4d5a6f1391d1eac6395e430d8dd82",
+      "sha256": "5f8d4333656e8949c87d480b74ad0fa9f33d8e8fb6c4c6e1fbf5d92df8784141"
+    },
+    {
+      "path": "index.html",
+      "git_blob_sha": "5b3692da88ed2a25055219799a04b34706a04a83",
+      "sha256": "c235c664d84a76ab0e2ae871f71eb53a0dc7862d411a690ae3811581de636197"
+    },
+    {
+      "path": "manifest.json",
+      "git_blob_sha": "574e8c23616fb96ea3a43c453d88716c3c93f288",
+      "sha256": "21c3e208c50a038597be260c8cbce749644497fde8b202bbf948401f098b6206"
+    },
+    {
+      "path": "quienes-somos.html",
+      "git_blob_sha": "9f7ffd5f8de850095fe281b6f6e251f323636c8a",
+      "sha256": "4a09d1d21deef97cb9743eca738bd5e2eb9f6a799f19fe3fc6aecb646fe7621e"
+    },
+    {
+      "path": "robots.txt",
+      "git_blob_sha": "bc4fc0ad773945f3e31cf9b017188c6b94fc1205",
+      "sha256": "e858819a4e4456a962907e021463c2c4c85bd25d82609b568c7c379db9c81e19"
+    },
+    {
+      "path": "service-worker.js",
+      "git_blob_sha": "fbcf0c96a020e6f4ffcd3461455e828edaecfaf4",
+      "sha256": "fe8ba7e2e2cae6182c52ae0392be21b679d7cca32c23ffca681b5dc1bc8b7af1"
+    },
+    {
+      "path": "sitemap.xml",
+      "git_blob_sha": "0dcfcba7563b4c82d1ef36c79bcea1f4f937a8bb",
+      "sha256": "a13d2a75f2358bcc8a2699eb52587b60ce55a808803b10716570899f7aec5dc5"
+    },
+    {
+      "path": "widget.js",
+      "git_blob_sha": "7ab4b636bbd606e5945b32b9dbd24ae2bd4f54d7",
+      "sha256": "d6fc60c25ceaff3d79010d99c3f057616891ad24a9def81ee102c229d02fef3e"
+    },
+    {
+      "path": "zh/quienes-somos.html",
+      "git_blob_sha": "b396000d9d17d53f691793c4aa0688e03ef1fb8f",
+      "sha256": "3bf2786256c09c9584f1469337e3908f9d82eaa5df025ebef00644c2c8940ac2"
+    }
+  ]
+}

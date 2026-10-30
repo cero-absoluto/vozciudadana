@@ -9,7 +9,7 @@ tratar su alcance antes de ejecutarla. OTP real sigue aplazado.
 | Punto | Área | Estado |
 |---|---|---|
 | 1 | Seguridad contra ataques | Bloques publicados; pendientes expresos conservados. No auditoría integral cerrada. |
-| 2 | Identidad y verificación | En curso. IDV-01–04 publicados y verificados. |
+| 2 | Identidad y verificación | En curso. IDV-01–04 publicados y verificados; bloque IDV-05/06 publicado, con límites explícitos. |
 | 3 | Experiencia de participación | Pendiente como revisión completa, especialmente móvil. |
 | 4 | Documentación pública | Pendiente de alineación con el comportamiento final. |
 
@@ -19,7 +19,7 @@ tratar su alcance antes de ejecutarla. OTP real sigue aplazado.
 | IDV-02 | Excluir GPS en riesgo alto/crítico e institucional | Publicado y verificado; límites históricos documentados. |
 | IDV-03 | Validar respuesta del geocodificador antes de confirmar GPS | Publicado y verificado, PR150. |
 | IDV-04 | Separar procedencia GPS/IP y corregir puntuación institucional | Publicado y verificado, PR151; API y SQL, sin recalcular históricos. |
-| IDV-05 | Coincidencia territorial contextual, OSM ambiguo y homónimos | Preparación local iniciada; no integrado ni publicado. |
+| IDV-05 | Coincidencia territorial contextual, OSM ambiguo y homónimos | Corrección de homónimos entre países y OSM sin tipo publicada; homónimos del mismo país y límites administrativos pendientes. |
 | IDV-06 | Cohortes territoriales exhaustivas y denominadores comunes | Preparación local iniciada; no integrado ni publicado. |
 | IDV-07 | Unicidad por identificador y país de numeración en cuatro idiomas | Pendiente. |
 | IDV-08 | Alcance del dominio declarado y vínculo institucional | Pendiente. |

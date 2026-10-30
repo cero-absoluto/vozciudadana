@@ -22,3 +22,22 @@ test('initial admission falls back to IP without confirming GPS',async()=>{
  const f=mock.method(globalThis,'fetch',async url=>String(url).includes('nominatim')?{ok:true,json:async()=>({error:'Unavailable'})}:{ok:true,json:async()=>({city:'Synthetic IP',country_code:'es'})});
  try {const result=await resolveLocationEvidence({latitude:40,longitude:-3,ip:'8.8.8.8',scope:'local'});assert.equal(result.gps_confirmed,false);assert.equal(result.ciudad,'Synthetic IP');assert.equal(result.pais_code,'ES');assert.equal(f.mock.callCount(),2);}finally{f.mock.restore();}
 });
+
+test('IDV-04 valid GPS does not manufacture IP corroboration',async()=>{
+ const f=mock.method(globalThis,'fetch',async()=>({ok:true,json:async()=>valid}));
+ try {const result=await resolveLocationEvidence({latitude:40,longitude:-3,ip:'8.8.8.8',scope:'local'});assert.equal(result.gps_confirmed,true);assert.equal(result.ip_country_confirmed,false);assert.equal(f.mock.callCount(),1);}finally{f.mock.restore();}
+});
+for(const response of [{ok:false,json:async()=>({country_code:'ES'})},{ok:true,json:async()=>({error:true,country_code:'ES'})},{ok:true,json:async()=>({country_code:123})},{ok:true,json:async()=>({country_code:'ESP'})}]) test('IDV-04 unusable IP response does not add IP evidence',async()=>{
+ const f=mock.method(globalThis,'fetch',async()=>response);
+ try {const result=await resolveLocationEvidence({ip:'8.8.8.8',scope:'global'});assert.equal(result.ip_country_confirmed,false);}finally{f.mock.restore();}
+});
+test('IDV-04 successful IP country is marked with its real provenance',async()=>{
+ const f=mock.method(globalThis,'fetch',async()=>({ok:true,json:async()=>({country_code:'ES'})}));
+ try {const result=await resolveLocationEvidence({ip:'8.8.8.8',scope:'global'});assert.equal(result.gps_confirmed,false);assert.equal(result.ip_country_confirmed,true);}finally{f.mock.restore();}
+});
+
+for(const code of ['ES\n','ÉS'])test('strict two-character country code rejects '+JSON.stringify(code),async()=>{
+ await assert.rejects(parseGpsGeocoderResponse({ok:true,json:async()=>({address:{city:'Synthetic',country_code:code}})},'local'));
+ const f=mock.method(globalThis,'fetch',async()=>({ok:true,json:async()=>({country_code:code})}));
+ try{assert.equal((await resolveLocationEvidence({ip:'8.8.8.8',scope:'global'})).ip_country_confirmed,false);}finally{f.mock.restore();}
+});

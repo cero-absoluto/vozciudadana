@@ -313,3 +313,16 @@ test('IDV-02 join succeeds without issuing a GPS reinforcement token at high or 
   assert.equal(response.statusCode,201);assert.equal(response.json().gps_update_token,null);
  }
 });
+
+test('IDV-04 actual admission persists only the geographic signals obtained',async()=>{
+ const {createVerifiedAdhesion}=await import('../apps/api/src/lib/adhesionService.js');
+ const originalFetch=globalThis.fetch;
+ try {
+  for(const scenario of ['gps','ip','none']) {
+   let fetched=0;
+   globalThis.fetch=async url=>{fetched++;return scenario==='none'?{ok:false,json:async()=>({country_code:'ES'})}:String(url).includes('nominatim')?{ok:true,json:async()=>({osm_id:123,address:{city:'Synthetic',country_code:'es'}})}:{ok:true,json:async()=>({city:'Synthetic IP',country_code:'ES'})};};
+   await createVerifiedAdhesion({protestId:GLOBAL,identity:{subjectHash:'b'.repeat(64),method:'phone_otp'},location:{...(scenario==='gps'?{latitude:40,longitude:-3}:{}),ip:'8.8.8.8'}});
+   const row=db.adhesions.at(-1);assert.equal(row.p_senales,scenario==='gps'?'gps,sim':scenario==='ip'?'sim,ip':'sim');assert.equal(row.p_fiabilidad,scenario==='gps'?92:scenario==='ip'?85:75);assert.equal(fetched,1);
+  }
+ }finally{globalThis.fetch=originalFetch;}
+});

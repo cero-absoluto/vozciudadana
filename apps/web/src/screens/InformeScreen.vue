@@ -137,6 +137,18 @@
             </div>
           </div>
 
+          <div v-if="data.desglose_geografico_local" class="ir-geo-breakdown">
+            <template v-for="key in ['gps_nacional', 'sin_pais']" :key="key">
+              <div class="ir-geo-row" style="margin-top:12px">
+                <div class="ir-geo-label">{{ $t('informe.' + (key === 'sin_pais' ? 'geoUnknown' : 'geoOtherGps')) }}</div>
+                <div class="ir-geo-count">{{ data.desglose_geografico_local[key] || 0 }}</div>
+              </div>
+              <div class="ir-geo-bar-bg"><div class="ir-geo-bar-fill" :style="{width: pctLocal(data.desglose_geografico_local[key] || 0) + '%', background: 'var(--accent4)'}"></div></div>
+            </template>
+            <p class="ir-caption">{{ $t('informe.geoCoverage', { analyzed: data.desglose_geografico_local.total, total: data.total_adhesiones }) }}</p>
+            <p class="ir-caption">{{ $t('informe.geoMatchLimit') }}</p>
+          </div>
+
           <!-- Distribución geográfica general -->
           <div v-if="hasGeoData" style="margin-top:20px">
             <div class="ir-caption" style="font-style:italic;opacity:.75;margin-bottom:10px">{{ $t('informe.geoIpCaveat') }} {{ $t('informe.placeNamesNote') }}</div>
@@ -1018,7 +1030,7 @@ function pct(count) {
 
 function pctLocal(count) {
   const dg = data.value?.desglose_geografico_local;
-  const total = dg ? (dg.gps_local + dg.nacionales_sin_gps + dg.internacionales) : data.value?.total_adhesiones;
+  const total = dg ? dg.total : data.value?.total_adhesiones;
   if (!total) return 0;
   return Math.round((count / total) * 100);
 }

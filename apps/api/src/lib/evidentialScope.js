@@ -77,7 +77,7 @@ export function buildEvidentialScope(protest, agg = {}) {
       // unless an OSM entity + GPS verified some adhesions territorially.
       demonstrates.push({ key: 'demonstrates.sim_country', params: { country: protest.country_name } });
       if (dgl && localVerified > 0) {
-        demonstrates.push({ key: 'demonstrates.local_verified_region', params: { count: localVerified, total, territory } });
+        demonstrates.push({ key: 'demonstrates.local_verified_region', params: { count: localVerified, total: dgl.total ?? total, territory } });
         methods.push({ key: 'methods.gps_osm_region', params: { territory } });
       }
       outside_scope.push({ key: 'not.region_presence', params: { territory } });
@@ -88,7 +88,7 @@ export function buildEvidentialScope(protest, agg = {}) {
 
     case 'local':
       if (dgl && localVerified > 0) {
-        demonstrates.push({ key: 'demonstrates.local_verified_municipality', params: { count: localVerified, total, territory } });
+        demonstrates.push({ key: 'demonstrates.local_verified_municipality', params: { count: localVerified, total: dgl.total ?? total, territory } });
         methods.push({ key: 'methods.gps_osm_municipality', params: { territory } });
       }
       outside_scope.push({ key: 'not.residence', params: { territory } });

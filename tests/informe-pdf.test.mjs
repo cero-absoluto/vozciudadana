@@ -265,3 +265,11 @@ test('language is frozen for the whole generation: switching the UI language whi
   const m = await mixedPending;
   assert.ok(m.drawn.join('\n').includes('Generated'), 'control shows the original defect');
 });
+
+for(const ui of L)test('PDF renders the same five geographic cohorts and analyzed denominator: '+ui,async()=>{
+ const c=structuredClone(FIXTURES[ui]);c.data.total_adhesiones=20;c.data.desglose_geografico_local={...c.data.desglose_geografico_local,total:5,gps_local:1,gps_nacional:1,nacionales_sin_gps:1,internacionales:1,sin_pais:1};
+ const r=await build(c,'idv0506-'+ui),all=r.drawn.join(' ').replace(/\s/g,'');
+ const t=tFor(ui);
+ for(const key of ['geoNational','geoInternational','geoOtherGps','geoUnknown'])assert.ok(all.includes(txt.stripUndrawable(t('informe.'+key)).replace(/\s/g,'')),key);
+ assert.ok(all.includes(txt.stripUndrawable(t('informe.geoCoverage',{analyzed:5,total:20})).replace(/\s/g,'')),'coverage');
+});

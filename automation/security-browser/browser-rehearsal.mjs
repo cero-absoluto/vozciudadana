@@ -43,6 +43,16 @@ try{
   checks.push({id:'bootstrap_'+locale,ok:true});
   await page.goto('https://voiceprotest.org/#/informe/'+FIXTURES[locale].data.protest.id);
   await page.locator('.ir-btn-pdf').waitFor();
+  if(process.env.IDV_GEOGRAPHY_REHEARSAL==='1') {
+   const reportText=await page.locator('.ir-doc').innerText();
+   for(const key of ['geoNational','geoInternational','geoOtherGps','geoUnknown'])assert.ok(reportText.includes(messages.informe[key]),locale+': '+key);
+   const dg=FIXTURES[locale].data.desglose_geografico_local;
+   const widths=await page.locator('.ir-geo-breakdown .ir-geo-bar-fill').evaluateAll(nodes=>nodes.map(n=>Number.parseFloat(n.style.width)));
+   assert.deepEqual(widths,[dg.gps_local,dg.nacionales_sin_gps,dg.internacionales,dg.gps_nacional,dg.sin_pais].map(n=>Math.round(n/dg.total*100)));
+   assert.equal(widths.reduce((a,b)=>a+b,0),100);
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false,'mobile horizontal overflow');
+   checks.push({id:'geographic_cohorts_and_denominator_'+locale,ok:true});
+  }
   const download=page.waitForEvent('download',{timeout:10000});await page.locator('.ir-btn-pdf').click();
   assert.ok((await download).suggestedFilename().endsWith('.pdf'));
   assert.deepEqual(await page.evaluate(()=>window.__policyViolations),[]);

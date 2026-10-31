@@ -21,7 +21,7 @@ tratar su alcance antes de ejecutarla. OTP real sigue aplazado.
 | IDV-04 | Separar procedencia GPS/IP y corregir puntuación institucional | Publicado y verificado, PR151; API y SQL, sin recalcular históricos. |
 | IDV-05 | Coincidencia territorial contextual, OSM ambiguo y homónimos | Corrección de homónimos entre países y OSM sin tipo publicada; homónimos del mismo país y límites administrativos pendientes. |
 | IDV-06 | Cohortes territoriales exhaustivas y denominadores comunes | Preparación local iniciada; no integrado ni publicado. |
-| IDV-07 | Unicidad por identificador y país de numeración en cuatro idiomas | Pendiente. |
+| IDV-07 | Unicidad por identificador y país de numeración en cuatro idiomas | Publicado y verificado, PR153. Sin cambiar admisión ni hashes. |
 | IDV-08 | Alcance del dominio declarado y vínculo institucional | Pendiente. |
 | IDV-09 | Reglas públicas de fundador, primera ola y avales del censo | Pendiente; conservar excepción de fundador aprobada. |
 | IDV-10 | Antigüedad, renovación y vigencia de credenciales/pertenencia | Pendiente; no confundir retención con elegibilidad. |

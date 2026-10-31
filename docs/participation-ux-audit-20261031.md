@@ -55,3 +55,9 @@ La fase 3 permanece abierta hasta completar correcciones y validación. Este doc
 | UX-03/04/06–14 | Pendientes. El ensayo sintético de este bloque no cierra el recorrido móvil completo. |
 
 La revisión añadió residuales sobre GPS local al abandonar, feedback si cambia el destino con OTP pendiente y contexto device_id de cuotas. Se conservan expresos en la evidencia; no se presentan como corregidos ni se reabre aquí una auditoría integral de seguridad.
+
+## Recuperación y segundo bloque — 31/10/2026
+
+UX-03/04/06/12 se publicaron en PR156, merge `1a3a315f0be50f3d1327d0971f3c7ececd692254`. La interrupción del chat dejó este inventario sin actualizar. Véase [evidencia](ux-03-04-06-12-publication-20261031.md). El árbol integrado coincide con el candidato `6e4baf50e230ca61a375735cc600c462955f5368`.
+
+UX-07/11 pasan a implementación mediante PR157. `countryName`, trim de correo y bloqueo de botones durante loading ya estaban corregidos: no se presentan como cambios nuevos. UX-08/09/10/13/14 y el ensayo móvil general permanecen abiertos.

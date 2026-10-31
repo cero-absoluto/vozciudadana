@@ -1,5 +1,5 @@
 # Fase 3 — Auditoría del recorrido de participación
-Fecha: 31 de octubre de 2026. Estado: auditoría inicial de código contrastada con Codex y Claude; correcciones y ensayo móvil pendientes.
+Fecha: 31 de octubre de 2026. Estado: auditoría inicial contrastada con Codex y Claude; primer bloque UX-01/02/05 publicado y comprobado. La fase completa y su ensayo móvil general siguen abiertos.
 Base pública exacta: `b339cb8f41df030e9c1633d5817abeee151b67c4`.
 
 ## Objetivo y límites
@@ -42,3 +42,16 @@ La autorización del Owner permite avanzar con correcciones rutinarias, pruebas,
 4. Ensayo móvil y regresión UX-10/14, revisión del candidato exacto, publicación y evidencia de API/web según archivos afectados.
 
 La fase 3 permanece abierta hasta completar correcciones y validación. Este documento es el inventario inicial, no una certificación del servicio ni de disponibilidad de los agentes.
+
+## Publicación del primer bloque
+
+[UX-01/02/05 — evidencia](ux-01-02-05-publication-20261031.md), PR155, publicada el 31/10/2026 y comprobada a las 07:18 CET.
+
+| Ref. | Estado actual |
+|---|---|
+| UX-01 | Publicado: reenvío explícito real, resultado sent:true, contexto estable y cambiar número. No acredita entrega real. |
+| UX-02 | Publicado: no se sustituye el destino ausente y se comprueba tras cargas/reCAPTCHA. Las guardas no son cancelación atómica con el servidor; abandono/GPS y respuestas tardías conservan residuales. |
+| UX-05 | Publicado: handlers institucionales protegidos contra solapamiento por Enter/clic. Navegación de paso durante una operación sigue en UX-11. |
+| UX-03/04/06–14 | Pendientes. El ensayo sintético de este bloque no cierra el recorrido móvil completo. |
+
+La revisión añadió residuales sobre GPS local al abandonar, feedback si cambia el destino con OTP pendiente y contexto device_id de cuotas. Se conservan expresos en la evidencia; no se presentan como corregidos ni se reabre aquí una auditoría integral de seguridad.

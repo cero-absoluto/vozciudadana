@@ -10,7 +10,7 @@ tratar su alcance antes de ejecutarla. OTP real sigue aplazado.
 |---|---|---|
 | 1 | Seguridad contra ataques | Bloques publicados; pendientes expresos conservados. No auditoría integral cerrada. |
 | 2 | Identidad y verificación | Bloques IDV-01–12 publicados en su alcance descrito; permanecen residuales de IDV-05/10 y OTP real aplazado. No se declara auditoría integral cerrada. |
-| 3 | Experiencia de participación | En curso: auditoría inicial contrastada con Codex y Claude; correcciones y ensayo móvil pendientes. Véase [UX-01–14](participation-ux-audit-20261031.md). |
+| 3 | Experiencia de participación | En curso: UX-01/02/05 publicados y comprobados (PR155); UX-03/04/06–14 y ensayo móvil completo pendientes. Véase [UX-01–14](participation-ux-audit-20261031.md). |
 | 4 | Documentación pública | Pendiente de alineación con el comportamiento final. |
 
 | Ref. | Trabajo | Estado |

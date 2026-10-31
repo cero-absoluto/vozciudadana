@@ -230,6 +230,10 @@
               </div>
               <div class="ir-geo-bar-bg"><div class="ir-geo-bar-fill" :style="{width:pct(data.desglose_fiabilidad.base.count)+'%',background:'var(--accent)'}"></div></div>
             </div>
+            <div v-for="key in ['baja','sin_dato']" :key="key" class="ir-quality-band" v-show="(data.desglose_fiabilidad[key]?.count || 0) > 0">
+              <div class="ir-quality-header"><div class="ir-quality-title">{{ $t('informe.'+(key==='baja'?'fiabilidadBaja':'fiabilidadSin')) }}</div><div class="ir-quality-n">{{ data.desglose_fiabilidad[key]?.count || 0 }}</div></div>
+              <div class="ir-geo-bar-bg"><div class="ir-geo-bar-fill" :style="{width:pct(data.desglose_fiabilidad[key]?.count || 0)+'%',background:'var(--accent)'}"></div></div>
+            </div>
           </div>
         </section>
 
@@ -301,24 +305,7 @@
           <details class="ir-details">
             <summary class="ir-details-summary">{{ $t('informe.chainTitle') }}</summary>
             <div v-if="data.evidential_scope?.version === 2" class="ir-chain"><p class="ir-caption">{{ $t('informe.chainBody') }}</p><p v-for="(entry, idx) in data.evidential_scope.methods" :key="idx" class="ir-caption">{{ $t('evidence.' + entry.key, entry.params || {}) }}</p></div>
-            <div v-else class="ir-chain">
-              <div class="ir-chain-step">
-                <div class="ir-chain-num">1</div>
-                <div><strong>reCAPTCHA v3</strong><div class="ir-caption">{{ $t('informe.chain1') }}</div></div>
-              </div>
-              <div class="ir-chain-step">
-                <div class="ir-chain-num">2</div>
-                <div><strong>SMS / Email OTP</strong><div class="ir-caption">{{ $t('informe.chain2') }}</div></div>
-              </div>
-              <div class="ir-chain-step">
-                <div class="ir-chain-num">3</div>
-                <div><strong>HMAC-SHA256</strong><div class="ir-caption">{{ $t('informe.chain3') }}</div></div>
-              </div>
-              <div class="ir-chain-step">
-                <div class="ir-chain-num">4</div>
-                <div><strong>{{ $t('informe.chain4Title') }}</strong><div class="ir-caption">{{ $t('informe.chain4') }}</div></div>
-              </div>
-            </div>
+            <div v-else class="ir-chain"><p class="ir-caption">{{ $t('informe.chainUnavailable') }}</p></div>
           </details>
 
           <details class="ir-details">

@@ -223,8 +223,8 @@
     "audienceTitle": "À qui s'adresse cet événement ?",
     "censoAll": "Toute l'institution",
     "audienceAll": "Toute l'institution",
-    "censoAllDesc": "Tout membre avec un e-mail institutionnel se terminant par {domain} peut participer",
-    "audienceAllDesc": "Tout membre avec un e-mail {domain} peut participer",
+    "censoAllDesc": "Toute personne vérifiant le contrôle d’une adresse du domaine déclaré {domain} peut participer ; aucun rôle ni lien institutionnel actuel n’est certifié.",
+    "audienceAllDesc": "Toute personne vérifiant le contrôle d’une adresse du domaine déclaré {domain} peut participer ; aucun rôle ni lien institutionnel actuel n’est certifié.",
     "censoDept": "Un département ou groupe spécifique",
     "audienceGroup": "Un département ou groupe spécifique",
     "censoDeptDesc": "Le fondateur accrédite la première vague ; ensuite deux avals de comptes accrédités distincts sont requis. Ce n’est ni un registre officiel ni une preuve de personnes indépendantes.",
@@ -474,11 +474,11 @@
     "adhesion": "adhésion",
     "adhesiones": "adhésions",
     "fiabilidadTitle": "🔬 Qualité de la vérification",
-    "fiabilidadAlta": "Haute fiabilité (85-95%)",
-    "fiabilidadMedia": "Fiabilité moyenne (75-84%)",
-    "fiabilidadBase": "Fiabilité de base (60-74%)",
-    "fiabilidadSin": "Non classé",
-    "fiabilidadSinDesc": "Adhésions antérieures au système de fiabilité",
+    "fiabilidadAlta": "Indice enregistré :85-100",
+    "fiabilidadMedia": "Indice enregistré :75-84",
+    "fiabilidadBase": "Indice enregistré :60-74",
+    "fiabilidadSin": "Aucun indice enregistré valide",
+    "fiabilidadSinDesc": "Aucun indice enregistré valide",
     "fiabilidadNoData": "Aucune donnée de fiabilité disponible.",
     "ciudadanos": "participants vérifiés",
     "numbersTitle": "🔢 Les trois chiffres",
@@ -573,7 +573,7 @@
     "headlineInstitutional": "Adhésions enregistrées pour une mobilisation avec domaine déclaré {dominio} · {count} · {focal} · {demands}",
     "statusClosed": "Clôturée",
     "statusActive": "Active",
-    "heroLabel": "participants vérifiés de {country}",
+    "heroLabel": "Adhésions enregistrées",
     "heroLabelLocal": "adhésions avec nom et pays GPS correspondant à {territorio}",
     "heroLabelRegional": "adhésions avec nom et pays GPS correspondant à {territorio}",
     "heroLabelInstitutional": "Adhésions enregistrées pour une mobilisation avec domaine déclaré {dominio}",
@@ -585,7 +585,7 @@
     "sectionConvocatoria": "Sur la convocation",
     "sectionGeo": "Preuve géographique",
     "sectionQuality": "Qualité de la preuve selon les signaux de l'appareil",
-    "qualityIntro": "Chaque adhésion combine les signaux disponibles au moment de participer — localisation GPS, numéro vérifié par SMS, pays détecté par connexion. Plus ils coïncident, plus la preuve de cette participation est solide.",
+    "qualityIntro": "Les bandes décrivent des valeurs enregistrées, pas des probabilités ni une identité certifiée.",
     "limitsNote": "Ce rapport présente les registres de participation et les éléments de vérification disponibles pour cette mobilisation. Il ne démontre ni la véracité de ses affirmations ou revendications, ni que ses participants soient représentatifs de la population.",
     "placeNamesNote": "Les noms de villes et de régions sont affichés tels qu'enregistrés par la source de localisation ; ils peuvent donc apparaître dans différentes langues.",
     "pdf": {
@@ -605,9 +605,9 @@
       "participantsN": "{n} participants",
       "extraNational": "GPS enregistré avec pays concordant, sans concordance territoriale confirmée",
       "international": "Participants internationaux",
-      "totalVerified": "Total des adhésions vérifiées",
+      "totalVerified": "Adhésions enregistrées",
       "verifiedMembers": "Adhésions enregistrées pour une mobilisation avec domaine déclaré {domain}",
-      "verifiedAdhesions": "Adhésions vérifiées",
+      "verifiedAdhesions": "Adhésions enregistrées",
       "distinctCountries": "Pays distincts",
       "distinctCities": "Villes distinctes",
       "firstAdhesion": "Première adhésion",
@@ -635,7 +635,9 @@
     "geoAnalyzedTotal": "Adhésions analysées",
     "geoCounterTotal": "Compteur général enregistré",
     "geoCounterMismatch": "Le compteur général ({total}) diffère des {analyzed} enregistrements analysés. Les répartitions et pourcentages utilisent les enregistrements analysés.",
-    "recordedIndex": "Indice enregistré {range} ; ni probabilité ni certificat d’identité."
+    "recordedIndex": "Indice enregistré {range} ; ni probabilité ni certificat d’identité.",
+    "fiabilidadBaja": "Indice enregistré :0-59",
+    "chainUnavailable": "Les méthodes observées sont indisponibles pour cette version du rapport."
   },
   "invite": {
     "loading": "Validation de l'invitation...",
@@ -996,7 +998,8 @@
       "institutional_affiliation": "Domaine déclaré {domain} : le contrôle du courriel ne certifie ni lien officiel ni appartenance actuelle.",
       "census_vouching": "L'affiliation est en outre corroborée par le cautionnement entre pairs au sein du recensement institutionnel.",
       "public_auditability": "Le résultat est auditable : le rapport clôturé porte un hash d'intégrité et enregistre des engagements publics par adhésion.",
-      "recorded_identifiers": "Identifiants et méthodes enregistrés dans {total} adhésions analysées ; ils ne certifient pas des personnes distinctes."
+      "recorded_identifiers": "Identifiants et méthodes enregistrés dans {total} adhésions analysées ; ils ne certifient pas des personnes distinctes.",
+      "evidence_unavailable": "Les preuves des méthodes sont indisponibles pour décrire ces adhésions."
     },
     "not": {
       "affiliation_geographic": "Que les participants appartiennent à une communauté affectée spécifique.",
@@ -1005,7 +1008,11 @@
       "institutional_role": "Le rôle ou le statut du participant au sein de l'institution.",
       "truth": "Que les faits dénoncés soient vrais : Voice Protest enregistre la participation vérifiée, pas la validité de la dénonciation.",
       "representative": "Que le résultat représente l'ensemble de la population affectée : il mesure ceux qui ont choisi de participer.",
-      "credential_scope": "Le créateur déclare le domaine ; ni lien officiel ni soutien de l’institution ne sont certifiés. Le recensement est un réseau de comptes avalisés, pas un registre officiel : le fondateur lié à la clé de création peut accréditer la première vague ; ensuite deux avals de comptes accrédités distincts sont requis, sans prouver des personnes indépendantes. La preuve du dispositif conserve une vérification antérieure ;270jours d’inactivité est une rétention, pas une preuve récente du téléphone. La validité institutionnelle expire le prochain31août à00:00UTC, sans certifier un lien continu jusque-là."
+      "credential_scope": "Le créateur déclare le domaine ; ni lien officiel ni soutien de l’institution ne sont certifiés. Le recensement est un réseau de comptes avalisés, pas un registre officiel : le fondateur lié à la clé de création peut accréditer la première vague ; ensuite deux avals de comptes accrédités distincts sont requis, sans prouver des personnes indépendantes. La preuve du dispositif conserve une vérification antérieure ;270jours d’inactivité est une rétention, pas une preuve récente du téléphone. Les enregistrements institutionnels reçoivent une échéance le prochain 31 août à 00:00 UTC, sans certifier un lien continu jusque-là.",
+      "device_credential_scope": "Le dispositif conserve une vérification antérieure, pas une preuve récente de contrôle du téléphone. La règle documentée de 270jours d’inactivité concerne la rétention, pas la fraîcheur. Aucun renouvellement automatique ou révocation après changement externe n’est certifié.",
+      "domain_scope": "Le créateur déclare le domaine ; aucun lien officiel, soutien, rôle ou appartenance actuelle n’est certifié.",
+      "census_scope": "Le recensement est un réseau de comptes avalisés, pas un registre officiel. Le fondateur lié à la clé de création peut accréditer la première vague ; ensuite deux avals de comptes accrédités distincts sont requis, sans prouver des personnes indépendantes.",
+      "institutional_expiry_scope": "Les enregistrements institutionnels reçoivent une échéance au prochain 31 août à 00:00 UTC. Cela ne prouve ni appartenance actuelle ni tous les contrôles de renouvellement/révocation."
     },
     "methods": {
       "sms_otp": "Vérification de numéro de téléphone réel par mot de passe à usage unique par SMS (Twilio Verify).",

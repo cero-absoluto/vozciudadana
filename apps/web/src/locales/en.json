@@ -223,8 +223,8 @@
     "audienceTitle": "Who is this event directed at?",
     "censoAll": "The entire institution",
     "audienceAll": "The entire institution",
-    "censoAllDesc": "Any member with an institutional email ending in {domain} can participate",
-    "audienceAllDesc": "Any member with email {domain} can participate",
+    "censoAllDesc": "Anyone verifying control of an address at declared domain {domain} may participate; role and current institutional affiliation are not certified.",
+    "audienceAllDesc": "Anyone verifying control of an address at declared domain {domain} may participate; role and current institutional affiliation are not certified.",
     "censoDept": "A specific department or group",
     "audienceGroup": "A specific department or group",
     "censoDeptDesc": "The founder accredits the first wave; later waves require two endorsements from distinct accredited accounts. This is not an official register or proof of independent people.",
@@ -474,11 +474,11 @@
     "adhesion": "adhesion",
     "adhesiones": "adhesions",
     "fiabilidadTitle": "🔬 Verification quality",
-    "fiabilidadAlta": "High reliability (85-95%)",
-    "fiabilidadMedia": "Medium reliability (75-84%)",
-    "fiabilidadBase": "Base reliability (60-74%)",
-    "fiabilidadSin": "Unclassified",
-    "fiabilidadSinDesc": "Adhesions prior to the reliability system",
+    "fiabilidadAlta": "Stored index:85-100",
+    "fiabilidadMedia": "Stored index:75-84",
+    "fiabilidadBase": "Stored index:60-74",
+    "fiabilidadSin": "No valid stored index",
+    "fiabilidadSinDesc": "No valid stored index",
     "fiabilidadNoData": "No reliability data available.",
     "ciudadanos": "verified participants",
     "numbersTitle": "🔢 The three numbers",
@@ -573,7 +573,7 @@
     "headlineInstitutional": "Recorded adhesions in an event with declared domain {dominio} · {count} · {focal} · {demands}",
     "statusClosed": "Closed",
     "statusActive": "Active",
-    "heroLabel": "verified participants from {country}",
+    "heroLabel": "Recorded adhesions",
     "heroLabelLocal": "adhesions with GPS name and country matching {territorio}",
     "heroLabelRegional": "adhesions with GPS name and country matching {territorio}",
     "heroLabelInstitutional": "Recorded adhesions in an event with declared domain {dominio}",
@@ -585,7 +585,7 @@
     "sectionConvocatoria": "About this convocation",
     "sectionGeo": "Geographic evidence",
     "sectionQuality": "Evidence quality, based on device signals",
-    "qualityIntro": "Each adhesion combines the signals available at the moment of joining — GPS location, SMS-verified phone number, country detected by connection. The more that coincide, the stronger the evidence for that participation.",
+    "qualityIntro": "Bands describe stored values, not probabilities or identity certification.",
     "limitsNote": "This report presents the participation records and verification evidence available for this convocation. It does not establish the truth of its claims or demands, nor that its participants are representative of the population.",
     "placeNamesNote": "City and region names are shown as recorded by the location source, so they may appear in different languages.",
     "pdf": {
@@ -605,9 +605,9 @@
       "participantsN": "{n} participants",
       "extraNational": "Recorded GPS with matching country, without confirmed territorial agreement",
       "international": "International participants",
-      "totalVerified": "Total verified adhesions",
+      "totalVerified": "Recorded adhesions",
       "verifiedMembers": "Recorded adhesions in an event with declared domain {domain}",
-      "verifiedAdhesions": "Verified adhesions",
+      "verifiedAdhesions": "Recorded adhesions",
       "distinctCountries": "Distinct countries",
       "distinctCities": "Distinct cities",
       "firstAdhesion": "First adhesion",
@@ -635,7 +635,9 @@
     "geoAnalyzedTotal": "Analyzed adhesions",
     "geoCounterTotal": "Stored overall counter",
     "geoCounterMismatch": "The overall counter ({total}) differs from the {analyzed} analyzed records. Breakdowns and percentages use the analyzed records.",
-    "recordedIndex": "Stored index {range}; not a probability or identity certificate."
+    "recordedIndex": "Stored index {range}; not a probability or identity certificate.",
+    "fiabilidadBaja": "Stored index:0-59",
+    "chainUnavailable": "Observed methods are unavailable for this report version."
   },
   "invite": {
     "loading": "Validating invitation...",
@@ -996,7 +998,8 @@
       "institutional_affiliation": "Declared domain {domain}: email control does not certify official affiliation or current membership.",
       "census_vouching": "Affiliation is additionally supported by peer vouching within the institutional census.",
       "public_auditability": "The result is auditable: the closed report carries an integrity hash and records per-adhesion public commitments. Full independent public verification, with complete disclosure of those commitments, is available from integrity version 2.",
-      "recorded_identifiers": "Identifiers and methods recorded in {total} analyzed adhesions; they do not certify distinct people."
+      "recorded_identifiers": "Identifiers and methods recorded in {total} analyzed adhesions; they do not certify distinct people.",
+      "evidence_unavailable": "Method evidence is unavailable to describe these adhesions."
     },
     "not": {
       "affiliation_geographic": "That participants belong to any specific affected community: no territorial or institutional membership was verified.",
@@ -1005,7 +1008,11 @@
       "institutional_role": "The participant's role or status within the institution (for example active student versus staff), nor that the whole institution is represented.",
       "truth": "That the reported facts are true: Voice Protest records verified participation, not the validity of the claim.",
       "representative": "That the result represents the entire affected population: it measures those who chose to participate.",
-      "credential_scope": "The creator declares the domain; its official institutional relationship or endorsement is not certified. The census is a network of vouched accounts, not an official register: the founder linked to the creation key may accredit the first wave; later waves require two endorsements from distinct accredited accounts, which do not prove independent people. A device credential retains an earlier verification; 270 days of inactivity is retention, not recent phone possession. Institutional eligibility expires at the next31August00:00UTC; it does not certify continuing affiliation until that date."
+      "credential_scope": "The creator declares the domain; its official institutional relationship or endorsement is not certified. The census is a network of vouched accounts, not an official register: the founder linked to the creation key may accredit the first wave; later waves require two endorsements from distinct accredited accounts, which do not prove independent people. A device credential retains an earlier verification; 270 days of inactivity is retention, not recent phone possession. Institutional records are assigned an expiry at the next 31 August 00:00 UTC; it does not certify continuing affiliation until that date.",
+      "device_credential_scope": "A device credential retains earlier verification; it does not prove recent phone control. The documented 270-day inactivity rule concerns retention, not freshness. Automatic renewal and revocation following external changes are not certified.",
+      "domain_scope": "The creator declares the domain; official affiliation, endorsement, role and current membership are not certified.",
+      "census_scope": "The census is a network of vouched accounts, not an official register. The founder linked to the creation key may accredit the first wave; later waves require two endorsements from distinct accredited accounts, not necessarily independent people.",
+      "institutional_expiry_scope": "Institutional records are assigned the next 31 August 00:00 UTC expiry. This is not current affiliation proof or certification of every renewal/revocation control."
     },
     "methods": {
       "sms_otp": "SMS one-time-password verification of a real phone number (Twilio Verify).",

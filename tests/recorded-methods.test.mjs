@@ -12,3 +12,12 @@ test('mixed institutional history does not become all-email evidence from config
 });
 test('empty report declares no observed method or IP signal',()=>{const s=buildEvidentialScope({scope:'national',country:'ES'},{recorded_methods:summarizeRecordedMethods([])});assert.deepEqual(s.methods,[]);});
 test('national numbering claim is omitted for historical non-phone records',()=>{const s=buildEvidentialScope({scope:'national',country:'ES'},{recorded_methods:summarizeRecordedMethods([{verification_method:'institutional_email_otp'}])});assert.ok(!s.demonstrates.some(x=>x.key==='demonstrates.sim_country'));});
+
+test('reference English renderer handles every version2 key without leaking key placeholders',async()=>{
+ const {renderStatementEn}=await import('../apps/api/src/lib/evidentialScope.js');
+ const scope=buildEvidentialScope({scope:'global'},{recorded_methods:summarizeRecordedMethods([{verification_method:'phone_otp'},{verification_method:'qr'},{verification_method:'eid'},{verification_method:null,senales:'ip',gps_confirmed:true}])});
+ const text=JSON.stringify(renderStatementEn(scope));assert.ok(!text.includes('[methods.'));assert.ok(!text.includes('[not.'));assert.ok(!text.includes('[demonstrates.'));assert.ok(text.includes('Unknown historical method: 1'));
+});
+
+test('missing observations fail closed rather than deriving email/SMS from configuration',()=>{const scope=buildEvidentialScope({scope:'national',dominio_email:'declared.invalid',requiere_censo:true,count:100});assert.deepEqual(scope.methods,[]);assert.equal(scope.demonstrates[0].key,'demonstrates.evidence_unavailable');});
+test('non-institutional report omits institutional and founder policy notes',()=>{const scope=buildEvidentialScope({scope:'global'},{recorded_methods:summarizeRecordedMethods([{verification_method:'phone_otp'}])});assert.ok(scope.outside_scope.some(x=>x.key==='not.device_credential_scope'));assert.ok(!scope.outside_scope.some(x=>x.key==='not.domain_scope'||x.key==='not.census_scope'||x.key==='not.institutional_expiry_scope'));});

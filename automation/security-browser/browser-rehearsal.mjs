@@ -63,7 +63,7 @@ try{
    const widths=await page.locator('.ir-geo-breakdown .ir-geo-bar-fill').evaluateAll(nodes=>nodes.map(n=>Number.parseFloat(n.style.width)));
    assert.deepEqual(widths,[dg.gps_local,dg.nacionales_sin_gps,dg.internacionales,dg.gps_nacional,dg.sin_pais].map(n=>Math.round(n/dg.total*100)));
    assert.equal(widths.reduce((a,b)=>a+b,0),100);
-   const qualityWidths=await page.locator('.ir-quality-band .ir-geo-bar-fill').evaluateAll(nodes=>nodes.map(n=>Number.parseFloat(n.style.width)));
+   const qualityWidths=await page.locator('.ir-quality-band:visible .ir-geo-bar-fill').evaluateAll(nodes=>nodes.map(n=>Number.parseFloat(n.style.width)));
    assert.deepEqual(qualityWidths,[60,40]);
    const notice=messages.informe.geoCounterMismatch.replaceAll('{analyzed}','5').replaceAll('{total}','20');
    assert.ok(reportText.replace(/\s+/g,' ').includes(notice.replace(/\s+/g,' ')));
@@ -76,7 +76,7 @@ try{
   if(process.env.IDV_METHODS_REHEARSAL==='1') {
    const text=await page.locator('.ir-doc').textContent();
    assert.ok(text.includes(messages.evidence.methods.recorded_unknown.replace('{count}','1')));
-   assert.ok(text.includes(messages.evidence.not.credential_scope));
+   assert.ok(text.includes(messages.evidence.not.device_credential_scope));
    checks.push({id:'recorded_methods_and_credential_limits_'+locale,ok:true});
   }
   const download=page.waitForEvent('download',{timeout:10000});await page.locator('.ir-btn-pdf').click();

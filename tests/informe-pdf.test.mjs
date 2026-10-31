@@ -295,8 +295,10 @@ for(const ui of L)test('recorded-method PDF shows mixed and unknown history with
  const c=structuredClone(FIXTURES[ui]);c.data.protest.dominio_email='declared.invalid';c.data.protest.requiere_censo=true;
  c.data.evidential_scope=buildEvidentialScope(c.data.protest,{recorded_methods:summarizeRecordedMethods([{verification_method:'institutional_email_otp'},{verification_method:null}])});
  const r=await build(c,'idv0812-'+ui),all=r.drawn.join(' ').replace(/\s/g,'');
- for(const key of ['methods.recorded_institutional_email_otp','methods.recorded_unknown','not.credential_scope']){
+ for(const key of ['methods.recorded_institutional_email_otp','methods.recorded_unknown','not.device_credential_scope']){
   const expected=tFor(ui)('evidence.'+key,{count:1});assert.ok(all.includes(txt.stripUndrawable(expected).replace(/\s/g,'')),key);
  }
  assert.ok(!r.drawn.some(s=>s.startsWith('2. SMS/Email OTP')));
 });
+
+for(const ui of L)test('legacy PDF does not infer a universal SMS/email chain: '+ui,async()=>{const r=await build(FIXTURES[ui]);assert.ok(!r.drawn.some(line=>line.startsWith('2. SMS/Email OTP')));});

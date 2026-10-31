@@ -1,17 +1,15 @@
 <template>
   <div class="screen active" id="s-detail" v-if="protest">
-    <!-- Header -->
-    <div class="detail-hdr">
-      <button class="back" @click="$router.back()">{{ $t('detail.back') }}</button>
-      <div class="d-title">{{ protest.title }}</div>
-      <div class="d-loc">
-        <span class="scope-badge" :class="store.scopeBadge(protest).cls">{{ store.scopeBadge(protest).icon }} {{ badgeLabel(protest) }}</span>
-        <span style="font-size:12px;color:var(--text2)">📍 {{ localizedCountry(protest.country, locale.value) || protest.countryName }}</span>
-      </div>
-    </div>
-
-
     <div class="d-scroll">
+      <!-- Header -->
+      <div class="detail-hdr">
+        <button class="back" @click="$router.back()">{{ $t('detail.back') }}</button>
+        <div class="d-title">{{ protest.title }}</div>
+        <div class="d-loc">
+          <span class="scope-badge" :class="store.scopeBadge(protest).cls">{{ store.scopeBadge(protest).icon }} {{ badgeLabel(protest) }}</span>
+          <span style="font-size:12px;color:var(--text2)">📍 {{ localizedCountry(protest.country, locale.value) || protest.countryName }}</span>
+        </div>
+      </div>
       <!-- Stats -->
       <div class="stats-row">
         <div class="sc"><div class="sc-n" style="color:var(--accent)">{{ fmt(protest.count) }}</div><div class="sc-l">{{ $t('detail.statAdheridos') }}</div></div>
@@ -54,30 +52,12 @@
       </div>
 
 
-      <!-- Lock / geo message -->
-      <div v-if="!cj.ok && !cj.joined">
-        <div v-if="cj.lock" class="lock-detail">{{ $t('detail.lockMsg') }} {{ cj.msg }}</div>
-        <div v-else-if="cj.geo" class="geo-detail">{{ $t('detail.geoMsg') }} {{ cj.msg }}</div>
-      </div>
-
-    </div>
-
-    <!-- Join footer -->
-    <div class="join-footer" v-if="!isClosed">
-      <!-- Risk info — solo para alto riesgo -->
-      <div v-if="!protest.joined && cj.ok && (protest.risk_level === 'high' || protest.risk_level === 'critical')"
-        class="risk-info" style="margin-bottom:8px;padding:10px 12px;border-radius:var(--r);font-size:13px;line-height:1.6;background:rgba(255,107,107,.06);border:.5px solid rgba(255,107,107,.2);color:var(--accent3)">
-        {{ $t('detail.riskHigh') }}
-      </div>
-      <!-- Financiacion ciudadana -->
-      <div v-if="donacionesInfo" style="width:100%;margin-bottom:10px;padding:12px;background:rgba(255,255,255,.04);border:.5px solid var(--border2);border-radius:var(--r2)">
+      <!-- Financiacion ciudadana (opcional) -->
+      <div class="detail-funding" v-if="!isClosed && donacionesInfo" style="width:100%;margin-bottom:10px;padding:12px;background:rgba(255,255,255,.04);border:.5px solid var(--border2);border-radius:var(--r2);box-sizing:border-box">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <div style="font-size:14px;font-weight:700;color:var(--text)">{{ $t('detail.donTitle') }}</div>
-          <div style="font-size:14px;color:var(--accent2)">{{ donacionesInfo.adhesiones_posibles }} {{ $t('detail.donPosibles') }}</div>
         </div>
-        <div style="width:100%;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-bottom:6px">
-          <div :style="{width: Math.min(100, (donacionesInfo.saldo_euros / 20) * 100) + '%', height: '100%', background: donacionesInfo.saldo_euros > 2 ? 'var(--accent2)' : 'var(--accent3)', borderRadius: '3px', transition: 'width .5s'}"></div>
-        </div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.5">{{ $t('detail.fundingOptional') }}</div>
         <div style="display:flex;justify-content:space-between;margin-bottom:10px">
           <div style="font-size:13px;color:var(--text2)">{{ $t('detail.donSaldo') }} <strong style="color:var(--text)">{{ donacionesInfo.saldo_euros.toFixed(2) }}€</strong></div>
           <div v-if="donacionesInfo.donaciones_count > 0" style="font-size:12px;color:var(--text2)">{{ $t('detail.donCount', { count: donacionesInfo.donaciones_count, total: donacionesInfo.donaciones_total.toFixed(2) }) }}</div>
@@ -91,8 +71,39 @@
           {{ $t('detail.donApoyar') }}
         </a>
       </div>
+
+      <!-- Lock / geo message -->
+      <div v-if="!cj.ok && !cj.joined">
+        <div v-if="cj.lock" class="lock-detail">{{ $t('detail.lockMsg') }} {{ cj.msg }}</div>
+        <div v-else-if="cj.geo" class="geo-detail">{{ $t('detail.geoMsg') }} {{ cj.msg }}</div>
+      </div>
+
+      <button v-if="!isClosed && protest.scope === 'regional' && protest.dominio_email && protest.requiere_censo && censoExiste"
+        @click="router.push(`/grupo/${protest.id}`)"
+        style="width:100%;margin-top:8px;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:12px;cursor:pointer">
+        {{ protest.joined ? $t('detail.myGroup') : $t('detail.seeCensus') }}
+      </button>
+      <div v-if="!isClosed && (protest.viralCount || 0) > 0"
+        style="display:flex;align-items:center;gap:6px;margin-top:7px;padding:6px 9px;background:rgba(184,65,14,.08);border:.5px solid rgba(232,93,36,.22);border-radius:var(--r)">
+        <span style="font-size:12px">🔥</span>
+        <span style="font-size:12px;color:rgba(255,140,80,.9)"><strong style="color:#e85d24">{{ fmt(protest.viralCount) }}</strong> {{ $t('detail.viralCountSuffix') }}</span>
+      </div>
+
+    </div>
+
+    <!-- Join footer -->
+    <div class="join-footer" v-if="!isClosed">
+      <!-- Risk info — solo para alto riesgo -->
+      <div v-if="!protest.joined && cj.ok && (protest.risk_level === 'high' || protest.risk_level === 'critical')"
+        id="detail-risk-info"
+        class="risk-info" style="margin-bottom:8px;padding:10px 12px;border-radius:var(--r);font-size:13px;line-height:1.6;background:rgba(255,107,107,.06);border:.5px solid rgba(255,107,107,.2);color:var(--accent3)">
+        {{ $t('detail.riskHigh') }}
+      </div>
+      <div v-if="sinSaldo" id="detail-balance-info" style="font-size:12px;color:var(--accent3);margin-bottom:8px;line-height:1.5">
+        ⚠️ {{ $t('detail.donAgotado') }}
+      </div>
       <div class="btn-row">
-        <button class="btn-primary" :class="{sj: protest.joined}" :disabled="!cj.ok || sinSaldo" @click="onJoin">
+        <button class="btn-primary" :class="{sj: protest.joined}" :disabled="!cj.ok || sinSaldo" :aria-describedby="[(!protest.joined && cj.ok && (protest.risk_level === 'high' || protest.risk_level === 'critical')) ? 'detail-risk-info' : null, sinSaldo ? 'detail-balance-info' : null].filter(Boolean).join(' ') || null" @click="onJoin">
           {{ joinLabel }}
         </button>
         <div class="viral-wrap"v-if="!protest.requiere_censo">
@@ -108,16 +119,6 @@
             </div>
           </button>
         </div>
-      </div>
-      <button v-if="protest.scope === 'regional' && protest.dominio_email && protest.requiere_censo && censoExiste"
-        @click="router.push(`/grupo/${protest.id}`)"
-        style="width:100%;margin-top:8px;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:12px;cursor:pointer">
-        {{ protest.joined ? $t('detail.myGroup') : $t('detail.seeCensus') }}
-      </button>
-      <div v-if="(protest.viralCount || 0) > 0"
-        style="display:flex;align-items:center;gap:6px;margin-top:7px;padding:6px 9px;background:rgba(184,65,14,.08);border:.5px solid rgba(232,93,36,.22);border-radius:var(--r)">
-        <span style="font-size:12px">🔥</span>
-        <span style="font-size:12px;color:rgba(255,140,80,.9)"><strong style="color:#e85d24">{{ fmt(protest.viralCount) }}</strong> {{ $t('detail.viralCountSuffix') }}</span>
       </div>
     </div>
     <!-- Convocatoria cerrada — ej. enlace visitado tras el cierre -->
@@ -259,7 +260,6 @@ const donacionesInfo = computed(() => {
   const saldo = protest.value.saldo_euros ?? 0;
   return {
     saldo_euros:         saldo,
-    adhesiones_posibles: Math.floor(saldo / 0.05),
     donaciones_count:    protest.value.donaciones_count ?? 0,
     donaciones_total:    protest.value.donaciones_total ?? 0,
     ultima_donacion:     protest.value.ultima_donacion ?? null,
@@ -332,7 +332,7 @@ const joinLabel = computed(() => {
   if (sinSaldo.value) return t('detail.joinSinSaldo');
   if (!cj.value.ok) return cj.value.lock ? t('detail.joinLocked') : t('detail.joinGeo');
   if (protest.value.scope === 'regional' && protest.value.dominio_email && protest.value.requiere_censo) {
-    return censoExiste.value ? t('detail.joinInitCensus') : t('detail.joinCensus');
+    return censoExiste.value ? t('detail.joinCensus') : t('detail.joinInitCensus');
   }
   if (protest.value.scope === 'regional' && protest.value.dominio_email) {
     return t('detail.joinEmail');
@@ -345,28 +345,44 @@ function shareProtest() {
   return ui.openShare({id: protest.value.id, title: protest.value.title});
 }
 
+function closedForJoin(target) {
+  if (!Number.isFinite(target.timer) || target.timer <= 0) return true;
+  const closesAt = target.endsAtMs ?? Date.parse(target.ends_at);
+  // Date.now is intentionally read here, not via a cached computed value:
+  // a suspended tab may activate before the countdown receives another tick.
+  return Number.isFinite(closesAt) && closesAt <= Date.now();
+}
+
 function onJoin() {
-  if (!cj.value.ok) return;
-  if (protest.value.scope === 'regional' && protest.value.dominio_email) {
-    if (protest.value.requiere_censo) {
+  const target = protest.value;
+  // Recheck current state at activation; hidden/disabled UI is not a handler guard.
+  if (!target || target.joined || closedForJoin(target) || (target.saldo_euros ?? 0) <= 0 || !store.canJoin(target).ok) return;
+  if (target.scope === 'regional' && target.dominio_email) {
+    if (target.requiere_censo) {
       sessionStorage.setItem('vc_group_id', sessionStorage.getItem('vc_group_id') || '');
       if (!censoExiste.value) {
-        router.push(`/grupo/${protest.value.id}?iniciar=true`);
+        router.push(`/grupo/${target.id}?iniciar=true`);
       } else {
-        router.push(`/grupo/${protest.value.id}`);
+        router.push(`/grupo/${target.id}`);
       }
     } else {
-      router.push(`/verify-institucional/${protest.value.id}`);
+      router.push(`/verify-institucional/${target.id}`);
     }
   } else {
-    sessionStorage.setItem('vc_risk_level', protest.value.risk_level || 'low');
-    sessionStorage.setItem('vc_protest_scope', protest.value.scope || 'national');
-    sessionStorage.setItem('vc_last_joined', String(protest.value.id));
-    sessionStorage.setItem('vc_protest_id', protest.value.id);
-    sessionStorage.setItem('vc_protest_ends_at', protest.value.ends_at || '');
+    sessionStorage.setItem('vc_risk_level', target.risk_level || 'low');
+    sessionStorage.setItem('vc_protest_scope', target.scope || 'national');
+    sessionStorage.setItem('vc_last_joined', String(target.id));
+    sessionStorage.setItem('vc_protest_id', target.id);
+    sessionStorage.setItem('vc_protest_ends_at', target.ends_at || '');
     router.push('/auth');
   }
 }
 </script>
 
 
+<style scoped>
+#s-detail .d-scroll { min-height: 0; overflow-wrap: anywhere; }
+#s-detail .d-scroll > .detail-hdr { padding: 0 0 12px; margin-bottom: 12px; overflow-wrap: anywhere; }
+#s-detail .join-footer .btn-primary:focus-visible,
+#s-detail .join-footer button:focus-visible { outline: 2px solid var(--accent2); outline-offset: 2px; }
+</style>

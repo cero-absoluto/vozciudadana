@@ -12,6 +12,28 @@
     "info": "Info",
     "about": "Cómo funciona"
   },
+  "participation": {
+    "anotherEmail": "Verificar otro correo",
+    "preflightUnavailable": "No se ha podido preparar la solicitud del código. Comprueba la conexión o la verificación del navegador antes de intentarlo de nuevo.",
+    "receipt": "Identificador de la adhesión",
+    "receiptNote": "Identifica este registro de adhesión; no acredita identidad ni pertenencia vigente.",
+    "savedConfirmation": "Confirmación recuperada de esta pestaña. No se ha enviado otra adhesión.",
+    "receiptNotSaved": "Guarda este identificador. El navegador no ha podido conservar la confirmación para recuperarla después.",
+    "censusNotSaved": "La adhesión está confirmada, pero no se ha podido conservar la sesión de acceso al censo.",
+    "uncertain": "No podemos confirmar si la adhesión se registró. Esta pestaña no la repetirá automáticamente. Puedes consultar la convocatoria o el informe; sus totales no acreditan tu registro individual.",
+    "storageUnavailable": "El navegador no permite conservar el estado de esta operación. No se ha enviado una nueva adhesión desde esta pantalla.",
+    "loadUnavailable": "No se ha podido preparar la verificación. No se ha enviado una adhesión. Vuelve a la convocatoria y comprueba la conexión.",
+    "viewReport": "Ver informe",
+    "requestRejected": "La solicitud o el código han sido rechazados. Revisa los datos y la vigencia del código.",
+    "verificationRejected": "La verificación ha sido rechazada o ha caducado. Verifica de nuevo.",
+    "noFunds": "La solicitud no se ha registrado por falta de saldo de la convocatoria.",
+    "requirements": "La solicitud no cumple los requisitos de participación de esta convocatoria.",
+    "notAvailable": "No se ha podido encontrar la convocatoria para esta solicitud.",
+    "alreadyRecorded": "No se ha creado otra adhesión. Puede existir un registro anterior; esta respuesta no incluye su recibo.",
+    "closed": "La convocatoria está cerrada. Puedes consultar su informe.",
+    "rateLimited": "Se ha alcanzado un límite temporal. Espera antes de intentarlo; no repetiremos la solicitud automáticamente.",
+    "deliveryUncertain": "No podemos confirmar la solicitud del código. Puede que llegue; comprueba tus mensajes antes de pedir otro."
+  },
   "auth": {
     "title": "Introduce tu número de móvil para recibir un código de verificación por SMS y unirte a la protesta.",
     "phoneHint": "Tu número se transforma en un código secreto e indescifrable.",

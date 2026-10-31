@@ -192,6 +192,8 @@
 
 <script setup>
 import { useProtestsStore } from '@/stores/protests.js';
+import {recaptchaToken} from '@/services/requestJson.js';
+import {uncertainOutcome} from '@/lib/participationOutcome.js';
 import { shouldSkipFastPath, clearForceOtp, preSmsRejectionKey } from '@/lib/nationalPreCheck.js';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
@@ -221,6 +223,7 @@ const otpDigits    = ref(['', '', '', '', '', '']);
 const otpRefs      = ref([]);
 // Bind resends/checks to the request that was actually accepted, not editable refs.
 const requestedOtp = ref(null);
+let authActive = true;
 const showGpsModal = ref(false);
 let gpsResolve = null;
 
@@ -240,17 +243,7 @@ const captchaTxt         = ref('');
 const RECAPTCHA_KEY = import.meta.env.VITE_RECAPTCHA_KEY;
 
 async function getRecaptchaToken(action) {
-  return new Promise((resolve, reject) => {
-    if (typeof window.grecaptcha === 'undefined' || !RECAPTCHA_KEY) {
-      reject(new Error('reCAPTCHA no disponible'));
-      return;
-    }
-    window.grecaptcha.ready(() => {
-      window.grecaptcha.execute(RECAPTCHA_KEY, { action })
-        .then(t => resolve(t))
-        .catch(err => reject(err));
-    });
-  });
+  return recaptchaToken(window.grecaptcha, RECAPTCHA_KEY, action);
 }
 
 import * as api from '@/services/api.js';
@@ -303,6 +296,7 @@ async function requestGpsFlow() {
         navigator.geolocation.getCurrentPosition(resolve, reject,
           { enableHighAccuracy: true, timeout: 10000 })
       );
+      if (!authActive) return;
       ui.setGps(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
       localStorage.setItem('vc_gps_lat', pos.coords.latitude);
       localStorage.setItem('vc_gps_lng', pos.coords.longitude);
@@ -336,7 +330,7 @@ async function requestGpsFlow() {
 }
 
 async function sendSMS() {
-  if (sending.value) return;
+  if (sending.value || !authActive) return;
   const target = joiningProtest.value;
   if (!target) {
     ui.showToast(t('verify.toastProtestNotFound'));
@@ -357,26 +351,29 @@ async function sendSMS() {
   sending.value = true;
   try {
     await requestGpsFlow();
-    if (sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
+    if (!authActive || sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
     // Returning-device proof remains an existing shortcut on initial entry only.
     // An explicit resend always requests a code, without reauth or another GPS prompt.
     const forceOtp = shouldSkipFastPath(sessionStorage);
     const deviceSecret = forceOtp ? null : device.getDeviceSecret();
     if (deviceSecret) {
+      const proofDeviceId = device.getDeviceId();
       try {
-        const locks = await api.fetchDeviceLocks(device.getDeviceId(), deviceSecret);
+        const locks = await api.fetchDeviceLocks(proofDeviceId, deviceSecret);
+        if (!authActive) return;
         if (locks?.length) {
-          const reauth = await api.reauthDevice(device.getDeviceId(), deviceSecret);
-          if (sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
+          const reauth = await api.reauthDevice(proofDeviceId, deviceSecret);
+          if (reauth?.authenticated !== true || typeof reauth.participation_token !== 'string' || !reauth.participation_token) throw new Error('INVALID_API_RESPONSE');
+          if (!authActive || sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
           sessionStorage.setItem('vc_participation_token', reauth.participation_token);
-          sessionStorage.setItem('vc_device_id', device.getDeviceId());
+          sessionStorage.setItem('vc_device_id', proofDeviceId);
           sessionStorage.setItem('vc_sms_sent', 'false');
           router.push('/verify');
           return;
         }
       } catch { /* Invalid/expired returning-device proof: request a fresh OTP. */ }
     }
-    if (sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
+    if (!authActive || sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
     await requestSmsCode(request);
   } finally {
     sending.value = false;
@@ -387,9 +384,9 @@ async function requestSmsCode(request, resend = false) {
   try {
     let token = '';
     try { token = await getRecaptchaToken('request_otp'); } catch { /* backend enforces reCAPTCHA */ }
-    if (sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
+    if (!authActive || sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
     const res = await api.requestOtp({phone: request.phone, recaptcha_token: token || 'dev', protest_id: request.protestId});
-    if (sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
+    if (!authActive || sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
     if (res?.sent !== true) {
       ui.showToast(t('auth.verificationCannotContinue'));
       return;
@@ -403,6 +400,7 @@ async function requestSmsCode(request, resend = false) {
     const preSms = preSmsRejectionKey(err);
     if (preSms) { ui.showToast(t(preSms)); }
     else if (err.status === 429 || err.code === 'otp_rate_limited') ui.showToast(t('auth.otpRateLimited'));
+    else if (uncertainOutcome(err)) ui.showToast(t('participation.deliveryUncertain'));
     else ui.showToast(t('auth.sendError'));
   }
 }
@@ -472,10 +470,14 @@ function startWebOtpListener() {
     .catch(() => { /* aborted (left the screen) or no matching SMS arrived — silent */ });
 }
 
-onUnmounted(() => otpAbortController?.abort());
+onUnmounted(() => {
+  authActive = false;
+  otpAbortController?.abort();
+  if (gpsResolve) gpsResolve(false);
+});
 
 async function verifyOTP() {
-  if (sending.value) return;
+  if (sending.value || !authActive) return;
   otpAbortController?.abort();
   const request = requestedOtp.value;
   if (!request || sessionStorage.getItem('vc_last_joined') !== request.protestId) {
@@ -489,7 +491,8 @@ async function verifyOTP() {
   try {
     const deviceId = device.getDeviceId();
     const res = await api.verifyOtp({phone: request.phone, otp: code, device_id: deviceId, country_code: request.countryCode});
-    if (sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
+    if (res?.verified !== true || typeof res.participation_token !== 'string' || !res.participation_token || typeof res.device_id !== 'string' || res.device_id.length < 8 || res.device_id.length > 128) throw new Error('INVALID_API_RESPONSE');
+    if (!authActive || sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
     // VP-SEC-001/002/003 fix (23 July 2026): the response no longer
     // includes phone_hash — store the signed participation_token instead,
     // and (only present the very first time this device is ever verified)

@@ -12,6 +12,28 @@
     "info": "Info",
     "about": "Comment ça marche"
   },
+  "participation": {
+    "anotherEmail": "Vérifier une autre adresse e-mail",
+    "preflightUnavailable": "La demande de code n’a pas pu être préparée. Vérifiez la connexion ou la vérification du navigateur avant de réessayer.",
+    "receipt": "Identifiant de l’adhésion",
+    "receiptNote": "Identifie cet enregistrement d’adhésion ; il n’atteste ni l’identité ni une appartenance actuelle.",
+    "savedConfirmation": "Confirmation récupérée dans cet onglet. Aucune nouvelle adhésion n’a été envoyée.",
+    "receiptNotSaved": "Conservez cet identifiant. Le navigateur n’a pas pu garder la confirmation pour la retrouver plus tard.",
+    "censusNotSaved": "L’adhésion est confirmée, mais la session d’accès au recensement n’a pas pu être conservée.",
+    "uncertain": "Nous ne pouvons pas confirmer si l’adhésion a été enregistrée. Cet onglet ne la renverra pas automatiquement. Vous pouvez consulter l’appel ou le rapport ; leurs totaux ne prouvent pas votre enregistrement individuel.",
+    "storageUnavailable": "Le navigateur ne permet pas de conserver l’état de cette opération. Aucune nouvelle adhésion n’a été envoyée depuis cet écran.",
+    "loadUnavailable": "La vérification n’a pas pu être préparée. Aucune adhésion n’a été envoyée. Revenez à l’appel et vérifiez la connexion.",
+    "viewReport": "Voir le rapport",
+    "requestRejected": "La demande ou le code a été refusé. Vérifiez les données et la validité du code.",
+    "verificationRejected": "La vérification a été refusée ou a expiré. Vérifiez à nouveau.",
+    "noFunds": "La demande n’a pas été enregistrée, faute de fonds pour cet appel.",
+    "requirements": "La demande ne remplit pas les conditions de participation à cet appel.",
+    "notAvailable": "L’appel n’a pas pu être trouvé pour cette demande.",
+    "alreadyRecorded": "Aucune nouvelle adhésion n’a été créée. Un enregistrement antérieur peut exister ; cette réponse n’en contient pas le reçu.",
+    "closed": "L’appel est clos. Vous pouvez consulter son rapport.",
+    "rateLimited": "Une limite temporaire a été atteinte. Patientez avant de réessayer ; la demande ne sera pas répétée automatiquement.",
+    "deliveryUncertain": "Nous ne pouvons pas confirmer la demande de code. Il peut encore arriver ; consultez vos messages avant d’en demander un autre."
+  },
   "auth": {
     "title": "Entrez votre numéro de mobile pour recevoir un code de vérification par SMS et rejoindre la protestation.",
     "phoneHint": "Votre numéro est transformé en un code secret et indéchiffrable.",

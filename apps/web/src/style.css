@@ -375,7 +375,8 @@ a:hover{opacity:.8}
 .spin-ring{width:36px;height:36px;border:2px solid var(--bg5);border-top:2px solid var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spin-txt{font-size:10px;color:var(--text2)}
-.success-scr{display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;text-align:center}
+.success-scr{display:none;flex-direction:column;align-items:center;justify-content:flex-start;flex:1;min-height:0;overflow-y:auto;overflow-wrap:anywhere;padding:20px;text-align:center}
+.success-scr>*{flex-shrink:0;max-width:100%}
 .success-scr.on{display:flex}
 .suc-ico{width:58px;height:58px;border-radius:50%;background:rgba(76,255,164,.1);border:2px solid rgba(76,255,164,.28);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 12px;animation:popIn .4s cubic-bezier(.34,1.56,.64,1)}
 @keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}

@@ -27,7 +27,7 @@ try {
     });
     let sms=0,joins=0,emailSends=0,emailChecks=0,releaseSms,releaseEmail,releaseCheck;
     let smsResponse={sent:true},smsStatus=200,holdSms=false,holdEmail=false,holdCheck=false;
-    let mobileDetail=null,groupAvailable=false;
+    let mobileDetail=null,groupAvailable=false,groupMode='auto',groupReads=0,holdGroup=false,releaseGroup;
     let holdList=false,releaseList,listStatus=200,listReads=0;
     let listOverride=null,detailStatus=200,detailResponse=events[1],holdDetail=false,releaseDetail;
     let joinStatus=201,joinResponse={receipt:'44444444-4444-4444-8444-444444444444'},emailStatus=200;
@@ -42,7 +42,7 @@ try {
       if(u.hostname==='api.voiceprotest.org') {
         if(req.method()==='OPTIONS')return route.fulfill({status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST','Access-Control-Allow-Headers':'Content-Type'}});
         if(req.method()==='GET'&&u.pathname==='/api/protests') {listReads++;if(holdList)await new Promise(r=>releaseList=r);return json(listOverride ?? events,listStatus);}
-        if(req.method()==='GET'&&u.pathname===`/api/grupos/convocatoria/${ID}`)return json(groupAvailable?{group_id:'33333333-3333-4333-8333-333333333333',name:'Synthetic census'}:{error:'synthetic absent'},groupAvailable?200:404);
+        if(req.method()==='GET'&&u.pathname===`/api/grupos/convocatoria/${ID}`){groupReads++;if(holdGroup)await new Promise(r=>releaseGroup=r);if(groupMode==='network')return route.abort('connectionfailed');if(groupMode==='503')return json({error:'synthetic private failure'},503);if(groupMode==='invalid')return json({});return json(groupAvailable?{group_id:'33333333-3333-4333-8333-333333333333',name:'Synthetic census'}:{error:'synthetic absent'},groupAvailable?200:404);}
         if(req.method()==='GET'&&u.pathname===`/api/protests/${ID}`)return json(mobileDetail ?? events[0]);
         if(req.method()==='GET'&&u.pathname===`/api/protests/${ID}/informe`)return json({error:'synthetic report unavailable'},503);
         if(req.method()==='GET'&&u.pathname===`/api/protests/${INSTITUTION}`) {if(holdDetail)await new Promise(r=>releaseDetail=r);return json(detailResponse,detailStatus);}
@@ -267,19 +267,62 @@ try {
     assert.ok((await page.locator('.suc-hash').textContent()).includes('66666666-6666-4666-8666-666666666666'));
     assert.equal(emailSends,beforeSends);assert.equal(emailChecks,beforeChecks);
     checks.push({id:`institutional_saved_receipt_survives_missing_event_${locale}_${width}`,ok:true});
+    // Census metadata never authorizes creation until absence was actually returned.
+    mobileDetail={...events[0],title:'Synthetic census lookup',scope:'regional',dominio_email:'example.invalid',requiere_censo:true,description:'Synthetic public event',risk_level:'low',saldo_euros:10};listOverride=[];
+    const censusPage=async(name,{joined=false}={})=>{await page.evaluate(({id,joined})=>{localStorage.clear();sessionStorage.clear();if(joined)localStorage.setItem('vc_locks',JSON.stringify({[id]:Date.now()}));},{id:ID,joined});await page.goto(`https://voiceprotest.org/?ux=census-${name}#/detail/${ID}`);};
+    const censusCta=()=>page.locator('#s-detail .join-footer .btn-primary');
+    const beforeCensusWrites=[sms,joins,emailSends,emailChecks];
+    groupMode='auto';groupAvailable=false;holdGroup=true;releaseGroup=undefined;const beforeGroupReads=groupReads;
+    await censusPage('pending');await page.locator('#detail-census-status').filter({hasText:messages.detail.censusLoading}).waitFor();
+    assert.equal(await censusCta().isDisabled(),true);assert.ok(!(await censusCta().textContent()).includes(messages.detail.joinInitCensus));
+    await page.keyboard.press('Enter');await waitForCount(()=>groupReads,beforeGroupReads+1);
+    checks.push({id:`census_pending_cannot_start_${locale}_${width}`,ok:true});
+    await waitForCount(()=>Number(!!releaseGroup),1);holdGroup=false;releaseGroup();await page.locator('#detail-census-status').filter({hasText:messages.detail.censusAbsent}).waitFor();
+    assert.ok((await censusCta().textContent()).includes(messages.detail.joinInitCensus));assert.equal(await censusCta().isDisabled(),false);
+    checks.push({id:`census_only_404_offers_start_${locale}_${width}`,ok:true});
+    groupMode='503';await censusPage('server-error');await page.locator('#detail-census-status').filter({hasText:messages.detail.censusUnavailable}).waitFor();
+    assert.ok((await censusCta().textContent()).includes(messages.detail.censusRetry));assert.equal(await censusCta().isDisabled(),false);
+    assert.ok(!(await page.locator('#s-detail').textContent()).includes('synthetic private failure'));
+    checks.push({id:`census_server_error_is_retry_not_absence_${locale}_${width}`,ok:true});
+    groupMode='auto';groupAvailable=true;holdGroup=true;releaseGroup=undefined;const beforeRetry=groupReads;
+    await censusCta().click();await page.waitForFunction(()=>document.querySelector('#s-detail .join-footer .btn-primary')?.disabled);
+    await page.keyboard.press('Enter');await waitForCount(()=>groupReads,beforeRetry+1);
+    await waitForCount(()=>Number(!!releaseGroup),1);holdGroup=false;releaseGroup();await page.locator('#detail-census-status').filter({hasText:messages.detail.censusPresent}).waitFor();
+    assert.ok((await censusCta().textContent()).includes(messages.detail.joinCensus));assert.equal(await censusCta().isDisabled(),false);
+    checks.push({id:`census_manual_retry_single_lookup_recovers_${locale}_${width}`,ok:true});
+    groupMode='invalid';await censusPage('invalid-success');await page.locator('#detail-census-status').filter({hasText:messages.detail.censusUnavailable}).waitFor();
+    assert.ok((await censusCta().textContent()).includes(messages.detail.censusRetry));
+    checks.push({id:`census_malformed_success_is_unavailable_${locale}_${width}`,ok:true});
+    groupMode='network';await censusPage('network');await page.locator('#detail-census-status').filter({hasText:messages.detail.censusUnavailable}).waitFor();
+    assert.ok((await censusCta().textContent()).includes(messages.detail.censusRetry));
+    checks.push({id:`census_network_error_is_not_absence_${locale}_${width}`,ok:true});
+    groupMode='auto';groupAvailable=false;holdGroup=true;releaseGroup=undefined;
+    await censusPage('late');await page.locator('#detail-census-status').filter({hasText:messages.detail.censusLoading}).waitFor();
+    await page.evaluate(()=>{window.location.hash='#/';});await page.waitForURL(url=>url.hash==='#/');
+    await waitForCount(()=>Number(!!releaseGroup),1);holdGroup=false;releaseGroup();await page.waitForTimeout(50);assert.equal(new URL(page.url()).hash,'#/');assert.equal(await page.locator('#detail-census-status').count(),0);
+    checks.push({id:`census_late_response_cannot_change_next_route_${locale}_${width}`,ok:true});
+    mobileDetail={...mobileDetail,saldo_euros:0};groupMode='503';await censusPage('readonly-retry',{joined:true});
+    await page.locator('#detail-census-status').filter({hasText:messages.detail.censusUnavailable}).waitFor();assert.equal(await censusCta().isDisabled(),false);
+    groupMode='auto';groupAvailable=true;await censusCta().click();await page.locator('#detail-census-status').filter({hasText:messages.detail.censusPresent}).waitFor();assert.equal(await censusCta().isDisabled(),true);
+    assert.deepEqual([sms,joins,emailSends,emailChecks],beforeCensusWrites);assert.equal(new URL(page.url()).hash,`#/detail/${ID}`);
+    checks.push({id:`census_retry_is_readonly_when_joined_unfunded_${locale}_${width}`,ok:true});
+    groupMode='auto';holdGroup=false;
     // Measured baseline global cases plus institutional/census/closed/joined states.
     const detailCases=[];
     for(const height of [640,844])for(const risk of ['low','high'])for(const balance of [0,10])detailCases.push({height,risk,balance,variant:'global'});
     for(const variant of ['email','census-existing','census-absent','closed','joined'])detailCases.push({height:640,risk:'low',balance:10,variant});
+    for(const variant of ['census-loading','census-error'])for(const balance of [0,10])detailCases.push({height:640,risk:'high',balance,variant});
     for(const {height,risk,balance,variant} of detailCases){
       const institutional=variant==='email'||variant.startsWith('census-');
-      groupAvailable=variant==='census-existing';
+      groupAvailable=variant==='census-existing';groupMode=variant==='census-error'?'503':'auto';holdGroup=variant==='census-loading';releaseGroup=undefined;
       mobileDetail={...events[0],title:('Synthetic campaign with a long public title ').repeat(4).trim(),description:('Synthetic public description. ').repeat(80),demands:('Synthetic concrete demand. ').repeat(25),focal_point:'Synthetic public institution',donaciones_count:variant==='global'?0:2354,donaciones_total:variant==='global'?0:12876.54,risk_level:risk,saldo_euros:balance,scope:institutional?'regional':'global',dominio_email:institutional?'example.invalid':null,requiere_censo:variant.startsWith('census-'),ends_at:variant==='closed'?'2000-01-01T00:00:00Z':events[0].ends_at};
       listOverride=[];await page.evaluate(({id,joined})=>{localStorage.clear();sessionStorage.clear();if(joined)localStorage.setItem('vc_locks',JSON.stringify({[id]:Date.now()}));},{id:ID,joined:variant==='joined'});
       await page.setViewportSize({width,height});
       await page.goto(`https://voiceprotest.org/?ux=detail-${height}-${risk}-${balance}-${variant}#/detail/${ID}`);
       await page.locator('#s-detail .d-title').waitFor();
-      if(variant.startsWith('census-'))await page.locator('#s-detail .join-footer .btn-primary').filter({hasText:groupAvailable?messages.detail.joinCensus:messages.detail.joinInitCensus}).waitFor();
+      if(variant==='census-loading')await page.locator('#detail-census-status').filter({hasText:messages.detail.censusLoading}).waitFor();
+      else if(variant==='census-error')await page.locator('#detail-census-status').filter({hasText:messages.detail.censusUnavailable}).waitFor();
+      else if(variant.startsWith('census-'))await page.locator('#s-detail .join-footer .btn-primary').filter({hasText:groupAvailable?messages.detail.joinCensus:messages.detail.joinInitCensus}).waitFor();
       const geometry=await page.evaluate(()=>{
         const screen=document.querySelector('#s-detail'),header=screen.querySelector('.detail-hdr'),body=screen.querySelector('.d-scroll'),footer=screen.querySelector('.join-footer'),primary=footer.querySelector('.btn-primary');
         body.scrollTop=body.scrollHeight;
@@ -293,18 +336,19 @@ try {
       else {
         assert.ok((await page.locator('.detail-funding').textContent()).includes(messages.detail.fundingOptional));
         assert.ok(!(await page.locator('#s-detail').textContent()).includes(messages.detail.donPosibles));
-        assert.equal(row.primaryDisabled,balance===0||variant==='joined');
+        assert.equal(row.primaryDisabled,variant==='census-error'?false:variant==='census-loading'||balance===0||variant==='joined');
         assert.equal(row.balanceNotice,balance===0);if(balance===0)assert.ok(row.describedBy.includes('detail-balance-info'));
         assert.equal(row.riskNotice,risk==='high');if(risk==='high')assert.ok(row.describedBy.includes('detail-risk-info'));
       }
       checks.push({id:`detail_content_and_action_${variant}_${height}_${risk}_${balance}_${locale}_${width}`,ok:true});
+      if(holdGroup){await waitForCount(()=>Number(!!releaseGroup),1);holdGroup=false;releaseGroup();await page.waitForTimeout(20);}
     }
     await context.close();
   }
   assert.deepEqual(unexpected,[]);assert.deepEqual(errors,[]);
 } finally {
   await browser.close();
-  const report={status:checks.length===392&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0};
+  const report={status:checks.length===488&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
   if(report.status!=='PASS') process.exitCode=1;
 }

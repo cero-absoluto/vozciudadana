@@ -10,6 +10,14 @@
           <span style="font-size:12px;color:var(--text2)">📍 {{ localizedCountry(protest.country, locale.value) || protest.countryName }}</span>
         </div>
       </div>
+      <p v-if="needsCensus && !isClosed" id="detail-census-status"
+        :role="censusStatus === 'error' ? 'alert' : 'status'"
+        style="font-size:12px;color:var(--text2);margin:0 0 10px;line-height:1.5">
+        {{ censusStatus === 'loading' ? $t('detail.censusLoading')
+          : censusStatus === 'present' ? $t('detail.censusPresent')
+          : censusStatus === 'absent' ? $t('detail.censusAbsent')
+          : $t('detail.censusUnavailable') }}
+      </p>
       <!-- Stats -->
       <div class="stats-row">
         <div class="sc"><div class="sc-n" style="color:var(--accent)">{{ fmt(protest.count) }}</div><div class="sc-l">{{ $t('detail.statAdheridos') }}</div></div>
@@ -103,8 +111,8 @@
         ⚠️ {{ $t('detail.donAgotado') }}
       </div>
       <div class="btn-row">
-        <button class="btn-primary" :class="{sj: protest.joined}" :disabled="!cj.ok || sinSaldo" :aria-describedby="[(!protest.joined && cj.ok && (protest.risk_level === 'high' || protest.risk_level === 'critical')) ? 'detail-risk-info' : null, sinSaldo ? 'detail-balance-info' : null].filter(Boolean).join(' ') || null" @click="onJoin">
-          {{ joinLabel }}
+        <button class="btn-primary" :class="{sj: protest.joined}" :disabled="(needsCensus && censusStatus === 'error') ? false : (!cj.ok || sinSaldo || censusBlocked)" :aria-describedby="[(!protest.joined && cj.ok && (protest.risk_level === 'high' || protest.risk_level === 'critical')) ? 'detail-risk-info' : null, sinSaldo ? 'detail-balance-info' : null, needsCensus ? 'detail-census-status' : null].filter(Boolean).join(' ') || null" @click="(needsCensus && censusStatus === 'error') ? loadCensus() : onJoin()">
+          {{ (needsCensus && censusStatus === 'error') ? $t('detail.censusRetry') : joinLabel }}
         </button>
         <div class="viral-wrap"v-if="!protest.requiere_censo">
           <button class="btn-viral" @click="shareProtest">
@@ -164,7 +172,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useProtestsStore } from '@/stores/protests.js';
 import { useDeviceStore }   from '@/stores/device.js';
@@ -196,7 +204,30 @@ const protest = computed(() => store.protests.find(p => String(p.id) === route.p
 const cj      = computed(() => protest.value ? store.canJoin(protest.value) : { ok: false });
 
 const grupoId = ref(null);
-const censoExiste = ref(false);
+const censusStatus = ref('loading');
+const censusContext = ref(null);
+let detailActive = true;
+let censusEpoch = 0;
+let censusRequest = null;
+const GROUP_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function isCensusTarget(target) {
+  return !!target && target.scope === 'regional' && !!target.dominio_email && target.requiere_censo === true;
+}
+const needsCensus = computed(() => isCensusTarget(protest.value));
+function currentCensusContext() {
+  const target = protest.value;
+  if (!detailActive || !isCensusTarget(target) || String(target.id) !== String(route.params.id)) return null;
+  return {id: String(target.id), domain: String(target.dominio_email).trim().toLowerCase(), scope: target.scope, required: target.requiere_censo};
+}
+function sameCensusContext(expected) {
+  const current = currentCensusContext();
+  return !!expected && !!current && current.id === expected.id && current.domain === expected.domain && current.scope === expected.scope && current.required === expected.required;
+}
+function resolvedCensus() {
+  return sameCensusContext(censusContext.value) && (censusStatus.value === 'absent' || censusStatus.value === 'present' && GROUP_UUID.test(grupoId.value ?? ''));
+}
+const censoExiste = computed(() => censusStatus.value === 'present' && resolvedCensus());
+const censusBlocked = computed(() => needsCensus.value && !resolvedCensus());
 const velocidadHoy = ref(0);
 const tendenciaHoy = ref(0);
 const geoOpen = ref(false);
@@ -266,42 +297,85 @@ const donacionesInfo = computed(() => {
   };
 });
 
+function invalidateCensus() {
+  censusEpoch += 1;
+  censusRequest = null;
+  censusContext.value = null;
+  grupoId.value = null;
+  censusStatus.value = 'error';
+}
+
+// Changing context invalidates the result, but never starts an automatic retry.
+watch(() => [route.params.id, protest.value?.dominio_email, protest.value?.scope, protest.value?.requiere_censo], (current, previous) => {
+  if (previous && current.every((value, index) => value === previous[index])) return;
+  invalidateCensus();
+  if (previous && current[0] !== previous[0]) {
+    loadingFallback.value = false;
+    notFound.value = false;
+    loadError.value = false;
+  }
+}, {flush: 'sync'});
+onUnmounted(() => { detailActive = false; invalidateCensus(); });
+
+async function loadCensus() {
+  const expected = currentCensusContext();
+  if (!expected) { invalidateCensus(); return; }
+  if (censusRequest && sameCensusContext(censusRequest.context)) return;
+  const request = {epoch: ++censusEpoch, context: expected};
+  censusRequest = request;
+  censusContext.value = null;
+  grupoId.value = null;
+  censusStatus.value = 'loading';
+  const ownsRequest = () => detailActive && request.epoch === censusEpoch && sameCensusContext(expected);
+  try {
+    const data = await api.fetchGrupoPorConvocatoria(expected.id);
+    if (!ownsRequest()) return;
+    if (!data || typeof data !== 'object' || typeof data.group_id !== 'string' || !GROUP_UUID.test(data.group_id)) {
+      censusStatus.value = 'error';
+      return;
+    }
+    grupoId.value = data.group_id;
+    censusContext.value = expected;
+    censusStatus.value = 'present';
+  } catch (error) {
+    if (!ownsRequest()) return;
+    if (error?.status === 404) {
+      censusContext.value = expected;
+      censusStatus.value = 'absent';
+    } else censusStatus.value = 'error';
+  } finally {
+    if (censusRequest === request) censusRequest = null;
+  }
+}
+
 async function loadDetail() {
-  if (loadingFallback.value) return;
+  if (loadingFallback.value || !detailActive) return;
+  const detailId = String(route.params.id);
+  const ownsDetail = () => detailActive && String(route.params.id) === detailId;
   loadingFallback.value = true;
   notFound.value = false;
   loadError.value = false;
-  // Fallback: this protest isn't in the already-loaded list yet — either
-  // restoreFromStorage() hasn't resolved, or (for closed convocatorias)
-  // it never will, since the list endpoint only returns active ones.
-  // Fetch it directly by id instead of leaving the screen blank.
   try {
     if (!protest.value) {
-      const found = await store.fetchProtestById(route.params.id);
-      if (!found) {
-        notFound.value = true;
-        return;
-      }
+      const found = await store.fetchProtestById(detailId);
+      if (!ownsDetail()) return;
+      if (!found) { notFound.value = true; return; }
     }
   } catch {
-    loadError.value = true;
+    if (ownsDetail()) loadError.value = true;
     return;
   } finally {
-    loadingFallback.value = false;
+    if (ownsDetail()) loadingFallback.value = false;
   }
+  if (!ownsDetail()) return;
 
-  if (protest.value?.requiere_censo) {
-    try {
-      const data = await api.fetchGrupoPorConvocatoria(route.params.id);
-      grupoId.value = data.group_id;
-      censoExiste.value = true;
-    } catch {
-      censoExiste.value = false;
-    }
-  }
+  if (needsCensus.value) await loadCensus();
+  if (!ownsDetail()) return;
+  // This secondary report request never determines census existence.
   try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/protests/${route.params.id}/informe`);
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/protests/${detailId}/informe`);
     const informe = await res.json();
+    if (!ownsDetail()) return;
     velocidadHoy.value = informe.velocidad?.adhesiones_hoy || 0;
     tendenciaHoy.value = informe.velocidad?.tendencia_hoy || 0;
   } catch { /* silencioso */ }
@@ -331,7 +405,8 @@ const joinLabel = computed(() => {
   if (protest.value.joined) return t('detail.joinJoined');
   if (sinSaldo.value) return t('detail.joinSinSaldo');
   if (!cj.value.ok) return cj.value.lock ? t('detail.joinLocked') : t('detail.joinGeo');
-  if (protest.value.scope === 'regional' && protest.value.dominio_email && protest.value.requiere_censo) {
+  if (needsCensus.value) {
+    if (censusBlocked.value) return t(censusStatus.value === 'loading' ? 'detail.censusLoading' : 'detail.censusUnavailable');
     return censoExiste.value ? t('detail.joinCensus') : t('detail.joinInitCensus');
   }
   if (protest.value.scope === 'regional' && protest.value.dominio_email) {
@@ -356,9 +431,10 @@ function closedForJoin(target) {
 function onJoin() {
   const target = protest.value;
   // Recheck current state at activation; hidden/disabled UI is not a handler guard.
-  if (!target || target.joined || closedForJoin(target) || (target.saldo_euros ?? 0) <= 0 || !store.canJoin(target).ok) return;
+  if (!detailActive || !target || target.joined || closedForJoin(target) || (target.saldo_euros ?? 0) <= 0 || !store.canJoin(target).ok) return;
   if (target.scope === 'regional' && target.dominio_email) {
     if (target.requiere_censo) {
+      if (!resolvedCensus()) return;
       sessionStorage.setItem('vc_group_id', sessionStorage.getItem('vc_group_id') || '');
       if (!censoExiste.value) {
         router.push(`/grupo/${target.id}?iniciar=true`);

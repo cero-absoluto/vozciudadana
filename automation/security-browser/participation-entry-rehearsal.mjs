@@ -27,7 +27,7 @@ try {
     });
     let sms=0,joins=0,emailSends=0,emailChecks=0,releaseSms,releaseEmail,releaseCheck;
     let smsResponse={sent:true},smsStatus=200,holdSms=false,holdEmail=false,holdCheck=false;
-    let mobileDetail=null;
+    let mobileDetail=null,groupAvailable=false;
     let holdList=false,releaseList,listStatus=200,listReads=0;
     let listOverride=null,detailStatus=200,detailResponse=events[1],holdDetail=false,releaseDetail;
     let joinStatus=201,joinResponse={receipt:'44444444-4444-4444-8444-444444444444'},emailStatus=200;
@@ -42,6 +42,7 @@ try {
       if(u.hostname==='api.voiceprotest.org') {
         if(req.method()==='OPTIONS')return route.fulfill({status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST','Access-Control-Allow-Headers':'Content-Type'}});
         if(req.method()==='GET'&&u.pathname==='/api/protests') {listReads++;if(holdList)await new Promise(r=>releaseList=r);return json(listOverride ?? events,listStatus);}
+        if(req.method()==='GET'&&u.pathname===`/api/grupos/convocatoria/${ID}`)return json(groupAvailable?{group_id:'33333333-3333-4333-8333-333333333333',name:'Synthetic census'}:{error:'synthetic absent'},groupAvailable?200:404);
         if(req.method()==='GET'&&u.pathname===`/api/protests/${ID}`)return json(mobileDetail ?? events[0]);
         if(req.method()==='GET'&&u.pathname===`/api/protests/${ID}/informe`)return json({error:'synthetic report unavailable'},503);
         if(req.method()==='GET'&&u.pathname===`/api/protests/${INSTITUTION}`) {if(holdDetail)await new Promise(r=>releaseDetail=r);return json(detailResponse,detailStatus);}
@@ -266,26 +267,44 @@ try {
     assert.ok((await page.locator('.suc-hash').textContent()).includes('66666666-6666-4666-8666-666666666666'));
     assert.equal(emailSends,beforeSends);assert.equal(emailChecks,beforeChecks);
     checks.push({id:`institutional_saved_receipt_survives_missing_event_${locale}_${width}`,ok:true});
-    // Measure the existing detail layout before changing the product hierarchy.
-    for(const height of [640,844])for(const risk of ['low','high'])for(const balance of [0,10]){
-      mobileDetail={...events[0],title:('Synthetic campaign with a long public title ').repeat(4).trim(),description:('Synthetic public description. ').repeat(80),demands:('Synthetic concrete demand. ').repeat(25),focal_point:'Synthetic public institution',risk_level:risk,saldo_euros:balance};
-      listOverride=[];await page.evaluate(()=>{localStorage.clear();sessionStorage.clear();});
+    // Measured baseline global cases plus institutional/census/closed/joined states.
+    const detailCases=[];
+    for(const height of [640,844])for(const risk of ['low','high'])for(const balance of [0,10])detailCases.push({height,risk,balance,variant:'global'});
+    for(const variant of ['email','census-existing','census-absent','closed','joined'])detailCases.push({height:640,risk:'low',balance:10,variant});
+    for(const {height,risk,balance,variant} of detailCases){
+      const institutional=variant==='email'||variant.startsWith('census-');
+      groupAvailable=variant==='census-existing';
+      mobileDetail={...events[0],title:('Synthetic campaign with a long public title ').repeat(4).trim(),description:('Synthetic public description. ').repeat(80),demands:('Synthetic concrete demand. ').repeat(25),focal_point:'Synthetic public institution',donaciones_count:variant==='global'?0:2354,donaciones_total:variant==='global'?0:12876.54,risk_level:risk,saldo_euros:balance,scope:institutional?'regional':'global',dominio_email:institutional?'example.invalid':null,requiere_censo:variant.startsWith('census-'),ends_at:variant==='closed'?'2000-01-01T00:00:00Z':events[0].ends_at};
+      listOverride=[];await page.evaluate(({id,joined})=>{localStorage.clear();sessionStorage.clear();if(joined)localStorage.setItem('vc_locks',JSON.stringify({[id]:Date.now()}));},{id:ID,joined:variant==='joined'});
       await page.setViewportSize({width,height});
-      await page.goto(`https://voiceprotest.org/?ux=detail-${height}-${risk}-${balance}#/detail/${ID}`);
+      await page.goto(`https://voiceprotest.org/?ux=detail-${height}-${risk}-${balance}-${variant}#/detail/${ID}`);
       await page.locator('#s-detail .d-title').waitFor();
+      if(variant.startsWith('census-'))await page.locator('#s-detail .join-footer .btn-primary').filter({hasText:groupAvailable?messages.detail.joinCensus:messages.detail.joinInitCensus}).waitFor();
       const geometry=await page.evaluate(()=>{
         const screen=document.querySelector('#s-detail'),header=screen.querySelector('.detail-hdr'),body=screen.querySelector('.d-scroll'),footer=screen.querySelector('.join-footer'),primary=footer.querySelector('.btn-primary');
-        const sr=screen.getBoundingClientRect(),br=primary.getBoundingClientRect();
-        return {screen:sr.height,header:header.getBoundingClientRect().height,body:body.clientHeight,bodyScroll:body.scrollHeight,footer:footer.getBoundingClientRect().height,primaryWithinScreen:br.top>=sr.top&&br.bottom<=sr.bottom,overflowX:document.documentElement.scrollWidth>window.innerWidth};
+        body.scrollTop=body.scrollHeight;
+        const sr=screen.getBoundingClientRect(),br=primary.getBoundingClientRect(),bodyRect=body.getBoundingClientRect(),last=body.lastElementChild?.getBoundingClientRect();
+        return {screen:sr.height,header:header.getBoundingClientRect().height,body:body.clientHeight,bodyScroll:body.scrollHeight,footer:footer.getBoundingClientRect().height,primaryWithinScreen:br.top>=sr.top&&br.bottom<=sr.bottom,overflowX:document.documentElement.scrollWidth>window.innerWidth,headerInBody:body.contains(header),fundingInBody:!!body.querySelector('.detail-funding'),fundingInFooter:!!footer.querySelector('.detail-funding'),donationInFooter:!!footer.querySelector('a[href*="ko-fi.com"]'),bodyEndReachable:!!last&&last.bottom<=bodyRect.bottom+1&&last.bottom>bodyRect.top,primaryDisabled:primary.disabled,describedBy:primary.getAttribute('aria-describedby')||'',riskNotice:!!footer.querySelector('#detail-risk-info'),balanceNotice:!!footer.querySelector('#detail-balance-info')};
       });
-      detailMeasurements.push({locale,width,height,risk,balance,...geometry});
+      const row={locale,width,height,risk,balance,variant,...geometry};detailMeasurements.push(row);
+      assert.equal(row.primaryWithinScreen,true,JSON.stringify(row));assert.ok(row.body>=100,JSON.stringify(row));assert.equal(row.overflowX,false,JSON.stringify(row));assert.equal(row.headerInBody,true);assert.equal(row.fundingInFooter,false);assert.equal(row.donationInFooter,false);assert.equal(row.bodyEndReachable,true,JSON.stringify(row));
+      assert.equal(row.fundingInBody,variant!=='closed');
+      if(variant==='closed')assert.ok((await page.locator('.join-footer').textContent()).includes(messages.detail.closedInformeBtn));
+      else {
+        assert.ok((await page.locator('.detail-funding').textContent()).includes(messages.detail.fundingOptional));
+        assert.ok(!(await page.locator('#s-detail').textContent()).includes(messages.detail.donPosibles));
+        assert.equal(row.primaryDisabled,balance===0||variant==='joined');
+        assert.equal(row.balanceNotice,balance===0);if(balance===0)assert.ok(row.describedBy.includes('detail-balance-info'));
+        assert.equal(row.riskNotice,risk==='high');if(risk==='high')assert.ok(row.describedBy.includes('detail-risk-info'));
+      }
+      checks.push({id:`detail_content_and_action_${variant}_${height}_${risk}_${balance}_${locale}_${width}`,ok:true});
     }
     await context.close();
   }
   assert.deepEqual(unexpected,[]);assert.deepEqual(errors,[]);
 } finally {
   await browser.close();
-  const report={status:checks.length===288&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0};
+  const report={status:checks.length===392&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
   if(report.status!=='PASS') process.exitCode=1;
 }

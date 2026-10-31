@@ -94,3 +94,11 @@ PR162 separa carga inicial, vacío confirmado y error. El indicador hasLoaded so
 ActiveTab ofrece vacío/crear solo después de éxito, sin carga ni error. La tarjeta es article sin click padre; un botón nativo abre el detalle con las guardas existentes y otro abre el informe incluso si la participación está bloqueada. Los nombres incluyen título/acción en los cuatro idiomas; foco visible y Enter/Espacio comprobados.
 
 Véase [evidencia](ux-08-10-publication-20261031.md). Esto no cierra todo UX-08/10: faltan ensayo general del descubrimiento/recorrido, zoom/dispositivos y el diálogo/consentimiento GPS. UX-09 y residuales UX-13 push e IDV siguen abiertos. Siguiente trabajo: comprobar la jerarquía de la ficha y su acción principal en móvil, sin asumir un rediseño antes de medir.
+
+## UX-09 — ficha móvil medida y corregida
+
+PR164 parte de una medición Chromium:38 de64 escenarios con CTA fuera del área de ficha,55 con contenido<100px,mínimo22px. El candidato mantiene CTA dentro del área en104 escenarios, mínimo133px de contenido y cero overflow horizontal.64 casos son comparables a la base y40 adicionales cubren email/censo/cerrada/unido. Son fixtures sintéticos, no frecuencia observada en usuarios.
+
+Título, financiación opcional y secundarios de censo/contador pasan al scroll; CTA/compartir y avisos de riesgo/saldo permanecen en el footer. Se conservan condiciones en cerradas. Guardas de onJoin revalidan estado actual, las etiquetas de censo coinciden con sus rutas y se retira la capacidad basada en coste fijo del cliente. Véase [evidencia](ux-09-detail-publication-20261031.md).
+
+Residual preexistente confirmado y no corregido en este bloque: censoExiste=false puede indicar consulta pendiente o fallo503, además de inexistencia. No se puede presentar la etiqueta de iniciar como prueba de inexistencia. Distinguir esos estados con recuperación explícita es el siguiente trabajo del recorrido; no requiere cambiar reglas de censo/admisión ni declara cerrado S1/S2. El ensayo general UX-14, GPS/consentimiento, push compartido e IDV permanecen abiertos.

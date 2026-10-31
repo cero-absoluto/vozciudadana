@@ -16,4 +16,4 @@ Claude implementó template-only `8e04d1c3a51be38c0158275c89e778750d479ced` medi
 
 Validación local final:989 pruebas,987 correctas,dos omitidas,cero fallos;86 dirigidas,build/CSP5HTML/política de dependencias/diffcheck correctos. Dos archivos nuevos suman53 pruebas:28 handlers y25 SFC con Vue/i18n reales.
 
-Ensayo final previsto:392 comprobaciones,104 layouts;64 comparables al baseline y40 adicionales de email/censo existente/ausente,cerrada/unido. Los adicionales prueban también cifras largas de donaciones. Solo servicios interceptados; sin OTP,donaciones,GPS,push ni otras mutaciones reales. Publicación pendiente hasta cierre del candidato exacto. No se declara terminada la fase UX completa.
+Ensayo final previsto:392 comprobaciones,104 layouts;64 comparables al baseline y40 adicionales de email/censo existente/ausente,cerrada/unido. Los adicionales prueban también cifras largas de donaciones. Solo servicios interceptados; sin OTP,donaciones,GPS,push ni otras mutaciones reales. Publicación y comprobación final: [evidencia](../ux-09-detail-publication-20261031.md). No se declara terminada la fase UX completa.

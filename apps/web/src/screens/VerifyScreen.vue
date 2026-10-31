@@ -163,12 +163,22 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 onMounted(async () => {
-  // Cleanup is independent of the outcome, including rejection, timeout/reload.
-  setTimeout(() => {
+  // Snapshot synchronously before any await, then remove the persistent copy.
+  // A slow preflight must not lose the consented payload or retain a GPS cache.
+  let gpsSnapshot;
+  try {
+    gpsSnapshot = {
+      lat: ui.gpsLat ?? (localStorage.getItem('vc_gps_lat') ? parseFloat(localStorage.getItem('vc_gps_lat')) : null) ?? (device.gpsReady ? device.gpsLat : null),
+      lng: ui.gpsLng ?? (localStorage.getItem('vc_gps_lng') ? parseFloat(localStorage.getItem('vc_gps_lng')) : null) ?? (device.gpsReady ? device.gpsLng : null),
+      accuracy: ui.gpsAccuracy ?? (localStorage.getItem('vc_gps_accuracy') ? parseFloat(localStorage.getItem('vc_gps_accuracy')) : null) ?? (device.gpsReady ? device.gpsAccuracy : null),
+    };
+    ui.clearGps?.();
+  } catch { outcomeMessage.value = 'participation.storageUnavailable'; return; }
+  finally {
     for (const key of ['vc_gps_lat','vc_gps_lng','vc_gps_accuracy','vc_gps_ts']) {
       try { localStorage.removeItem(key); } catch { /* Browser storage unavailable. */ }
     }
-  }, 5000);
+  }
   let lastId, context;
   try {
     lastId = sessionStorage.getItem('vc_last_joined');
@@ -230,9 +240,9 @@ onMounted(async () => {
       participation_token: sessionStorage.getItem('vc_participation_token'),
       sms_sent: sessionStorage.getItem('vc_sms_sent') === 'true',
       recaptcha_token: token,
-      gps_lat: gpsAllowed ? (ui.gpsLat ?? (localStorage.getItem('vc_gps_lat') ? parseFloat(localStorage.getItem('vc_gps_lat')) : null) ?? (device.gpsReady ? device.gpsLat : null)) : null,
-      gps_lng: gpsAllowed ? (ui.gpsLng ?? (localStorage.getItem('vc_gps_lng') ? parseFloat(localStorage.getItem('vc_gps_lng')) : null) ?? (device.gpsReady ? device.gpsLng : null)) : null,
-      gps_accuracy: gpsAllowed ? (ui.gpsAccuracy ?? (localStorage.getItem('vc_gps_accuracy') ? parseFloat(localStorage.getItem('vc_gps_accuracy')) : null) ?? (device.gpsReady ? device.gpsAccuracy : null)) : null,
+      gps_lat: gpsAllowed ? gpsSnapshot.lat : null,
+      gps_lng: gpsAllowed ? gpsSnapshot.lng : null,
+      gps_accuracy: gpsAllowed ? gpsSnapshot.accuracy : null,
       ip_ciudad: localStorage.getItem('vc_geo_ciudad') || device.ipCity || null,
       ip_pais: localStorage.getItem('vc_geo_pais') || device.ipCountryName || null,
       ip_region: localStorage.getItem('vc_geo_region') || device.ipRegion || null,
@@ -253,7 +263,7 @@ onMounted(async () => {
   confirmedTitle.value = target.title;
   receiptNotSaved.value = !writeOutcome(sessionStorage, context, {state:'completed',receipt:joinRes.receipt,title:target.title,attemptId:attempt.attemptId});
   success.value = true;
-  hadGpsAtJoin.value = !!(ui.gpsLat ?? (localStorage.getItem('vc_gps_lat') ? parseFloat(localStorage.getItem('vc_gps_lat')) : null) ?? (device.gpsReady ? device.gpsLat : null));
+  hadGpsAtJoin.value = gpsAllowed && gpsSnapshot.lat != null && gpsSnapshot.lng != null;
   gpsUpdateToken.value = joinRes.gps_update_token || null;
   showGpsReinforce.value = gpsAllowed && !hadGpsAtJoin.value && !!gpsUpdateToken.value;
   try { protests.joinProtest(target.id); } catch { /* Secondary local counter/lock. */ }

@@ -7,6 +7,21 @@ import {validReceipt,readOutcome,writeOutcome,beginOutcome,participationErrorKey
 const RECEIPT='44444444-4444-4444-8444-444444444444';
 const phoneContext='phone:synthetic-device:selected';
 const copySession=(from,to)=>{for(const [k,v] of from.memory)to.memory.set(k,v);};
+test('slow preflight preserves a GPS snapshot after immediate cache deletion, including zero latitude',async()=>{
+  const f=harness('VerifyScreen'),wait=deferred(),gps=new Map([['vc_gps_lat','0'],['vc_gps_lng','2'],['vc_gps_accuracy','5']]);
+  f.context.localStorage.getItem=key=>gps.get(key)??null;f.context.localStorage.removeItem=key=>gps.delete(key);f.store.loadProtests=()=>wait.promise;
+  let payload;f.api.joinProtest=async(_id,body)=>{payload=body;return {receipt:RECEIPT,gps_update_token:'synthetic'};};
+  const pending=f.mount();assert.equal(gps.size,0);wait.resolve();await pending;
+  assert.equal(payload.gps_lat,0);assert.equal(payload.gps_lng,2);assert.equal(payload.gps_accuracy,5);assert.equal(f.state.success.value,true);
+});
+test('a late failure cannot convert a corrupt or oversize unknown marker into a retryable rejection',()=>{
+  for(const corrupt of ['broken','x'.repeat(5000)]){
+    const f=harness('VerifyScreen'),storage=f.context.sessionStorage,attempt=beginOutcome(storage,phoneContext,'Synthetic');
+    f.memory.set('vc_participation_outcome:v1:'+phoneContext,corrupt);
+    assert.equal(writeOutcome(storage,phoneContext,{state:'rejected',attemptId:attempt.attemptId}),false);
+    assert.equal(readOutcome(storage,phoneContext).state,'uncertain');assert.equal(beginOutcome(storage,phoneContext,'Retry').started,false);
+  }
+});
 test('interleaved mounts in one tab dispatch once and cannot overwrite the resulting receipt',async()=>{
   const wait=deferred(),a=harness('VerifyScreen'),b=harness('VerifyScreen');b.context.sessionStorage=a.context.sessionStorage;
   let calls=0;const join=()=>{calls++;return wait.promise;};a.api.joinProtest=join;b.api.joinProtest=join;
@@ -43,11 +58,11 @@ test('institutional local storage or CAPTCHA preflight failure cannot spend anot
     assert.equal(f.state.emailError.value,'participation.'+(failure==='storage'?'storageUnavailable':'preflightUnavailable'));
   }
 });
-for(const result of ['rejected','uncertain','malformed','restored','pending'])test('GPS cache cleanup is scheduled independently of '+result,async()=>{
+for(const result of ['rejected','uncertain','malformed','restored','pending'])test('GPS cache cleanup is immediate and independent of '+result,async()=>{
   const f=harness('VerifyScreen',{joinProtest:async()=>{if(result==='rejected')throw {status:403};if(result==='uncertain')throw {status:503};return {};}}),timers=[],removed=[];
   f.context.setTimeout=(fn,ms)=>timers.push({fn,ms});f.context.localStorage.removeItem=key=>removed.push(key);
   if(result==='restored'||result==='pending')writeOutcome(f.context.sessionStorage,phoneContext,{state:result==='restored'?'completed':'pending',receipt:RECEIPT,title:'Synthetic'});
-  await f.mount();const cleanup=timers.find(x=>x.ms===5000);assert.ok(cleanup);cleanup.fn();
+  await f.mount();assert.equal(timers.some(x=>x.ms===5000),false);
   assert.deepEqual(removed,['vc_gps_lat','vc_gps_lng','vc_gps_accuracy','vc_gps_ts']);
 });
 for(const stage of ['transport','body'])test('deadline bounds '+stage+' even if the mocked transport ignores abort; no retry',async()=>{

@@ -14,7 +14,8 @@ export function readOutcome(storage, context) {
     const raw = storage.getItem(key(context));
     if (raw === null) return null;
     if (raw.length > 4096) return {state:'uncertain'};
-    const record = JSON.parse(raw);
+    let record;
+    try { record = JSON.parse(raw); } catch { return {state:'uncertain'}; }
     if (record?.v !== 1 || record.context !== context || !['pending','uncertain','completed','rejected'].includes(record.state)) return {state:'uncertain'};
     if (record.state === 'completed' && (!validReceipt(record.receipt) || typeof record.title !== 'string')) return {state:'uncertain'};
     return record;
@@ -25,6 +26,7 @@ export function writeOutcome(storage, context, {state, receipt, title = '', atte
   const previous = readOutcome(storage, context);
   if (previous?.state === 'completed') return false; // A later failure cannot erase a receipt.
   if (state === 'pending' && previous && previous.state !== 'rejected') return false;
+  if (['uncertain','rejected'].includes(state) && (!attemptId || previous?.attemptId !== attemptId)) return false;
   if (state !== 'pending' && previous?.attemptId && previous.attemptId !== attemptId) return false;
   const record = {v:1, context, state, title:String(title).slice(0,500), at:Date.now()};
   if (attemptId) record.attemptId = attemptId;

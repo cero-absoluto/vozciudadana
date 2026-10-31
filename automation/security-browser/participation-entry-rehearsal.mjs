@@ -18,6 +18,7 @@ try {
     const messages=JSON.parse(readFileSync(resolve('apps/web/src/locales',locale+'.json'),'utf8'));
     const context=await browser.newContext({serviceWorkers:'block',viewport:{width,height:844},isMobile:true,hasTouch:true,locale});
     await context.addInitScript(({locale})=>{localStorage.setItem('vc_lang',locale);localStorage.setItem('vc_map_seen','1');}, {locale});
+    await context.addInitScript(()=>{window.__notificationRequests=0;Notification.requestPermission=async()=>{window.__notificationRequests++;return 'denied';};});
     let sms=0,joins=0,emailSends=0,emailChecks=0,releaseSms,releaseEmail,releaseCheck;
     let smsResponse={sent:true},smsStatus=200,holdSms=false,holdEmail=false,holdCheck=false;
     let joinStatus=201,joinResponse={receipt:'44444444-4444-4444-8444-444444444444'},emailStatus=200;
@@ -77,10 +78,13 @@ try {
     checks.push({id:`receipt_actions_scroll_reachable_${locale}_${width}`,ok:true});
     assert.ok((await page.locator('.participation-receipt').textContent()).includes('44444444-4444-4444-8444-444444444444'));
     // Simulate another tab changing the shared identity while this tab keeps token A.
-    await page.evaluate(()=>localStorage.setItem('vc_device_id','other-tab-identity'));
+    await page.evaluate(()=>{localStorage.setItem('vc_device_id','other-tab-identity');localStorage.setItem('vc_device_secret','b'.repeat(64));});
     await page.reload();await page.locator('.participation-receipt').waitFor();assert.equal(joins,1);
     assert.ok((await page.locator('.participation-receipt').textContent()).includes(messages.participation.savedConfirmation));
     checks.push({id:`confirmed_reload_ignores_other_tab_identity_${locale}_${width}`,ok:true});
+    await page.getByRole('button',{name:messages.verify.notiOff,exact:true}).click();
+    assert.equal(await page.evaluate(()=>window.__notificationRequests),0);
+    checks.push({id:`notification_refuses_other_identity_before_permission_${locale}_${width}`,ok:true});
     await page.goto('https://voiceprotest.org/#/verify-institucional/'+INSTITUTION);
     await page.locator('#institution-verify-email').fill('synthetic@example.invalid');
     holdEmail=true;await page.locator('#institution-verify-email').press('Enter');
@@ -123,6 +127,6 @@ try {
   assert.deepEqual(unexpected,[]);assert.deepEqual(errors,[]);
 } finally {
   await browser.close();
-  const report={status:checks.length===104&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,externalMutations:0};
+  const report={status:checks.length===112&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,externalMutations:0};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
 }

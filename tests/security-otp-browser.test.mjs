@@ -6,7 +6,7 @@ const source=readFileSync(new URL('../apps/web/src/screens/AuthScreen.vue',impor
 async function run({response,error,doubleSubmit=false}={}){
  let apiCalls=0;
  const store=new Map([['vc_device_secret','old-secret']]),session=new Map(),toasts=[],nav=[];
- const context={otpAbortController:null,otpDigits:{value:['1','2','3','4','5','6']},requestedOtp:{value:{phone:'+34600000001',countryCode:'ES',protestId:'synthetic'}},sending:{value:false},
+ const context={authActive:true,otpAbortController:null,otpDigits:{value:['1','2','3','4','5','6']},requestedOtp:{value:{phone:'+34600000001',countryCode:'ES',protestId:'synthetic'}},sending:{value:false},
   device:{getDeviceId:()=> 'old-device',setDeviceId:id=>store.set('id',id),setDeviceSecret:secret=>store.set('vc_device_secret',secret)},
   api:{verifyOtp:async()=>{apiCalls++;if(error)throw error;return response;}},sessionStorage:{getItem:k=>k==='vc_last_joined'?'synthetic':null,setItem:(k,v)=>session.set(k,v)},localStorage:{removeItem:k=>store.delete(k)},
   clearForceOtp(){},ui:{showToast:x=>toasts.push(x)},t:x=>x,router:{push:x=>nav.push(x)}};

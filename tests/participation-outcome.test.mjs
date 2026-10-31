@@ -8,6 +8,18 @@ import {validReceipt,readOutcome,writeOutcome,beginOutcome,participationErrorKey
 const RECEIPT='44444444-4444-4444-8444-444444444444';
 const phoneContext='phone:synthetic-device:selected';
 const copySession=(from,to)=>{for(const [k,v] of from.memory)to.memory.set(k,v);};
+test('GPS reinforcement cannot switch away from the confirmed event and identity',async()=>{
+  const f=harness('VerifyScreen');await f.mount();let prompts=0,patches=0;
+  f.context.navigator.geolocation={getCurrentPosition(){prompts++;}};f.api.patchAdhesionGps=async()=>{patches++;};
+  f.memory.set('vc_last_joined','another');f.store.protests.push({id:'another',scope:'local',risk_level:'low'});await f.state.reinforceGps();
+  assert.equal(prompts,0);assert.equal(patches,0);
+});
+test('an unmounted OTP check cannot overwrite the newer tab session identity and token',async()=>{
+  const f=harness(),wait=deferred();await f.state.sendSMS();f.state.otpDigits.value=['1','2','3','4','5','6'];f.api.verifyOtp=()=>wait.promise;
+  const pending=f.state.verifyOTP();await flush();f.unmount();f.memory.set('vc_device_id','identity-B');f.memory.set('vc_participation_token','token-for-B');
+  wait.resolve({verified:true,device_id:'identity-A',participation_token:'token-for-A'});await pending;
+  assert.equal(f.memory.get('vc_device_id'),'identity-B');assert.equal(f.memory.get('vc_participation_token'),'token-for-B');assert.deepEqual(f.navigation,[]);
+});
 test('another tab’s global identity cannot move A’s token/receipt into B’s context',async()=>{
   const f=harness('VerifyScreen');f.device.getDeviceId=()=> 'identity-B';let token;
   f.api.joinProtest=async(_id,payload)=>{token=payload.participation_token;return {receipt:RECEIPT};};

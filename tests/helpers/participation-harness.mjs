@@ -37,7 +37,7 @@ export function harness(name='AuthScreen', overrides={}) {
     window:{grecaptcha:{ready:fn=>fn(),execute:async()=> 'synthetic-captcha'}},navigator:{},setTimeout(){},
   };
   vm.createContext(context);
-  const exports=name==='AuthScreen'?'sendSMS,resendSMS,verifyOTP,changeNumber,phone,countryCode,countryCodes,otpDigits,otpVisible,requestedOtp,sending':name==='VerifyInstitucionalScreen'?'sendOtp,verifyOtp,email,otp,emailError,otpError,loading,step,activeContext,outcomeMessage,receiptHash,censusNotSaved,receiptNotSaved':'success,outcomeMessage,receipt,confirmedTitle,savedConfirmation,receiptNotSaved';
+  const exports=name==='AuthScreen'?'sendSMS,resendSMS,verifyOTP,changeNumber,phone,countryCode,countryCodes,otpDigits,otpVisible,requestedOtp,sending':name==='VerifyInstitucionalScreen'?'sendOtp,verifyOtp,email,otp,emailError,otpError,loading,step,activeContext,outcomeMessage,receiptHash,censusNotSaved,receiptNotSaved':'success,outcomeMessage,receipt,confirmedTitle,savedConfirmation,receiptNotSaved,reinforceGps';
   vm.runInContext(script(name)+'\nglobalThis.state={'+exports+'};',context);
   const state=context.state;
   if(name==='AuthScreen'){state.phone.value='600000001';state.countryCodes.value=[{iso2:'ES',dial_code:'34'}];}

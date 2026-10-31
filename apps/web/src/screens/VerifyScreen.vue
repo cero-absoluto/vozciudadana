@@ -44,7 +44,7 @@
 
         <!-- Peldaño 1 — Notificación -->
 
-        <button @click="activarNotificacion"
+        <button @click="activarNotificacion" :disabled="notiPending" :aria-busy="notiPending"
           style="width:100%;margin-bottom:10px;padding:12px;background:rgba(76,111,255,.12);border:.5px solid #4C6FFF;border-radius:var(--r);color:#4C6FFF;font-size:13px;font-weight:700;cursor:pointer">
           {{ notiActivada ? $t('verify.notiOn') : $t('verify.notiOff') }}
         </button>
@@ -93,9 +93,12 @@ const receipt = ref('');
 const confirmedTitle = ref('');
 const savedConfirmation = ref(false);
 const receiptNotSaved = ref(false);
+const confirmedProtestId = ref('');
+const confirmedIdentity = ref('');
 let verificationActive = true;
 onUnmounted(() => { verificationActive = false; });
 const notiActivada = ref(false);
+const notiPending = ref(false);
 const gpsUpdateToken  = ref(null);
 const hadGpsAtJoin    = ref(false);
 const showGpsReinforce = ref(false);
@@ -105,24 +108,30 @@ const gpsReinforceDone = ref(false);
 
 
 async function activarNotificacion() {
-  if (notiActivada.value) return;
-  const deviceId=device.getDeviceId();
-  const deviceSecret=device.getDeviceSecret();
-  if (!deviceSecret) { ui.showToast(t('verify.notiError')); return; }
+  if (notiActivada.value || notiPending.value) return;
+  notiPending.value = true;
   try {
+    const deviceId=confirmedIdentity.value;
+    const protestId=confirmedProtestId.value;
+    const deviceSecret=device.getDeviceSecret();
+    const ownsContext=()=>verificationActive && !!deviceId && !!protestId && sessionStorage.getItem('vc_device_id')===deviceId && sessionStorage.getItem('vc_last_joined')===protestId && device.getDeviceId()===deviceId && device.getDeviceSecret()===deviceSecret;
+    if (!deviceSecret || !ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') return;
-
-    const reg = await navigator.serviceWorker.ready;
-    const vapidRes = await fetch(`${import.meta.env.VITE_API_URL}/api/push/vapid-public-key`);
-    const { publicKey } = await vapidRes.json();
-
-    let sub = await reg.pushManager.subscribe({
+    if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
+    const reg = await withClientDeadline(() => navigator.serviceWorker.ready);
+    if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
+    const {publicKey} = await withClientDeadline(async signal => {
+      const response=await fetch(`${import.meta.env.VITE_API_URL}/api/push/vapid-public-key`,{signal});
+      if (!response.ok) throw new Error('VAPID_UNAVAILABLE');
+      return response.json();
+    });
+    if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
+    let sub = await withClientDeadline(() => reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(publicKey),
-    });
-
-    const protestId = sessionStorage.getItem('vc_last_joined');
+    }));
+    if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
 
     // Get protest ends_at
     const protestEndsAt = protests.protests.find(p => String(p.id) === protestId)?.ends_at || null;
@@ -130,10 +139,12 @@ async function activarNotificacion() {
     const locale = localStorage.getItem('vc_lang') || navigator.language?.substring(0, 2) || 'en';
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
 
-    const save = subscription => fetch(`${import.meta.env.VITE_API_URL}/api/push/subscribe`, {
+    const save = subscription => withClientDeadline(async signal => {
+      if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
+      const response=await fetch(`${import.meta.env.VITE_API_URL}/api/push/subscribe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+      signal, body: JSON.stringify({
         device_id:    deviceId,
         device_secret: deviceSecret,
         protest_id:   protestId,
@@ -142,18 +153,23 @@ async function activarNotificacion() {
         timezone,
         subscription,
       }),
+      });
+      const data=await response.json().catch(()=>null);
+      return {ok:response.ok,status:response.status,json:async()=>data};
     });
     let saved = await save(sub);
     if (saved.status === 409 && (await saved.json().catch(() => null))?.error === 'PUSH_ENDPOINT_OWNED') {
       // Clearing device storage can leave an old browser endpoint. Obtain a
       // new provider subscription instead of transferring another owner's row.
       await sub.unsubscribe();
-      sub = await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(publicKey)});
+      if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
+      sub = await withClientDeadline(() => reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(publicKey)}));
       saved = await save(sub);
     }
     if (!saved.ok) { ui.showToast(t('verify.notiError')); return; }
     notiActivada.value = true;
   } catch { ui.showToast(t('verify.notiError')); }
+  finally { notiPending.value = false; }
 }
 
 function urlBase64ToUint8Array(base64String) {
@@ -193,6 +209,8 @@ onMounted(async () => {
     router.push('/auth');
     return;
   }
+  confirmedProtestId.value = lastId;
+  confirmedIdentity.value = identity;
   const previous = readOutcome(sessionStorage, context);
   if (previous?.state === 'completed') {
     receipt.value = previous.receipt;
@@ -281,7 +299,8 @@ onMounted(async () => {
 const reinforcing = ref(false);
 async function reinforceGps() {
   if (reinforcing.value) return;
-  const id = sessionStorage.getItem('vc_last_joined');
+  const id = confirmedProtestId.value;
+  if (!verificationActive || sessionStorage.getItem('vc_last_joined') !== id || sessionStorage.getItem('vc_device_id') !== confirmedIdentity.value) return;
   const target = protests.protests.find(p => String(p.id) === String(id));
   if (!target || target.dominio_email || ['high', 'critical'].includes(target.risk_level)) return;
   reinforcing.value = true;
@@ -290,14 +309,15 @@ async function reinforceGps() {
       navigator.geolocation.getCurrentPosition(resolve, reject,
         { enableHighAccuracy: true, timeout: 10000 })
     );
-    const res = await import('@/services/api.js').then(api =>
-      api.patchAdhesionGps(sessionStorage.getItem('vc_last_joined'), {
+    const res = await import('@/services/api.js').then(api => {
+      if (!verificationActive || sessionStorage.getItem('vc_last_joined') !== id || sessionStorage.getItem('vc_device_id') !== confirmedIdentity.value) throw new Error('GPS_CONTEXT_CHANGED');
+      return api.patchAdhesionGps(id, {
         gps_update_token: gpsUpdateToken.value,
         gps_lat:          pos.coords.latitude,
         gps_lng:          pos.coords.longitude,
         gps_accuracy:     pos.coords.accuracy,
-      })
-    );
+      });
+    });
     showGpsReinforce.value = false;
     gpsReinforceDone.value = true;
     ui.showToast(t('verify.gpsReinforceSuccess'));
@@ -322,12 +342,12 @@ async function reinforceGps() {
 }
 
 function goDetail() {
-  const id = sessionStorage.getItem('vc_last_joined');
+  const id = confirmedProtestId.value || sessionStorage.getItem('vc_last_joined');
   if (id) router.push(`/detail/${id}`);
   else    router.push('/');
 }
   function goInforme() {
-  const id = sessionStorage.getItem('vc_last_joined');
+  const id = confirmedProtestId.value || sessionStorage.getItem('vc_last_joined');
   if (id) router.push(`/informe/${id}`);
   else    router.push('/');
 }

@@ -142,6 +142,13 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 onMounted(async () => {
+  // A direct/stale route must never choose a replacement event for the person.
+  const lastId = sessionStorage.getItem('vc_last_joined');
+  if (!lastId) {
+    ui.showToast(t('verify.toastProtestNotFound'));
+    router.push('/');
+    return;
+  }
   await protests.loadProtests();
 
   // Limpiar GPS después de usarlo
@@ -156,11 +163,9 @@ onMounted(async () => {
   // a ningún trabajo real (antes: 3 mensajes x 850ms fijos).
   spinMsg.value = t('verify.spinVerifying');
 
-  // Find the protest the user was viewing (the first joinable one for demo)
-  const lastId = sessionStorage.getItem('vc_last_joined');
-const target = lastId 
-  ? protests.protests.find(p => String(p.id) === lastId)
-  : protests.protests.find(p => !p.joined && protests.canJoin(p).ok);
+  const target = sessionStorage.getItem('vc_last_joined') === lastId
+    ? protests.protests.find(p => String(p.id) === lastId)
+    : null;
   if (!target) {
     // No convocatoria to join (list empty, load failed, or the id in
     // vc_last_joined is not in the loaded list). Nothing was sent to the

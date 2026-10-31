@@ -24,7 +24,7 @@
       <div style="width:100%" v-if="!otpVisible">
         <div class="phone-wrap">
           <label for="cc-sel" class="sr-only">{{ $t('auth.prefixLabel') }}</label>
-          <select id="cc-sel" class="cc-sel cc-sel-visible" v-model="countryCode" :disabled="countryCodes.length === 0">
+          <select id="cc-sel" class="cc-sel cc-sel-visible" v-model="countryCode" :disabled="sending || countryCodes.length === 0">
             <option v-if="countryCodes.length === 0" :value="countryCode">...</option>
             <option v-for="c in countryCodes" :key="c.iso2" :value="c.iso2">
               {{ c.flag }} +{{ c.dial_code }}
@@ -32,7 +32,7 @@
           </select>
           <label for="phone-in" class="sr-only">{{ $t('auth.phoneLabel') }}</label>
           <input id="phone-in" class="phone-in phone-in-visible" type="tel" v-model="phone"
-            :placeholder="$t('auth.phonePlaceholder')" maxlength="12"
+            :placeholder="$t('auth.phonePlaceholder')" maxlength="12" :disabled="sending"
             :aria-label="$t('auth.phoneLabel')" autofocus>
         </div>
         <button class="btn-primary auth-submit-btn"
@@ -56,9 +56,10 @@
         </div>
         <div class="auth-resend">
           {{ $t('auth.resendQuestion') }}
-          <span class="auth-resend-link" @click="ui.showToast($t('auth.resendToast'))">{{ $t('auth.resend') }}</span>
+          <button type="button" class="auth-resend-link" :disabled="sending" @click="resendSMS">{{ $t('auth.resend') }}</button>
         </div>
-        <button class="btn-primary auth-submit-btn" @click="verifyOTP">{{ $t('auth.verify') }}</button>
+        <button class="btn-primary auth-submit-btn" :disabled="sending" :aria-busy="sending" @click="verifyOTP">{{ sending ? $t('auth.working') : $t('auth.verify') }}</button>
+        <button type="button" class="auth-resend-link" :disabled="sending" @click="changeNumber">{{ $t('auth.changeNumber') }}</button>
       </div>
 
       <!-- Modal GPS -->
@@ -179,6 +180,10 @@
   margin-top: 10px;
 }
 .auth-resend-link {
+  background: transparent;
+  border: 0;
+  font: inherit;
+  padding: 10px;
   color: var(--accent);
   cursor: pointer;
   font-weight: 600;
@@ -214,6 +219,8 @@ const sending      = ref(false);
 const otpVisible   = ref(false);
 const otpDigits    = ref(['', '', '', '', '', '']);
 const otpRefs      = ref([]);
+// Bind resends/checks to the request that was actually accepted, not editable refs.
+const requestedOtp = ref(null);
 const showGpsModal = ref(false);
 let gpsResolve = null;
 
@@ -251,6 +258,11 @@ import { useDeviceStore } from '@/stores/device.js';
 const device = useDeviceStore();
 
 onMounted(async () => {
+  if (!sessionStorage.getItem('vc_last_joined')) {
+    ui.showToast(t('verify.toastProtestNotFound'));
+    router.push('/');
+    return;
+  }
   try {
     await getRecaptchaToken('load');
     captchaStatusClass.value = 'verif-ok';
@@ -325,85 +337,98 @@ async function requestGpsFlow() {
 
 async function sendSMS() {
   if (sending.value) return;
-  sending.value = true;
-  if (joiningProtest.value?.dominio_email) {
-    ui.showToast(t('verify.toastInstitutionalRequired'));
-    sending.value = false;
+  const target = joiningProtest.value;
+  if (!target) {
+    ui.showToast(t('verify.toastProtestNotFound'));
+    router.push('/');
     return;
   }
-  const protestScope = sessionStorage.getItem('vc_protest_scope') || 'national';
-  if (protestScope === 'national') {
-    const lastId = sessionStorage.getItem('vc_last_joined');
-    const protestsStore = useProtestsStore();
-    const protest = protestsStore.protests.find(p => String(p.id) === lastId);
-    if (protest?.country && protest.country !== countryCode.value) {
-      ui.showToast(t('auth.wrongCountry', { country: protest.country_name }));
-      sending.value = false;
-      return;
-    }
+  if (target.dominio_email) {
+    ui.showToast(t('verify.toastInstitutionalRequired'));
+    return;
   }
-
-  // GPS para local/regional — ahora se pide aquí, justo tras pulsar el botón,
-  // en vez de nada más entrar en la pantalla (ver requestGpsFlow más arriba).
-  await requestGpsFlow();
-
-  if (device.gpsReady) {
-    await new Promise(r => setTimeout(r, 300));
+  const digits = phone.value.replace(/\D/g, '');
+  if (digits.length < 6) return;
+  const request = {phone: '+' + dialCode.value + digits, countryCode: countryCode.value, protestId: String(target.id)};
+  if (target.scope === 'national' && target.country && target.country !== request.countryCode) {
+    ui.showToast(t('auth.wrongCountry', {country: target.countryName}));
+    return;
   }
-
-  // VP-SEC-002 fix (23 July 2026): both calls below now require the
-  // device_secret minted at this device's first verification — without it
-  // (a genuinely new device, or one verified before this fix existed),
-  // there is nothing to re-authenticate with, so this fast path is skipped
-  // entirely and a fresh OTP is requested below, same as for a new device.
-  // vc_force_otp: set when a national join was rejected because this device has no
-  // numbering provenance; the fast path would just loop back, so use a fresh OTP.
-  const forceOtp = shouldSkipFastPath(sessionStorage);
-  const deviceSecret = forceOtp ? null : device.getDeviceSecret();
-  if (deviceSecret) {
-    try {
-      const existingDevice = await api.fetchDeviceLocks(device.getDeviceId(), deviceSecret);
-      if (existingDevice && existingDevice.length > 0) {
-        const reauth = await api.reauthDevice(device.getDeviceId(), deviceSecret);
-        sessionStorage.setItem('vc_participation_token', reauth.participation_token);
-        sessionStorage.setItem('vc_device_id', device.getDeviceId());
-        sessionStorage.setItem('vc_sms_sent', 'false');
-        router.push('/verify');
-        return;
-      }
-    } catch {
-      // Secret invalid, expired locks, or reauth otherwise failed — fall
-      // through to a fresh OTP below rather than surfacing an error here.
-    }
-  }
-  const v = phone.value.replace(/\D/g, '');
-  if (v.length < 6) { sending.value = false; return; }
+  sending.value = true;
   try {
-    let token = '';
-    try { token = await getRecaptchaToken('request_otp'); } catch { /* dev mode */ }
-    const protestId = sessionStorage.getItem('vc_last_joined') || null;
-    const res = await api.requestOtp({ phone: '+' + dialCode.value + v, recaptcha_token: token || 'dev', protest_id: protestId });
-    if (res && res.sent === false) {
-      ui.showToast(t('auth.verificationCannotContinue'));
-      return;
+    await requestGpsFlow();
+    if (sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
+    // Returning-device proof remains an existing shortcut on initial entry only.
+    // An explicit resend always requests a code, without reauth or another GPS prompt.
+    const forceOtp = shouldSkipFastPath(sessionStorage);
+    const deviceSecret = forceOtp ? null : device.getDeviceSecret();
+    if (deviceSecret) {
+      try {
+        const locks = await api.fetchDeviceLocks(device.getDeviceId(), deviceSecret);
+        if (locks?.length) {
+          const reauth = await api.reauthDevice(device.getDeviceId(), deviceSecret);
+          if (sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
+          sessionStorage.setItem('vc_participation_token', reauth.participation_token);
+          sessionStorage.setItem('vc_device_id', device.getDeviceId());
+          sessionStorage.setItem('vc_sms_sent', 'false');
+          router.push('/verify');
+          return;
+        }
+      } catch { /* Invalid/expired returning-device proof: request a fresh OTP. */ }
     }
-    otpDigits.value = ['', '', '', '', '', ''];
-    otpVisible.value = true;
-    startWebOtpListener();
-  } catch (err) {
-    const preSms = preSmsRejectionKey(err);
-    if (preSms) {
-      // National convocatoria and the country of this number cannot be established:
-      // no SMS was sent. Says nothing about participation or about another country.
-      ui.showToast(t(preSms));
-    } else if (err.status === 429 || err.message?.includes('429') || err.code === 'otp_rate_limited') {
-      ui.showToast(t('auth.otpRateLimited'));
-    } else {
-      ui.showToast(t('auth.sendError'));
-    }
+    if (sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
+    await requestSmsCode(request);
   } finally {
     sending.value = false;
   }
+}
+
+async function requestSmsCode(request, resend = false) {
+  try {
+    let token = '';
+    try { token = await getRecaptchaToken('request_otp'); } catch { /* backend enforces reCAPTCHA */ }
+    if (sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
+    const res = await api.requestOtp({phone: request.phone, recaptcha_token: token || 'dev', protest_id: request.protestId});
+    if (sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
+    if (res?.sent !== true) {
+      ui.showToast(t('auth.verificationCannotContinue'));
+      return;
+    }
+    requestedOtp.value = request;
+    otpDigits.value = ['', '', '', '', '', ''];
+    otpVisible.value = true;
+    startWebOtpListener();
+    if (resend) ui.showToast(t('auth.resendToast'));
+  } catch (err) {
+    const preSms = preSmsRejectionKey(err);
+    if (preSms) { ui.showToast(t(preSms)); }
+    else if (err.status === 429 || err.code === 'otp_rate_limited') ui.showToast(t('auth.otpRateLimited'));
+    else ui.showToast(t('auth.sendError'));
+  }
+}
+
+async function resendSMS() {
+  if (sending.value || !otpVisible.value) return;
+  const request = requestedOtp.value;
+  if (!request || sessionStorage.getItem('vc_last_joined') !== request.protestId) {
+    ui.showToast(t('verify.toastProtestNotFound'));
+    router.push('/');
+    return;
+  }
+  sending.value = true;
+  try {
+    await requestSmsCode(request, true);
+  } finally {
+    sending.value = false;
+  }
+}
+
+function changeNumber() {
+  if (sending.value) return;
+  otpAbortController?.abort();
+  requestedOtp.value = null;
+  otpDigits.value = ['', '', '', '', '', ''];
+  otpVisible.value = false;
 }
 
 function onOtpInput(i) {
@@ -452,13 +477,19 @@ onUnmounted(() => otpAbortController?.abort());
 async function verifyOTP() {
   if (sending.value) return;
   otpAbortController?.abort();
+  const request = requestedOtp.value;
+  if (!request || sessionStorage.getItem('vc_last_joined') !== request.protestId) {
+    ui.showToast(t('verify.toastProtestNotFound'));
+    router.push('/');
+    return;
+  }
   const code = otpDigits.value.join('');
   if (code.length < 6) { ui.showToast(t('auth.otpError')); return; }
   sending.value = true;
   try {
-    const v = phone.value.replace(/\D/g, '');
-    const deviceId  = device.getDeviceId();
-    const res = await api.verifyOtp({ phone: '+' + dialCode.value + v, otp: code, device_id: deviceId, country_code: countryCode.value });
+    const deviceId = device.getDeviceId();
+    const res = await api.verifyOtp({phone: request.phone, otp: code, device_id: deviceId, country_code: request.countryCode});
+    if (sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
     // VP-SEC-001/002/003 fix (23 July 2026): the response no longer
     // includes phone_hash — store the signed participation_token instead,
     // and (only present the very first time this device is ever verified)

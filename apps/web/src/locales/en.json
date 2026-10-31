@@ -12,6 +12,27 @@
     "info": "Info",
     "about": "How it works"
   },
+  "participation": {
+    "anotherEmail": "Verify another email",
+    "receipt": "Adhesion identifier",
+    "receiptNote": "Identifies this adhesion record; it does not establish identity or current membership.",
+    "savedConfirmation": "Confirmation recovered from this tab. No additional adhesion was sent.",
+    "receiptNotSaved": "Save this identifier. The browser could not retain the confirmation for later recovery.",
+    "censusNotSaved": "The adhesion is confirmed, but the census access session could not be saved.",
+    "uncertain": "We cannot confirm whether the adhesion was recorded. This tab will not repeat it automatically. You can view the event or report; their totals do not establish your individual record.",
+    "storageUnavailable": "The browser cannot retain this operation’s state. No new adhesion was sent from this screen.",
+    "loadUnavailable": "Verification could not be prepared. No adhesion was sent. Return to the event and check your connection.",
+    "viewReport": "View report",
+    "requestRejected": "The request or code was rejected. Check the details and whether the code is still valid.",
+    "verificationRejected": "Verification was rejected or has expired. Verify again.",
+    "noFunds": "The request was not recorded because the event has insufficient funds.",
+    "requirements": "The request does not meet this event’s participation requirements.",
+    "notAvailable": "The event could not be found for this request.",
+    "alreadyRecorded": "No additional adhesion was created. An earlier record may exist; this response does not include its receipt.",
+    "closed": "The event is closed. You can view its report.",
+    "rateLimited": "A temporary limit was reached. Wait before trying again; we will not repeat the request automatically.",
+    "deliveryUncertain": "We cannot confirm the code request. It may still arrive; check your messages before requesting another."
+  },
   "auth": {
     "title": "Enter your mobile number to receive an SMS verification code and join the protest.",
     "phoneHint": "Your number is transformed into a secret, undecipherable code.",

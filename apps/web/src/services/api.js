@@ -1,4 +1,5 @@
 import { getCensusSession, saveCensusSession, clearCensusSession } from './censusAccess.js';
+import {requestJson} from './requestJson.js';
 export { getCensusSession } from './censusAccess.js';
 /**
  * API client for the Voice Protest Fastify backend.
@@ -17,25 +18,11 @@ export { getCensusSession } from './censusAccess.js';
 const BASE = import.meta.env.VITE_API_URL ?? '';
 
 async function request(method, path, body, extraHeaders = {}) {
-  const res = await fetch(`${BASE}${path}`, {
+  return requestJson(`${BASE}${path}`, {
     method,
     headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...extraHeaders },
     body:    body ? JSON.stringify(body) : undefined,
   });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const err = new Error(json.error ?? json.message ?? `API error ${res.status}`);
-    if (json.code) err.code = json.code;
-    // status + reason let callers tell "the server rejected this input"
-    // (4xx, with a human-readable reason) apart from "the network/API is
-    // down" (thrown before a response was ever received, see below) — the
-    // two need very different handling: a rejection must be shown to the
-    // user, never silently treated as if it had succeeded.
-    err.status = res.status;
-    err.reason = json.reason ?? null;
-    throw err;
-  }
-  return json;
 }
 
 // ── Protests ──────────────────────────────────────────────────────────────────
@@ -221,7 +208,10 @@ export async function sendEmailOtp(payload) {
  */
 export async function verifyEmailOtp(payload) {
   const result = await request('POST', '/api/institucional/verify-otp', { ...payload, challenge_id: sessionStorage.getItem(`vc_institutional_challenge:adhesion:${payload.protest_id}:${payload.email.toLowerCase()}`) || '' });
-  if (result.census_session) saveCensusSession(payload.protest_id, result.census_session);
+  if (result.census_session) {
+    try { saveCensusSession(payload.protest_id, result.census_session); }
+    catch { throw Object.assign(new Error('CENSUS_SESSION_NOT_SAVED'), {code:'CENSUS_SESSION_NOT_SAVED', receipt:result.receipt, verified:result.verified}); }
+  }
   return result;
 }
 export async function verifyCensusOtp(payload) {

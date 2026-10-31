@@ -20,6 +20,7 @@ try {
     await context.addInitScript(({locale})=>{localStorage.setItem('vc_lang',locale);localStorage.setItem('vc_map_seen','1');}, {locale});
     let sms=0,joins=0,emailSends=0,emailChecks=0,releaseSms,releaseEmail,releaseCheck;
     let smsResponse={sent:true},smsStatus=200,holdSms=false,holdEmail=false,holdCheck=false;
+    let joinStatus=201,joinResponse={receipt:'44444444-4444-4444-8444-444444444444'},emailStatus=200;
     await context.route('**/*',async route=>{
       const req=route.request(),u=new URL(req.url());requests.push({locale,width,host:u.host,path:u.pathname,method:req.method()});
       const json=(data,status=200)=>route.fulfill({status,contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify(data)});
@@ -39,9 +40,9 @@ try {
           return json(smsResponse,smsStatus);
         }
         if(req.method()==='POST'&&u.pathname==='/api/users/verify-otp')return json({verified:true,device_id:'synthetic-device',participation_token:'synthetic-token'});
-        if(req.method()==='POST'&&u.pathname===`/api/protests/${ID}/join`) {joins++;return json({receipt:'synthetic-receipt'},201);}
-        if(req.method()==='POST'&&u.pathname==='/api/institucional/send-otp') {emailSends++;if(holdEmail)await new Promise(r=>releaseEmail=r);return json({sent:true,challenge_id:'synthetic-challenge'});}
-        if(req.method()==='POST'&&u.pathname==='/api/institucional/verify-otp') {emailChecks++;if(holdCheck)await new Promise(r=>releaseCheck=r);return json({receipt:'synthetic-institution-receipt'});}
+        if(req.method()==='POST'&&u.pathname===`/api/protests/${ID}/join`) {joins++;return json(joinResponse,joinStatus);}
+        if(req.method()==='POST'&&u.pathname==='/api/institucional/send-otp') {emailSends++;if(holdEmail)await new Promise(r=>releaseEmail=r);return json({sent:true,challenge_id:'33333333-3333-4333-8333-333333333333'});}
+        if(req.method()==='POST'&&u.pathname==='/api/institucional/verify-otp') {emailChecks++;if(holdCheck)await new Promise(r=>releaseCheck=r);return json(emailStatus===200?{verified:true,receipt:'66666666-6666-4666-8666-666666666666',census_session:'v1.synthetic'}:{error:'synthetic'},emailStatus);}
       }
       if(u.hostname==='cdn.jsdelivr.net')return json({type:'Topology',objects:{countries:{type:'GeometryCollection',geometries:[]}},arcs:[]});
       if(['www.wikidata.org','query.wikidata.org'].includes(u.hostname))return json({search:[]});
@@ -71,23 +72,49 @@ try {
     for(let i=0;i<6;i++)await page.locator('.otp-box').nth(i).fill(String(i+1));
     await page.getByRole('button',{name:messages.auth.verify,exact:true}).click();await page.locator('.success-scr').waitFor();assert.equal(joins,1);
     checks.push({id:`selected_event_success_${locale}_${width}`,ok:true});
+    assert.ok((await page.locator('.participation-receipt').textContent()).includes('44444444-4444-4444-8444-444444444444'));
+    await page.reload();await page.locator('.participation-receipt').waitFor();assert.equal(joins,1);
+    assert.ok((await page.locator('.participation-receipt').textContent()).includes(messages.participation.savedConfirmation));
+    checks.push({id:`confirmed_reload_no_write_${locale}_${width}`,ok:true});
     await page.goto('https://voiceprotest.org/#/verify-institucional/'+INSTITUTION);
     await page.locator('#institution-verify-email').fill('synthetic@example.invalid');
     holdEmail=true;await page.locator('#institution-verify-email').press('Enter');
     await page.waitForFunction(()=>document.querySelector('#s-verify-institucional .btn-primary')?.disabled===true);
-    await page.locator('#institution-verify-email').press('Enter');await waitForCount(()=>emailSends,1);releaseEmail();holdEmail=false;
+    await page.keyboard.press('Enter');await waitForCount(()=>emailSends,1);releaseEmail();holdEmail=false;
     await page.locator('#institution-verify-code').waitFor();await page.locator('#institution-verify-code').fill('123456');
+    await page.evaluate(()=>{const set=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k.startsWith('vc_census_session:'))throw new DOMException('Synthetic storage failure','QuotaExceededError');return set.call(this,k,v);};});
     holdCheck=true;await page.locator('#institution-verify-code').press('Enter');
     await page.waitForFunction(()=>document.querySelector('#s-verify-institucional .btn-primary')?.disabled===true);
-    await page.locator('#institution-verify-code').press('Enter');await waitForCount(()=>emailChecks,1);releaseCheck();holdCheck=false;
-    await page.locator('.suc-hash').waitFor();assert.ok((await page.locator('.suc-hash').textContent()).includes('synthetic-institution-receipt'));
+    await page.keyboard.press('Enter');await waitForCount(()=>emailChecks,1);releaseCheck();holdCheck=false;
+    await page.locator('.suc-hash').waitFor();assert.ok((await page.locator('.suc-hash').textContent()).includes('66666666-6666-4666-8666-666666666666'));
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false);
     checks.push({id:`institutional_double_enter_${locale}_${width}`,ok:true});
+    assert.ok((await page.locator('#s-verify-institucional').textContent()).includes(messages.participation.censusNotSaved));
+    checks.push({id:`receipt_survives_census_storage_failure_${locale}_${width}`,ok:true});
+    await page.reload();await page.locator('.suc-hash').waitFor();assert.equal(emailChecks,1);
+    assert.ok((await page.locator('#s-verify-institucional').textContent()).includes(messages.participation.savedConfirmation));
+    checks.push({id:`institutional_reload_no_write_${locale}_${width}`,ok:true});
+    await page.getByRole('button',{name:messages.participation.anotherEmail,exact:true}).click();
+    await page.locator('#institution-verify-email').fill('synthetic@example.invalid');
+    await page.getByRole('button',{name:messages.verificacional.sendCode,exact:true}).click();await page.locator('#institution-verify-code').waitFor();
+    await page.locator('#institution-verify-code').fill('123456');emailStatus=429;
+    await page.getByRole('button',{name:messages.verificacional.verifyCode,exact:true}).click();
+    await page.getByRole('alert').filter({hasText:messages.participation.rateLimited}).waitFor();assert.equal(emailChecks,2);
+    checks.push({id:`institutional_quota_is_not_wrong_code_${locale}_${width}`,ok:true});
+    emailStatus=503;await page.getByRole('button',{name:messages.verificacional.verifyCode,exact:true}).click();
+    await page.getByRole('alert').filter({hasText:messages.participation.uncertain}).waitFor();assert.equal(emailChecks,3);
+    await page.reload();await page.getByRole('alert').filter({hasText:messages.participation.uncertain}).waitFor();assert.equal(emailChecks,3);
+    checks.push({id:`institutional_uncertain_reload_no_write_${locale}_${width}`,ok:true});
+    await page.evaluate(id=>{for(const key of Object.keys(sessionStorage))if(key.startsWith('vc_participation_outcome:v1:phone:')&&key.endsWith(':'+id))sessionStorage.removeItem(key);sessionStorage.setItem('vc_last_joined',id);},ID);
+    joinStatus=width===360?201:503;joinResponse=width===360?{}:{error:'synthetic-after-commit'};
+    await page.goto('https://voiceprotest.org/#/verify');await page.getByRole('alert').filter({hasText:messages.participation.uncertain}).waitFor();assert.equal(joins,2);
+    await page.reload();await page.getByRole('alert').filter({hasText:messages.participation.uncertain}).waitFor();assert.equal(joins,2);assert.equal(await page.locator('.participation-receipt').count(),0);
+    checks.push({id:`uncertain_${width===360?'missing_receipt':'503'}_reload_no_write_${locale}_${width}`,ok:true});
     await context.close();
   }
   assert.deepEqual(unexpected,[]);assert.deepEqual(errors,[]);
 } finally {
   await browser.close();
-  const report={status:checks.length===40&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,externalMutations:0};
+  const report={status:checks.length===88&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,externalMutations:0};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
 }

@@ -1,14 +1,26 @@
 <template>
   <div class="screen active" id="s-verify">
     <!-- Spinner -->
-    <div v-if="!success" class=" spinner on">
+    <div v-if="!success && !outcomeMessage" class=" spinner on" role="status" aria-live="polite">
       <div class="spin-ring"></div>
       <div class="spin-txt">{{ spinMsg }}</div>
     </div>
+    <section v-if="outcomeMessage" role="alert" style="padding:24px;overflow-y:auto">
+      <p>{{ $t(outcomeMessage) }}</p>
+      <button type="button" @click="goDetail">{{ $t('verify.backDetail') }}</button>
+      <button type="button" @click="goInforme">{{ $t('participation.viewReport') }}</button>
+    </section>
     <!-- Success -->
     <div v-if="success" class="success-scr on">
       <div class="suc-ico">✓</div>
       <div class="suc-h">{{ $t('verify.successTitle') }}</div>
+      <div class="participation-receipt" style="width:100%;overflow-wrap:anywhere;padding:12px" role="status">
+        <strong>{{ confirmedTitle }}</strong>
+        <p>{{ $t('participation.receipt') }}: <code>{{ receipt }}</code></p>
+        <p>{{ $t('participation.receiptNote') }}</p>
+        <p v-if="savedConfirmation">{{ $t('participation.savedConfirmation') }}</p>
+        <p v-if="receiptNotSaved" role="alert">{{ $t('participation.receiptNotSaved') }}</p>
+      </div>
 
             <!-- Escalera de acción -->
       <div style="width:100%;margin-top:8px">
@@ -63,6 +75,8 @@ import { useI18n } from 'vue-i18n';
 import { markForceOtp } from '@/lib/nationalPreCheck.js';
 import { classifyJoinRejection, joinRejectionPath, joinRejectionToast } from '@/lib/joinRejection.js';
 import { localizedCountry } from '@/constants.js';
+import {withClientDeadline} from '@/services/requestJson.js';
+import {validReceipt, readOutcome, writeOutcome, uncertainOutcome, participationErrorKey} from '@/lib/participationOutcome.js';
 
 const { t, locale } = useI18n();
 
@@ -73,6 +87,11 @@ const ui       = useUiStore();
 
 const success    = ref(false);
 const spinMsg    = ref('');
+const outcomeMessage = ref('');
+const receipt = ref('');
+const confirmedTitle = ref('');
+const savedConfirmation = ref(false);
+const receiptNotSaved = ref(false);
 const notiActivada = ref(false);
 const gpsUpdateToken  = ref(null);
 const hadGpsAtJoin    = ref(false);
@@ -142,104 +161,91 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 onMounted(async () => {
-  // A direct/stale route must never choose a replacement event for the person.
-  const lastId = sessionStorage.getItem('vc_last_joined');
+  let lastId, context;
+  try {
+    lastId = sessionStorage.getItem('vc_last_joined');
+    context = 'phone:' + device.getDeviceId() + ':' + lastId;
+  } catch { outcomeMessage.value = 'participation.storageUnavailable'; return; }
   if (!lastId) {
     ui.showToast(t('verify.toastProtestNotFound'));
     router.push('/');
     return;
   }
-  await protests.loadProtests();
-
-  // Limpiar GPS después de usarlo
-  setTimeout(() => {
-    localStorage.removeItem('vc_gps_lat');
-    localStorage.removeItem('vc_gps_lng');
-    localStorage.removeItem('vc_gps_accuracy');
-    localStorage.removeItem('vc_gps_ts');
-  }, 5000);
-  // Mensaje honesto: se muestra mientras dura la llamada real de adhesión
-  // más abajo, no un progreso simulado con tiempos fijos que no corresponden
-  // a ningún trabajo real (antes: 3 mensajes x 850ms fijos).
+  const previous = readOutcome(sessionStorage, context);
+  if (previous?.state === 'completed') {
+    receipt.value = previous.receipt;
+    confirmedTitle.value = previous.title;
+    savedConfirmation.value = true;
+    success.value = true;
+    return; // Reload is display-only: no list, CAPTCHA or adhesion request.
+  }
+  if (previous && previous.state !== 'rejected') {
+    outcomeMessage.value = previous.state === 'unavailable' ? 'participation.storageUnavailable' : 'participation.uncertain';
+    return;
+  }
   spinMsg.value = t('verify.spinVerifying');
-
+  try { await withClientDeadline(() => protests.loadProtests()); }
+  catch { outcomeMessage.value = 'participation.loadUnavailable'; return; }
   const target = sessionStorage.getItem('vc_last_joined') === lastId
-    ? protests.protests.find(p => String(p.id) === lastId)
-    : null;
+    ? protests.protests.find(p => String(p.id) === lastId) : null;
   if (!target) {
-    // No convocatoria to join (list empty, load failed, or the id in
-    // vc_last_joined is not in the loaded list). Nothing was sent to the
-    // backend, so nothing is confirmed: end the flow here, before any
-    // success state or post-success effect. The message does not claim the
-    // convocatoria closed (it may simply have failed to load). No retry.
+    outcomeMessage.value = 'participation.loadUnavailable';
+    return;
+  }
+  let api, token;
+  try {
+    token = await withClientDeadline(() => window.grecaptcha.execute(import.meta.env.VITE_RECAPTCHA_KEY, {action:'join_protest'}));
+    api = await withClientDeadline(() => import('@/services/api.js'));
+  } catch { outcomeMessage.value = 'participation.loadUnavailable'; return; }
+  // Check after all preflight awaits, immediately before journalling/dispatch.
+  if (sessionStorage.getItem('vc_last_joined') !== lastId) {
     ui.showToast(t('verify.toastProtestNotFound'));
     router.push('/');
     return;
   }
-  if (target) {
-    const gpsAllowed = !target.dominio_email && !['high', 'critical'].includes(target.risk_level);
-    try {
-      const participationToken = sessionStorage.getItem('vc_participation_token');
-      const smsSent   = sessionStorage.getItem('vc_sms_sent') === 'true';
-      let token = '';
-      try {
-        token = await window.grecaptcha.execute(import.meta.env.VITE_RECAPTCHA_KEY, { action: 'join_protest' });
-      } catch { /* dev */ }
-      if (sessionStorage.getItem('vc_last_joined') !== lastId) {
-        ui.showToast(t('verify.toastProtestNotFound'));
-        router.push('/');
-        return;
-      }
-      await import('@/services/api.js').then(async api => {
-  const joinRes = await api.joinProtest(target.id, {
-    participation_token: participationToken,
-    sms_sent:        smsSent,
-    recaptcha_token: token || 'dev',
-   gps_lat: gpsAllowed ? (ui.gpsLat ?? (localStorage.getItem('vc_gps_lat') ? parseFloat(localStorage.getItem('vc_gps_lat')) : null) ?? (device.gpsReady ? device.gpsLat : null)) : null,
-   gps_lng: gpsAllowed ? (ui.gpsLng ?? (localStorage.getItem('vc_gps_lng') ? parseFloat(localStorage.getItem('vc_gps_lng')) : null) ?? (device.gpsReady ? device.gpsLng : null)) : null,
-   gps_accuracy: gpsAllowed ? (ui.gpsAccuracy ?? (localStorage.getItem('vc_gps_accuracy') ? parseFloat(localStorage.getItem('vc_gps_accuracy')) : null) ?? (device.gpsReady ? device.gpsAccuracy : null)) : null,
-   ip_ciudad:  localStorage.getItem('vc_geo_ciudad') || device.ipCity || null,
-   ip_pais:    localStorage.getItem('vc_geo_pais') || device.ipCountryName || null,
-   ip_region:  localStorage.getItem('vc_geo_region') || device.ipRegion || null,
-  });
-  // Capa 1 (21 July 2026): if this adhesion didn't carry GPS the first
-  // time — declined, failed silently (see the Capa 0 fix in AuthScreen.vue),
-  // or simply skipped — and the backend issued a reinforcement token
-  // (local/regional scope only), offer one more attempt right here, once
-  // the person has already completed a successful adhesion. Reconnects an
-  // existing, already-hardened backend endpoint (PATCH .../adhesion) that
-  // had been fully built and working with no frontend caller since the old
-  // UI for it was removed — see the Audit Trail, 16 and 21 July 2026.
+  if (!writeOutcome(sessionStorage, context, {state:'pending',title:target.title})) {
+    outcomeMessage.value = 'participation.storageUnavailable';
+    return;
+  }
+  const gpsAllowed = !target.dominio_email && !['high','critical'].includes(target.risk_level);
+  let joinRes;
+  try {
+    joinRes = await api.joinProtest(target.id, {
+      participation_token: sessionStorage.getItem('vc_participation_token'),
+      sms_sent: sessionStorage.getItem('vc_sms_sent') === 'true',
+      recaptcha_token: token,
+      gps_lat: gpsAllowed ? (ui.gpsLat ?? (localStorage.getItem('vc_gps_lat') ? parseFloat(localStorage.getItem('vc_gps_lat')) : null) ?? (device.gpsReady ? device.gpsLat : null)) : null,
+      gps_lng: gpsAllowed ? (ui.gpsLng ?? (localStorage.getItem('vc_gps_lng') ? parseFloat(localStorage.getItem('vc_gps_lng')) : null) ?? (device.gpsReady ? device.gpsLng : null)) : null,
+      gps_accuracy: gpsAllowed ? (ui.gpsAccuracy ?? (localStorage.getItem('vc_gps_accuracy') ? parseFloat(localStorage.getItem('vc_gps_accuracy')) : null) ?? (device.gpsReady ? device.gpsAccuracy : null)) : null,
+      ip_ciudad: localStorage.getItem('vc_geo_ciudad') || device.ipCity || null,
+      ip_pais: localStorage.getItem('vc_geo_pais') || device.ipCountryName || null,
+      ip_region: localStorage.getItem('vc_geo_region') || device.ipRegion || null,
+    });
+    if (!validReceipt(joinRes?.receipt)) throw Object.assign(new Error('INVALID_API_RESPONSE'), {code:'INVALID_API_RESPONSE'});
+  } catch (error) {
+    writeOutcome(sessionStorage, context, {state:uncertainOutcome(error) ? 'uncertain' : 'rejected',title:target.title});
+    outcomeMessage.value = participationErrorKey(error);
+    if (!uncertainOutcome(error)) {
+      const rejection = classifyJoinRejection(error);
+      if (rejection.forceOtp) markForceOtp(sessionStorage);
+      if (rejection.destination === 'auth') router.push(joinRejectionPath(rejection, target.id));
+    }
+    return;
+  }
+  // The receipt proves this response. Later local failures never undo that fact.
+  receipt.value = joinRes.receipt;
+  confirmedTitle.value = target.title;
+  receiptNotSaved.value = !writeOutcome(sessionStorage, context, {state:'completed',receipt:joinRes.receipt,title:target.title});
+  success.value = true;
   hadGpsAtJoin.value = !!(ui.gpsLat ?? (localStorage.getItem('vc_gps_lat') ? parseFloat(localStorage.getItem('vc_gps_lat')) : null) ?? (device.gpsReady ? device.gpsLat : null));
   gpsUpdateToken.value = joinRes.gps_update_token || null;
   showGpsReinforce.value = gpsAllowed && !hadGpsAtJoin.value && !!gpsUpdateToken.value;
-});
-    } catch (e) {
-      // Message + destination come from lib/joinRejection.js: fixed translated
-      // messages only (never server text). NATIONAL_ONLY, 409 and 402 behave as
-      // before; VERIFICATION_REQUIRED goes back to /auth (vc_last_joined and the
-      // other vc_* keys are left untouched, so the flow resumes on the same
-      // convocatoria) and PROTEST_CLOSED goes to its public report.
-      const rejection = classifyJoinRejection(e);
-      // Device without numbering provenance: ask AuthScreen to skip the device-secret
-      // fast path once and send a fresh OTP (cleared there after a successful OTP).
-      if (rejection.forceOtp) markForceOtp(sessionStorage);
-      // NATIONAL_ONLY needs the country: localized name of the convocatoria's country if
-      // known, else its stored name, else a variant of the message without a country.
-      const countryName = target.country ? localizedCountry(target.country, locale.value) : target.countryName;
-      const toast = joinRejectionToast(rejection, countryName);
-      ui.showToast(t(toast.key, toast.params));
-      router.push(joinRejectionPath(rejection, target.id));
-      return;
-    }
-    protests.joinProtest(target.id);
-    await protests.loadProtests();
-    sessionStorage.setItem('vc_last_joined', String(target.id));
-  }
-
-  success.value = true;
-
+  try { protests.joinProtest(target.id); } catch { /* Secondary local counter/lock. */ }
+  void protests.loadProtests().catch(() => {});
   ui.showToast(t('verify.toast'));
+  setTimeout(() => {
+    for (const key of ['vc_gps_lat','vc_gps_lng','vc_gps_accuracy','vc_gps_ts']) localStorage.removeItem(key);
+  }, 5000);
   setTimeout(() => ui.revealInstallBanner(), 1500);
 });
 

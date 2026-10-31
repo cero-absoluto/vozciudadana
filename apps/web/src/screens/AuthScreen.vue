@@ -192,6 +192,8 @@
 
 <script setup>
 import { useProtestsStore } from '@/stores/protests.js';
+import {recaptchaToken} from '@/services/requestJson.js';
+import {uncertainOutcome} from '@/lib/participationOutcome.js';
 import { shouldSkipFastPath, clearForceOtp, preSmsRejectionKey } from '@/lib/nationalPreCheck.js';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
@@ -240,17 +242,7 @@ const captchaTxt         = ref('');
 const RECAPTCHA_KEY = import.meta.env.VITE_RECAPTCHA_KEY;
 
 async function getRecaptchaToken(action) {
-  return new Promise((resolve, reject) => {
-    if (typeof window.grecaptcha === 'undefined' || !RECAPTCHA_KEY) {
-      reject(new Error('reCAPTCHA no disponible'));
-      return;
-    }
-    window.grecaptcha.ready(() => {
-      window.grecaptcha.execute(RECAPTCHA_KEY, { action })
-        .then(t => resolve(t))
-        .catch(err => reject(err));
-    });
-  });
+  return recaptchaToken(window.grecaptcha, RECAPTCHA_KEY, action);
 }
 
 import * as api from '@/services/api.js';
@@ -367,6 +359,7 @@ async function sendSMS() {
         const locks = await api.fetchDeviceLocks(device.getDeviceId(), deviceSecret);
         if (locks?.length) {
           const reauth = await api.reauthDevice(device.getDeviceId(), deviceSecret);
+          if (reauth?.authenticated !== true || typeof reauth.participation_token !== 'string' || !reauth.participation_token) throw new Error('INVALID_API_RESPONSE');
           if (sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
           sessionStorage.setItem('vc_participation_token', reauth.participation_token);
           sessionStorage.setItem('vc_device_id', device.getDeviceId());
@@ -403,6 +396,7 @@ async function requestSmsCode(request, resend = false) {
     const preSms = preSmsRejectionKey(err);
     if (preSms) { ui.showToast(t(preSms)); }
     else if (err.status === 429 || err.code === 'otp_rate_limited') ui.showToast(t('auth.otpRateLimited'));
+    else if (uncertainOutcome(err)) ui.showToast(t('participation.deliveryUncertain'));
     else ui.showToast(t('auth.sendError'));
   }
 }
@@ -489,6 +483,7 @@ async function verifyOTP() {
   try {
     const deviceId = device.getDeviceId();
     const res = await api.verifyOtp({phone: request.phone, otp: code, device_id: deviceId, country_code: request.countryCode});
+    if (res?.verified !== true || typeof res.participation_token !== 'string' || !res.participation_token) throw new Error('INVALID_API_RESPONSE');
     if (sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
     // VP-SEC-001/002/003 fix (23 July 2026): the response no longer
     // includes phone_hash — store the signed participation_token instead,

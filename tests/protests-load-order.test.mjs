@@ -56,7 +56,7 @@ test('the latest failure remains visible even when an older request then succeed
   const latest = store.loadProtests();
   pending[1].reject(new Error('current network failure')); await latest;
   pending[0].resolve(response('older')); await older;
-  assert.equal(store.error, 'current network failure');
+  assert.equal(store.error, 'API_NETWORK_ERROR');
   assert.equal(store.protests.length, 0);
   assert.equal(store.loading, false);
 });

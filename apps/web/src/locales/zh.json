@@ -12,6 +12,27 @@
     "info": "信息",
     "about": "如何运作"
   },
+  "participation": {
+    "anotherEmail": "验证另一个邮箱",
+    "receipt": "参与记录标识",
+    "receiptNote": "此标识对应本次参与记录，不证明身份或当前成员资格。",
+    "savedConfirmation": "已从此标签页恢复确认信息，未再次提交参与。",
+    "receiptNotSaved": "请保存此标识。浏览器无法保存确认信息以供稍后恢复。",
+    "censusNotSaved": "参与已确认，但无法保存名册访问会话。",
+    "uncertain": "无法确认参与是否已记录。此标签页不会自动重复提交。你可以查看活动或报告，但其总数不能证明你的个人记录。",
+    "storageUnavailable": "浏览器无法保存此操作的状态。此页面未发送新的参与提交。",
+    "loadUnavailable": "无法准备验证，未提交参与。请返回活动并检查网络连接。",
+    "viewReport": "查看报告",
+    "requestRejected": "请求或验证码被拒绝。请检查信息及验证码是否仍然有效。",
+    "verificationRejected": "验证被拒绝或已过期，请重新验证。",
+    "noFunds": "活动余额不足，此请求未被记录。",
+    "requirements": "此请求不符合该活动的参与要求。",
+    "notAvailable": "无法找到此请求对应的活动。",
+    "alreadyRecorded": "未创建新的参与记录。可能已有记录，但此响应不含原记录的回执。",
+    "closed": "活动已结束，你可以查看报告。",
+    "rateLimited": "已达到临时限制，请稍后再试。系统不会自动重复此请求。",
+    "deliveryUncertain": "无法确认验证码请求。验证码仍可能送达，请先查看消息，再决定是否重新请求。"
+  },
   "auth": {
     "title": "输入手机号以接收短信验证码并参与抗议。",
     "phoneHint": "您的号码会被转换为无法破解的秘密代码。",

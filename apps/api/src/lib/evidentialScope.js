@@ -75,14 +75,12 @@ export function buildEvidentialScope(protest, agg = {}) {
     case 'regional':
       // Honesty: regional is a creator DECLARATION, not a technical restriction —
       // unless an OSM entity + GPS verified some adhesions territorially.
-      demonstrates.push({ key: 'demonstrates.sim_country', params: { country: protest.country_name } });
       if (dgl && localVerified > 0) {
         demonstrates.push({ key: 'demonstrates.local_verified_region', params: { count: localVerified, total: dgl.total ?? total, territory } });
         methods.push({ key: 'methods.gps_osm_region', params: { territory } });
       }
       outside_scope.push({ key: 'not.region_presence', params: { territory } });
       methods.unshift({ key: 'methods.sms_otp' });
-      methods.push({ key: 'methods.sim_country' });
       methods.push({ key: 'methods.ip' });
       break;
 
@@ -175,7 +173,7 @@ export const EVIDENTIAL_SCOPE_EN = {
   'demonstrates.unique_participation_email': () =>
     `Unique, verified participation: each adhesion comes from a distinct verified institutional email address, counted once per convocatoria.`,
   'demonstrates.sim_country': (p) =>
-    `Each participant holds a SIM registered in ${p.country}.`,
+    `The admitted verified phone numbers are attributed to ${p.country} by the numbering plan.`,
   'demonstrates.country_breakdown': () =>
     `The country of each participant is recorded and shown in the geographic breakdown.`,
   'demonstrates.local_verified_municipality': (p) =>
@@ -205,7 +203,7 @@ export const EVIDENTIAL_SCOPE_EN = {
   'methods.sms_otp': () => `SMS one-time-password verification of a real phone number (Twilio Verify).`,
   'methods.email_otp': (p) => `Institutional email one-time-password verification (domain ${p.domain}).`,
   'methods.census_vouching': () => `Peer vouching within the institutional census.`,
-  'methods.sim_country': () => `SIM country-of-registration signal.`,
+  'methods.sim_country': () => `Phone-number country according to the numbering plan.`,
   'methods.gps_osm_municipality': (p) => `Declared coordinates compared by geocoded municipality name and country${p.territory ? ` (${p.territory})` : ''}.`,
   'methods.gps_osm_region': (p) => `Declared coordinates compared by geocoded region name and country${p.territory ? ` (${p.territory})` : ''}.`,
   'methods.ip': () => `Approximate IP geolocation, used as a secondary signal (not stored in plain text).`,

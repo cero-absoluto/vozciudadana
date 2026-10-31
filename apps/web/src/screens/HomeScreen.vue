@@ -13,6 +13,10 @@
       <!-- A failed load is NOT an empty state: say so and offer a manual retry
            (no automatic retries). Fixed translated text only; the raw error is never shown.
            Shown here, not in ActiveTab, because the tab panel is hidden until a filter is chosen. -->
+      <div v-if="!protests.error && (protests.loading || !protests.hasLoaded)" role="status" aria-live="polite" id="events-loading"
+        style="padding:12px 14px;text-align:center;border:.5px solid var(--border2);border-radius:var(--r);margin:0 0 8px;font-size:12px;color:var(--text);line-height:1.6">
+        {{ $t('home.loadingEvents') }}
+      </div>
       <div v-if="protests.error" role="alert" id="load-failed" style="padding:12px 14px;text-align:center;border:.5px solid var(--border2);border-radius:var(--r);margin:0 0 8px">
         <div style="font-size:12px;color:var(--text);line-height:1.6;margin-bottom:8px">{{ protests.loading ? $t('home.loadingEvents') : $t('home.loadFailed') }}</div>
         <button @click="retryLoad" :disabled="protests.loading" :aria-busy="protests.loading"

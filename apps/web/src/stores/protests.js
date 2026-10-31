@@ -61,6 +61,8 @@ export const useProtestsStore = defineStore('protests', () => {
   const protests      = ref(FALLBACK_PROTESTS.map(p => ({ ...p })));
   const queue         = ref(INITIAL_QUEUE.map(q => ({ ...q })));
   const loading       = ref(false);
+  // A direct-link fetch or stale response does not establish the list's empty state.
+  const hasLoaded     = ref(false);
   const error         = ref(null);
   const filter        = ref('all');   // 'all' | 'national' | 'regional' | 'global'
   const countryFilter = ref(null);    // ISO alpha-2 or null
@@ -186,6 +188,7 @@ export const useProtestsStore = defineStore('protests', () => {
       const keptClosed = protests.value.filter(p => p.timer <= 0 && !freshIds.has(p.id));
       protests.value = [...fresh, ...keptClosed];
       error.value = null;
+      hasLoaded.value = true;
     } catch (err) {
       if (load !== latestLoad) return;
       // A failed load is an error state, not an empty list: keep whatever real
@@ -281,7 +284,7 @@ export const useProtestsStore = defineStore('protests', () => {
   }
 
   return {
-    protests, queue, filter, countryFilter, loading, error,
+    protests, queue, filter, countryFilter, loading, hasLoaded, error,
     globalCount, filteredProtests, openProtests,
     canJoin, scopeBadge,
     loadProtests, fetchProtestById, joinProtest, incrementViral, boostQueue, createProtest, tickTimers, restoreFromStorage,

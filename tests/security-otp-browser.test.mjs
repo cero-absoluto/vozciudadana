@@ -22,7 +22,10 @@ test('switching canonical identity without new proof removes unrelated stored se
  const f=await run({response:{verified:true,device_id:'canonical',participation_token:'token'}});assert.equal(f.store.has('vc_device_secret'),false);assert.equal(f.store.get('id'),'canonical');assert.equal(f.session.get('vc_participation_token'),'token');assert.deepEqual(f.nav,['/verify']);
 });
 test('new identity keeps its newly minted proof',async()=>{
- const f=await run({response:{verified:true,device_id:'new-id',participation_token:'token',device_secret:'new-proof'}});assert.equal(f.store.get('vc_device_secret'),'new-proof');assert.equal(f.store.get('id'),'new-id');
+ const f=await run({response:{verified:true,device_id:'new-device',participation_token:'token',device_secret:'new-proof'}});assert.equal(f.store.get('vc_device_secret'),'new-proof');assert.equal(f.store.get('id'),'new-device');
+});
+test('a success without its canonical identity cannot reuse the previous identity context',async()=>{
+ const f=await run({response:{verified:true,participation_token:'synthetic-token'}});assert.equal(f.session.size,0);assert.deepEqual(f.nav,[]);assert.deepEqual(f.toasts,['auth.otpUnavailable']);
 });
 for(const [status,key] of [[401,'otpIncorrect'],[429,'otpRateLimited'],[503,'otpUnavailable'],[undefined,'otpUnavailable']])test('browser handles OTP failure '+status,async()=>{
  const f=await run({error:{status}});assert.deepEqual(f.toasts,['auth.'+key]);assert.equal(f.nav.length,0);assert.equal(f.session.size,0);assert.equal(f.context.sending.value,false);assert.equal(f.store.get('vc_device_secret'),'old-secret');

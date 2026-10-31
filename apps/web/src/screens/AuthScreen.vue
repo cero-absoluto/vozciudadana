@@ -483,7 +483,7 @@ async function verifyOTP() {
   try {
     const deviceId = device.getDeviceId();
     const res = await api.verifyOtp({phone: request.phone, otp: code, device_id: deviceId, country_code: request.countryCode});
-    if (res?.verified !== true || typeof res.participation_token !== 'string' || !res.participation_token) throw new Error('INVALID_API_RESPONSE');
+    if (res?.verified !== true || typeof res.participation_token !== 'string' || !res.participation_token || typeof res.device_id !== 'string' || res.device_id.length < 8 || res.device_id.length > 128) throw new Error('INVALID_API_RESPONSE');
     if (sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
     // VP-SEC-001/002/003 fix (23 July 2026): the response no longer
     // includes phone_hash — store the signed participation_token instead,

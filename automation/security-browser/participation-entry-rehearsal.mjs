@@ -17,7 +17,7 @@ try {
   for(const locale of ['es','en','fr','zh'])for(const width of [360,390]) {
     const messages=JSON.parse(readFileSync(resolve('apps/web/src/locales',locale+'.json'),'utf8'));
     const context=await browser.newContext({serviceWorkers:'block',viewport:{width,height:844},isMobile:true,hasTouch:true,locale});
-    await context.addInitScript(({locale})=>{localStorage.setItem('vc_lang',locale);localStorage.setItem('vc_map_seen','1');}, {locale});
+    await context.addInitScript(({locale})=>{localStorage.setItem('vc_lang',locale);localStorage.setItem('vc_map_seen','1');localStorage.setItem('vc_map_intro','1');}, {locale});
     await context.addInitScript(()=>{window.__notificationRequests=0;Notification.requestPermission=async()=>{window.__notificationRequests++;return 'denied';};});
     await context.addInitScript(()=>{
       window.__copyMode='success';window.__copies=[];
@@ -27,6 +27,7 @@ try {
     });
     let sms=0,joins=0,emailSends=0,emailChecks=0,releaseSms,releaseEmail,releaseCheck;
     let smsResponse={sent:true},smsStatus=200,holdSms=false,holdEmail=false,holdCheck=false;
+    let holdList=false,releaseList,listStatus=200,listReads=0;
     let listOverride=null,detailStatus=200,detailResponse=events[1],holdDetail=false,releaseDetail;
     let joinStatus=201,joinResponse={receipt:'44444444-4444-4444-8444-444444444444'},emailStatus=200;
     await context.route('**/*',async route=>{
@@ -39,7 +40,8 @@ try {
       }
       if(u.hostname==='api.voiceprotest.org') {
         if(req.method()==='OPTIONS')return route.fulfill({status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST','Access-Control-Allow-Headers':'Content-Type'}});
-        if(req.method()==='GET'&&u.pathname==='/api/protests')return json(listOverride ?? events);
+        if(req.method()==='GET'&&u.pathname==='/api/protests') {listReads++;if(holdList)await new Promise(r=>releaseList=r);return json(listOverride ?? events,listStatus);}
+        if(req.method()==='GET'&&u.pathname===`/api/protests/${ID}/informe`)return json({error:'synthetic report unavailable'},503);
         if(req.method()==='GET'&&u.pathname===`/api/protests/${INSTITUTION}`) {if(holdDetail)await new Promise(r=>releaseDetail=r);return json(detailResponse,detailStatus);}
         if(req.method()==='GET'&&u.pathname==='/api/ipinfo')return json({country_code:'ES',country_name:'Spain',city:'Synthetic'});
         if(req.method()==='GET'&&u.pathname==='/api/country-codes')return json([{iso2:'ES',dial_code:'34',flag:'ES'}]);
@@ -60,6 +62,52 @@ try {
       unexpected.push({host:u.host,path:u.pathname,method:req.method()});return route.abort();
     });
     const page=await context.newPage();page.on('pageerror',e=>errors.push({locale,width,message:e.message}));
+    // First list response is held: a selected filter must not announce an empty list.
+    holdList=true;listOverride=[];
+    await page.goto('https://voiceprotest.org/?ux=initial-loading#/');
+    await page.locator('#events-loading').waitFor();
+    await page.locator('.filter-row button').first().click();
+    await page.locator('#home-right').waitFor();
+    assert.equal(await page.getByRole('button',{name:messages.active.createBtn,exact:true}).count(),0);
+    assert.ok(!(await page.locator('#home-right').textContent()).includes(messages.active.emptyDesc));
+    checks.push({id:`initial_loading_never_claims_empty_${locale}_${width}`,ok:true});
+    await waitForCount(()=>Number(!!releaseList),1);holdList=false;releaseList();
+    await page.getByRole('button',{name:messages.active.createBtn,exact:true}).waitFor();
+    assert.equal(await page.locator('#events-loading').count(),0);
+    checks.push({id:`successful_empty_list_is_explicit_${locale}_${width}`,ok:true});
+    listStatus=503;listOverride={error:'private synthetic raw failure'};
+    await page.goto('https://voiceprotest.org/?ux=initial-error#/');
+    await page.locator('#load-failed').waitFor();await page.locator('.filter-row button').first().click();
+    assert.equal(await page.getByRole('button',{name:messages.active.createBtn,exact:true}).count(),0);
+    assert.ok(!(await page.locator('#s-home').textContent()).includes('private synthetic raw failure'));
+    checks.push({id:`initial_error_is_not_empty_${locale}_${width}`,ok:true});
+    const beforeListReads=listReads;holdList=true;releaseList=undefined;listStatus=200;listOverride=events;
+    const retry=page.locator('#load-failed').getByRole('button',{name:messages.home.retry,exact:true});
+    await retry.click();await page.waitForFunction(()=>document.querySelector('#load-failed button')?.disabled);
+    await page.keyboard.press('Enter');await waitForCount(()=>listReads,beforeListReads+1);
+    assert.equal(await page.getByRole('button',{name:messages.active.createBtn,exact:true}).count(),0);
+    checks.push({id:`retry_waits_single_request_without_empty_${locale}_${width}`,ok:true});
+    holdList=false;releaseList();
+    await page.locator('article.p-item').first().waitFor();await page.locator('#load-failed').waitFor({state:'hidden'});
+    const card=()=>page.locator('article.p-item').filter({hasText:events[0].title}).first();
+    const primary=()=>card().getByRole('button').nth(0),reportButton=()=>card().getByRole('button').nth(1);
+    await primary().focus();await page.keyboard.press('Tab');assert.equal(await reportButton().evaluate(el=>el===document.activeElement),true);
+    await page.keyboard.press('Shift+Tab');assert.equal(await primary().evaluate(el=>el===document.activeElement),true);
+    assert.equal(await primary().evaluate(el=>{const s=getComputedStyle(el);return s.outlineStyle!=='none'&&parseFloat(s.outlineWidth)>0;}),true);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false);
+    checks.push({id:`card_focus_order_visible_without_overflow_${locale}_${width}`,ok:true});
+    for(const key of ['Enter','Space']){
+      await primary().focus();await page.keyboard.press(key);await page.waitForURL(url=>url.hash===`#/detail/${ID}`);
+      assert.equal(sms,0);assert.equal(joins,0);
+      checks.push({id:`card_primary_${key}_${locale}_${width}`,ok:true});
+      await page.goBack();await card().waitFor();
+      await reportButton().focus();await page.keyboard.press(key);await page.waitForURL(url=>url.hash===`#/informe/${ID}`);
+      await page.getByText(messages.informe.loadError,{exact:true}).waitFor();
+      assert.equal(sms,0);assert.equal(joins,0);
+      checks.push({id:`card_report_${key}_${locale}_${width}`,ok:true});
+      await page.goBack();await card().waitFor();
+    }
+    listOverride=null;
     await page.goto('https://voiceprotest.org/#/auth');await page.waitForURL('**/#/');
     await page.goto('https://voiceprotest.org/#/verify');await page.waitForURL('**/#/');assert.equal(sms,0);assert.equal(joins,0);
     checks.push({id:`no_destination_${locale}_${width}`,ok:true});
@@ -221,7 +269,7 @@ try {
   assert.deepEqual(unexpected,[]);assert.deepEqual(errors,[]);
 } finally {
   await browser.close();
-  const report={status:checks.length===216&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,externalMutations:0};
+  const report={status:checks.length===288&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,externalMutations:0};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
   if(report.status!=='PASS') process.exitCode=1;
 }

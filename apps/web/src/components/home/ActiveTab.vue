@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- A failed load is not an empty list: the failure notice (with retry) lives in HomeScreen. -->
-    <div v-if="!protests.length && !store.error" style="padding:20px 14px;text-align:center">
+    <div v-if="!protests.length && store.hasLoaded && !store.loading && !store.error" style="padding:20px 14px;text-align:center">
       <div style="font-size:22px;margin-bottom:8px">🌍</div>
       <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:4px">{{ $t('active.empty') }}</div>
       <div style="font-size:10px;color:var(--text3);line-height:1.6">{{ $t('active.emptyDesc') }}</div>
@@ -90,3 +90,8 @@ function handleClick(p) {
   else if (r.geo)       ui.showToast(t('active.toastGeo'));
 }
 </script>
+
+<style scoped>
+.p-item, .p-item.locked { cursor: default; }
+.p-item button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>

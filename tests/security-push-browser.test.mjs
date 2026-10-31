@@ -7,7 +7,7 @@ const source=readFileSync(new URL('../apps/web/src/screens/VerifyScreen.vue',imp
 function fixture(statuses=[201],secret='a'.repeat(64),errorCode='PUSH_ENDPOINT_OWNED'){
   const requests=[],toasts=[];let permissions=0,subscriptions=0,unsubscribed=0;
   const reg={pushManager:{subscribe:async()=>({endpoint:'https://fcm.googleapis.com/fcm/send/'+(++subscriptions),keys:{p256dh:'B'.repeat(87),auth:'a'.repeat(22)},unsubscribe:async()=>{unsubscribed++;return true;}})}};
-  const context={ref:value=>({value}),onMounted(){},useRouter:()=>({}),useI18n:()=>({t:key=>key,locale:{value:'en'}}),
+  const context={ref:value=>({value}),onMounted(){},onUnmounted(){},useRouter:()=>({}),useI18n:()=>({t:key=>key,locale:{value:'en'}}),
     useDeviceStore:()=>({getDeviceId:()=> 'local-device-id',getDeviceSecret:()=>secret}),
     useProtestsStore:()=>({protests:[]}),useUiStore:()=>({showToast:msg=>toasts.push(msg)}),
     sessionStorage:{getItem:key=>key==='vc_last_joined'?'11111111-1111-1111-1111-111111111111':null},localStorage:{getItem:()=> 'en'},

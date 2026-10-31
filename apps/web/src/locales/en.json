@@ -14,6 +14,7 @@
   },
   "participation": {
     "anotherEmail": "Verify another email",
+    "preflightUnavailable": "The code request could not be prepared. Check your connection or browser verification before trying again.",
     "receipt": "Adhesion identifier",
     "receiptNote": "Identifies this adhesion record; it does not establish identity or current membership.",
     "savedConfirmation": "Confirmation recovered from this tab. No additional adhesion was sent.",

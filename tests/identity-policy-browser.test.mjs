@@ -16,7 +16,7 @@ const verify=read('VerifyScreen').match(/<script setup>([\s\S]*?)<\/script>/)[1]
 for(const risk of ['high','critical','low'])test('IDV-02 final join '+risk+' handles cached GPS according to current target',async()=>{
  let mounted;const payloads=[],target={id:'synthetic',scope:'local',risk_level:risk};
  const memory=new Map([['vc_last_joined','synthetic']]);
- const context={...outcomes,withClientDeadline,ref:value=>({value}),onMounted:fn=>{mounted=fn;},useRouter:()=>({push(){}}),useI18n:()=>({t:key=>key,locale:{value:'en'}}),
+ const context={...outcomes,withClientDeadline,ref:value=>({value}),onMounted:fn=>{mounted=fn;},onUnmounted(){},useRouter:()=>({push(){}}),useI18n:()=>({t:key=>key,locale:{value:'en'}}),
  useProtestsStore:()=>({protests:[target],loadProtests:async()=>{},joinProtest(){}}),useDeviceStore:()=>({getDeviceId:()=> 'synthetic-device',gpsReady:true,gpsLat:43,gpsLng:-3,gpsAccuracy:5}),
  useUiStore:()=>({gpsLat:43,gpsLng:-3,gpsAccuracy:5,showToast(){},revealInstallBanner(){}}),
  sessionStorage:{getItem:key=>memory.get(key)??null,setItem:(key,value)=>memory.set(key,String(value))},localStorage:{getItem:()=> '43',removeItem(){}},setTimeout(){},

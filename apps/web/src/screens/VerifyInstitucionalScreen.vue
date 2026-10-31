@@ -69,9 +69,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import {recaptchaToken} from '@/services/requestJson.js';
-import {validReceipt, readOutcome, writeOutcome, uncertainOutcome, participationErrorKey} from '@/lib/participationOutcome.js';
+import {validReceipt, freshOutcomeId, readOutcome, writeOutcome, beginOutcome, uncertainOutcome, participationErrorKey} from '@/lib/participationOutcome.js';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useProtestsStore } from '@/stores/protests.js';
@@ -103,12 +103,14 @@ const savedConfirmation = ref(false);
 const receiptNotSaved = ref(false);
 const censusNotSaved = ref(false);
 const contextKey = 'vc_institutional_outcome_context:' + protestId;
+let verificationActive = true;
+onUnmounted(() => { verificationActive = false; });
 
 function showConfirmed(result, restored = false) {
   receiptHash.value = result.receipt;
   confirmedTitle.value = result.title || protest.value?.title || protestId;
   savedConfirmation.value = restored;
-  if (!restored) receiptNotSaved.value = !writeOutcome(sessionStorage, activeContext.value, {state:'completed',receipt:result.receipt,title:confirmedTitle.value});
+  if (!restored) receiptNotSaved.value = !writeOutcome(sessionStorage, activeContext.value, {state:'completed',receipt:result.receipt,title:confirmedTitle.value,attemptId:result.attemptId});
   step.value = 3;
 }
 
@@ -156,16 +158,23 @@ async function sendOtp() {
     return;
   }
   loading.value = true;
+  // Establish recoverable local context before requesting an email code.
+  let nonce;
   try {
-    const recaptcha = await getRecaptchaToken('institutional_send_otp');
+    nonce = freshOutcomeId();
+    sessionStorage.setItem(contextKey, nonce);
+    if (sessionStorage.getItem(contextKey) !== nonce) throw new Error();
+  } catch { emailError.value = t('participation.storageUnavailable'); loading.value = false; return; }
+  let recaptcha;
+  try { recaptcha = await getRecaptchaToken('institutional_send_otp'); }
+  catch { emailError.value = t('participation.preflightUnavailable'); loading.value = false; return; }
+  if (!verificationActive) { loading.value = false; return; }
+  try {
     const api = await import('@/services/api.js');
+    if (!verificationActive) return;
     const result = await api.sendEmailOtp({email:email.value,protest_id:protestId,recaptcha_token:recaptcha});
     if (result?.sent !== true || !validReceipt(result.challenge_id)) throw Object.assign(new Error('INVALID_API_RESPONSE'), {code:'INVALID_API_RESPONSE'});
-    const nonce = crypto.randomUUID();
-    try {
-      sessionStorage.setItem(contextKey, nonce);
-      if (sessionStorage.getItem(contextKey) !== nonce) throw new Error();
-    } catch { emailError.value = t('participation.storageUnavailable'); return; }
+    if (!verificationActive) return;
     activeContext.value = 'email:' + protestId + ':' + nonce;
     step.value = 2;
   } catch (error) {
@@ -186,20 +195,24 @@ async function verifyOtp() {
   let api;
   try { api = await import('@/services/api.js'); }
   catch { otpError.value = t('participation.loadUnavailable'); loading.value = false; return; }
-  if (!writeOutcome(sessionStorage, activeContext.value, {state:'pending',title:protest.value?.title || protestId})) {
-    otpError.value = t('participation.storageUnavailable'); loading.value = false; return;
+  if (!verificationActive) { loading.value = false; return; }
+  const attempt = beginOutcome(sessionStorage, activeContext.value, protest.value?.title || protestId);
+  if (!attempt.started) {
+    if (attempt.previous?.state === 'completed') showConfirmed(attempt.previous, true);
+    else { outcomeMessage.value = attempt.previous?.state === 'unavailable' ? 'participation.storageUnavailable' : 'participation.uncertain'; step.value = 4; }
+    loading.value = false; return;
   }
   try {
     const result = await api.verifyEmailOtp({email:email.value,otp:otp.value,protest_id:protestId});
     if (result?.verified !== true || !validReceipt(result.receipt)) throw Object.assign(new Error('INVALID_API_RESPONSE'), {code:'INVALID_API_RESPONSE'});
-    showConfirmed(result);
+    showConfirmed({...result,attemptId:attempt.attemptId});
     ui.showToast(t('verify.toast'));
   } catch (error) {
     if (error?.code === 'CENSUS_SESSION_NOT_SAVED' && error.verified === true && validReceipt(error.receipt)) {
       censusNotSaved.value = true;
-      showConfirmed({receipt:error.receipt});
+      showConfirmed({receipt:error.receipt,attemptId:attempt.attemptId});
     } else {
-      writeOutcome(sessionStorage, activeContext.value, {state:uncertainOutcome(error) ? 'uncertain' : 'rejected'});
+      writeOutcome(sessionStorage, activeContext.value, {state:uncertainOutcome(error) ? 'uncertain' : 'rejected',attemptId:attempt.attemptId});
       if (uncertainOutcome(error)) { outcomeMessage.value = 'participation.uncertain'; step.value = 4; }
       else otpError.value = t(participationErrorKey(error));
     }

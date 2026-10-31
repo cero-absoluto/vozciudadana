@@ -72,6 +72,9 @@ try {
     for(let i=0;i<6;i++)await page.locator('.otp-box').nth(i).fill(String(i+1));
     await page.getByRole('button',{name:messages.auth.verify,exact:true}).click();await page.locator('.success-scr').waitFor();assert.equal(joins,1);
     checks.push({id:`selected_event_success_${locale}_${width}`,ok:true});
+    await page.locator('#s-verify .success-scr button').last().scrollIntoViewIfNeeded();
+    assert.equal(await page.locator('#s-verify .success-scr button').last().evaluate(el=>{const a=el.getBoundingClientRect(),b=el.closest('.success-scr').getBoundingClientRect();return a.top>=b.top-1&&a.bottom<=b.bottom+1;}),true);
+    checks.push({id:`receipt_actions_scroll_reachable_${locale}_${width}`,ok:true});
     assert.ok((await page.locator('.participation-receipt').textContent()).includes('44444444-4444-4444-8444-444444444444'));
     await page.reload();await page.locator('.participation-receipt').waitFor();assert.equal(joins,1);
     assert.ok((await page.locator('.participation-receipt').textContent()).includes(messages.participation.savedConfirmation));
@@ -89,6 +92,9 @@ try {
     await page.locator('.suc-hash').waitFor();assert.ok((await page.locator('.suc-hash').textContent()).includes('66666666-6666-4666-8666-666666666666'));
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false);
     checks.push({id:`institutional_double_enter_${locale}_${width}`,ok:true});
+    await page.locator('#s-verify-institucional .success-scr button').last().scrollIntoViewIfNeeded();
+    assert.equal(await page.locator('#s-verify-institucional .success-scr button').last().evaluate(el=>{const a=el.getBoundingClientRect(),b=el.closest('.success-scr').getBoundingClientRect();return a.top>=b.top-1&&a.bottom<=b.bottom+1;}),true);
+    checks.push({id:`institutional_receipt_actions_scroll_reachable_${locale}_${width}`,ok:true});
     assert.ok((await page.locator('#s-verify-institucional').textContent()).includes(messages.participation.censusNotSaved));
     checks.push({id:`receipt_survives_census_storage_failure_${locale}_${width}`,ok:true});
     await page.reload();await page.locator('.suc-hash').waitFor();assert.equal(emailChecks,1);
@@ -115,6 +121,6 @@ try {
   assert.deepEqual(unexpected,[]);assert.deepEqual(errors,[]);
 } finally {
   await browser.close();
-  const report={status:checks.length===88&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,externalMutations:0};
+  const report={status:checks.length===104&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,externalMutations:0};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
 }

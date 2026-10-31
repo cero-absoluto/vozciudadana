@@ -3,10 +3,53 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {harness,deferred,flush} from './helpers/participation-harness.mjs';
 import {requestJson,withClientDeadline} from '../apps/web/src/services/requestJson.js';
-import {validReceipt,readOutcome,writeOutcome,participationErrorKey,uncertainOutcome} from '../apps/web/src/lib/participationOutcome.js';
+import {validReceipt,readOutcome,writeOutcome,beginOutcome,participationErrorKey,uncertainOutcome} from '../apps/web/src/lib/participationOutcome.js';
 const RECEIPT='44444444-4444-4444-8444-444444444444';
 const phoneContext='phone:synthetic-device:selected';
 const copySession=(from,to)=>{for(const [k,v] of from.memory)to.memory.set(k,v);};
+test('interleaved mounts in one tab dispatch once and cannot overwrite the resulting receipt',async()=>{
+  const wait=deferred(),a=harness('VerifyScreen'),b=harness('VerifyScreen');b.context.sessionStorage=a.context.sessionStorage;
+  let calls=0;const join=()=>{calls++;return wait.promise;};a.api.joinProtest=join;b.api.joinProtest=join;
+  const first=a.mount(),second=b.mount();await flush();assert.equal(calls,1);
+  wait.resolve({receipt:RECEIPT});await Promise.all([first,second]);assert.equal(readOutcome(a.context.sessionStorage,phoneContext).state,'completed');
+  assert.equal(writeOutcome(a.context.sessionStorage,phoneContext,{state:'rejected',attemptId:'late-instance'}),false);
+  assert.equal(readOutcome(a.context.sessionStorage,phoneContext).receipt,RECEIPT);
+});
+test('unmounted preflight cannot dispatch after a remount',async()=>{
+  const wait=deferred(),a=harness('VerifyScreen'),b=harness('VerifyScreen');a.store.loadProtests=()=>wait.promise;
+  const first=a.mount();a.unmount();b.context.sessionStorage=a.context.sessionStorage;await b.mount();wait.resolve();await first;
+  assert.equal(a.calls.some(x=>x[0]==='join'),false);assert.equal(b.calls.filter(x=>x[0]==='join').length,1);
+});
+test('a pending owner is exclusive, a rejected request permits a new owner, and completion is monotonic',()=>{
+  const f=harness('VerifyScreen'),storage=f.context.sessionStorage;
+  const a=beginOutcome(storage,phoneContext,'A');assert.equal(a.started,true);assert.equal(beginOutcome(storage,phoneContext,'B').started,false);
+  assert.equal(writeOutcome(storage,phoneContext,{state:'rejected',attemptId:'foreign'}),false);
+  assert.equal(writeOutcome(storage,phoneContext,{state:'rejected',attemptId:a.attemptId}),true);
+  const b=beginOutcome(storage,phoneContext,'B');assert.equal(b.started,true);assert.notEqual(a.attemptId,b.attemptId);
+  assert.equal(writeOutcome(storage,phoneContext,{state:'completed',receipt:RECEIPT,attemptId:a.attemptId}),false);
+  assert.equal(writeOutcome(storage,phoneContext,{state:'completed',receipt:RECEIPT,attemptId:b.attemptId}),true);
+  assert.equal(writeOutcome(storage,phoneContext,{state:'uncertain',attemptId:b.attemptId}),false);
+});
+test('new canonical verified identity cannot receive the earlier identity’s receipt',async()=>{
+  const f=harness('VerifyScreen');writeOutcome(f.context.sessionStorage,phoneContext,{state:'completed',receipt:RECEIPT,title:'Earlier identity'});
+  f.device.getDeviceId=()=> 'new-canonical-id';await f.mount();assert.equal(f.calls.filter(x=>x[0]==='join').length,1);assert.notEqual(f.state.confirmedTitle.value,'Earlier identity');
+});
+test('institutional local storage or CAPTCHA preflight failure cannot spend another email request',async()=>{
+  for(const failure of ['storage','captcha']){
+    let calls=0;const f=harness('VerifyInstitucionalScreen',{sendEmailOtp:async()=>{calls++;}});
+    if(failure==='storage')f.context.sessionStorage.setItem=()=>{throw Error('synthetic');};
+    else f.context.window.grecaptcha.execute=async()=>{throw Error('synthetic');};
+    await f.state.sendOtp();assert.equal(calls,0);assert.equal(f.state.loading.value,false);
+    assert.equal(f.state.emailError.value,'participation.'+(failure==='storage'?'storageUnavailable':'preflightUnavailable'));
+  }
+});
+for(const result of ['rejected','uncertain','malformed','restored','pending'])test('GPS cache cleanup is scheduled independently of '+result,async()=>{
+  const f=harness('VerifyScreen',{joinProtest:async()=>{if(result==='rejected')throw {status:403};if(result==='uncertain')throw {status:503};return {};}}),timers=[],removed=[];
+  f.context.setTimeout=(fn,ms)=>timers.push({fn,ms});f.context.localStorage.removeItem=key=>removed.push(key);
+  if(result==='restored'||result==='pending')writeOutcome(f.context.sessionStorage,phoneContext,{state:result==='restored'?'completed':'pending',receipt:RECEIPT,title:'Synthetic'});
+  await f.mount();const cleanup=timers.find(x=>x.ms===5000);assert.ok(cleanup);cleanup.fn();
+  assert.deepEqual(removed,['vc_gps_lat','vc_gps_lng','vc_gps_accuracy','vc_gps_ts']);
+});
 for(const stage of ['transport','body'])test('deadline bounds '+stage+' even if the mocked transport ignores abort; no retry',async()=>{
   let calls=0,signal;
   await assert.rejects(requestJson('https://synthetic.invalid',{method:'POST'},{timeoutMs:10,fetchImpl:async(_url,options)=>{

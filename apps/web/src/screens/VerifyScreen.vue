@@ -66,7 +66,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useProtestsStore } from '@/stores/protests.js';
 import { useDeviceStore }   from '@/stores/device.js';
@@ -76,7 +76,7 @@ import { markForceOtp } from '@/lib/nationalPreCheck.js';
 import { classifyJoinRejection, joinRejectionPath, joinRejectionToast } from '@/lib/joinRejection.js';
 import { localizedCountry } from '@/constants.js';
 import {withClientDeadline} from '@/services/requestJson.js';
-import {validReceipt, readOutcome, writeOutcome, uncertainOutcome, participationErrorKey} from '@/lib/participationOutcome.js';
+import {validReceipt, readOutcome, writeOutcome, beginOutcome, uncertainOutcome, participationErrorKey} from '@/lib/participationOutcome.js';
 
 const { t, locale } = useI18n();
 
@@ -92,6 +92,8 @@ const receipt = ref('');
 const confirmedTitle = ref('');
 const savedConfirmation = ref(false);
 const receiptNotSaved = ref(false);
+let verificationActive = true;
+onUnmounted(() => { verificationActive = false; });
 const notiActivada = ref(false);
 const gpsUpdateToken  = ref(null);
 const hadGpsAtJoin    = ref(false);
@@ -161,6 +163,12 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 onMounted(async () => {
+  // Cleanup is independent of the outcome, including rejection, timeout/reload.
+  setTimeout(() => {
+    for (const key of ['vc_gps_lat','vc_gps_lng','vc_gps_accuracy','vc_gps_ts']) {
+      try { localStorage.removeItem(key); } catch { /* Browser storage unavailable. */ }
+    }
+  }, 5000);
   let lastId, context;
   try {
     lastId = sessionStorage.getItem('vc_last_joined');
@@ -186,6 +194,7 @@ onMounted(async () => {
   spinMsg.value = t('verify.spinVerifying');
   try { await withClientDeadline(() => protests.loadProtests()); }
   catch { outcomeMessage.value = 'participation.loadUnavailable'; return; }
+  if (!verificationActive) return;
   const target = sessionStorage.getItem('vc_last_joined') === lastId
     ? protests.protests.find(p => String(p.id) === lastId) : null;
   if (!target) {
@@ -198,13 +207,20 @@ onMounted(async () => {
     api = await withClientDeadline(() => import('@/services/api.js'));
   } catch { outcomeMessage.value = 'participation.loadUnavailable'; return; }
   // Check after all preflight awaits, immediately before journalling/dispatch.
+  if (!verificationActive) return;
   if (sessionStorage.getItem('vc_last_joined') !== lastId) {
     ui.showToast(t('verify.toastProtestNotFound'));
     router.push('/');
     return;
   }
-  if (!writeOutcome(sessionStorage, context, {state:'pending',title:target.title})) {
-    outcomeMessage.value = 'participation.storageUnavailable';
+  const attempt = beginOutcome(sessionStorage, context, target.title);
+  if (!attempt.started) {
+    if (attempt.previous?.state === 'completed') {
+      receipt.value = attempt.previous.receipt;
+      confirmedTitle.value = attempt.previous.title;
+      savedConfirmation.value = true;
+      success.value = true;
+    } else outcomeMessage.value = attempt.previous?.state === 'unavailable' ? 'participation.storageUnavailable' : 'participation.uncertain';
     return;
   }
   const gpsAllowed = !target.dominio_email && !['high','critical'].includes(target.risk_level);
@@ -223,7 +239,7 @@ onMounted(async () => {
     });
     if (!validReceipt(joinRes?.receipt)) throw Object.assign(new Error('INVALID_API_RESPONSE'), {code:'INVALID_API_RESPONSE'});
   } catch (error) {
-    writeOutcome(sessionStorage, context, {state:uncertainOutcome(error) ? 'uncertain' : 'rejected',title:target.title});
+    writeOutcome(sessionStorage, context, {state:uncertainOutcome(error) ? 'uncertain' : 'rejected',title:target.title,attemptId:attempt.attemptId});
     outcomeMessage.value = participationErrorKey(error);
     if (!uncertainOutcome(error)) {
       const rejection = classifyJoinRejection(error);
@@ -235,7 +251,7 @@ onMounted(async () => {
   // The receipt proves this response. Later local failures never undo that fact.
   receipt.value = joinRes.receipt;
   confirmedTitle.value = target.title;
-  receiptNotSaved.value = !writeOutcome(sessionStorage, context, {state:'completed',receipt:joinRes.receipt,title:target.title});
+  receiptNotSaved.value = !writeOutcome(sessionStorage, context, {state:'completed',receipt:joinRes.receipt,title:target.title,attemptId:attempt.attemptId});
   success.value = true;
   hadGpsAtJoin.value = !!(ui.gpsLat ?? (localStorage.getItem('vc_gps_lat') ? parseFloat(localStorage.getItem('vc_gps_lat')) : null) ?? (device.gpsReady ? device.gpsLat : null));
   gpsUpdateToken.value = joinRes.gps_update_token || null;
@@ -243,9 +259,6 @@ onMounted(async () => {
   try { protests.joinProtest(target.id); } catch { /* Secondary local counter/lock. */ }
   void protests.loadProtests().catch(() => {});
   ui.showToast(t('verify.toast'));
-  setTimeout(() => {
-    for (const key of ['vc_gps_lat','vc_gps_lng','vc_gps_accuracy','vc_gps_ts']) localStorage.removeItem(key);
-  }, 5000);
   setTimeout(() => ui.revealInstallBanner(), 1500);
 });
 

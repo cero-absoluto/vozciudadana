@@ -14,6 +14,7 @@
   },
   "participation": {
     "anotherEmail": "Verificar otro correo",
+    "preflightUnavailable": "No se ha podido preparar la solicitud del código. Comprueba la conexión o la verificación del navegador antes de intentarlo de nuevo.",
     "receipt": "Identificador de la adhesión",
     "receiptNote": "Identifica este registro de adhesión; no acredita identidad ni pertenencia vigente.",
     "savedConfirmation": "Confirmación recuperada de esta pestaña. No se ha enviado otra adhesión.",

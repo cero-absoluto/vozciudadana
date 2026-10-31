@@ -1,5 +1,6 @@
 import { getCensusSession, saveCensusSession, clearCensusSession } from './censusAccess.js';
 import {requestJson} from './requestJson.js';
+import {validReceipt} from '../lib/participationOutcome.js';
 export { getCensusSession } from './censusAccess.js';
 /**
  * API client for the Voice Protest Fastify backend.
@@ -208,6 +209,7 @@ export async function sendEmailOtp(payload) {
  */
 export async function verifyEmailOtp(payload) {
   const result = await request('POST', '/api/institucional/verify-otp', { ...payload, challenge_id: sessionStorage.getItem(`vc_institutional_challenge:adhesion:${payload.protest_id}:${payload.email.toLowerCase()}`) || '' });
+  if (result?.verified !== true || !validReceipt(result.receipt)) throw Object.assign(new Error('INVALID_API_RESPONSE'), {code:'INVALID_API_RESPONSE'});
   if (result.census_session) {
     try { saveCensusSession(payload.protest_id, result.census_session); }
     catch { throw Object.assign(new Error('CENSUS_SESSION_NOT_SAVED'), {code:'CENSUS_SESSION_NOT_SAVED', receipt:result.receipt, verified:result.verified}); }

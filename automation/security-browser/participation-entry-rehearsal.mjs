@@ -1,0 +1,93 @@
+// Synthetic browser journey: every request is fulfilled locally or aborted.
+// No real OTP, geolocation, notifications, provider or production mutations.
+import {readFileSync, existsSync, writeFileSync} from 'node:fs';
+import {resolve, extname} from 'node:path';
+import assert from 'node:assert/strict';
+const {chromium}=await import(process.env.S16_PLAYWRIGHT_MODULE||'playwright');
+const root=resolve('apps/web/dist'),checks=[],requests=[],unexpected=[],errors=[];
+async function waitForCount(read,expected) {
+  for(let i=0;i<100&&read()<expected;i++)await new Promise(r=>setTimeout(r,20));
+  assert.equal(read(),expected);
+}
+const ID='11111111-1111-4111-8111-111111111111',INSTITUTION='22222222-2222-4222-8222-222222222222';
+const events=[{id:ID,title:'Synthetic selected event',scope:'global',risk_level:'low',country:null,ends_at:'2099-12-31T23:59:59Z',count:1,saldo_euros:10},
+  {id:INSTITUTION,title:'Synthetic institution',scope:'regional',risk_level:'low',country:'ES',dominio_email:'example.invalid',ends_at:'2099-12-31T23:59:59Z',count:1,saldo_euros:10}];
+const browser=await chromium.launch({headless:true});
+try {
+  for(const locale of ['es','en','fr','zh'])for(const width of [360,390]) {
+    const messages=JSON.parse(readFileSync(resolve('apps/web/src/locales',locale+'.json'),'utf8'));
+    const context=await browser.newContext({serviceWorkers:'block',viewport:{width,height:844},isMobile:true,hasTouch:true,locale});
+    await context.addInitScript(({locale})=>{localStorage.setItem('vc_lang',locale);localStorage.setItem('vc_map_seen','1');}, {locale});
+    let sms=0,joins=0,emailSends=0,emailChecks=0,releaseSms,releaseEmail,releaseCheck;
+    let smsResponse={sent:true},smsStatus=200,holdSms=false,holdEmail=false,holdCheck=false;
+    await context.route('**/*',async route=>{
+      const req=route.request(),u=new URL(req.url());requests.push({locale,width,host:u.host,path:u.pathname,method:req.method()});
+      const json=(data,status=200)=>route.fulfill({status,contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify(data)});
+      if(u.origin==='https://voiceprotest.org') {
+        const file=resolve(root,u.pathname==='/'?'index.html':'.'+u.pathname);
+        if(!file.startsWith(root+'/')||!existsSync(file))return route.fulfill({status:404,body:'missing'});
+        return route.fulfill({path:file,contentType:({'.html':'text/html','.js':'application/javascript','.css':'text/css','.json':'application/json','.ttf':'font/ttf','.png':'image/png','.svg':'image/svg+xml'})[extname(file)]||'application/octet-stream'});
+      }
+      if(u.hostname==='api.voiceprotest.org') {
+        if(req.method()==='OPTIONS')return route.fulfill({status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST','Access-Control-Allow-Headers':'Content-Type'}});
+        if(req.method()==='GET'&&u.pathname==='/api/protests')return json(events);
+        if(req.method()==='GET'&&u.pathname==='/api/ipinfo')return json({country_code:'ES',country_name:'Spain',city:'Synthetic'});
+        if(req.method()==='GET'&&u.pathname==='/api/country-codes')return json([{iso2:'ES',dial_code:'34',flag:'ES'}]);
+        if(req.method()==='POST'&&u.pathname==='/api/users/request-otp') {
+          sms++;assert.deepEqual(req.postDataJSON(),{phone:'+34600000001',recaptcha_token:'synthetic-no-provider',protest_id:ID});
+          if(holdSms)await new Promise(r=>releaseSms=r);
+          return json(smsResponse,smsStatus);
+        }
+        if(req.method()==='POST'&&u.pathname==='/api/users/verify-otp')return json({verified:true,device_id:'synthetic-device',participation_token:'synthetic-token'});
+        if(req.method()==='POST'&&u.pathname===`/api/protests/${ID}/join`) {joins++;return json({receipt:'synthetic-receipt'},201);}
+        if(req.method()==='POST'&&u.pathname==='/api/institucional/send-otp') {emailSends++;if(holdEmail)await new Promise(r=>releaseEmail=r);return json({sent:true,challenge_id:'synthetic-challenge'});}
+        if(req.method()==='POST'&&u.pathname==='/api/institucional/verify-otp') {emailChecks++;if(holdCheck)await new Promise(r=>releaseCheck=r);return json({receipt:'synthetic-institution-receipt'});}
+      }
+      if(u.hostname==='cdn.jsdelivr.net')return json({type:'Topology',objects:{countries:{type:'GeometryCollection',geometries:[]}},arcs:[]});
+      if(['www.wikidata.org','query.wikidata.org'].includes(u.hostname))return json({search:[]});
+      if(u.hostname==='fonts.googleapis.com')return route.fulfill({contentType:'text/css',body:''});
+      if(u.hostname==='www.google.com'&&u.pathname.startsWith('/recaptcha/'))return route.fulfill({contentType:'application/javascript',body:'window.grecaptcha={ready:fn=>fn(),execute:async()=>"synthetic-no-provider"};'});
+      unexpected.push({host:u.host,path:u.pathname,method:req.method()});return route.abort();
+    });
+    const page=await context.newPage();page.on('pageerror',e=>errors.push({locale,width,message:e.message}));
+    await page.goto('https://voiceprotest.org/#/auth');await page.waitForURL('**/#/');
+    await page.goto('https://voiceprotest.org/#/verify');await page.waitForURL('**/#/');assert.equal(sms,0);assert.equal(joins,0);
+    checks.push({id:`no_destination_${locale}_${width}`,ok:true});
+    await page.evaluate(id=>sessionStorage.setItem('vc_last_joined',id),ID);
+    await page.goto('https://voiceprotest.org/#/auth');await page.locator('#phone-in').fill('600000001');
+    await page.getByRole('button',{name:messages.auth.sendCode,exact:true}).click();await page.locator('.otp-row').waitFor();assert.equal(sms,1);
+    assert.ok((await page.locator('.auth-protest-title').textContent()).includes(events[0].title));
+    const resend=page.getByRole('button',{name:messages.auth.resend,exact:true});
+    holdSms=true;await resend.focus();await page.keyboard.press('Enter');
+    await page.waitForFunction(()=>document.querySelector('.auth-resend button')?.disabled===true);
+    await waitForCount(()=>sms,2);await page.keyboard.press('Enter');assert.equal(sms,2);assert.equal(joins,0);
+    releaseSms();holdSms=false;await resend.waitFor({state:'visible'});await page.waitForFunction(()=>!document.querySelector('.auth-resend button')?.disabled);
+    checks.push({id:`real_resend_keyboard_single_request_${locale}_${width}`,ok:true});
+    smsStatus=429;smsResponse={code:'otp_rate_limited'};await resend.click();await page.waitForFunction(()=>!document.querySelector('.auth-resend button')?.disabled);assert.equal(sms,3);assert.equal(await page.locator('.otp-row').count(),1);assert.equal(joins,0);
+    checks.push({id:`resend_quota_recovers_${locale}_${width}`,ok:true});
+    await page.getByRole('button',{name:messages.auth.changeNumber,exact:true}).click();await page.locator('#phone-in').waitFor();
+    smsStatus=200;smsResponse={};await page.getByRole('button',{name:messages.auth.sendCode,exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.auth-submit-btn')?.disabled);assert.equal(await page.locator('.otp-row').count(),0);
+    smsResponse={sent:true};await page.getByRole('button',{name:messages.auth.sendCode,exact:true}).click();await page.locator('.otp-row').waitFor();
+    for(let i=0;i<6;i++)await page.locator('.otp-box').nth(i).fill(String(i+1));
+    await page.getByRole('button',{name:messages.auth.verify,exact:true}).click();await page.locator('.success-scr').waitFor();assert.equal(joins,1);
+    checks.push({id:`selected_event_success_${locale}_${width}`,ok:true});
+    await page.goto('https://voiceprotest.org/#/verify-institucional/'+INSTITUTION);
+    await page.locator('#institution-verify-email').fill('synthetic@example.invalid');
+    holdEmail=true;await page.locator('#institution-verify-email').press('Enter');
+    await page.waitForFunction(()=>document.querySelector('#s-verify-institucional .btn-primary')?.disabled===true);
+    await page.locator('#institution-verify-email').press('Enter');await waitForCount(()=>emailSends,1);releaseEmail();holdEmail=false;
+    await page.locator('#institution-verify-code').waitFor();await page.locator('#institution-verify-code').fill('123456');
+    holdCheck=true;await page.locator('#institution-verify-code').press('Enter');
+    await page.waitForFunction(()=>document.querySelector('#s-verify-institucional .btn-primary')?.disabled===true);
+    await page.locator('#institution-verify-code').press('Enter');await waitForCount(()=>emailChecks,1);releaseCheck();holdCheck=false;
+    await page.locator('.suc-hash').waitFor();assert.ok((await page.locator('.suc-hash').textContent()).includes('synthetic-institution-receipt'));
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false);
+    checks.push({id:`institutional_double_enter_${locale}_${width}`,ok:true});
+    await context.close();
+  }
+  assert.deepEqual(unexpected,[]);assert.deepEqual(errors,[]);
+} finally {
+  await browser.close();
+  const report={status:checks.length===40&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,externalMutations:0};
+  writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
+}

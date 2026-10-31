@@ -98,6 +98,7 @@ async function getRecaptchaToken(action) {
 }
 
 async function sendOtp() {
+  if (loading.value) return;
   emailError.value = '';
   if (!email.value.trim()) { emailError.value = t('verificacional.errEmail'); return; }
   if (!email.value.includes('@')) { emailError.value = t('verificacional.errEmailInvalid'); return; }
@@ -123,6 +124,7 @@ async function sendOtp() {
 }
 
 async function verifyOtp() {
+  if (loading.value) return;
   otpError.value = '';
   if (!otp.value.trim() || otp.value.length < 6) { otpError.value = t('verificacional.errOtp'); return; }
   loading.value = true;

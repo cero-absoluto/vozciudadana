@@ -1,3 +1,4 @@
+import { summarizeRecordedMethods } from '../lib/recordedMethods.js';
 import { readReportAdhesions } from '../lib/reportAdhesions.js';
 import { matchesDeclaredTerritory, geographicBreakdown } from '../lib/territorialEvidence.js';
 import { parseGpsGeocoderResponse } from '../lib/gpsGeocoder.js';
@@ -1125,7 +1126,8 @@ export default async function protestRoutes(app, opts = {}) {
     // null unless a real, auditable registered census exists for the convocatoria
     // (census_eligible is intentionally not passed until that exists — never estimated).
     const evidential_scope = buildEvidentialScope(protest, {
-      total: protest.count,
+      total: adhesions.length,
+      recorded_methods: summarizeRecordedMethods(adhesions),
       desglose_geografico_local,
       paises_distintos: paises.length,
     });
@@ -1146,9 +1148,9 @@ export default async function protestRoutes(app, opts = {}) {
       primera_adhesion: adhesions[0]?.created_at || null,
       ultima_adhesion: adhesions[adhesions.length - 1]?.created_at || null,
       desglose_fiabilidad: {
-        alta:     { count: fiabilidad_alta,     rango: '85-95%', descripcion: 'GPS + SIM + IP verificados' },
-        media:    { count: fiabilidad_media,    rango: '75-84%', descripcion: 'SIM verificada' },
-        base:     { count: fiabilidad_base,     rango: '60-74%', descripcion: 'Solo IP verificada' },
+        alta:     { count: fiabilidad_alta,     rango: '85-100', descripcion: 'Stored index; not a probability or current identity certificate' },
+        media:    { count: fiabilidad_media,    rango: '75-84', descripcion: 'Stored index; not a probability or current identity certificate' },
+        base:     { count: fiabilidad_base,     rango: '60-74', descripcion: 'Stored index; not a probability or current identity certificate' },
         sin_dato: { count: fiabilidad_sin_dato, rango: '—',      descripcion: 'Adhesiones anteriores al sistema' },
       },
       velocidad: {

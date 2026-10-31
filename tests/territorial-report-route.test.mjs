@@ -26,3 +26,8 @@ test('stored counter below analyzed rows never creates negative non-GPS counts',
 test('regional report route compares region rather than city',async()=>{
  const app=await appFor({scope:'regional',data:rows.map((a,i)=>({...a,ciudad:'Elsewhere',region:i===0?'Synthetic':'Elsewhere'}))});try{const r=await app.inject('/'+id+'/informe');assert.equal(r.statusCode,200,r.body);assert.equal(r.json().desglose_geografico_local.gps_local,1);}finally{await app.close();}
 });
+
+test('actual report derives mixed methods from rows and never exposes row identifiers',async()=>{
+ const app=await appFor({data:rows.map((r,i)=>({...r,verification_method:i===0?'phone_otp':i===1?'institutional_email_otp':null}))});
+ try{const r=await app.inject('/'+id+'/informe');assert.equal(r.statusCode,200,r.body);const scope=r.json().evidential_scope;assert.equal(scope.version,2);assert.equal(scope.recorded_methods.counts.unknown,3);assert.equal(scope.recorded_methods.counts.phone_otp,1);assert.ok(!r.body.includes(rows[0].id));}finally{await app.close();}
+});

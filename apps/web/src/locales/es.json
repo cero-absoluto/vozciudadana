@@ -193,7 +193,7 @@
     "scopeInstSubtitle": "Personas vinculadas a una institución — universidades, hospitales, empresas públicas, ayuntamientos como empleador, asociaciones internas.",
     "scopeInstEmail": "Institucional — dominio de email",
     "scopeInstEmailBadge": "Institucional",
-    "scopeInstEmailDesc": "Para miembros de una institución específica. Los participantes deben verificar una dirección de email del dominio institucional aprobado, como uu.nl, students.uu.nl, hospital.org o city.gov.",
+    "scopeInstEmailDesc": "Dominio declarado por el creador. El OTP prueba control del correo, no relación oficial con la institución.",
     "scopeInstCensus": "Institucional + censo de confianza",
     "scopeInstCensusBadge": "Institucional + censo",
     "scopeInstCensusDesc": "Para un departamento, grupo o comunidad cerrada dentro de una institución. Los participantes verifican un email institucional y pueden requerir invitación o validación entre pares. Útil cuando la institución entera es demasiado amplia.",
@@ -217,7 +217,7 @@
     "institutionHint": "Si es un evento universitario o laboral, introduce el nombre.",
     "dominioLabel": "Dominio de email institucional *",
     "emailDomainLabel": "Dominio de email institucional *",
-    "dominioHint": "Solo la parte después de la arroba — por ejemplo: uu.nl",
+    "dominioHint": "Dominio declarado por el creador. El OTP prueba control del correo, no relación oficial con la institución.",
     "emailDomainHint": "Solo la parte después de la arroba — por ejemplo: uu.nl",
     "censoTitle": "¿A quién va dirigido este evento?",
     "audienceTitle": "¿A quién va dirigido este evento?",
@@ -227,8 +227,8 @@
     "audienceAllDesc": "Cualquier miembro con email {domain} puede participar",
     "censoDept": "Un departamento o grupo específico",
     "audienceGroup": "Un departamento o grupo específico",
-    "censoDeptDesc": "Crea un censo dinámico y únete — los miembros se avalan mutuamente, solo entran quienes reciben el aval de compañeros del grupo",
-    "audienceGroupDesc": "Crea un censo dinámico y únete — los miembros se avalan mutuamente, solo entran quienes reciben el aval de compañeros del grupo",
+    "censoDeptDesc": "El fundador acredita su primera ola; después se requieren dos avales de cuentas acreditadas distintas. No es un censo oficial ni prueba independencia entre personas.",
+    "audienceGroupDesc": "El fundador acredita su primera ola; después se requieren dos avales de cuentas acreditadas distintas. No es un censo oficial ni prueba independencia entre personas.",
     "dateLabel": "Fecha del evento *",
     "riskLabel": "Nivel de riesgo",
     "riskLow": "Bajo — democracia plena",
@@ -499,7 +499,7 @@
     "penetracionTitle": "🌍 Penetración del universo",
     "penetracionBody": "{count} adhesiones verificadas en {country} dentro de este ámbito.",
     "chainTitle": "🔒 Cadena de verificación",
-    "chainBody": "Cada adhesión fue verificada mediante: reCAPTCHA v3 (señal de humanidad) + OTP por SMS (número real) + hash HMAC-SHA256 (pseudonimización) + unicidad del dispositivo.",
+    "chainBody": "Los métodos realmente registrados se describen en el alcance de la evidencia; no todas las adhesiones siguen la misma cadena.",
     "selloTitle": "🔐 Sello de integridad",
     "selloHashLabel": "Hash de integridad SHA256 — calculado al cierre a partir de todos los nullifiers de adhesión:",
     "selloSourceBtn": "Ver código fuente en GitHub →",
@@ -570,13 +570,13 @@
     "geoNationalDescRegional": "La clasificación usa el país estimado por geolocalización; no acredita residencia ni país de la SIM.",
     "headlineLocal": "{count} adhesiones con nombre y país coincidentes con {territorio} piden a {focal}: \"{demands}\"",
     "headlineLocalSupport": "{nacional} adhesiones adicionales con país estimado coincidente, sin GPS confirmado.",
-    "headlineInstitutional": "{count} miembros verificados de {dominio} exigen a {focal}: \"{demands}\"",
+    "headlineInstitutional": "Adhesiones registradas en convocatoria de dominio declarado {dominio} · {count} · {focal} · {demands}",
     "statusClosed": "Cerrada",
     "statusActive": "Activa",
     "heroLabel": "participantes verificados de {country}",
     "heroLabelLocal": "adhesiones con nombre y país GPS coincidentes con {territorio}",
     "heroLabelRegional": "adhesiones con nombre y país GPS coincidentes con {territorio}",
-    "heroLabelInstitutional": "miembros verificados de {dominio}",
+    "heroLabelInstitutional": "Adhesiones registradas en convocatoria de dominio declarado {dominio}",
     "heroSubLocal": "{total} adhesiones analizadas · {nacional} con país estimado coincidente, sin GPS confirmado",
     "sealUnique": "Participación verificada",
     "sealOne": "Cada identificador verificado se cuenta una vez por método y convocatoria; no se certifica una persona distinta.",
@@ -606,7 +606,7 @@
       "extraNational": "GPS registrado con país coincidente, sin coincidencia territorial confirmada",
       "international": "Participantes internacionales",
       "totalVerified": "Total adhesiones verificadas",
-      "verifiedMembers": "Miembros verificados de {domain}",
+      "verifiedMembers": "Adhesiones registradas en convocatoria de dominio declarado {domain}",
       "verifiedAdhesions": "Adhesiones verificadas",
       "distinctCountries": "Países distintos",
       "distinctCities": "Ciudades distintas",
@@ -634,7 +634,8 @@
     "geoMatchIn": "Coincidencia de nombre y país según GPS declarado: {territory}",
     "geoAnalyzedTotal": "Adhesiones analizadas",
     "geoCounterTotal": "Contador general almacenado",
-    "geoCounterMismatch": "El contador general ({total}) no coincide con los {analyzed} registros analizados. Los desgloses y porcentajes usan los registros analizados."
+    "geoCounterMismatch": "El contador general ({total}) no coincide con los {analyzed} registros analizados. Los desgloses y porcentajes usan los registros analizados.",
+    "recordedIndex": "Índice almacenado {range}; no es una probabilidad ni certificación de identidad."
   },
   "invite": {
     "loading": "Validando invitación...",
@@ -992,9 +993,10 @@
       "country_breakdown": "El país de cada participante está registrado y se muestra en el desglose geográfico.",
       "local_verified_municipality": "{count} de {total} adhesiones tienen GPS declarado cuyo municipio y país coinciden con el territorio declarado ({territory}) según el geocodificador.",
       "local_verified_region": "{count} de {total} adhesiones tienen GPS declarado cuya región y país coinciden con el territorio declarado ({territory}) según el geocodificador.",
-      "institutional_affiliation": "Cada participante dispone de una dirección de email verificada en el dominio institucional {domain}. Esto aporta evidencia que respalda la afiliación institucional.",
+      "institutional_affiliation": "Dominio declarado {domain}: el control del correo no acredita relación oficial ni pertenencia vigente.",
       "census_vouching": "La afiliación está además respaldada por el aval entre pares dentro del censo institucional.",
-      "public_auditability": "El resultado es auditable: el informe cerrado lleva un hash de integridad y registra compromisos públicos por adhesión. La verificación pública independiente completa, con divulgación completa de esos compromisos, está disponible a partir de la versión de integridad 2."
+      "public_auditability": "El resultado es auditable: el informe cerrado lleva un hash de integridad y registra compromisos públicos por adhesión. La verificación pública independiente completa, con divulgación completa de esos compromisos, está disponible a partir de la versión de integridad 2.",
+      "recorded_identifiers": "Identificadores y métodos registrados en {total} adhesiones analizadas; no certifican personas distintas."
     },
     "not": {
       "affiliation_geographic": "Que los participantes pertenezcan a ninguna comunidad afectada específica: no se verificó ninguna pertenencia territorial ni institucional.",
@@ -1002,7 +1004,8 @@
       "residence": "Que los participantes residan legalmente en {territory}: el GPS es una señal de verificación, no prueba de residencia, y puede falsificarse.",
       "institutional_role": "El rol o estatus del participante dentro de la institución (por ejemplo, estudiante activo frente a personal), ni que toda la institución esté representada.",
       "truth": "Que los hechos denunciados sean ciertos: Voice Protest registra la participación verificada, no la validez de la denuncia.",
-      "representative": "Que el resultado represente a toda la población afectada: mide a quienes eligieron participar."
+      "representative": "Que el resultado represente a toda la población afectada: mide a quienes eligieron participar.",
+      "credential_scope": "El creador declara el dominio; no se certifican su vínculo oficial con la institución ni su respaldo. El censo es una red de cuentas avaladas, no un registro oficial: el fundador vinculado a la clave de creación puede acreditar su primera ola; después se requieren dos avales de cuentas acreditadas distintas, que no prueban personas independientes. La credencial de dispositivo conserva una verificación anterior; 270 días de inactividad es una regla de retención, no prueba reciente del teléfono. La vigencia institucional vence el siguiente 31 de agosto a las 00:00 UTC; no acredita pertenencia actual hasta esa fecha."
     },
     "methods": {
       "sms_otp": "Verificación de número de teléfono real mediante contraseña de un solo uso por SMS (Twilio Verify).",
@@ -1011,7 +1014,14 @@
       "sim_country": "País del número según el plan de numeración.",
       "gps_osm_municipality": "Coordenadas declaradas contrastadas por nombre de municipio y país mediante geocodificación ({territory}).",
       "gps_osm_region": "Coordenadas declaradas contrastadas por nombre de región y país mediante geocodificación ({territory}).",
-      "ip": "Geolocalización aproximada por IP, usada como señal secundaria (no almacenada en texto claro)."
+      "ip": "Geolocalización aproximada por IP, usada como señal secundaria (no almacenada en texto claro).",
+      "recorded_phone_otp": "Teléfono: {count} registros. Puede reutilizar una credencial de verificación anterior; no implica un SMS nuevo en cada adhesión.",
+      "recorded_institutional_email_otp": "Correo verificado: {count} registros. No certifica rol ni vínculo institucional vigente.",
+      "recorded_qr": "QR registrado: {count}; no se presume una prueba adicional no conservada.",
+      "recorded_eid": "eID registrado: {count}; se describe el método guardado, no una verificación adicional.",
+      "recorded_unknown": "Método histórico desconocido: {count}; no se atribuye SMS ni correo.",
+      "recorded_ip": "Señal IP registrada: {count}; los históricos no se recalculan.",
+      "recorded_gps": "Señal GPS registrada: {count}; no certifica presencia física ni residencia."
     },
     "admission": {
       "public_institution": "El destinatario es una institución pública, verificada en Wikidata ({wikidata}).",

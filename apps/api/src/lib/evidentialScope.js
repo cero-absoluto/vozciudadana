@@ -116,12 +116,31 @@ export function buildEvidentialScope(protest, agg = {}) {
       break;
   }
 
+  // New report path supplies observed rows; old callers remain compatible.
+  if (agg.recorded_methods) {
+    const observed=agg.recorded_methods;
+    const allowed=new Set(['phone_otp','institutional_email_otp','qr','eid','unknown']);
+    methods.splice(0,methods.length);
+    for(const [method,count] of Object.entries(observed.counts)) {
+      if(allowed.has(method) && count>0) methods.push({key:'methods.recorded_'+method,params:{count}});
+    }
+    if(observed.gps>0)methods.push({key:'methods.recorded_gps',params:{count:observed.gps}});
+    if(observed.ip>0)methods.push({key:'methods.recorded_ip',params:{count:observed.ip}});
+    for(let i=demonstrates.length-1;i>=0;i--) {
+      const key=demonstrates[i].key;
+      if(['demonstrates.unique_participation_phone','demonstrates.unique_participation_email','demonstrates.institutional_affiliation','demonstrates.census_vouching','demonstrates.sim_country','demonstrates.country_breakdown'].includes(key)
+       || (key==='demonstrates.sim_country' && (observed.total===0 || observed.counts.phone_otp!==observed.total)))demonstrates.splice(i,1);
+    }
+    demonstrates.unshift({key:'demonstrates.recorded_identifiers',params:{total:observed.total}});
+    outside_scope.push({key:'not.credential_scope',params:{}});
+  }
+
   // ── core "outside scope" lines, always present (kept short) ──────────────
   outside_scope.push({ key: 'not.truth', params: {} });
   outside_scope.push({ key: 'not.representative', params: {} });
 
   // ── public auditability is always demonstrable ───────────────────────────
-  demonstrates.push({ key: 'demonstrates.public_auditability', params: {} });
+  if (!agg.recorded_methods || protest.hash_integridad) demonstrates.push({ key: 'demonstrates.public_auditability', params: {} });
 
   // ── participation rate: ONLY when the universe is owned by the system ─────
   // Census defines a registered member set. Email-domain mode does NOT (the
@@ -158,7 +177,8 @@ export function buildEvidentialScope(protest, agg = {}) {
     participation_rate,
     admission_rules,
     // schema marker so the frontend/consumers know the contract version
-    version: 1,
+    version: agg.recorded_methods ? 2 : 1,
+    recorded_methods: agg.recorded_methods ?? null,
   };
 }
 

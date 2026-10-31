@@ -1,5 +1,5 @@
 import {withRequestDeadline} from './requestDeadline.js';
-const FIELDS='id, ciudad, region, pais, pais_code, idioma, created_at, gps_confirmed, fiabilidad, senales, adhesion_osm_id';
+const FIELDS='id, verification_method, ciudad, region, pais, pais_code, idioma, created_at, gps_confirmed, fiabilidad, senales, adhesion_osm_id';
 // Bound public report work. Never turn a platform row cap into a partial report.
 export const MAX_REPORT_ROWS=20_000;
 export async function readReportAdhesions(database,protestId,{timeoutMs=6000,pageSize=500,maxPages=80}={}) {

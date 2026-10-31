@@ -288,3 +288,15 @@ for(const ui of L)test('PDF cohort total names the analyzed rows separately from
  const stored=r.drawn.indexOf(txt.stripUndrawable(loc[ui].informe.geoCounterTotal)+':');
  assert.ok(analyzed>=0);assert.equal(r.drawn[analyzed+1],'5');assert.ok(stored>=0);assert.equal(r.drawn[stored+1],'1');
 });
+
+for(const ui of L)test('recorded-method PDF shows mixed and unknown history without a universal SMS chain: '+ui,async()=>{
+ const {buildEvidentialScope}=await import('../apps/api/src/lib/evidentialScope.js');
+ const {summarizeRecordedMethods}=await import('../apps/api/src/lib/recordedMethods.js');
+ const c=structuredClone(FIXTURES[ui]);c.data.protest.dominio_email='declared.invalid';c.data.protest.requiere_censo=true;
+ c.data.evidential_scope=buildEvidentialScope(c.data.protest,{recorded_methods:summarizeRecordedMethods([{verification_method:'institutional_email_otp'},{verification_method:null}])});
+ const r=await build(c,'idv0812-'+ui),all=r.drawn.join(' ').replace(/\s/g,'');
+ for(const key of ['methods.recorded_institutional_email_otp','methods.recorded_unknown','not.credential_scope']){
+  const expected=tFor(ui)('evidence.'+key,{count:1});assert.ok(all.includes(txt.stripUndrawable(expected).replace(/\s/g,'')),key);
+ }
+ assert.ok(!r.drawn.some(s=>s.startsWith('2. SMS/Email OTP')));
+});

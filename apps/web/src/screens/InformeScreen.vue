@@ -204,7 +204,7 @@
               <div class="ir-quality-header">
                 <div>
                   <div class="ir-quality-title" style="color:var(--accent2)">{{ $t('informe.fiabilidadAlta') }}</div>
-                  <div class="ir-caption">{{ data.desglose_fiabilidad.alta.descripcion }}</div>
+                  <div class="ir-caption">{{ $t('informe.recordedIndex', { range: '85-100' }) }}</div>
                 </div>
                 <div class="ir-quality-n" style="color:var(--accent2)">{{ data.desglose_fiabilidad.alta.count }}</div>
               </div>
@@ -214,7 +214,7 @@
               <div class="ir-quality-header">
                 <div>
                   <div class="ir-quality-title" style="color:var(--accent4)">{{ $t('informe.fiabilidadMedia') }}</div>
-                  <div class="ir-caption">{{ data.desglose_fiabilidad.media.descripcion }}</div>
+                  <div class="ir-caption">{{ $t('informe.recordedIndex', { range: '75-84' }) }}</div>
                 </div>
                 <div class="ir-quality-n" style="color:var(--accent4)">{{ data.desglose_fiabilidad.media.count }}</div>
               </div>
@@ -224,7 +224,7 @@
               <div class="ir-quality-header">
                 <div>
                   <div class="ir-quality-title" style="color:var(--accent)">{{ $t('informe.fiabilidadBase') }}</div>
-                  <div class="ir-caption">{{ data.desglose_fiabilidad.base.descripcion }}</div>
+                  <div class="ir-caption">{{ $t('informe.recordedIndex', { range: '60-74' }) }}</div>
                 </div>
                 <div class="ir-quality-n" style="color:var(--accent)">{{ data.desglose_fiabilidad.base.count }}</div>
               </div>
@@ -300,7 +300,8 @@
           <!-- Acordeón: cadena de verificación + ledger -->
           <details class="ir-details">
             <summary class="ir-details-summary">{{ $t('informe.chainTitle') }}</summary>
-            <div class="ir-chain">
+            <div v-if="data.evidential_scope?.version === 2" class="ir-chain"><p class="ir-caption">{{ $t('informe.chainBody') }}</p><p v-for="(entry, idx) in data.evidential_scope.methods" :key="idx" class="ir-caption">{{ $t('evidence.' + entry.key, entry.params || {}) }}</p></div>
+            <div v-else class="ir-chain">
               <div class="ir-chain-step">
                 <div class="ir-chain-num">1</div>
                 <div><strong>reCAPTCHA v3</strong><div class="ir-caption">{{ $t('informe.chain1') }}</div></div>

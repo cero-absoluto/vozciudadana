@@ -92,6 +92,8 @@ export async function buildInformePdf({ data: d, integrity, protestId, abuseLabe
 
   // ── Decide the font from everything that will be drawn ───────────────────
   const uiStrings = [
+    t('evidence.title'), t('evidence.demonstratesTitle'), t('evidence.outsideScopeTitle'),
+    ...[...(d.evidential_scope?.demonstrates || []), ...(d.evidential_scope?.outside_scope || []), ...(d.evidential_scope?.methods || [])].map(entry => t('evidence.'+entry.key, entry.params || {})),
     t('informe.chainTitle'), t('informe.chain1'), t('informe.chain2'), t('informe.chain3'),
     t('informe.chain4Title'), t('informe.chain4'), t('informe.geoIpCaveat'), t('informe.placeNamesNote'),
     t('informe.geoLocalVerified'), t('informe.geoRegionalVerified'), t('informe.geoNational'), t('informe.geoInternational'), t('informe.geoMatchIn', { territory: geoTerritory }), t('informe.geoOtherGps'), t('informe.geoUnknown'), t('informe.geoAnalyzedTotal'), t('informe.geoCounterTotal'), t('informe.geoCounterMismatch', { analyzed: d.total_analizado ?? dg?.total ?? 0, total: d.total_adhesiones }), t('informe.geoCoverage', { analyzed: dg?.total ?? 0, total: d.total_adhesiones }), t('informe.geoMatchLimit'),
@@ -258,11 +260,25 @@ export async function buildInformePdf({ data: d, integrity, protestId, abuseLabe
 
   // ── 5. Verification chain ────────────────────────────────────────────────
   h2('5. ' + t('informe.chainTitle').toUpperCase());
+  if (d.evidential_scope?.version === 2) {
+    para(t('informe.chainBody'));
+    for(const entry of d.evidential_scope.methods) para(t('evidence.'+entry.key,entry.params||{}));
+  } else {
   para('1. reCAPTCHA v3 — ' + t('informe.chain1'));
   para('2. SMS/Email OTP — ' + t('informe.chain2'));
   para('3. HMAC-SHA256 — ' + t('informe.chain3'));
   para('4. ' + t('informe.chain4Title') + ' — ' + t('informe.chain4'));
+  }
   nl(2); line();
+
+  if (d.evidential_scope?.version === 2) {
+    h2(t('evidence.title'));
+    para(t('evidence.demonstratesTitle'));
+    for(const entry of d.evidential_scope.demonstrates) para(t('evidence.'+entry.key,entry.params||{}));
+    nl(1);para(t('evidence.outsideScopeTitle'));
+    for(const entry of d.evidential_scope.outside_scope) para(t('evidence.'+entry.key,entry.params||{}));
+    nl(2);line();
+  }
 
   // ── 6. Integrity seal (hashes and their rules are untouched) ─────────────
   h2('6. ' + tp('seal').toUpperCase());

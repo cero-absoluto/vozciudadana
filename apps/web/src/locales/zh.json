@@ -193,7 +193,7 @@
     "scopeInstSubtitle": "与某一机构相关的人员——大学、医院、公共企业、作为雇主的市政府、内部协会等。",
     "scopeInstEmail": "机构——电子邮件域名",
     "scopeInstEmailBadge": "机构",
-    "scopeInstEmailDesc": "面向特定机构的成员。参与者必须验证经批准的机构域名的电子邮件地址，例如 uu.nl、students.uu.nl、hospital.org 或 city.gov。",
+    "scopeInstEmailDesc": "创建者声明的域名。验证码证明邮箱控制权，不证明官方机构关系。",
     "scopeInstCensus": "机构 + 可信名册",
     "scopeInstCensusBadge": "机构 + 名册",
     "scopeInstCensusDesc": "面向机构内部的某个部门、团体或封闭社区。参与者验证机构电子邮件，并且可能还需要邀请或同伴验证。当整个机构范围过于宽泛时很有用。",
@@ -217,7 +217,7 @@
     "institutionHint": "如果是大学或职场活动，请填写名称。",
     "dominioLabel": "机构电子邮件域名 *",
     "emailDomainLabel": "机构电子邮件域名 *",
-    "dominioHint": "只填写 at 符号后面的部分 — 例如：pku.edu.cn",
+    "dominioHint": "创建者声明的域名。验证码证明邮箱控制权，不证明官方机构关系。",
     "emailDomainHint": "只填写 at 符号后面的部分 — 例如：pku.edu.cn",
     "censoTitle": "此活动面向谁？",
     "audienceTitle": "此活动面向谁？",
@@ -227,8 +227,8 @@
     "audienceAllDesc": "任何拥有{domain}邮箱的成员均可参与",
     "censoDept": "特定部门或群体",
     "audienceGroup": "特定部门或群体",
-    "censoDeptDesc": "创建动态名册——成员相互验证，只有获得同事担保的人才能加入",
-    "audienceGroupDesc": "创建动态名册——成员相互验证，只有获得同事担保的人才能加入",
+    "censoDeptDesc": "创始账户认证第一批账户；后续需两个不同已认证账户担保。这不是官方名册，也不证明对应独立个人。",
+    "audienceGroupDesc": "创始账户认证第一批账户；后续需两个不同已认证账户担保。这不是官方名册，也不证明对应独立个人。",
     "dateLabel": "活动日期 *",
     "riskLabel": "风险级别",
     "riskLow": "低 — 完全民主",
@@ -499,7 +499,7 @@
     "penetracionTitle": "🌍 覆盖范围",
     "penetracionBody": "在此范围内，{country}有{count}次经验证的加入。",
     "chainTitle": "🔒 验证链",
-    "chainBody": "每次加入均通过以下方式验证：reCAPTCHA v3（人类信号）+ 短信OTP（真实号码）+ HMAC-SHA256哈希（假名化）+ 设备唯一性。",
+    "chainBody": "证据范围列出实际保存的验证方式；并非所有参与记录经过同一条验证链。",
     "selloTitle": "🔐 完整性印章",
     "selloHashLabel": "SHA256完整性哈希——在关闭时从所有参与nullifier计算：",
     "selloSourceBtn": "在GitHub上查看源代码 →",
@@ -570,13 +570,13 @@
     "geoNationalDescRegional": "分类依据地理定位估计的国家，不能证明居住地或SIM卡注册国家。",
     "headlineLocal": "{count} 条名称和国家与 {territorio} 一致的参与记录向 {focal} 提出：\"{demands}\"",
     "headlineLocalSupport": "另有 {nacional} 条估计国家一致但无已确认 GPS 的参与记录。",
-    "headlineInstitutional": "{dominio}的{count}名经验证成员要求{focal}：\"{demands}\"",
+    "headlineInstitutional": "声明域名为 {dominio} 的活动中的参与记录 · {count} · {focal} · {demands}",
     "statusClosed": "已关闭",
     "statusActive": "进行中",
     "heroLabel": "来自{country}的经验证参与者",
     "heroLabelLocal": "GPS 名称和国家与 {territorio} 一致的参与记录",
     "heroLabelRegional": "GPS 名称和国家与 {territorio} 一致的参与记录",
-    "heroLabelInstitutional": "{dominio}的经验证成员",
+    "heroLabelInstitutional": "声明域名为 {dominio} 的活动中的参与记录",
     "heroSubLocal": "已分析 {total} 条参与记录；{nacional} 条估计国家一致但无已确认 GPS",
     "sealUnique": "参与已验证",
     "sealOne": "每个已验证标识符在每种验证方式和每次活动中只计一次；这不证明每条记录对应不同的人。",
@@ -606,7 +606,7 @@
       "extraNational": "GPS 记录的国家一致，但未确认地区匹配",
       "international": "国际参与者",
       "totalVerified": "已验证加入总数",
-      "verifiedMembers": "{domain} 已验证成员",
+      "verifiedMembers": "声明域名为 {domain} 的活动中的参与记录",
       "verifiedAdhesions": "已验证加入数",
       "distinctCountries": "不同国家/地区数",
       "distinctCities": "不同城市数",
@@ -634,7 +634,8 @@
     "geoMatchIn": "申报 GPS 的名称和国家匹配：{territory}",
     "geoAnalyzedTotal": "已分析的参与记录",
     "geoCounterTotal": "已存储的总计数器",
-    "geoCounterMismatch": "总计数器（{total}）与已分析的 {analyzed} 条记录不一致。分类和百分比以已分析记录为依据。"
+    "geoCounterMismatch": "总计数器（{total}）与已分析的 {analyzed} 条记录不一致。分类和百分比以已分析记录为依据。",
+    "recordedIndex": "已存储指数 {range}；不是概率或身份认证。"
   },
   "invite": {
     "loading": "验证邀请中...",
@@ -992,9 +993,10 @@
       "country_breakdown": "记录每位参与者的国家，并在地理分布中显示。",
       "local_verified_municipality": "{total}次参与中，{count}次报告的GPS经地理编码后，其城市名称及国家与声明区域（{territory}）相符。",
       "local_verified_region": "{total}次参与中，{count}次报告的GPS经地理编码后，其地区名称及国家与声明区域（{territory}）相符。",
-      "institutional_affiliation": "每位参与者在机构域名 {domain} 下持有经过验证的邮箱。这提供了支持机构隶属关系的证据。",
+      "institutional_affiliation": "声明域名 {domain}：邮箱控制权不证明官方关系或当前成员资格。",
       "census_vouching": "隶属关系还通过机构普查中的同伴担保得到进一步支持。",
-      "public_auditability": "结果可审计：已结束的报告包含完整性哈希值，并记录每条联署的公开承诺。完整的独立公开验证（含这些承诺的完整披露）自完整性版本2起提供。"
+      "public_auditability": "结果可审计：已结束的报告包含完整性哈希值，并记录每条联署的公开承诺。完整的独立公开验证（含这些承诺的完整披露）自完整性版本2起提供。",
+      "recorded_identifiers": "{total} 条已分析记录中的标识符和已记录验证方式，不证明对应不同的人。"
     },
     "not": {
       "affiliation_geographic": "参与者属于某一特定受影响群体：未验证任何地域或机构归属。",
@@ -1002,7 +1004,8 @@
       "residence": "参与者在 {territory} 合法居住：GPS 是一种验证信号，而非居住证明，且可被伪造。",
       "institutional_role": "参与者在机构中的角色或身份（例如在读学生与教职员工之分），也不代表整个机构。",
       "truth": "所报告的事实属实：Voice Protest 记录的是经过验证的参与，而非主张的真伪。",
-      "representative": "结果代表整个受影响人群：它衡量的是选择参与的人。"
+      "representative": "结果代表整个受影响人群：它衡量的是选择参与的人。",
+      "credential_scope": "域名由创建者声明，不证明其与机构的官方关系或机构支持。名册是账户互相担保的网络，而非官方登记：与创建密钥关联的创始账户可认证第一批账户；后续需要两个不同已认证账户担保，但不证明独立的个人。设备凭证保留先前验证；270天无活动是保留规则，不是当前控制电话号码的证明。机构资格在下一个8月31日00:00UTC到期，不证明在此之前始终属于该机构。"
     },
     "methods": {
       "sms_otp": "通过一次性短信验证码核验真实电话号码（Twilio Verify）。",
@@ -1011,7 +1014,14 @@
       "sim_country": "根据编号计划推导的号码所属国家。",
       "gps_osm_municipality": "对报告的坐标进行逆地理编码，比较城市名称与国家（{territory}）。",
       "gps_osm_region": "对报告的坐标进行逆地理编码，比较地区名称与国家（{territory}）。",
-      "ip": "近似的 IP 地理定位，用作次要信号（不以明文存储）。"
+      "ip": "近似的 IP 地理定位，用作次要信号（不以明文存储）。",
+      "recorded_phone_otp": "电话方式：{count} 条。可复用先前验证凭证，并不代表每次参与都发送新的短信。",
+      "recorded_institutional_email_otp": "已验证邮箱：{count} 条。不证明当前机构关系或身份角色。",
+      "recorded_qr": "已记录 QR：{count} 条；不推断未保存的其他证明。",
+      "recorded_eid": "已记录 eID：{count} 条；描述保存的方式，不代表另一次验证。",
+      "recorded_unknown": "历史方式未知：{count} 条；不推断短信或邮箱验证。",
+      "recorded_ip": "已记录 IP 信号：{count} 条；不重新计算历史记录。",
+      "recorded_gps": "已记录 GPS 信号：{count} 条；不证明实际在场或居住。"
     },
     "admission": {
       "public_institution": "收件方为公共机构，已在 Wikidata 上验证（{wikidata}）。",

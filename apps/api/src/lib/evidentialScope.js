@@ -75,14 +75,12 @@ export function buildEvidentialScope(protest, agg = {}) {
     case 'regional':
       // Honesty: regional is a creator DECLARATION, not a technical restriction —
       // unless an OSM entity + GPS verified some adhesions territorially.
-      demonstrates.push({ key: 'demonstrates.sim_country', params: { country: protest.country_name } });
       if (dgl && localVerified > 0) {
         demonstrates.push({ key: 'demonstrates.local_verified_region', params: { count: localVerified, total: dgl.total ?? total, territory } });
         methods.push({ key: 'methods.gps_osm_region', params: { territory } });
       }
       outside_scope.push({ key: 'not.region_presence', params: { territory } });
       methods.unshift({ key: 'methods.sms_otp' });
-      methods.push({ key: 'methods.sim_country' });
       methods.push({ key: 'methods.ip' });
       break;
 

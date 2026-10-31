@@ -25,7 +25,8 @@ async function mountDetail(extra={},options={}){
   const navigation=[],writes=[],shares=[];const memory=new Map();
   const router={push:p=>navigation.push(p),back(){}};
   const store=Vue.reactive({protests:[event(extra)],canJoin:p=>options.decision??(p.joined?{ok:false,joined:true}:{ok:true}),scopeBadge:()=>({cls:'sb-global',icon:'',label:'Global'})});
-  const api={fetchGrupoPorConvocatoria:async()=>{if(options.censusExists)return {group_id:'existing-group'};throw {status:404};}};
+  const censusCalls=[];
+  const api={fetchGrupoPorConvocatoria:async id=>{censusCalls.push(id);if(options.censusLookup)return options.censusLookup(id);if(options.censusExists)return {group_id:'33333333-3333-4333-8333-333333333333',name:'Existing group'};throw {status:404};}};
   const {descriptor}=parse(fs.readFileSync('apps/web/src/screens/DetailScreen.vue','utf8'));
   let source=compileScript(descriptor,{id:'detail-layout-test',inlineTemplate:true}).content;
   source=source.replace(/import\s+\{([^}]+)\}\s+from\s+['"]vue['"];?/g,(_,names)=>`const { ${names.replace(/\bas\b/g,':')} }=Vue;`).replace(/^import[^\n]+from[^\n]+\n/gm,'').replace('import.meta.env.VITE_API_URL',"'https://synthetic.invalid'").replace('export default','const Component=');
@@ -34,7 +35,7 @@ async function mountDetail(extra={},options={}){
   const root=make('root');const app=renderer.createApp(Component);app.config.globalProperties.$t=i18n.global.t;app.config.globalProperties.$router=router;app.mount(root);
   const flush=async()=>{await new Promise(r=>setImmediate(r));await Vue.nextTick();};await flush();
   const nodes=()=>all(root);const byClass=c=>nodes().find(n=>hasClass(n,c));
-  return {store,navigation,writes,memory,shares,t:i18n.global.t,nodes,byClass,flush,unmount:()=>app.unmount(),cta:()=>byClass('join-footer')?.children.flatMap(all).find(n=>n.tag==='button'&&hasClass(n,'btn-primary')),click:async n=>{n.props.onClick?.({target:n,currentTarget:n});await flush();}};
+  return {store,navigation,writes,memory,shares,censusCalls,t:i18n.global.t,nodes,byClass,flush,unmount:()=>app.unmount(),cta:()=>byClass('join-footer')?.children.flatMap(all).find(n=>n.tag==='button'&&hasClass(n,'btn-primary')),click:async n=>{n.props.onClick?.({target:n,currentTarget:n});await flush();}};
 }
 
 test('detail header and optional financing belong to the scrollable body while only one primary CTA remains in footer',async()=>{
@@ -116,5 +117,49 @@ test('high risk and exhausted balance are both associated with the same disabled
     const ids=f.cta().props['aria-describedby'].split(' ');assert.deepEqual(ids,['detail-risk-info','detail-balance-info']);
     for(const id of ids){const note=f.nodes().find(n=>n.props.id===id);assert.ok(note);assert.ok(inside(note,f.byClass('join-footer')));}
     assert.equal(f.cta().props.disabled,true);await f.click(f.cta());assert.deepEqual(f.navigation,[]);assert.deepEqual(f.writes,[]);
+  }finally{f.unmount();}
+});
+
+
+const deferredCensus=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};};
+const censusEvent={scope:'regional',dominio_email:'example.invalid',requiere_censo:true};
+for(const lang of ['es','en','fr','zh'])test('census SFC loading/error/retry/absence is explicit and never navigates automatically in '+lang,async()=>{
+  const first=deferredCensus(),retry=deferredCensus();let requests=0;
+  const f=await mountDetail(censusEvent,{lang,censusLookup:()=>++requests===1?first.promise:retry.promise});
+  try{
+    const status=()=>f.nodes().find(n=>n.props.id==='detail-census-status');
+    assert.ok(status());assert.ok(inside(status(),f.byClass('d-scroll')));assert.ok(text(status()).includes(f.t('detail.censusLoading')));
+    assert.equal(f.cta().props.disabled,true);assert.equal(text(f.cta()).trim(),f.t('detail.censusLoading'));await f.click(f.cta());assert.deepEqual(f.navigation,[]);assert.deepEqual(f.writes,[]);
+    first.reject({status:503});await f.flush();assert.ok(text(status()).includes(f.t('detail.censusUnavailable')));
+    const button=f.cta();assert.equal(text(button).trim(),f.t('detail.censusRetry'));assert.equal(button.props.disabled,false);
+    const e={target:button,currentTarget:button};button.props.onClick(e);button.props.onClick(e);await f.flush();
+    assert.equal(requests,2);assert.equal(f.cta().props.disabled,true);assert.ok(text(status()).includes(f.t('detail.censusLoading')));assert.deepEqual(f.navigation,[]);assert.deepEqual(f.writes,[]);
+    retry.reject({status:404});await f.flush();assert.ok(text(status()).includes(f.t('detail.censusAbsent')));
+    assert.equal(text(f.cta()).trim(),f.t('detail.joinInitCensus'));assert.equal(f.cta().props.disabled,false);assert.deepEqual(f.navigation,[]);
+    await f.click(f.cta());assert.deepEqual(f.navigation,['/grupo/selected?iniciar=true']);
+  }finally{f.unmount();}
+});
+
+for(const lang of ['es','en','fr','zh'])test('census SFC confirmed presence uses the current group route in '+lang,async()=>{
+  const f=await mountDetail(censusEvent,{lang,censusExists:true});try{
+    const status=f.nodes().find(n=>n.props.id==='detail-census-status');assert.ok(status);assert.ok(text(status).includes(f.t('detail.censusPresent')));
+    assert.equal(text(f.cta()).trim(),f.t('detail.joinCensus'));await f.click(f.cta());assert.deepEqual(f.navigation,['/grupo/selected']);
+  }finally{f.unmount();}
+});
+
+for(const extra of [{joined:true},{saldo_euros:0}])test('public census error retry remains available for '+JSON.stringify(extra)+' without bypassing participation guards',async()=>{
+  let requests=0;const f=await mountDetail({...censusEvent,...extra},{censusLookup:async()=>{requests++;if(requests===1)throw {status:401};throw {status:404};}});
+  try{
+    assert.equal(text(f.cta()).trim(),f.t('detail.censusRetry'));assert.equal(f.cta().props.disabled,false);
+    await f.click(f.cta());assert.equal(requests,2);assert.deepEqual(f.navigation,[]);assert.deepEqual(f.writes,[]);
+    assert.equal(f.cta().props.disabled,true);await f.click(f.cta());assert.deepEqual(f.navigation,[]);assert.deepEqual(f.writes,[]);
+  }finally{f.unmount();}
+});
+
+for(const data of [{},{group_id:'unverified-short-id'}])test('malformed census 200 remains a retry-only error in the SFC '+JSON.stringify(data),async()=>{
+  const f=await mountDetail(censusEvent,{censusLookup:async()=>data});try{
+    const status=f.nodes().find(n=>n.props.id==='detail-census-status');assert.ok(text(status).includes(f.t('detail.censusUnavailable')));
+    assert.equal(text(f.cta()).trim(),f.t('detail.censusRetry'));assert.ok(!f.nodes().some(n=>text(n).trim()===f.t('detail.joinInitCensus')));
+    await f.click(f.cta());assert.equal(f.censusCalls.length,2);assert.deepEqual(f.navigation,[]);assert.deepEqual(f.writes,[]);
   }finally{f.unmount();}
 });

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import {ref,computed,reactive} from 'vue';
+import {ref,computed,reactive,watch} from 'vue';
 import {createI18n} from 'vue-i18n';
 const source=fs.readFileSync('apps/web/src/screens/DetailScreen.vue','utf8');
 const event=extra=>({id:'selected',title:'Chosen event',scope:'global',risk_level:'low',joined:false,saldo_euros:1,timer:3600,endsAtMs:100000,ends_at:new Date(100000).toISOString(),...extra});
@@ -11,10 +11,11 @@ function fixture(extra={},lang='es'){
   const messages=JSON.parse(fs.readFileSync('apps/web/src/locales/'+lang+'.json','utf8'));
   const i18n=createI18n({legacy:false,locale:lang,messages:{[lang]:messages}});
   const store=reactive({protests:[event(extra)],canJoin:p=>{checks.push(p.id);return decision;}});
-  const context={ref,computed,onMounted(){},useRoute:()=>({params:{id:'selected'}}),useRouter:()=>({push:p=>navigation.push(p)}),useProtestsStore:()=>store,useDeviceStore:()=>({}),useUiStore:()=>({openShare(){}}),useI18n:()=>i18n.global,
+  const api={fetchGrupoPorConvocatoria:async()=>{throw {status:404};}};
+  const context={ref,computed,watch,onMounted(){},onUnmounted(){},api,useRoute:()=>({params:{id:'selected'}}),useRouter:()=>({push:p=>navigation.push(p)}),useProtestsStore:()=>store,useDeviceStore:()=>({}),useUiStore:()=>({openShare(){}}),useI18n:()=>i18n.global,
     Date:{parse:Date.parse,now:()=>clock},sessionStorage:{getItem:k=>memory.get(k)??null,setItem:(k,v)=>{writes.push([k,v]);memory.set(k,String(v));}}};
-  vm.createContext(context);vm.runInContext(source.match(/<script setup>([\s\S]*?)<\/script>/)[1].replace(/^import .*;\n/gm,'').replaceAll('import.meta.env.VITE_API_URL',"'https://synthetic.invalid'")+'\nglobalThis.state={onJoin,joinLabel,donacionesInfo,censoExiste,cj,isClosed};',context);
-  return {state:context.state,store,navigation,writes,memory,checks,t:i18n.global.t,setClock:v=>clock=v,setDecision:v=>decision=v};
+  vm.createContext(context);vm.runInContext(source.match(/<script setup>([\s\S]*?)<\/script>/)[1].replace(/^import .*;\n/gm,'').replaceAll('import.meta.env.VITE_API_URL',"'https://synthetic.invalid'")+'\nglobalThis.state={onJoin,joinLabel,donacionesInfo,censoExiste,cj,isClosed,loadCensus,censusStatus,censusBlocked,grupoId};',context);
+  return {state:context.state,store,navigation,writes,memory,checks,t:i18n.global.t,resolveCensus:async exists=>{api.fetchGrupoPorConvocatoria=async()=>{if(exists)return {group_id:'33333333-3333-4333-8333-333333333333',name:'Existing group'};throw {status:404};};await context.state.loadCensus();},setClock:v=>clock=v,setDecision:v=>decision=v};
 }
 function noDispatch(f){f.state.onJoin();assert.deepEqual(f.navigation,[]);assert.deepEqual(f.writes,[]);assert.equal(f.memory.get('vc_last_joined'),'previous');}
 
@@ -68,17 +69,17 @@ test('institutional email event keeps its verification route without rewriting a
   assert.deepEqual(f.navigation,['/verify-institucional/selected']);assert.deepEqual(f.writes,[]);assert.equal(f.memory.get('vc_last_joined'),'previous');
 });
 
-for(const exists of [false,true])test('census '+(exists?'existing':'not yet created')+' keeps its route and matching action label',()=>{
-  const f=fixture({scope:'regional',dominio_email:'example.invalid',requiere_censo:true});f.state.censoExiste.value=exists;
+for(const exists of [false,true])test('census '+(exists?'existing':'not yet created')+' keeps its route and matching action label',async()=>{
+  const f=fixture({scope:'regional',dominio_email:'example.invalid',requiere_censo:true});await f.resolveCensus(exists);
   assert.equal(f.state.joinLabel.value,f.t(exists?'detail.joinCensus':'detail.joinInitCensus'));
   f.memory.set('vc_group_id','existing-context');f.state.onJoin();
   assert.deepEqual(f.navigation,[exists?'/grupo/selected':'/grupo/selected?iniciar=true']);assert.equal(f.memory.get('vc_group_id'),'existing-context');
   assert.equal(f.memory.get('vc_last_joined'),'previous');
 });
 
-for(const lang of ['es','en','fr','zh'])test('census start/join labels are correctly paired using real '+lang+' translations',()=>{
+for(const lang of ['es','en','fr','zh'])test('census start/join labels are correctly paired using real '+lang+' translations',async()=>{
   const f=fixture({scope:'regional',dominio_email:'example.invalid',requiere_censo:true},lang);
-  assert.equal(f.state.joinLabel.value,f.t('detail.joinInitCensus'));f.state.censoExiste.value=true;
+  await f.resolveCensus(false);assert.equal(f.state.joinLabel.value,f.t('detail.joinInitCensus'));await f.resolveCensus(true);
   assert.equal(f.state.joinLabel.value,f.t('detail.joinCensus'));
 });
 

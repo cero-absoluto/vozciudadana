@@ -1,9 +1,19 @@
 # Estado de consulta del censo
 
-Autorización vigente del Owner. Distinguir loading/present/absent/error y permitir iniciar censo solo tras ausencia acreditada; todos los fallos son reintentables sin asumir inexistencia. Mantener admisión, riesgos, saldo, cierres y lectura pública del censo. No API/SQL/dependencias/credenciales/vigilancia.
+Base `666d83981e3490e252add728a1cb416c077fc8ee`, PR166. Autorización vigente del Owner. Solo frontend, pruebas y evidencia; sin cambios API/SQL/admisión/cuotas/dependencias/credenciales/vigilancia.
 
-Microtarea SOLO TEMPLATE apps/web/src/screens/DetailScreen.vue; no script/styles/tests/locales. La coordinación implementará estos bindings: needsCensus booleancomputed, censusStatus stringloading/present/absent/error, censusBlocked boolean, loadCensus() con guardas.
-1. Añadir después de .detail-hdr dentro de .d-scroll un párrafo id=detail-census-status v-if="needsCensus && !isClosed": rolealert enerror/status resto, texto traducido segúnestado con claves detail.censusLoading/censusPresent/censusAbsent/censusUnavailable. No rawerrors, no párrafo enfooter que agrande el pie.
-2. Botón principal existente: cuando needsCensus&&censusStatus==='error', texto $t('detail.censusRetry'), enabled para consulta pública (aunque no haya saldo o ya unido); handler loadCensus() SOLO. Enresto conserva joinLabel/onJoin ydisabled anterior MÁS censusBlocked. No crear segundoCTA. Un reintento esGETmetadata, nofundación/OTP/adhesión.
-3. Añadir detail-census-status a aria-describedby del botón principal cuando needsCensus, conservando riesgo/saldo. No cambiar avisos, jerarquía ni condicionescerradas.
-4. No tocar los botonesseecenso secundarios ni rutas, onJoin, censoExiste oestadoScript. Rootpuedecompletarlo. Leerúnicamente esteSFC y editartemplate mínimo; máximo15turnos, sinred/shell/commits.
+## Contrato
+
+Distinguir loading, present, absent y error. Solo404 de la consulta confirma ausencia;200 requiere group_id UUID válido. Fallos de red, timeout,401/429/503 y respuestas200 incoherentes no habilitan creación. onJoin comprueba el estado y contexto actuales antes de escribir o navegar.
+
+La lectura pública puede cargar aun con saldo0, unido o cerrado. En error, el únicoCTA de la ficha abierta ofrece reintentar la consultaGET, sin OTP, adhesión ni fundación. Los demás estados conservan restricciones de saldo/cierre/política y bloquean navegación mientras la consulta no se resuelva. La ficha cerrada mantiene su acción de informe.
+
+Cada consulta se vincula a id/dominio/ámbito/requisito y epoch. Cambiar contexto o desmontar invalida respuestas anteriores, inclusoABA; no hay autorreintento. Un refresh con metadatos iguales conserva resultados y solicitudes pendientes. Reintento explícito singleflight. El informe secundario no determina existencia del censo. El párrafo de estado está en el scroll, descrito por el botón y traducido en cuatro idiomas, sin agrandar el footer.
+
+## Coordinación y validación local
+
+Claude completó la plantilla en run `41221907518`, pero verify falló16 pruebas al ejecutarla sin los bindings del script que coordinaba Codex. No se publicó ese parche por el relevo ni se cuenta como aprobación. Recuperado artifactpatch `13050287447`, SHA256 `1d87ac0a60d2be5c32e77a4f760165a0f02c296e77709b5124b39914c2eaa6da`, integrado con script/tests del coordinador sin reiniciar ni ampliar permisos/turnos.
+
+Candidato integrado local:1040 pruebas,1038 correctas,dos omitidas,cero fallos;109 pertinentes en revisión independiente sin bloqueos nuevos. Build/CSP5HTML/política de dependencias/diffcheck correctos.51 pruebas nuevas:39 de estado/carreras con Vue real y12 SFC; fixtures previas migradas a respuestaUUID real y ausencia explícita, sin omitir tests. La revisión automática GitHub sigue sin dictamen por cuota.
+
+Ensayo previsto del SHA exacto:488 comprobaciones,136 layouts, casos de carga/404/503/red/respuesta incoherente/reintento único/respuesta tardía/lectura con saldo0 y unido; conserva392 comprobaciones anteriores y añade64 de flujo y32 layouts de censo en carga/error, riesgo alto y saldo0/10. Sin proveedores ni mutaciones reales. Publicación pendiente de cerrar ese ensayo y comprobar bytes servidos; no se declara terminada la fase UX integral.

@@ -11,9 +11,9 @@
       </button>
     </div>
     <div v-for="p in protests" :key="p.id">
-      <div class="p-item"
-        :class="{ locked: isBlocked(p), 'joined-item': p.joined }"
-        @click="handleClick(p)">
+      <article class="p-item"
+        :aria-label="p.title"
+        :class="{ locked: isBlocked(p), 'joined-item': p.joined }">
         <div class="pi-heat" :style="{ background: p.color+'18', color: p.color }">{{ p.heat }}°</div>
         <div class="pi-info">
           <div class="pi-title" style="white-space:normal;overflow:visible;text-overflow:unset">{{ p.title }}</div>
@@ -30,18 +30,20 @@
           </div>
           <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
             <!-- Botón principal: UNIRSE — protagonista -->
-            <div @click.stop="handleClick(p)"
-              style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 14px;background:var(--accent2);border-radius:20px;cursor:pointer;font-size:15px;font-weight:700;color:#000;box-sizing:border-box">
+            <button type="button" @click.stop="handleClick(p)"
+              :aria-label="p.title + ' — ' + (p.joined ? $t('active.joined', { time: fmtTime(p.timer) }) : $t('active.joinBtn'))"
+              style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 14px;background:var(--accent2);border:none;font-family:inherit;border-radius:20px;cursor:pointer;font-size:15px;font-weight:700;color:#000;box-sizing:border-box">
               ✊ {{ p.joined ? $t('active.joined', { time: fmtTime(p.timer) }) : $t('active.joinBtn') }}
-            </div>
+            </button>
             <!-- Botón secundario: informe — texto completo, borde sutil -->
-            <div @click.stop="router.push(`/informe/${p.id}`)"
-              style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 14px;border:.5px solid var(--border2);border-radius:20px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);box-sizing:border-box">
+            <button type="button" @click.stop="router.push(`/informe/${p.id}`)"
+              :aria-label="p.title + ' — ' + $t('informe.headerLabel')"
+              style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 14px;background:transparent;font-family:inherit;border:.5px solid var(--border2);border-radius:20px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);box-sizing:border-box">
               📊 {{ $t('informe.headerLabel') }} →
-            </div>
+            </button>
           </div>
         </div>
-      </div>
+      </article>
       <!-- status strips -->
       <div v-if="p.joined"                  class="joined-strip">{{ $t('active.joined', { time: fmtTime(p.timer) }) }}</div>
       <div v-else-if="cj(p).lock"           class="lock-strip">🔒 {{ cj(p).msg }}</div>

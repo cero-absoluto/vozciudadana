@@ -135,7 +135,7 @@
     <div class="vc-scope" id="vc-scope-${id}"></div>
     <div class="vc-counter">
       <span class="vc-number" id="vc-count-${id}">—</span>
-      <span class="vc-label">verified citizens</span>
+      <span class="vc-label">recorded adhesions</span>
     </div>
     <div class="vc-meta" id="vc-meta-${id}"></div>
     <a class="vc-btn" href="${APP}/#/protest/${id}" target="_blank" rel="noopener">

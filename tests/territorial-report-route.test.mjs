@@ -21,8 +21,18 @@ for(const result of [{data:null},{error:{message:'PRIVATE_DATABASE_DETAIL'}}])te
 });
 
 test('stored counter below analyzed rows never creates negative non-GPS counts',async()=>{
- const app=await appFor({count:1,cap:2});try{const r=await app.inject('/'+id+'/informe'),b=r.json();assert.equal(r.statusCode,200,r.body);assert.equal(b.total_analizado,5);assert.equal(b.adhesiones_sin_gps,2);assert.equal(b.report_coverage.complete,true);assert.equal(b.report_coverage.counter_matches,false);}finally{await app.close();}
+ const app=await appFor({count:1,cap:2});try{const r=await app.inject('/'+id+'/informe'),b=r.json();assert.equal(r.statusCode,200,r.body);assert.equal(b.total_analizado,5);assert.equal(b.adhesiones_sin_gps,2);assert.equal(b.report_coverage.query_complete,true);assert.equal(b.report_coverage.complete,false);assert.equal(b.report_coverage.counter_matches,false);}finally{await app.close();}
 });
 test('regional report route compares region rather than city',async()=>{
  const app=await appFor({scope:'regional',data:rows.map((a,i)=>({...a,ciudad:'Elsewhere',region:i===0?'Synthetic':'Elsewhere'}))});try{const r=await app.inject('/'+id+'/informe');assert.equal(r.statusCode,200,r.body);assert.equal(r.json().desglose_geografico_local.gps_local,1);}finally{await app.close();}
+});
+
+test('actual report derives mixed methods from rows and never exposes row identifiers',async()=>{
+ const app=await appFor({data:rows.map((r,i)=>({...r,verification_method:i===0?'phone_otp':i===1?'institutional_email_otp':null}))});
+ try{const r=await app.inject('/'+id+'/informe');assert.equal(r.statusCode,200,r.body);const scope=r.json().evidential_scope;assert.equal(scope.version,2);assert.equal(scope.recorded_methods.counts.unknown,3);assert.equal(scope.recorded_methods.counts.phone_otp,1);assert.ok(!r.body.includes(rows[0].id));}finally{await app.close();}
+});
+
+test('actual index histogram covers zero, missing and lower values without probability labels',async()=>{
+ const values=[0,null,30,60,75,85];const data=values.map((fiabilidad,i)=>({...rows[i%rows.length],id:'index-'+i,fiabilidad}));
+ const app=await appFor({data,count:6});try{const r=await app.inject('/'+id+'/informe');assert.equal(r.statusCode,200,r.body);const d=r.json().desglose_fiabilidad;assert.equal(Object.values(d).reduce((s,x)=>s+x.count,0),6);assert.equal(d.baja.count,2);assert.equal(d.sin_dato.count,1);assert.ok(!JSON.stringify(d).includes('%'));}finally{await app.close();}
 });

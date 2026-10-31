@@ -1,3 +1,5 @@
+import {summarizeRecordedMethods} from '../../apps/api/src/lib/recordedMethods.js';
+import {buildEvidentialScope} from '../../apps/api/src/lib/evidentialScope.js';
 // Run only against locally built static files, with every browser request intercepted.
 import {readFileSync,existsSync,writeFileSync} from 'node:fs';
 import {resolve,extname} from 'node:path';
@@ -14,6 +16,10 @@ if(process.env.IDV_GEOGRAPHY_REHEARSAL==='1')for(const fixture of Object.values(
   desglose_fiabilidad:{alta:{count:3},media:{count:2},base:{count:0}}};
 }
 
+if(process.env.IDV_METHODS_REHEARSAL==='1')for(const fixture of Object.values(FIXTURES)) {
+ const recorded=summarizeRecordedMethods([{verification_method:'phone_otp'},{verification_method:'institutional_email_otp'},{verification_method:null},{verification_method:'qr'},{verification_method:'eid'}]);
+ fixture.data.evidential_scope=buildEvidentialScope(fixture.data.protest,{total:5,recorded_methods:recorded});
+}
 const browser=await chromium.launch({headless:true,...(process.env.S16_CHROMIUM_EXECUTABLE?{executablePath:process.env.S16_CHROMIUM_EXECUTABLE}:{})});
 try{
  for(const locale of ['es','en','fr','zh']){
@@ -57,7 +63,7 @@ try{
    const widths=await page.locator('.ir-geo-breakdown .ir-geo-bar-fill').evaluateAll(nodes=>nodes.map(n=>Number.parseFloat(n.style.width)));
    assert.deepEqual(widths,[dg.gps_local,dg.nacionales_sin_gps,dg.internacionales,dg.gps_nacional,dg.sin_pais].map(n=>Math.round(n/dg.total*100)));
    assert.equal(widths.reduce((a,b)=>a+b,0),100);
-   const qualityWidths=await page.locator('.ir-quality-band .ir-geo-bar-fill').evaluateAll(nodes=>nodes.map(n=>Number.parseFloat(n.style.width)));
+   const qualityWidths=await page.locator('.ir-quality-band:visible .ir-geo-bar-fill').evaluateAll(nodes=>nodes.map(n=>Number.parseFloat(n.style.width)));
    assert.deepEqual(qualityWidths,[60,40]);
    const notice=messages.informe.geoCounterMismatch.replaceAll('{analyzed}','5').replaceAll('{total}','20');
    assert.ok(reportText.replace(/\s+/g,' ').includes(notice.replace(/\s+/g,' ')));
@@ -66,6 +72,12 @@ try{
 
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false,'mobile horizontal overflow');
    checks.push({id:'geographic_cohorts_and_denominator_'+locale,ok:true});
+  }
+  if(process.env.IDV_METHODS_REHEARSAL==='1') {
+   const text=await page.locator('.ir-doc').textContent();
+   assert.ok(text.includes(messages.evidence.methods.recorded_unknown.replace('{count}','1')));
+   assert.ok(text.includes(messages.evidence.not.device_credential_scope));
+   checks.push({id:'recorded_methods_and_credential_limits_'+locale,ok:true});
   }
   const download=page.waitForEvent('download',{timeout:10000});await page.locator('.ir-btn-pdf').click();
   assert.ok((await download).suggestedFilename().endsWith('.pdf'));

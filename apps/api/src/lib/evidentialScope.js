@@ -45,6 +45,8 @@ function modeOf(protest) {
  */
 export function buildEvidentialScope(protest, agg = {}) {
   const mode = modeOf(protest);
+  if (!agg.recorded_methods) return {mode,version:2,recorded_methods:null,
+    demonstrates:[{key:'demonstrates.evidence_unavailable',params:{}}],outside_scope:[],methods:[],participation_rate:null,admission_rules:[]};
   const total = agg.total ?? protest.count ?? 0;
   const dgl = agg.desglose_geografico_local || null;
   const localVerified = dgl?.local_verified?.count ?? 0;
@@ -116,12 +118,33 @@ export function buildEvidentialScope(protest, agg = {}) {
       break;
   }
 
+  // New report path supplies observed rows; old callers remain compatible.
+  if (agg.recorded_methods) {
+    const observed=agg.recorded_methods;
+    const allowed=new Set(['phone_otp','institutional_email_otp','qr','eid','unknown']);
+    methods.splice(0,methods.length);
+    for(const [method,count] of Object.entries(observed.counts)) {
+      if(allowed.has(method) && count>0) methods.push({key:'methods.recorded_'+method,params:{count}});
+    }
+    if(observed.gps>0)methods.push({key:'methods.recorded_gps',params:{count:observed.gps}});
+    if(observed.ip>0)methods.push({key:'methods.recorded_ip',params:{count:observed.ip}});
+    for(let i=demonstrates.length-1;i>=0;i--) {
+      const key=demonstrates[i].key;
+      if(['demonstrates.unique_participation_phone','demonstrates.unique_participation_email','demonstrates.institutional_affiliation','demonstrates.census_vouching','demonstrates.sim_country','demonstrates.country_breakdown'].includes(key))demonstrates.splice(i,1);
+    }
+    demonstrates.unshift({key:'demonstrates.recorded_identifiers',params:{total:observed.total}});
+    outside_scope.push({key:'not.device_credential_scope',params:{}});
+    if(protest.dominio_email)outside_scope.push({key:'not.domain_scope',params:{}});
+    if(protest.requiere_censo)outside_scope.push({key:'not.census_scope',params:{}});
+    if(protest.dominio_email)outside_scope.push({key:'not.institutional_expiry_scope',params:{}});
+  }
+
   // ── core "outside scope" lines, always present (kept short) ──────────────
   outside_scope.push({ key: 'not.truth', params: {} });
   outside_scope.push({ key: 'not.representative', params: {} });
 
   // ── public auditability is always demonstrable ───────────────────────────
-  demonstrates.push({ key: 'demonstrates.public_auditability', params: {} });
+  if (!agg.recorded_methods || protest.hash_integridad) demonstrates.push({ key: 'demonstrates.public_auditability', params: {} });
 
   // ── participation rate: ONLY when the universe is owned by the system ─────
   // Census defines a registered member set. Email-domain mode does NOT (the
@@ -158,7 +181,8 @@ export function buildEvidentialScope(protest, agg = {}) {
     participation_rate,
     admission_rules,
     // schema marker so the frontend/consumers know the contract version
-    version: 1,
+    version: agg.recorded_methods ? 2 : 1,
+    recorded_methods: agg.recorded_methods ?? null,
   };
 }
 
@@ -214,6 +238,23 @@ export const EVIDENTIAL_SCOPE_EN = {
   'admission.petition_filter': () => `The source passed the petition-platform filter (change.org, avaaz.org, etc. are rejected).`,
   'admission.wikidata_verified': () => `Recipient validation was performed server-side via the Wikidata API.`,
 };
+
+const RECORDED_SCOPE_EN = {
+  "demonstrates.recorded_identifiers": "Identifiers and methods recorded in {total} analyzed adhesions; they do not certify distinct people.",
+  "demonstrates.evidence_unavailable": "Method evidence is unavailable to describe these adhesions.",
+  "not.device_credential_scope": "A device credential retains earlier verification; it does not prove recent phone control. The documented 270-day inactivity rule concerns retention, not freshness. Automatic renewal and revocation following external changes are not certified.",
+  "not.domain_scope": "The creator declares the domain; official affiliation, endorsement, role and current membership are not certified.",
+  "not.census_scope": "The census is a network of vouched accounts, not an official register. The founder linked to the creation key may accredit the first wave; later waves require two endorsements from distinct accredited accounts, not necessarily independent people.",
+  "not.institutional_expiry_scope": "Institutional records are assigned the next 31 August 00:00 UTC expiry. This is not current affiliation proof or certification of every renewal/revocation control.",
+  "methods.recorded_phone_otp": "Phone: {count} records. A previous verification credential may be reused; this does not imply a fresh SMS for every adhesion.",
+  "methods.recorded_institutional_email_otp": "Verified email: {count} records. This does not certify a role or current institutional affiliation.",
+  "methods.recorded_qr": "Recorded QR: {count}; no additional unretained proof is presumed.",
+  "methods.recorded_eid": "Recorded eID: {count}; this describes the stored method, not an additional verification.",
+  "methods.recorded_unknown": "Unknown historical method: {count}; neither SMS nor email is inferred.",
+  "methods.recorded_ip": "Recorded IP signal: {count}; historical records are not recalculated.",
+  "methods.recorded_gps": "Recorded GPS signal: {count}; not certified physical presence or residence."
+};
+Object.assign(EVIDENTIAL_SCOPE_EN, Object.fromEntries(Object.entries(RECORDED_SCOPE_EN).map(([key,text]) => [key,(params={}) => text.replace(/\{(\w+)\}/g,(_,name) => String(params[name] ?? ''))])));
 
 /** Render a scope object to plain English lines (reference / testing helper). */
 export function renderStatementEn(scope) {

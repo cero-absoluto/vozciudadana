@@ -1,3 +1,5 @@
+import { summarizeStoredIndex } from '../lib/storedIndex.js';
+import { summarizeRecordedMethods } from '../lib/recordedMethods.js';
 import { readReportAdhesions } from '../lib/reportAdhesions.js';
 import { matchesDeclaredTerritory, geographicBreakdown } from '../lib/territorialEvidence.js';
 import { parseGpsGeocoderResponse } from '../lib/gpsGeocoder.js';
@@ -1073,7 +1075,7 @@ export default async function protestRoutes(app, opts = {}) {
     let adhesions;
     try { adhesions = await readReportAdhesions(supabase, req.params.id); }
     catch { return reply.header('Cache-Control','no-store').code(503).send({error:'Service temporarily unavailable'}); }
-    const reportCoverage = { complete: true, analyzed: adhesions.length, counter_total: protest.count,
+    const reportCoverage = { query_complete: true, complete: adhesions.length === protest.count, analyzed: adhesions.length, counter_total: protest.count,
       counter_matches: adhesions.length === protest.count };
 
     const ciudades = [...new Set(adhesions.map(a => a.ciudad).filter(Boolean))];
@@ -1094,10 +1096,8 @@ export default async function protestRoutes(app, opts = {}) {
     const desglose_geografico_local = (protest.scope === 'local' || protest.scope === 'regional') && protest.convocatoria_osm_id
       ? geographicBreakdown(protest, adhesions) : null;
 
-    const fiabilidad_alta    = adhesions.filter(a => a.fiabilidad >= 85).length;
-    const fiabilidad_media   = adhesions.filter(a => a.fiabilidad >= 75 && a.fiabilidad < 85).length;
-    const fiabilidad_base    = adhesions.filter(a => a.fiabilidad >= 60 && a.fiabilidad < 75).length;
-    const fiabilidad_sin_dato = adhesions.filter(a => !a.fiabilidad).length;
+    const indexCounts = summarizeStoredIndex(adhesions);
+    const {alta:fiabilidad_alta,media:fiabilidad_media,base:fiabilidad_base,baja:fiabilidad_baja,sin_dato:fiabilidad_sin_dato}=indexCounts;
 
     const porDia = {};
     adhesions.forEach(a => {
@@ -1125,7 +1125,8 @@ export default async function protestRoutes(app, opts = {}) {
     // null unless a real, auditable registered census exists for the convocatoria
     // (census_eligible is intentionally not passed until that exists — never estimated).
     const evidential_scope = buildEvidentialScope(protest, {
-      total: protest.count,
+      total: adhesions.length,
+      recorded_methods: summarizeRecordedMethods(adhesions),
       desglose_geografico_local,
       paises_distintos: paises.length,
     });
@@ -1146,10 +1147,11 @@ export default async function protestRoutes(app, opts = {}) {
       primera_adhesion: adhesions[0]?.created_at || null,
       ultima_adhesion: adhesions[adhesions.length - 1]?.created_at || null,
       desglose_fiabilidad: {
-        alta:     { count: fiabilidad_alta,     rango: '85-95%', descripcion: 'GPS + SIM + IP verificados' },
-        media:    { count: fiabilidad_media,    rango: '75-84%', descripcion: 'SIM verificada' },
-        base:     { count: fiabilidad_base,     rango: '60-74%', descripcion: 'Solo IP verificada' },
-        sin_dato: { count: fiabilidad_sin_dato, rango: '—',      descripcion: 'Adhesiones anteriores al sistema' },
+        alta:     { count: fiabilidad_alta,     rango: '85-100', descripcion: 'Stored index; not a probability or current identity certificate' },
+        media:    { count: fiabilidad_media,    rango: '75-84', descripcion: 'Stored index; not a probability or current identity certificate' },
+        base:     { count: fiabilidad_base,     rango: '60-74', descripcion: 'Stored index; not a probability or current identity certificate' },
+        baja: { count: fiabilidad_baja, rango: '0-59', descripcion: 'Stored index; not a probability' },
+        sin_dato: { count: fiabilidad_sin_dato, rango: '—', descripcion: 'No valid stored index' },
       },
       velocidad: {
         adhesiones_por_dia: adhesionesPorDia,

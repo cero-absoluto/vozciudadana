@@ -122,7 +122,7 @@ async function activarNotificacion() {
     const reg = await withClientDeadline(() => navigator.serviceWorker.ready);
     if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
     const {publicKey} = await withClientDeadline(async signal => {
-      const response=await fetch(`${import.meta.env.VITE_API_URL}/api/push/vapid-public-key`,{signal});
+      const response=await fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/push/vapid-public-key`,{signal});
       if (!response.ok) throw new Error('VAPID_UNAVAILABLE');
       return response.json();
     });
@@ -141,7 +141,7 @@ async function activarNotificacion() {
 
     const save = subscription => withClientDeadline(async signal => {
       if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
-      const response=await fetch(`${import.meta.env.VITE_API_URL}/api/push/subscribe`, {
+      const response=await fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/push/subscribe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal, body: JSON.stringify({
@@ -161,7 +161,8 @@ async function activarNotificacion() {
     if (saved.status === 409 && (await saved.json().catch(() => null))?.error === 'PUSH_ENDPOINT_OWNED') {
       // Clearing device storage can leave an old browser endpoint. Obtain a
       // new provider subscription instead of transferring another owner's row.
-      await sub.unsubscribe();
+      if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
+      await withClientDeadline(() => sub.unsubscribe());
       if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
       sub = await withClientDeadline(() => reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(publicKey)}));
       saved = await save(sub);

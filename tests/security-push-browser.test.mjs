@@ -32,6 +32,11 @@ test('a global identity switch while permission is pending blocks provider subsc
 test('VAPID network hang is bounded and never creates a push subscription',async()=>{
  const f=fixture();f.context.fetch=()=>new Promise(()=>{});await f.run();assert.equal(f.subscriptions(),0);assert.equal(f.requests.length,0);assert.equal(f.context.flow.notiPending.value,false);
 });
+test('identity changed at ownership conflict preserves the existing browser subscription',async()=>{
+ const f=fixture([409]);const fetch=f.context.fetch;
+ f.context.fetch=async(url,options)=>{const response=await fetch(url,options);if(url.endsWith('/subscribe')){const json=response.json;response.json=async()=>{const data=await json();f.setGlobal('identity-B');return data;};}return response;};
+ await f.run();assert.equal(f.unsubscribed(),0);assert.equal(f.requests.length,1);assert.equal(f.activated(),false);
+});
 test('push uses a proof matching the confirmed per-tab identity',async()=>{
   const f=fixture();await f.run();assert.equal(f.activated(),true);assert.equal(f.requests[0].device_id,'local-device-id');assert.equal(f.requests[0].device_secret,'a'.repeat(64));
 });

@@ -814,6 +814,9 @@
     "contextChanged": "活动已变更。请重新获取验证码。"
   },
   "share": {
+    "copyError": "未能复制。您可以选择文本并手动复制。",
+    "dialogTitle": "分享活动",
+    "messageLabel": "分享消息",
     "previewLabel": "🔥 将要发送的消息",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "将消息发送给您的联系人和群组",
@@ -822,10 +825,10 @@
     "copy": "复制链接 + 消息",
     "copyDesc": "用于TikTok、Instagram、微博、微信或任何您想要的地方",
     "close": "关闭",
-    "viralMsg": "你好，我刚刚加入了这个经过验证的抗议活动。我鼓励你参与：{url}",
-    "viralMsgEvent": "我刚刚加入了这个经过验证的倡议：《{title}》。请阅读，如果您同意，请在此加入：{url}",
-    "toastWA": "🔥 通过WhatsApp分享",
-    "toastTG": "🔥 通过Telegram分享",
+    "viralMsg": "向您分享这项活动。请阅读，如果您同意，可以参与：{url}",
+    "viralMsgEvent": "向您分享这项活动：《{title}》。请阅读，如果您同意，可以在此参与：{url}",
+    "toastWA": "正在打开 WhatsApp 以分享",
+    "toastTG": "正在打开 Telegram 以分享",
     "toastCopy": "📋 已复制！粘贴到TikTok、Instagram或任何地方"
   },
   "install": {

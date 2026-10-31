@@ -26,20 +26,26 @@ export async function mountShareModal() {
       return false;
     }
     get offsetParent() { return this.hiddenByAncestor ? null : this.parentNode; }
-    get tabIndex() { return Number(this.props.tabindex ?? (this.tagName === 'BUTTON' ? 0 : -1)); }
+    get tabIndex() { return Number(this.props.tabindex ?? (['BUTTON','INPUT','SELECT','TEXTAREA'].includes(this.tagName) || this.tagName==='A' && this.hasAttribute('href') ? 0 : -1)); }
+    select() { this.selected = true; }
     getClientRects() { return this.isConnected && !this.hiddenByAncestor ? [{}] : []; }
     contains(node) { return node === this || this.children.some(c => c.contains(node)); }
     focus() {
       const native = ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(this.tagName) ||
         (this.tagName === 'A' && this.hasAttribute('href'));
       // tabindex=-1 allows programmatic focus, while an ordinary div does not.
-      if (this.isConnected && !this.hiddenByAncestor && !this.disabled && (native || this.hasAttribute('tabindex'))) document.activeElement = this;
+      if (this.isConnected && !this.hiddenByAncestor && !this.disabled && (native || this.hasAttribute('tabindex'))) {
+        document.activeElement = this;
+        if (typeof this.props.onFocus === 'function') this.props.onFocus({target:this,currentTarget:this});
+      }
     }
     getAttribute(name) { return this.props[name] == null ? null : String(this.props[name]); }
     hasAttribute(name) { return this.props[name] != null; }
-    querySelectorAll() {
+    querySelectorAll(selector = '') {
       const all = this.children.flatMap(child => [child, ...child.descendants()]);
-      return all.filter(n => !n.disabled && (n.tagName === 'BUTTON' || n.tabIndex >= 0 || n.tagName === 'A'));
+      if (selector === 'button') return all.filter(n => n.tagName === 'BUTTON');
+      if (selector === 'textarea') return all.filter(n => n.tagName === 'TEXTAREA');
+      return all.filter(n => !n.disabled && (['BUTTON','INPUT','SELECT','TEXTAREA'].includes(n.tagName) || n.tabIndex >= 0 || n.hasAttribute('href')));
     }
     querySelector(selector) { return this.querySelectorAll(selector)[0] ?? null; }
     descendants() { return this.children.flatMap(child => [child, ...child.descendants()]); }
@@ -70,7 +76,12 @@ export async function mountShareModal() {
     querySelector: selector => selector === 'body' ? document.body : null,
     setScopeId() {},
   });
-  const ui = Vue.reactive({ showShareModal: false, showToast() {} });
+  const toasts = [], increments = [], windows = [], route = Vue.reactive({ params: {} });
+  const session = new Map();
+  const store = Vue.reactive({protests:[],incrementViral:id=>increments.push(id)});
+  const translate = (key, params={}) => ({'share.viralMsgEvent':'Event {title}: {url}','share.viralMsg':'Website {url}'}[key] ?? key).replace(/\{(\w+)\}/g,(_,name)=>params[name]??'');
+  const navigator = { clipboard: { writeText: () => Promise.resolve() } };
+  const ui = Vue.reactive({ showShareModal: false, shareContext: null, shareOpenId: 0, showToast: msg => { toasts.push(msg); } });
   const { descriptor } = parse(fs.readFileSync('apps/web/src/components/shared/ShareModal.vue', 'utf8'));
   let code = compileScript(descriptor, { id: 'share-focus-test', inlineTemplate: true }).content;
   code = code.replace(/import\s+\{([^}]+)\}\s+from\s+['"]vue['"];?/g,
@@ -78,16 +89,16 @@ export async function mountShareModal() {
     .replace(/^import[^\n]+from[^\n]+\n/gm, '')
     .replace('export default', 'const Component =');
   const context = vm.createContext({ Vue, document, HTMLElement: Element,
-    useI18n: () => ({ t: key => key }), useRoute: () => ({ params: {} }),
-    useUiStore: () => ui, useProtestsStore: () => ({ protests: [], incrementViral() {} }), fmt: String,
-    sessionStorage: { getItem: () => null }, window: { open() {} },
-    navigator: { clipboard: { writeText: () => Promise.resolve() } },
+    useI18n: () => ({ t: translate }), useRoute: () => route,
+    useUiStore: () => ui, useProtestsStore: () => store, fmt: String,
+    sessionStorage: { getItem: key => session.get(key) ?? null }, window: { open: (...args) => { windows.push(args); return {}; } },
+    navigator,
   });
   const Component = vm.runInContext(code + '; Component;', context);
   const host = new Element('div'), opener = new Element('button');
   insert(opener, document.body); insert(host, document.body); opener.focus();
   const app = renderer.createApp(Component);
-  app.config.globalProperties.$t = key => key;
+  app.config.globalProperties.$t = translate;
   app.mount(host);
   const flush = async () => { await Vue.nextTick(); await Vue.nextTick(); };
   await flush();
@@ -100,11 +111,17 @@ export async function mountShareModal() {
       preventDefault() { this.defaultPrevented = true; }, stopPropagation() {} };
     for (let node = target; node; node = node.parentNode) { event.currentTarget = node; invoke(node.props.onKeydown, event); }
     for (const fn of listeners.get('keydown') ?? []) fn(event);
+    if (value === 'Tab' && !event.defaultPrevented) {
+      const items=document.body.querySelectorAll('button, [href], input, select, textarea, [tabindex]').filter(n=>n.isConnected && !n.hiddenByAncestor && n.tabIndex >= 0);
+      const current=items.indexOf(document.activeElement);
+      if(items.length)items[(current+(shiftKey ? -1 : 1)+items.length)%items.length].focus();
+    }
     await flush(); return event;
   };
   const click = async node => { invoke(node.props.onClick, { target: node, currentTarget: node }); await flush(); };
-  return { ui, document, opener, dialog, controls, flush, key, click,
-    open: async () => { ui.showShareModal = true; await flush(); },
+  const openSync = (context={id:'7',title:'Synthetic share event'}) => { ui.shareContext=context;ui.shareOpenId+=1;ui.showShareModal=true; };
+  return { ui, document, opener, toasts, increments, windows, route, store, session, navigator, dialog, controls, flush, key, click, openSync,
+    open: async context => { openSync(context); await flush(); },
     removeOpener: () => remove(opener),
     appendElement: (tag, props = {}, parent = document.body) => { const node = new Element(tag); node.props = props; insert(node, parent); return node; },
     unmount: async () => { app.unmount(); await flush(); },

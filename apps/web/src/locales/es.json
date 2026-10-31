@@ -814,6 +814,9 @@
     "contextChanged": "La convocatoria ha cambiado. Solicita un código nuevo."
   },
   "share": {
+    "copyError": "No se ha podido copiar. Puedes seleccionar el texto y copiarlo manualmente.",
+    "dialogTitle": "Compartir convocatoria",
+    "messageLabel": "Mensaje para compartir",
     "previewLabel": "🔥 Mensaje que se enviará",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "Envía el mensaje a tus contactos y grupos",
@@ -822,10 +825,10 @@
     "copy": "Copiar enlace + mensaje",
     "copyDesc": "Para TikTok, Instagram, X, Facebook o donde quieras",
     "close": "Cerrar",
-    "viralMsg": "Hola, acabo de unirme a esta protesta verificada. Te animo a participar: {url}",
-    "viralMsgEvent": "Me acabo de adherir a esta convocatoria verificada: «{title}». Léela y, si estás de acuerdo, súmate aquí: {url}",
-    "toastWA": "🔥 Compartido por WhatsApp",
-    "toastTG": "🔥 Compartido por Telegram",
+    "viralMsg": "Te comparto esta convocatoria. Léela y, si estás de acuerdo, participa: {url}",
+    "viralMsgEvent": "Te comparto esta convocatoria: «{title}». Léela y, si estás de acuerdo, súmate aquí: {url}",
+    "toastWA": "Abriendo WhatsApp para compartir",
+    "toastTG": "Abriendo Telegram para compartir",
     "toastCopy": "📋 ¡Copiado! Pégalo en TikTok, Instagram o donde quieras"
   },
   "install": {

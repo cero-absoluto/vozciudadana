@@ -86,3 +86,11 @@ PR160 corrige el destino explícito al compartir desde detalle y recibos SMS/ins
 El diálogo conserva solo id/título públicos por apertura, admite UUID sin convertirlos a número y no cambia de destino si cambia ruta, listado o sesión. Clipboard rechazado/ausente ofrece copia manual; una respuesta tardía tras cerrar/reabrir no cierra el nuevo diálogo ni anuncia éxito.
 
 No se cierra todo UX-13: recuperación push compartida, orfandad, revocación y comprobación operativa de notificaciones siguen pendientes. UX-08/09/10/14 y GPS/IDV permanecen abiertos. Próximo bloque concreto: carga inicial diferenciada de vacío y acciones de tarjetas accesibles por teclado, con ensayo móvil.
+
+## UX-08/10 — carga inicial y tarjetas nativas
+
+PR162 separa carga inicial, vacío confirmado y error. El indicador hasLoaded solo se fija después de una respuesta vigente del listado correctamente procesada; ni un lookup directo/caché ni respuestas antiguas habilitan el estado vacío. La recarga conserva filas y el reintento manual sigue protegido contra duplicados.
+
+ActiveTab ofrece vacío/crear solo después de éxito, sin carga ni error. La tarjeta es article sin click padre; un botón nativo abre el detalle con las guardas existentes y otro abre el informe incluso si la participación está bloqueada. Los nombres incluyen título/acción en los cuatro idiomas; foco visible y Enter/Espacio comprobados.
+
+Véase [evidencia](ux-08-10-publication-20261031.md). Esto no cierra todo UX-08/10: faltan ensayo general del descubrimiento/recorrido, zoom/dispositivos y el diálogo/consentimiento GPS. UX-09 y residuales UX-13 push e IDV siguen abiertos. Siguiente trabajo: comprobar la jerarquía de la ficha y su acción principal en móvil, sin asumir un rediseño antes de medir.

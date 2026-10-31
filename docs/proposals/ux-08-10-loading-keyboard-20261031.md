@@ -10,4 +10,4 @@ Claude implementó la microtarea de marcado en `311130174caf42b660fd9cc57034aaaf
 
 Validación local:936 pruebas,934 correctas,dos omitidas,cero fallos.28 dirigidas durante implementación;33 pertinentes en revisión independiente, sin bloqueos nuevos. Dos archivos nuevos cubren Home/ActiveTab mediante SFC compilados y Vue/Pinia/i18n reales. Compilación con API revisada y clave sintética, CSP de cincoHTML, política de dependencias y diffcheck correctos.
 
-Ensayo Chromium del candidato exacto y comprobación de publicación pendientes al preparar esta propuesta. No es auditoría integral de accesibilidad ni prueba de teclado/autofill en dispositivos reales. UX-09, GPS/OTP, UX-13 push y ensayo general UX-14 siguen abiertos; UX-08/10 solo se cierran en este alcance concreto.
+Ensayo y publicación final: [evidencia](../ux-08-10-publication-20261031.md). No es auditoría integral de accesibilidad ni prueba de teclado/autofill en dispositivos reales. UX-09, GPS/OTP, UX-13 push y ensayo general UX-14 siguen abiertos; UX-08/10 solo se cierran en este alcance concreto.

@@ -9,7 +9,7 @@ tratar su alcance antes de ejecutarla. OTP real sigue aplazado.
 | Punto | Área | Estado |
 |---|---|---|
 | 1 | Seguridad contra ataques | Bloques publicados; pendientes expresos conservados. No auditoría integral cerrada. |
-| 2 | Identidad y verificación | En curso. IDV-01–04 publicados y verificados; bloque IDV-05/06 publicado, con límites explícitos. |
+| 2 | Identidad y verificación | Bloques IDV-01–12 publicados en su alcance descrito; permanecen residuales de IDV-05/10 y OTP real aplazado. No se declara auditoría integral cerrada. |
 | 3 | Experiencia de participación | Pendiente como revisión completa, especialmente móvil. |
 | 4 | Documentación pública | Pendiente de alineación con el comportamiento final. |
 
@@ -22,11 +22,11 @@ tratar su alcance antes de ejecutarla. OTP real sigue aplazado.
 | IDV-05 | Coincidencia territorial contextual, OSM ambiguo y homónimos | Corrección de homónimos entre países y OSM sin tipo publicada; homónimos del mismo país y límites administrativos pendientes. |
 | IDV-06 | Cohortes territoriales exhaustivas y denominadores comunes | Preparación local iniciada; no integrado ni publicado. |
 | IDV-07 | Unicidad por identificador y país de numeración en cuatro idiomas | Publicado y verificado, PR153. Sin cambiar admisión ni hashes. |
-| IDV-08 | Alcance del dominio declarado y vínculo institucional | Pendiente. |
-| IDV-09 | Reglas públicas de fundador, primera ola y avales del censo | Pendiente; conservar excepción de fundador aprobada. |
-| IDV-10 | Antigüedad, renovación y vigencia de credenciales/pertenencia | Pendiente; no confundir retención con elegibilidad. |
-| IDV-11 | Informe según métodos/procedencia realmente registrados | Pendiente; incluir históricos y mezcla de métodos. |
-| IDV-12 | Metodología coherente con cliente, API, informe, PDF y widget | Pendiente de actualización conjunta. |
+| IDV-08 | Dominio declarado y alcance institucional | Publicado: distingue control de correo de vínculo oficial, respaldo, rol o pertenencia vigente; sin validación externa nueva. |
+| IDV-09 | Censo, fundador, primera ola y avales | Publicado: reglas y límites explícitos; se conservan fundador/primera ola y dos cuentas acreditadas posteriores. |
+| IDV-10 | Antigüedad, autenticación y elegibilidad | Parcial: contrato y límites publicados. Pendientes renovación automática, revocación externa y acreditación operativa de retención; no se certifica pertenencia actual. |
+| IDV-11 | Métodos realmente registrados y calidad del informe | Publicado: mezclas/desconocidos explícitos, alcance v2 común API/web/PDF, índices completos sin probabilidades inventadas. |
+| IDV-12 | Metodología y recorrido actual | Publicado: metodología v1.5, v1.4 archivada, alcance coherente y residuales expresos. DOCX históricos no reauditados en este bloque. |
 
 Publicar una corrección concreta no certifica todo el sistema ni modifica los
 registros históricos. Las revisiones independientes son acotadas al código que

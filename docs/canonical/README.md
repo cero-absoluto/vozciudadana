@@ -1,6 +1,6 @@
 # Canonical Documentation
 
-These documents define the current audited reality of Voice Protest. They are authoritative and supersede previous drafts. They reflect the audited state of the platform as of 28 June 2026; the running record of the corrections that produced this state is kept in `/docs/governance/` (Audit Trail).
+The DOCX documents preserve the foundational audited baseline of28June2026; they have not been re-audited or rewritten in the31October identity block. The active participation methodology is v1.5 and must be read with its publication evidence and explicit residuals. Do not infer that all historical policy documents match current code. The full public-documentation review remains roadmap point4.
 
 ## Documents in this folder
 
@@ -24,3 +24,7 @@ Governance history (audit trail, security audit records, correction records) is 
 The Privacy Policy and the Funding & Independence Policy are not standalone files: they are canonical sections of the master design document (`2.-VoiceProtest_v3_5_beta_auditado_final.docx`) — Part III (Privacy and Data Protection) and Part VII (Financing Policy and Independence) respectively. The same content is presented to participants through the in-app INFO screens and locales.
 
 The repository README is maintained at the project root (`/README.md`).
+
+## Current identity methodology
+
+`6.-Participation_Verification_Methodology.md` is v1.5, published with PR154. The v1.4 text is preserved in `Participation_Verification_Methodology_v1.4_historical.md` for history, not as the current contract. See `../idv-08-12-publication-20261031.md` and `../identity-verification-roadmap-20261030.md`. Automatic renewal, external revocation and current-role validation remain open.

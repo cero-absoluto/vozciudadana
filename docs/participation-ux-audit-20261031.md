@@ -78,3 +78,11 @@ El pie fijo de Detail coloca financiación antes de adhesión. Su impacto con te
 ## Publicación UX-07/11
 
 PR157 corrige el contexto institucional de entrada directa y el texto phoneHint. Véase [evidencia](ux-07-11-publication-20261031.md). Incluye prioridad de recibos/uncertain, contexto fijo y comprobación imperativa de cierre tras esperas. No resuelve UX-08/09/10/13/14 ni declara completada la fase.
+
+## UX-13 — compartir y acciones opcionales
+
+PR160 corrige el destino explícito al compartir desde detalle y recibos SMS/institucionales, la confirmación de copia y el aviso previo de notificaciones. Los mensajes de difusión son neutrales y no afirman que quien comparte se haya adherido; abrir WhatsApp/Telegram no se presenta como entrega. Véase [evidencia](ux-13-share-publication-20261031.md).
+
+El diálogo conserva solo id/título públicos por apertura, admite UUID sin convertirlos a número y no cambia de destino si cambia ruta, listado o sesión. Clipboard rechazado/ausente ofrece copia manual; una respuesta tardía tras cerrar/reabrir no cierra el nuevo diálogo ni anuncia éxito.
+
+No se cierra todo UX-13: recuperación push compartida, orfandad, revocación y comprobación operativa de notificaciones siguen pendientes. UX-08/09/10/14 y GPS/IDV permanecen abiertos. Próximo bloque concreto: carga inicial diferenciada de vacío y acciones de tarjetas accesibles por teclado, con ensayo móvil.

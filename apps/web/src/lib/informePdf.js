@@ -278,6 +278,9 @@ export async function buildInformePdf({ data: d, integrity, protestId, abuseLabe
   }
 
   // ── 6. Integrity seal (hashes and their rules are untouched) ─────────────
+  // Keep the receipt identifiers and both hashes together, rather than orphaning
+  // the final hash on an otherwise empty page after long scope disclosures.
+  ensure(78 + (integrity.discrepancy ? 18 : 0) + (integrity.unavailable ? 18 : 0));
   h2('6. ' + tp('seal').toUpperCase());
   kv(tp('convocationId'), protestId);
   kv(tp('sourceCode'), 'github.com/cero-absoluto/vozciudadana (AGPL 3.0)');

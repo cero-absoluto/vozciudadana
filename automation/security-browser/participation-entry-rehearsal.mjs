@@ -19,6 +19,12 @@ try {
     const context=await browser.newContext({serviceWorkers:'block',viewport:{width,height:844},isMobile:true,hasTouch:true,locale});
     await context.addInitScript(({locale})=>{localStorage.setItem('vc_lang',locale);localStorage.setItem('vc_map_seen','1');}, {locale});
     await context.addInitScript(()=>{window.__notificationRequests=0;Notification.requestPermission=async()=>{window.__notificationRequests++;return 'denied';};});
+    await context.addInitScript(()=>{
+      window.__copyMode='success';window.__copies=[];
+      window.__syntheticClipboard={writeText:async text=>{window.__copies.push(text);if(window.__copyMode==='reject')throw new Error('Synthetic clipboard denial');if(window.__copyMode==='defer')await new Promise(r=>window.__releaseCopy=r);}};
+      Object.defineProperty(navigator,'clipboard',{configurable:true,value:window.__syntheticClipboard});
+      window.__shares=[];window.open=(...args)=>{window.__shares.push(args);return {};};
+    });
     let sms=0,joins=0,emailSends=0,emailChecks=0,releaseSms,releaseEmail,releaseCheck;
     let smsResponse={sent:true},smsStatus=200,holdSms=false,holdEmail=false,holdCheck=false;
     let listOverride=null,detailStatus=200,detailResponse=events[1],holdDetail=false,releaseDetail;
@@ -75,6 +81,41 @@ try {
     for(let i=0;i<6;i++)await page.locator('.otp-box').nth(i).fill(String(i+1));
     await page.getByRole('button',{name:messages.auth.verify,exact:true}).click();await page.locator('.success-scr').waitFor();assert.equal(joins,1);
     checks.push({id:`selected_event_success_${locale}_${width}`,ok:true});
+    assert.ok((await page.locator('#s-verify').textContent()).includes(messages.verify.notiInfo));
+    assert.equal(await page.evaluate(()=>window.__notificationRequests),0);
+    assert.equal(await page.getByRole('button',{name:messages.verify.notiOff,exact:true}).getAttribute('aria-describedby'),'participation-notification-info');
+    checks.push({id:`notification_explained_before_permission_${locale}_${width}`,ok:true});
+    const openShare=async()=>{await page.locator('#s-verify .suc-share').click();await page.locator('.modal-overlay.open').waitFor();};
+    const copyButton=()=>page.locator('.modal-overlay.open').getByRole('button').filter({hasText:messages.share.copy}).first();
+    const closeShare=()=>page.locator('.modal-overlay.open').getByRole('button',{name:messages.share.close,exact:true}).click();
+    await page.evaluate(id=>sessionStorage.setItem('vc_last_joined',id),INSTITUTION);
+    await openShare();await copyButton().click();await page.locator('.modal-overlay.open').waitFor({state:'hidden'});
+    let copies=await page.evaluate(()=>window.__copies);
+    assert.ok(copies.at(-1).includes(ID));assert.ok(copies.at(-1).includes(events[0].title));assert.ok(!copies.at(-1).includes(INSTITUTION));
+    checks.push({id:`share_uses_confirmed_sms_event_${locale}_${width}`,ok:true});
+    await page.evaluate(id=>{sessionStorage.setItem('vc_last_joined',id);window.__copyMode='reject';},ID);
+    await openShare();await copyButton().click();
+    await page.locator('.modal-overlay.open [role="alert"]').filter({hasText:messages.share.copyError}).waitFor();
+    assert.ok((await page.locator('.modal-overlay.open textarea').inputValue()).includes(ID));
+    await closeShare();checks.push({id:`clipboard_denial_preserves_manual_text_${locale}_${width}`,ok:true});
+    await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:undefined}));
+    await openShare();await copyButton().click();
+    await page.locator('.modal-overlay.open [role="alert"]').filter({hasText:messages.share.copyError}).waitFor();
+    assert.ok((await page.locator('.modal-overlay.open textarea').inputValue()).includes(ID));
+    await closeShare();checks.push({id:`missing_clipboard_preserves_manual_text_${locale}_${width}`,ok:true});
+    await page.evaluate(()=>{Object.defineProperty(navigator,'clipboard',{configurable:true,value:window.__syntheticClipboard});window.__copyMode='defer';});
+    const beforeCopies=await page.evaluate(()=>window.__copies.length);
+    await openShare();await copyButton().click();
+    await page.waitForFunction(()=>!!window.__releaseCopy);assert.equal(await copyButton().isDisabled(),true);
+    await page.keyboard.press('Enter');assert.equal(await page.evaluate(()=>window.__copies.length),beforeCopies+1);
+    checks.push({id:`clipboard_double_action_single_write_${locale}_${width}`,ok:true});
+    await closeShare();await openShare();
+    await page.evaluate(()=>{window.__releaseCopy();window.__copyMode='success';});
+    await page.waitForTimeout(50);
+    assert.equal(await page.locator('.modal-overlay.open').count(),1);
+    assert.equal(await copyButton().isDisabled(),false);
+    checks.push({id:`late_copy_cannot_close_reopened_dialog_${locale}_${width}`,ok:true});
+    await closeShare();
     await page.locator('#s-verify .success-scr button').last().scrollIntoViewIfNeeded();
     assert.equal(await page.locator('#s-verify .success-scr button').last().evaluate(el=>{const a=el.getBoundingClientRect(),b=el.closest('.success-scr').getBoundingClientRect();return a.top>=b.top-1&&a.bottom<=b.bottom+1;}),true);
     checks.push({id:`receipt_actions_scroll_reachable_${locale}_${width}`,ok:true});
@@ -108,6 +149,11 @@ try {
     await page.reload();await page.locator('.suc-hash').waitFor();assert.equal(emailChecks,1);
     assert.ok((await page.locator('#s-verify-institucional').textContent()).includes(messages.participation.savedConfirmation));
     checks.push({id:`institutional_reload_no_write_${locale}_${width}`,ok:true});
+    await page.locator('#s-verify-institucional .suc-share').click();await page.locator('.modal-overlay.open').waitFor();
+    await copyButton().click();await page.locator('.modal-overlay.open').waitFor({state:'hidden'});
+    const institutionCopy=await page.evaluate(()=>window.__copies.at(-1));
+    assert.ok(institutionCopy.includes(INSTITUTION));assert.ok(institutionCopy.includes(events[1].title));assert.ok(!institutionCopy.includes(ID));
+    checks.push({id:`share_uses_restored_institutional_event_${locale}_${width}`,ok:true});
     const confirmedStorage=await page.evaluate(()=>Object.fromEntries(Object.entries(sessionStorage)));
     await page.getByRole('button',{name:messages.participation.anotherEmail,exact:true}).click();
     await page.locator('#institution-verify-email').fill('synthetic@example.invalid');
@@ -175,7 +221,7 @@ try {
   assert.deepEqual(unexpected,[]);assert.deepEqual(errors,[]);
 } finally {
   await browser.close();
-  const report={status:checks.length===160&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,externalMutations:0};
+  const report={status:checks.length===216&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,externalMutations:0};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
   if(report.status!=='PASS') process.exitCode=1;
 }

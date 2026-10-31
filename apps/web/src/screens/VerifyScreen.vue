@@ -44,13 +44,14 @@
 
         <!-- Peldaño 1 — Notificación -->
 
-        <button @click="activarNotificacion" :disabled="notiPending" :aria-busy="notiPending"
+        <p id="participation-notification-info" style="font-size:12px;color:var(--text2);line-height:1.6">{{ $t('verify.notiInfo') }}</p>
+        <button @click="activarNotificacion" :disabled="notiPending" :aria-busy="notiPending" aria-describedby="participation-notification-info"
           style="width:100%;margin-bottom:10px;padding:12px;background:rgba(76,111,255,.12);border:.5px solid #4C6FFF;border-radius:var(--r);color:#4C6FFF;font-size:13px;font-weight:700;cursor:pointer">
           {{ notiActivada ? $t('verify.notiOn') : $t('verify.notiOff') }}
         </button>
 
         <!-- Peldaño 2 — VIRAL -->
-        <button class="suc-share" style="width:100%;margin-bottom:10px" @click="ui.showShareModal = true">
+        <button class="suc-share" style="width:100%;margin-bottom:10px" @click="shareProtest">
           {{ $t('verify.viral') }}
         </button>
 
@@ -106,6 +107,11 @@ const gpsReinforceDone = ref(false);
 
 // Local scope GPS reinforce
 
+
+function shareProtest() {
+  if (!success.value || !validReceipt(receipt.value)) return false;
+  return ui.openShare({id: confirmedProtestId.value, title: confirmedTitle.value});
+}
 
 async function activarNotificacion() {
   if (notiActivada.value || notiPending.value) return;

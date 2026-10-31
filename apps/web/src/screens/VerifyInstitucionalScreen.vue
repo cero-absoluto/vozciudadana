@@ -65,7 +65,7 @@
       <p v-if="receiptNotSaved" role="alert">{{ $t('participation.receiptNotSaved') }}</p>
       <p v-if="censusNotSaved" role="alert">{{ $t('participation.censusNotSaved') }}</p>
       <button type="button" @click="newInstitutionalVerification">{{ $t('participation.anotherEmail') }}</button>
-      <button class="suc-share" @click="ui.showShareModal = true">{{ $t('verificacional.viral') }}</button>
+      <button class="suc-share" @click="shareProtest">{{ $t('verificacional.viral') }}</button>
       <button class="btn-primary" style="width:100%;margin-bottom:7px" @click="goDetail">{{ $t('verificacional.backDetail') }}</button>
       <button style="width:100%;padding:9px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);font-size:10px;color:var(--text2);cursor:pointer"
         @click="$router.push('/')">{{ $t('verificacional.goMap') }}</button>
@@ -319,6 +319,11 @@ async function verifyOtp() {
       else otpError.value = t(participationErrorKey(error));
     }
   } finally { loading.value = false; }
+}
+
+function shareProtest() {
+  if (step.value !== 3 || !validReceipt(receiptHash.value)) return false;
+  return ui.openShare({id: protestId, title: confirmedTitle.value});
 }
 
 function goDetail() {

@@ -6,6 +6,27 @@ export const useUiStore = defineStore('ui', () => {
   const toastMsg           = ref('');
   const toastVisible       = ref(false);
   const showShareModal     = ref(false);
+  const shareContext       = shallowRef(null);
+  const shareOpenId        = ref(0);
+
+  function openShare(context) {
+    // An open dialog keeps the destination it was explicitly opened for.
+    if (showShareModal.value) return false;
+    const rawId = context?.id;
+    const id = typeof rawId === 'string' ? rawId.trim()
+      : typeof rawId === 'number' && Number.isSafeInteger(rawId) && rawId > 0 ? String(rawId) : '';
+    const title = typeof context?.title === 'string' ? context.title.trim() : '';
+    if (!/^[A-Za-z0-9_-]{1,128}$/.test(id) || !title || title.length > 500) {
+      shareContext.value = null;
+      showShareModal.value = false;
+      return false;
+    }
+    // Copy only public event metadata: never retain the caller's object or credentials.
+    shareContext.value = Object.freeze({ id, title });
+    shareOpenId.value += 1;
+    showShareModal.value = true;
+    return true;
+  }
   const showInstallBanner  = ref(false);
   const lang               = ref(i18n.global.locale.value);
   const deferredPrompt     = shallowRef(null);
@@ -57,7 +78,7 @@ function clearGps() {
   }
 
  return {
-    toastMsg, toastVisible, showShareModal, showInstallBanner, lang,
+    toastMsg, toastVisible, showShareModal, shareContext, shareOpenId, openShare, showInstallBanner, lang,
     showToast, setDeferredPrompt, revealInstallBanner, dismissInstallBanner, installPWA,
     gpsLat, gpsLng, gpsAccuracy, setGps, clearGps,
   };

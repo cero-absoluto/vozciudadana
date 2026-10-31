@@ -96,7 +96,7 @@
           {{ joinLabel }}
         </button>
         <div class="viral-wrap"v-if="!protest.requiere_censo">
-          <button class="btn-viral" @click="ui.showShareModal = true">
+          <button class="btn-viral" @click="shareProtest">
             <div class="bv-inner">
               <div class="bv-left"><span class="bv-fire">🔥</span>
               <div class="bv-text"><div class="bv-title">{{ $t('detail.viral') }}</div><div class="bv-sub">{{ $t('detail.viralMake') }}</div></div>
@@ -339,6 +339,11 @@ const joinLabel = computed(() => {
   }
   return t('detail.joinAnon');
 });
+
+function shareProtest() {
+  if (!protest.value) return false;
+  return ui.openShare({id: protest.value.id, title: protest.value.title});
+}
 
 function onJoin() {
   if (!cj.value.ok) return;

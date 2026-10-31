@@ -814,6 +814,9 @@
     "contextChanged": "The campaign has changed. Request a new code."
   },
   "share": {
+    "copyError": "Could not copy. You can select the text and copy it manually.",
+    "dialogTitle": "Share campaign",
+    "messageLabel": "Message to share",
     "previewLabel": "🔥 Message that will be sent",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "Send the message to your contacts and groups",
@@ -822,10 +825,10 @@
     "copy": "Copy link + message",
     "copyDesc": "For TikTok, Instagram, X, Facebook or wherever you want",
     "close": "Close",
-    "viralMsg": "Hi, I just joined this verified protest. I encourage you to participate: {url}",
-    "viralMsgEvent": "I just joined this verified call to action: “{title}”. Read it and, if you agree, join here: {url}",
-    "toastWA": "🔥 Shared via WhatsApp",
-    "toastTG": "🔥 Shared via Telegram",
+    "viralMsg": "Here is a campaign you may want to read. If you agree, you can participate: {url}",
+    "viralMsgEvent": "Here is a campaign: “{title}”. Read it and, if you agree, join here: {url}",
+    "toastWA": "Opening WhatsApp to share",
+    "toastTG": "Opening Telegram to share",
     "toastCopy": "📋 Copied! Paste it on TikTok, Instagram or wherever you want"
   },
   "install": {

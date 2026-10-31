@@ -33,7 +33,7 @@ export function harness(name='AuthScreen', overrides={}, runtime={}) {
     useI18n:()=>({t:k=>k,locale:ref('es')}),useRouter:()=>({push:p=>navigation.push(p)}),
     useRoute:()=>({params:{protestId:'selected'}}),useProtestsStore:()=>store,
     useDeviceStore:()=>device,
-    useUiStore:()=>({clearGps(){},showToast:m=>toasts.push(m),revealInstallBanner(){}}),
+    useUiStore:()=>runtime.ui || ({clearGps(){},showToast:m=>toasts.push(m),revealInstallBanner(){}}),
     shouldSkipFastPath,clearForceOtp,preSmsRejectionKey,sessionStorage,
     localStorage:{getItem:()=>null,setItem(){},removeItem(){}},api,apiFixture:api,
     window:{grecaptcha:{ready:fn=>fn(),execute:async()=> 'synthetic-captcha'}},navigator:{},setTimeout(){},
@@ -42,7 +42,7 @@ export function harness(name='AuthScreen', overrides={}, runtime={}) {
   if(runtime.computed)context.computed=runtime.computed;
   if(runtime.globals)Object.assign(context,runtime.globals);
   vm.createContext(context);
-  const exports=name==='AuthScreen'?'sendSMS,resendSMS,verifyOTP,changeNumber,phone,countryCode,countryCodes,otpDigits,otpVisible,requestedOtp,sending':name==='VerifyInstitucionalScreen'?'sendOtp,verifyOtp,email,otp,emailError,otpError,loading,step,activeContext,outcomeMessage,receiptHash,censusNotSaved,receiptNotSaved,sentContext,availability,loadState,loadProtest,changeEmail,dominio,newInstitutionalVerification,confirmedTitle,savedConfirmation':'success,outcomeMessage,receipt,confirmedTitle,savedConfirmation,receiptNotSaved,reinforceGps';
+  const exports=name==='AuthScreen'?'sendSMS,resendSMS,verifyOTP,changeNumber,phone,countryCode,countryCodes,otpDigits,otpVisible,requestedOtp,sending':name==='VerifyInstitucionalScreen'?'sendOtp,verifyOtp,email,otp,emailError,otpError,loading,step,activeContext,outcomeMessage,receiptHash,censusNotSaved,receiptNotSaved,sentContext,availability,loadState,loadProtest,changeEmail,dominio,newInstitutionalVerification,confirmedTitle,savedConfirmation,shareProtest':'success,outcomeMessage,receipt,confirmedTitle,savedConfirmation,receiptNotSaved,reinforceGps,shareProtest';
   vm.runInContext(script(name)+'\nglobalThis.state={'+exports+'};',context);
   const state=context.state;
   if(name==='AuthScreen'){state.phone.value='600000001';state.countryCodes.value=[{iso2:'ES',dial_code:'34'}];}

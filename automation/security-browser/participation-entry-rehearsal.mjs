@@ -4,7 +4,7 @@ import {readFileSync, existsSync, writeFileSync} from 'node:fs';
 import {resolve, extname} from 'node:path';
 import assert from 'node:assert/strict';
 const {chromium}=await import(process.env.S16_PLAYWRIGHT_MODULE||'playwright');
-const root=resolve('apps/web/dist'),checks=[],requests=[],unexpected=[],errors=[];
+const root=resolve('apps/web/dist'),checks=[],requests=[],unexpected=[],errors=[],detailMeasurements=[];
 async function waitForCount(read,expected) {
   for(let i=0;i<100&&read()<expected;i++)await new Promise(r=>setTimeout(r,20));
   assert.equal(read(),expected);
@@ -27,6 +27,7 @@ try {
     });
     let sms=0,joins=0,emailSends=0,emailChecks=0,releaseSms,releaseEmail,releaseCheck;
     let smsResponse={sent:true},smsStatus=200,holdSms=false,holdEmail=false,holdCheck=false;
+    let mobileDetail=null;
     let holdList=false,releaseList,listStatus=200,listReads=0;
     let listOverride=null,detailStatus=200,detailResponse=events[1],holdDetail=false,releaseDetail;
     let joinStatus=201,joinResponse={receipt:'44444444-4444-4444-8444-444444444444'},emailStatus=200;
@@ -41,6 +42,7 @@ try {
       if(u.hostname==='api.voiceprotest.org') {
         if(req.method()==='OPTIONS')return route.fulfill({status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST','Access-Control-Allow-Headers':'Content-Type'}});
         if(req.method()==='GET'&&u.pathname==='/api/protests') {listReads++;if(holdList)await new Promise(r=>releaseList=r);return json(listOverride ?? events,listStatus);}
+        if(req.method()==='GET'&&u.pathname===`/api/protests/${ID}`)return json(mobileDetail ?? events[0]);
         if(req.method()==='GET'&&u.pathname===`/api/protests/${ID}/informe`)return json({error:'synthetic report unavailable'},503);
         if(req.method()==='GET'&&u.pathname===`/api/protests/${INSTITUTION}`) {if(holdDetail)await new Promise(r=>releaseDetail=r);return json(detailResponse,detailStatus);}
         if(req.method()==='GET'&&u.pathname==='/api/ipinfo')return json({country_code:'ES',country_name:'Spain',city:'Synthetic'});
@@ -264,12 +266,26 @@ try {
     assert.ok((await page.locator('.suc-hash').textContent()).includes('66666666-6666-4666-8666-666666666666'));
     assert.equal(emailSends,beforeSends);assert.equal(emailChecks,beforeChecks);
     checks.push({id:`institutional_saved_receipt_survives_missing_event_${locale}_${width}`,ok:true});
+    // Measure the existing detail layout before changing the product hierarchy.
+    for(const height of [640,844])for(const risk of ['low','high'])for(const balance of [0,10]){
+      mobileDetail={...events[0],title:('Synthetic campaign with a long public title ').repeat(4).trim(),description:('Synthetic public description. ').repeat(80),demands:('Synthetic concrete demand. ').repeat(25),focal_point:'Synthetic public institution',risk_level:risk,saldo_euros:balance};
+      listOverride=[];await page.evaluate(()=>{localStorage.clear();sessionStorage.clear();});
+      await page.setViewportSize({width,height});
+      await page.goto(`https://voiceprotest.org/?ux=detail-${height}-${risk}-${balance}#/detail/${ID}`);
+      await page.locator('#s-detail .d-title').waitFor();
+      const geometry=await page.evaluate(()=>{
+        const screen=document.querySelector('#s-detail'),header=screen.querySelector('.detail-hdr'),body=screen.querySelector('.d-scroll'),footer=screen.querySelector('.join-footer'),primary=footer.querySelector('.btn-primary');
+        const sr=screen.getBoundingClientRect(),br=primary.getBoundingClientRect();
+        return {screen:sr.height,header:header.getBoundingClientRect().height,body:body.clientHeight,bodyScroll:body.scrollHeight,footer:footer.getBoundingClientRect().height,primaryWithinScreen:br.top>=sr.top&&br.bottom<=sr.bottom,overflowX:document.documentElement.scrollWidth>window.innerWidth};
+      });
+      detailMeasurements.push({locale,width,height,risk,balance,...geometry});
+    }
     await context.close();
   }
   assert.deepEqual(unexpected,[]);assert.deepEqual(errors,[]);
 } finally {
   await browser.close();
-  const report={status:checks.length===288&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,externalMutations:0};
+  const report={status:checks.length===288&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
   if(report.status!=='PASS') process.exitCode=1;
 }

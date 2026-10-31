@@ -74,3 +74,7 @@ Revisión de código de la base `1a3a315f`, sin proveedores ni mutaciones extern
 - **UX-09, capacidad estimada:** cliente calcula saldo/0.05 y traducciones mencionan 20 verificaciones por euro; API usa coste configurable. No se ha demostrado discrepancia en producción. Presentar estimación o dato autorizado por servidor sin alterar cobros.
 
 El pie fijo de Detail coloca financiación antes de adhesión. Su impacto con texto largo/zoom queda para ensayo 360/390px; no se declara overflow sin medirlo. La ficha sí muestra título, destinatario si existe, descripción, demandas y tiempos, y explica saldo agotado.
+
+## Publicación UX-07/11
+
+PR157 corrige el contexto institucional de entrada directa y el texto phoneHint. Véase [evidencia](ux-07-11-publication-20261031.md). Incluye prioridad de recibos/uncertain, contexto fijo y comprobación imperativa de cierre tras esperas. No resuelve UX-08/09/10/13/14 ni declara completada la fase.

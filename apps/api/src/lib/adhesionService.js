@@ -31,7 +31,7 @@ export class BalanceExhaustedError extends AdhesionError {
   constructor() { super('BALANCE_EXHAUSTED', 'Esta convocatoria no tiene saldo. Apóyala con una donación.'); }
 }
 export class AlreadyJoinedError extends AdhesionError {
-  constructor() { super('ALREADY_JOINED', 'You have already joined this convocatoria — one verified adhesion per person, per event.'); }
+  constructor() { super('ALREADY_JOINED', 'You have already joined this convocatoria — this verified identifier is counted once for this verification method and event.'); }
 }
 export class MembershipAlreadyExistsError extends AdhesionError {
   constructor() { super('MEMBERSHIP_ALREADY_EXISTS', 'This email has already registered institutional membership for this convocatoria.'); }

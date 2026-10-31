@@ -76,9 +76,11 @@ try {
     assert.equal(await page.locator('#s-verify .success-scr button').last().evaluate(el=>{const a=el.getBoundingClientRect(),b=el.closest('.success-scr').getBoundingClientRect();return a.top>=b.top-1&&a.bottom<=b.bottom+1;}),true);
     checks.push({id:`receipt_actions_scroll_reachable_${locale}_${width}`,ok:true});
     assert.ok((await page.locator('.participation-receipt').textContent()).includes('44444444-4444-4444-8444-444444444444'));
+    // Simulate another tab changing the shared identity while this tab keeps token A.
+    await page.evaluate(()=>localStorage.setItem('vc_device_id','other-tab-identity'));
     await page.reload();await page.locator('.participation-receipt').waitFor();assert.equal(joins,1);
     assert.ok((await page.locator('.participation-receipt').textContent()).includes(messages.participation.savedConfirmation));
-    checks.push({id:`confirmed_reload_no_write_${locale}_${width}`,ok:true});
+    checks.push({id:`confirmed_reload_ignores_other_tab_identity_${locale}_${width}`,ok:true});
     await page.goto('https://voiceprotest.org/#/verify-institucional/'+INSTITUTION);
     await page.locator('#institution-verify-email').fill('synthetic@example.invalid');
     holdEmail=true;await page.locator('#institution-verify-email').press('Enter');

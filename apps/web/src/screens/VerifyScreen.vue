@@ -77,6 +77,7 @@ import { classifyJoinRejection, joinRejectionPath, joinRejectionToast } from '@/
 import { localizedCountry } from '@/constants.js';
 import {withClientDeadline} from '@/services/requestJson.js';
 import {validReceipt, readOutcome, writeOutcome, beginOutcome, uncertainOutcome, participationErrorKey} from '@/lib/participationOutcome.js';
+import {participationGpsSnapshot} from '@/lib/participationGps.js';
 
 const { t, locale } = useI18n();
 
@@ -167,26 +168,29 @@ onMounted(async () => {
   // A slow preflight must not lose the consented payload or retain a GPS cache.
   let gpsSnapshot;
   try {
-    gpsSnapshot = {
-      lat: ui.gpsLat ?? (localStorage.getItem('vc_gps_lat') ? parseFloat(localStorage.getItem('vc_gps_lat')) : null) ?? (device.gpsReady ? device.gpsLat : null),
-      lng: ui.gpsLng ?? (localStorage.getItem('vc_gps_lng') ? parseFloat(localStorage.getItem('vc_gps_lng')) : null) ?? (device.gpsReady ? device.gpsLng : null),
-      accuracy: ui.gpsAccuracy ?? (localStorage.getItem('vc_gps_accuracy') ? parseFloat(localStorage.getItem('vc_gps_accuracy')) : null) ?? (device.gpsReady ? device.gpsAccuracy : null),
-    };
-    ui.clearGps?.();
+    gpsSnapshot = participationGpsSnapshot(ui, device, localStorage);
+    ui.clearGps();
   } catch { outcomeMessage.value = 'participation.storageUnavailable'; return; }
   finally {
     for (const key of ['vc_gps_lat','vc_gps_lng','vc_gps_accuracy','vc_gps_ts']) {
       try { localStorage.removeItem(key); } catch { /* Browser storage unavailable. */ }
     }
   }
-  let lastId, context;
+  let lastId, context, identity, participationToken;
   try {
     lastId = sessionStorage.getItem('vc_last_joined');
-    context = 'phone:' + device.getDeviceId() + ':' + lastId;
+    identity = sessionStorage.getItem('vc_device_id');
+    participationToken = sessionStorage.getItem('vc_participation_token');
+    context = 'phone:' + identity + ':' + lastId;
   } catch { outcomeMessage.value = 'participation.storageUnavailable'; return; }
   if (!lastId) {
     ui.showToast(t('verify.toastProtestNotFound'));
     router.push('/');
+    return;
+  }
+  if (typeof identity !== 'string' || identity.length < 8 || identity.length > 128) {
+    outcomeMessage.value = 'participation.verificationRejected';
+    router.push('/auth');
     return;
   }
   const previous = readOutcome(sessionStorage, context);
@@ -201,6 +205,7 @@ onMounted(async () => {
     outcomeMessage.value = previous.state === 'unavailable' ? 'participation.storageUnavailable' : 'participation.uncertain';
     return;
   }
+  if (!participationToken) { outcomeMessage.value = 'participation.verificationRejected'; router.push('/auth'); return; }
   spinMsg.value = t('verify.spinVerifying');
   try { await withClientDeadline(() => protests.loadProtests()); }
   catch { outcomeMessage.value = 'participation.loadUnavailable'; return; }
@@ -218,7 +223,7 @@ onMounted(async () => {
   } catch { outcomeMessage.value = 'participation.loadUnavailable'; return; }
   // Check after all preflight awaits, immediately before journalling/dispatch.
   if (!verificationActive) return;
-  if (sessionStorage.getItem('vc_last_joined') !== lastId) {
+  if (sessionStorage.getItem('vc_last_joined') !== lastId || sessionStorage.getItem('vc_device_id') !== identity || sessionStorage.getItem('vc_participation_token') !== participationToken) {
     ui.showToast(t('verify.toastProtestNotFound'));
     router.push('/');
     return;
@@ -237,7 +242,7 @@ onMounted(async () => {
   let joinRes;
   try {
     joinRes = await api.joinProtest(target.id, {
-      participation_token: sessionStorage.getItem('vc_participation_token'),
+      participation_token: participationToken,
       sms_sent: sessionStorage.getItem('vc_sms_sent') === 'true',
       recaptcha_token: token,
       gps_lat: gpsAllowed ? gpsSnapshot.lat : null,
@@ -249,7 +254,8 @@ onMounted(async () => {
     });
     if (!validReceipt(joinRes?.receipt)) throw Object.assign(new Error('INVALID_API_RESPONSE'), {code:'INVALID_API_RESPONSE'});
   } catch (error) {
-    writeOutcome(sessionStorage, context, {state:uncertainOutcome(error) ? 'uncertain' : 'rejected',title:target.title,attemptId:attempt.attemptId});
+    const saved = writeOutcome(sessionStorage, context, {state:uncertainOutcome(error) ? 'uncertain' : 'rejected',title:target.title,attemptId:attempt.attemptId});
+    if (!saved) { outcomeMessage.value = 'participation.uncertain'; return; }
     outcomeMessage.value = participationErrorKey(error);
     if (!uncertainOutcome(error)) {
       const rejection = classifyJoinRejection(error);

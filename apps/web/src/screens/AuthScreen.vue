@@ -355,14 +355,15 @@ async function sendSMS() {
     const forceOtp = shouldSkipFastPath(sessionStorage);
     const deviceSecret = forceOtp ? null : device.getDeviceSecret();
     if (deviceSecret) {
+      const proofDeviceId = device.getDeviceId();
       try {
-        const locks = await api.fetchDeviceLocks(device.getDeviceId(), deviceSecret);
+        const locks = await api.fetchDeviceLocks(proofDeviceId, deviceSecret);
         if (locks?.length) {
-          const reauth = await api.reauthDevice(device.getDeviceId(), deviceSecret);
+          const reauth = await api.reauthDevice(proofDeviceId, deviceSecret);
           if (reauth?.authenticated !== true || typeof reauth.participation_token !== 'string' || !reauth.participation_token) throw new Error('INVALID_API_RESPONSE');
           if (sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
           sessionStorage.setItem('vc_participation_token', reauth.participation_token);
-          sessionStorage.setItem('vc_device_id', device.getDeviceId());
+          sessionStorage.setItem('vc_device_id', proofDeviceId);
           sessionStorage.setItem('vc_sms_sent', 'false');
           router.push('/verify');
           return;

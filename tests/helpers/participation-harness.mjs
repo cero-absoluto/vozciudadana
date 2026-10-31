@@ -1,5 +1,6 @@
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
+import {participationGpsSnapshot} from '../../apps/web/src/lib/participationGps.js';
 import {classifyJoinRejection,joinRejectionPath} from '../../apps/web/src/lib/joinRejection.js';
 import {withClientDeadline,recaptchaToken} from '../../apps/web/src/services/requestJson.js';
 import * as outcomes from '../../apps/web/src/lib/participationOutcome.js';
@@ -16,7 +17,7 @@ export const deferred = () => {let resolve,reject;const promise=new Promise((a,b
 export const flush = () => new Promise(r=>setImmediate(r));
 export function harness(name='AuthScreen', overrides={}) {
   let mounted; const toasts=[],navigation=[],calls=[],unmounted=[];
-  const memory=new Map([['vc_last_joined','selected']]);
+  const memory=new Map([['vc_last_joined','selected'],['vc_device_id','synthetic-device'],['vc_participation_token','synthetic-token']]);
   const sessionStorage={getItem:k=>memory.get(k)??null,setItem:(k,v)=>memory.set(k,String(v)),removeItem:k=>memory.delete(k)};
   const store={protests:[{id:'selected',scope:'global',risk_level:'low',title:'Synthetic selected event',dominio_email:name==='VerifyInstitucionalScreen'?'example.invalid':null}],
     loadProtests:async()=>{calls.push(['load']);},joinProtest:()=>calls.push(['localJoin'])};
@@ -26,11 +27,11 @@ export function harness(name='AuthScreen', overrides={}) {
     sendEmailOtp:async()=>({sent:true,challenge_id:'33333333-3333-4333-8333-333333333333'}),verifyEmailOtp:async()=>({verified:true,receipt:'44444444-4444-4444-8444-444444444444'}),
     joinProtest:async()=>{calls.push(['join']);return {receipt:'44444444-4444-4444-8444-444444444444'};},...overrides};
   const device={gpsReady:false,getDeviceSecret:()=>null,getDeviceId:()=> 'synthetic-device'};
-  const context={classifyJoinRejection,joinRejectionPath,markForceOtp,...outcomes,withClientDeadline,recaptchaToken,crypto:{randomUUID:()=> '55555555-5555-4555-8555-555555555555'},ref,computed,onMounted:fn=>mounted=fn,onUnmounted:fn=>unmounted.push(fn),watch(){},
+  const context={participationGpsSnapshot,classifyJoinRejection,joinRejectionPath,markForceOtp,...outcomes,withClientDeadline,recaptchaToken,crypto:{randomUUID:()=> '55555555-5555-4555-8555-555555555555'},ref,computed,onMounted:fn=>mounted=fn,onUnmounted:fn=>unmounted.push(fn),watch(){},
     useI18n:()=>({t:k=>k,locale:ref('es')}),useRouter:()=>({push:p=>navigation.push(p)}),
     useRoute:()=>({params:{protestId:'selected'}}),useProtestsStore:()=>store,
     useDeviceStore:()=>device,
-    useUiStore:()=>({showToast:m=>toasts.push(m),revealInstallBanner(){}}),
+    useUiStore:()=>({clearGps(){},showToast:m=>toasts.push(m),revealInstallBanner(){}}),
     shouldSkipFastPath,clearForceOtp,preSmsRejectionKey,sessionStorage,
     localStorage:{getItem:()=>null,setItem(){},removeItem(){}},api,apiFixture:api,
     window:{grecaptcha:{ready:fn=>fn(),execute:async()=> 'synthetic-captcha'}},navigator:{},setTimeout(){},

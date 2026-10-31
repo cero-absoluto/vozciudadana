@@ -212,7 +212,8 @@ async function verifyOtp() {
       censusNotSaved.value = true;
       showConfirmed({receipt:error.receipt,attemptId:attempt.attemptId});
     } else {
-      writeOutcome(sessionStorage, activeContext.value, {state:uncertainOutcome(error) ? 'uncertain' : 'rejected',attemptId:attempt.attemptId});
+      const saved = writeOutcome(sessionStorage, activeContext.value, {state:uncertainOutcome(error) ? 'uncertain' : 'rejected',attemptId:attempt.attemptId});
+      if (!saved) { outcomeMessage.value = 'participation.uncertain'; step.value = 4; return; }
       if (uncertainOutcome(error)) { outcomeMessage.value = 'participation.uncertain'; step.value = 4; }
       else otpError.value = t(participationErrorKey(error));
     }

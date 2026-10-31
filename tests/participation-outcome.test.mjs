@@ -3,10 +3,34 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {harness,deferred,flush} from './helpers/participation-harness.mjs';
 import {requestJson,withClientDeadline} from '../apps/web/src/services/requestJson.js';
+import {participationGpsSnapshot} from '../apps/web/src/lib/participationGps.js';
 import {validReceipt,readOutcome,writeOutcome,beginOutcome,participationErrorKey,uncertainOutcome} from '../apps/web/src/lib/participationOutcome.js';
 const RECEIPT='44444444-4444-4444-8444-444444444444';
 const phoneContext='phone:synthetic-device:selected';
 const copySession=(from,to)=>{for(const [k,v] of from.memory)to.memory.set(k,v);};
+test('another tab’s global identity cannot move A’s token/receipt into B’s context',async()=>{
+  const f=harness('VerifyScreen');f.device.getDeviceId=()=> 'identity-B';let token;
+  f.api.joinProtest=async(_id,payload)=>{token=payload.participation_token;return {receipt:RECEIPT};};
+  await f.mount();assert.equal(token,'synthetic-token');assert.equal(readOutcome(f.context.sessionStorage,phoneContext).state,'completed');assert.equal(readOutcome(f.context.sessionStorage,'phone:identity-B:selected'),null);
+  const b=harness('VerifyScreen');copySession(f,b);b.memory.set('vc_device_id','identity-B');b.memory.set('vc_participation_token','token-for-B');b.device.getDeviceId=()=> 'identity-B';await b.mount();
+  assert.equal(b.calls.filter(x=>x[0]==='join').length,1);assert.equal(b.state.savedConfirmation.value,false);
+});
+test('returning-device proof and session identity remain paired if another tab switches global identity mid-request',async()=>{
+  const wait=deferred(),f=harness();let id='identity-A';f.device.getDeviceId=()=>id;f.device.getDeviceSecret=()=> 'synthetic-secret';
+  f.api.fetchDeviceLocks=async current=>{assert.equal(current,'identity-A');return ['lock'];};
+  f.api.reauthDevice=async current=>{assert.equal(current,'identity-A');return wait.promise;};
+  const pending=f.state.sendSMS();await flush();id='identity-B';wait.resolve({authenticated:true,participation_token:'token-for-A'});await pending;
+  assert.equal(f.memory.get('vc_device_id'),'identity-A');assert.equal(f.memory.get('vc_participation_token'),'token-for-A');assert.equal(f.calls.some(x=>x[0]==='request'),false);
+});
+test('a refused late failure remains uncertain and cannot force a new OTP or navigate',async()=>{
+  const wait=deferred(),f=harness('VerifyScreen',{joinProtest:()=>wait.promise});const mounting=f.mount();await flush();
+  f.memory.set('vc_participation_outcome:v1:'+phoneContext,'broken');wait.reject({status:403,code:'NATIONAL_REVERIFICATION_REQUIRED'});await mounting;
+  assert.equal(f.state.outcomeMessage.value,'participation.uncertain');assert.equal(f.memory.has('vc_force_otp'),false);assert.deepEqual(f.navigation,[]);
+});
+for(const values of [['abc','2','5'],['','2','5'],['91','2','5'],['0','181','5'],['Infinity','2','5']])test('invalid cached GPS cannot suppress reinforcement '+JSON.stringify(values),()=>{
+  const cache=new Map([['vc_gps_lat',values[0]],['vc_gps_lng',values[1]],['vc_gps_accuracy',values[2]]]);
+  assert.deepEqual(participationGpsSnapshot({}, {gpsReady:false}, {getItem:key=>cache.get(key)??null}),{lat:null,lng:null,accuracy:null});
+});
 test('slow preflight preserves a GPS snapshot after immediate cache deletion, including zero latitude',async()=>{
   const f=harness('VerifyScreen'),wait=deferred(),gps=new Map([['vc_gps_lat','0'],['vc_gps_lng','2'],['vc_gps_accuracy','5']]);
   f.context.localStorage.getItem=key=>gps.get(key)??null;f.context.localStorage.removeItem=key=>gps.delete(key);f.store.loadProtests=()=>wait.promise;
@@ -47,7 +71,7 @@ test('a pending owner is exclusive, a rejected request permits a new owner, and 
 });
 test('new canonical verified identity cannot receive the earlier identity’s receipt',async()=>{
   const f=harness('VerifyScreen');writeOutcome(f.context.sessionStorage,phoneContext,{state:'completed',receipt:RECEIPT,title:'Earlier identity'});
-  f.device.getDeviceId=()=> 'new-canonical-id';await f.mount();assert.equal(f.calls.filter(x=>x[0]==='join').length,1);assert.notEqual(f.state.confirmedTitle.value,'Earlier identity');
+  f.device.getDeviceId=()=> 'new-canonical-id';f.memory.set('vc_device_id','new-canonical-id');f.memory.set('vc_participation_token','new-identity-token');await f.mount();assert.equal(f.calls.filter(x=>x[0]==='join').length,1);assert.notEqual(f.state.confirmedTitle.value,'Earlier identity');
 });
 test('institutional local storage or CAPTCHA preflight failure cannot spend another email request',async()=>{
   for(const failure of ['storage','captcha']){

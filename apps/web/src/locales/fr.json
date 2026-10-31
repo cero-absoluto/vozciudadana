@@ -906,7 +906,7 @@
     "reportNote": "Le rapport public vérifié",
     "reportNoteBody": "Le rapport public contient uniquement des statistiques agrégées.",
     "metadataTitle": "Métadonnées techniques conservées par adhésion",
-    "metadataBody": "Par adhésion nous conservons : hash HMAC-SHA256 du numéro de téléphone, ville et région, identifiant aléatoire d'appareil, score de fiabilité, signaux géographiques utilisés, horodatage approximatif.",
+    "metadataBody": "Selon la méthode et la politique, les enregistrements peuvent conserver des identifiants pseudonymes, la méthode enregistrée, un identifiant de dispositif lorsqu’il est utilisé, les pays/villes/régions disponibles, des signaux GPS/IP enregistrés, un indice interne et une date approximative. L’indice n’est ni une probabilité ni un certificat d’identité. Les enregistrements institutionnels n’impliquent pas un téléphone vérifié ; la méthode historique peut être inconnue.",
     "pushTitle": "Notifications push (optionnelles)",
     "pushBody": "Si vous choisissez d'activer les notifications push, l'endpoint push de votre navigateur est conservé lié à cette protestation.",
     "abuseTitle": "Protection contre les abus",

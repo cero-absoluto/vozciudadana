@@ -58,6 +58,11 @@ test('verify refuses a destination changed while the list was loading',async()=>
 test('explicit selected event still reaches join',async()=>{
   const f=harness('VerifyScreen');await f.mount();assert.equal(f.calls.filter(x=>x[0]==='join').length,1);assert.equal(f.state.success.value,true);
 });
+test('verify refuses a destination changed while reCAPTCHA was pending',async()=>{
+  const f=harness('VerifyScreen'),wait=deferred();f.context.window.grecaptcha.execute=()=>wait.promise;
+  const pending=f.mount();await flush();f.memory.set('vc_last_joined','another');wait.resolve('synthetic-captcha');await pending;
+  assert.equal(f.calls.filter(x=>x[0]==='join').length,0);assert.equal(f.state.success.value,false);assert.deepEqual(f.navigation,['/']);
+});
 test('resend waits for the real result, sends once, skips reauth and preserves the request destination',async()=>{
   const f=harness();await f.state.sendSMS();f.calls.length=0;f.state.phone.value='999999999';f.state.countryCode.value='FR';
   const wait=deferred();f.api.requestOtp=async payload=>{f.calls.push(['request',payload]);return wait.promise;};

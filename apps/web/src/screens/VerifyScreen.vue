@@ -185,6 +185,11 @@ onMounted(async () => {
       try {
         token = await window.grecaptcha.execute(import.meta.env.VITE_RECAPTCHA_KEY, { action: 'join_protest' });
       } catch { /* dev */ }
+      if (sessionStorage.getItem('vc_last_joined') !== lastId) {
+        ui.showToast(t('verify.toastProtestNotFound'));
+        router.push('/');
+        return;
+      }
       await import('@/services/api.js').then(async api => {
   const joinRes = await api.joinProtest(target.id, {
     participation_token: participationToken,

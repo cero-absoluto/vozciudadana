@@ -1,7 +1,7 @@
 # Hoja de ruta — identidad y verificación
 
-Actualización: 30/10/2026. La seguridad sigue con sus pendientes expresos; el trabajo
-actual es el punto 2. La autorización del Owner cubre completar los pasos rutinarios
+Actualización: 31/10/2026. La seguridad y la identidad conservan sus pendientes expresos;
+el trabajo actual es el punto 3, experiencia de participación. La autorización del Owner cubre completar los pasos rutinarios
 sin pedir una aprobación por cambio: implementar, probar, revisar, publicar y comprobar.
 Una decisión que cambie las reglas acordadas o una operación destructiva requiere
 tratar su alcance antes de ejecutarla. OTP real sigue aplazado.
@@ -10,7 +10,7 @@ tratar su alcance antes de ejecutarla. OTP real sigue aplazado.
 |---|---|---|
 | 1 | Seguridad contra ataques | Bloques publicados; pendientes expresos conservados. No auditoría integral cerrada. |
 | 2 | Identidad y verificación | Bloques IDV-01–12 publicados en su alcance descrito; permanecen residuales de IDV-05/10 y OTP real aplazado. No se declara auditoría integral cerrada. |
-| 3 | Experiencia de participación | Pendiente como revisión completa, especialmente móvil. |
+| 3 | Experiencia de participación | En curso: auditoría inicial contrastada con Codex y Claude; correcciones y ensayo móvil pendientes. Véase [UX-01–14](participation-ux-audit-20261031.md). |
 | 4 | Documentación pública | Pendiente de alineación con el comportamiento final. |
 
 | Ref. | Trabajo | Estado |
@@ -20,7 +20,7 @@ tratar su alcance antes de ejecutarla. OTP real sigue aplazado.
 | IDV-03 | Validar respuesta del geocodificador antes de confirmar GPS | Publicado y verificado, PR150. |
 | IDV-04 | Separar procedencia GPS/IP y corregir puntuación institucional | Publicado y verificado, PR151; API y SQL, sin recalcular históricos. |
 | IDV-05 | Coincidencia territorial contextual, OSM ambiguo y homónimos | Corrección de homónimos entre países y OSM sin tipo publicada; homónimos del mismo país y límites administrativos pendientes. |
-| IDV-06 | Cohortes territoriales exhaustivas y denominadores comunes | Preparación local iniciada; no integrado ni publicado. |
+| IDV-06 | Cohortes territoriales exhaustivas y denominadores comunes | Publicado y verificado, PR152; cohortes completas y denominadores explícitos, límites de IDV-05 conservados. |
 | IDV-07 | Unicidad por identificador y país de numeración en cuatro idiomas | Publicado y verificado, PR153. Sin cambiar admisión ni hashes. |
 | IDV-08 | Dominio declarado y alcance institucional | Publicado: distingue control de correo de vínculo oficial, respaldo, rol o pertenencia vigente; sin validación externa nueva. |
 | IDV-09 | Censo, fundador, primera ola y avales | Publicado: reglas y límites explícitos; se conservan fundador/primera ola y dos cuentas acreditadas posteriores. |

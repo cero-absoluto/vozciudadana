@@ -15,12 +15,14 @@ const ref = value => ({value});
 const computed = fn => ({get value(){return fn();}});
 export const deferred = () => {let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};};
 export const flush = () => new Promise(r=>setImmediate(r));
-export function harness(name='AuthScreen', overrides={}) {
+export function harness(name='AuthScreen', overrides={}, runtime={}) {
   let mounted; const toasts=[],navigation=[],calls=[],unmounted=[];
   const memory=new Map([['vc_last_joined','selected'],['vc_device_id','synthetic-device'],['vc_participation_token','synthetic-token']]);
   const sessionStorage={getItem:k=>memory.get(k)??null,setItem:(k,v)=>memory.set(k,String(v)),removeItem:k=>memory.delete(k)};
-  const store={protests:[{id:'selected',scope:'global',risk_level:'low',title:'Synthetic selected event',dominio_email:name==='VerifyInstitucionalScreen'?'example.invalid':null}],
+  const rawStore={protests:[{id:'selected',scope:'global',risk_level:'low',title:'Synthetic selected event',dominio_email:name==='VerifyInstitucionalScreen'?'example.invalid':null,...(name==='VerifyInstitucionalScreen'?{timer:3600}:{})}],
+    fetchProtestById:async id=>{calls.push(['fetchById',id]);return store.protests.find(p=>String(p.id)===String(id))??null;},
     loadProtests:async()=>{calls.push(['load']);},joinProtest:()=>calls.push(['localJoin'])};
+  const store=runtime.reactive ? runtime.reactive(rawStore) : rawStore;
   const api={requestOtp:async payload=>{calls.push(['request',payload]);return {sent:true};},
     verifyOtp:async payload=>{calls.push(['verify',payload]);return {verified:true,participation_token:'synthetic-token',device_id:'synthetic-device'};},
     fetchDeviceLocks:async()=>{calls.push(['locks']);return [];},fetchCountryCodes:async()=>[],
@@ -36,11 +38,14 @@ export function harness(name='AuthScreen', overrides={}) {
     localStorage:{getItem:()=>null,setItem(){},removeItem(){}},api,apiFixture:api,
     window:{grecaptcha:{ready:fn=>fn(),execute:async()=> 'synthetic-captcha'}},navigator:{},setTimeout(){},
   };
+  if(runtime.ref)context.ref=runtime.ref;
+  if(runtime.computed)context.computed=runtime.computed;
+  if(runtime.globals)Object.assign(context,runtime.globals);
   vm.createContext(context);
-  const exports=name==='AuthScreen'?'sendSMS,resendSMS,verifyOTP,changeNumber,phone,countryCode,countryCodes,otpDigits,otpVisible,requestedOtp,sending':name==='VerifyInstitucionalScreen'?'sendOtp,verifyOtp,email,otp,emailError,otpError,loading,step,activeContext,outcomeMessage,receiptHash,censusNotSaved,receiptNotSaved':'success,outcomeMessage,receipt,confirmedTitle,savedConfirmation,receiptNotSaved,reinforceGps';
+  const exports=name==='AuthScreen'?'sendSMS,resendSMS,verifyOTP,changeNumber,phone,countryCode,countryCodes,otpDigits,otpVisible,requestedOtp,sending':name==='VerifyInstitucionalScreen'?'sendOtp,verifyOtp,email,otp,emailError,otpError,loading,step,activeContext,outcomeMessage,receiptHash,censusNotSaved,receiptNotSaved,sentContext,availability,loadState,loadProtest,changeEmail,dominio,newInstitutionalVerification,confirmedTitle,savedConfirmation':'success,outcomeMessage,receipt,confirmedTitle,savedConfirmation,receiptNotSaved,reinforceGps';
   vm.runInContext(script(name)+'\nglobalThis.state={'+exports+'};',context);
   const state=context.state;
   if(name==='AuthScreen'){state.phone.value='600000001';state.countryCodes.value=[{iso2:'ES',dial_code:'34'}];}
-  if(name==='VerifyInstitucionalScreen'){state.email.value='synthetic@example.invalid';state.otp.value='123456';state.activeContext.value='email:selected:synthetic-context';}
+  if(name==='VerifyInstitucionalScreen'){state.email.value='synthetic@example.invalid';state.otp.value='123456';state.activeContext.value='email:selected:synthetic-context';state.sentContext.value={protestId:'selected',dominio:'example.invalid',email:'synthetic@example.invalid'};}
   return {state,context,api,calls,toasts,navigation,memory,store,device,mount:()=>mounted(),unmount:()=>unmounted.forEach(fn=>fn())};
 }

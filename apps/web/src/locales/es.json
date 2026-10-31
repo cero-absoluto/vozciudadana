@@ -36,7 +36,7 @@
   },
   "auth": {
     "title": "Introduce tu número de móvil para recibir un código de verificación por SMS y unirte a la protesta.",
-    "phoneHint": "Tu número se transforma en un código secreto e indescifrable.",
+    "phoneHint": "Tu número se usa para verificarte por SMS y se convierte en un identificador pseudónimo. Eso no garantiza un anonimato absoluto.",
     "subtitle": "Enviamos un código de 6 dígitos. Tu número se utiliza para la verificación por SMS y luego se transforma en una huella matemática irreversible. El número original no se almacena.",
     "prefixLabel": "Prefijo del país",
     "phoneLabel": "Número de teléfono",
@@ -803,7 +803,15 @@
     "errOtp": "Introduce el código de 6 dígitos",
     "errOtpWrong": "Código incorrecto o caducado.",
     "yourInstitution": "tu institución",
-    "errorSend": "Error al enviar el código. Por favor, inténtalo de nuevo."
+    "errorSend": "Error al enviar el código. Por favor, inténtalo de nuevo.",
+    "emailPlaceholder": "Ej: tu.nombre{'@'}{domain}",
+    "loadingEvent": "Cargando la convocatoria…",
+    "loadError": "No se ha podido cargar la convocatoria.",
+    "retry": "Reintentar",
+    "notFound": "No hemos encontrado esta convocatoria.",
+    "notInstitutional": "Esta convocatoria no tiene un dominio institucional válido, por lo que no se puede verificar por correo.",
+    "closed": "La convocatoria está cerrada. Puedes consultar su informe.",
+    "contextChanged": "La convocatoria ha cambiado. Solicita un código nuevo."
   },
   "share": {
     "previewLabel": "🔥 Mensaje que se enviará",

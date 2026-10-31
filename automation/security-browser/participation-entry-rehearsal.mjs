@@ -21,6 +21,7 @@ try {
     await context.addInitScript(()=>{window.__notificationRequests=0;Notification.requestPermission=async()=>{window.__notificationRequests++;return 'denied';};});
     let sms=0,joins=0,emailSends=0,emailChecks=0,releaseSms,releaseEmail,releaseCheck;
     let smsResponse={sent:true},smsStatus=200,holdSms=false,holdEmail=false,holdCheck=false;
+    let listOverride=null,detailStatus=200,detailResponse=events[1],holdDetail=false,releaseDetail;
     let joinStatus=201,joinResponse={receipt:'44444444-4444-4444-8444-444444444444'},emailStatus=200;
     await context.route('**/*',async route=>{
       const req=route.request(),u=new URL(req.url());requests.push({locale,width,host:u.host,path:u.pathname,method:req.method()});
@@ -32,7 +33,8 @@ try {
       }
       if(u.hostname==='api.voiceprotest.org') {
         if(req.method()==='OPTIONS')return route.fulfill({status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST','Access-Control-Allow-Headers':'Content-Type'}});
-        if(req.method()==='GET'&&u.pathname==='/api/protests')return json(events);
+        if(req.method()==='GET'&&u.pathname==='/api/protests')return json(listOverride ?? events);
+        if(req.method()==='GET'&&u.pathname===`/api/protests/${INSTITUTION}`) {if(holdDetail)await new Promise(r=>releaseDetail=r);return json(detailResponse,detailStatus);}
         if(req.method()==='GET'&&u.pathname==='/api/ipinfo')return json({country_code:'ES',country_name:'Spain',city:'Synthetic'});
         if(req.method()==='GET'&&u.pathname==='/api/country-codes')return json([{iso2:'ES',dial_code:'34',flag:'ES'}]);
         if(req.method()==='POST'&&u.pathname==='/api/users/request-otp') {
@@ -106,6 +108,7 @@ try {
     await page.reload();await page.locator('.suc-hash').waitFor();assert.equal(emailChecks,1);
     assert.ok((await page.locator('#s-verify-institucional').textContent()).includes(messages.participation.savedConfirmation));
     checks.push({id:`institutional_reload_no_write_${locale}_${width}`,ok:true});
+    const confirmedStorage=await page.evaluate(()=>Object.fromEntries(Object.entries(sessionStorage)));
     await page.getByRole('button',{name:messages.participation.anotherEmail,exact:true}).click();
     await page.locator('#institution-verify-email').fill('synthetic@example.invalid');
     await page.getByRole('button',{name:messages.verificacional.sendCode,exact:true}).click();await page.locator('#institution-verify-code').waitFor();
@@ -122,11 +125,57 @@ try {
     await page.goto('https://voiceprotest.org/#/verify');await page.getByRole('alert').filter({hasText:messages.participation.uncertain}).waitFor();assert.equal(joins,2);
     await page.reload();await page.getByRole('alert').filter({hasText:messages.participation.uncertain}).waitFor();assert.equal(joins,2);assert.equal(await page.locator('.participation-receipt').count(),0);
     checks.push({id:`uncertain_${width===360?'missing_receipt':'503'}_reload_no_write_${locale}_${width}`,ok:true});
+    // Fresh documents and an empty list exercise the institutional direct-link fallback.
+    listOverride=[];
+    const beforeSends=emailSends,beforeChecks=emailChecks;
+    const direct=async name=>{
+      await page.evaluate(()=>sessionStorage.clear());
+      await page.goto(`https://voiceprotest.org/?ux=${name}#/verify-institucional/${INSTITUTION}`);
+    };
+    detailStatus=503;detailResponse={error:'synthetic'};
+    await direct('unavailable');
+    await page.getByRole('alert').filter({hasText:messages.verificacional.loadError}).waitFor();
+    assert.equal(await page.locator('#institution-verify-email').count(),0);
+    detailStatus=200;detailResponse=events[1];
+    await page.getByRole('button',{name:messages.verificacional.retry,exact:true}).click();
+    await page.locator('#institution-verify-email').waitFor();
+    assert.ok((await page.locator('#s-verify-institucional').textContent()).includes(events[1].title));
+    checks.push({id:`institutional_direct_link_error_retry_${locale}_${width}`,ok:true});
+    detailStatus=404;detailResponse={error:'synthetic-not-found'};
+    await direct('missing');
+    await page.getByRole('alert').filter({hasText:messages.verificacional.notFound}).waitFor();
+    assert.equal(await page.locator('#institution-verify-email').count(),0);
+    checks.push({id:`institutional_direct_link_missing_${locale}_${width}`,ok:true});
+    detailStatus=200;detailResponse={...events[1],dominio_email:null};
+    await direct('noninstitutional');
+    await page.getByRole('alert').filter({hasText:messages.verificacional.notInstitutional}).waitFor();
+    assert.equal(await page.locator('#institution-verify-email').count(),0);
+    checks.push({id:`institutional_direct_link_wrong_method_${locale}_${width}`,ok:true});
+    detailResponse={...events[1],ends_at:'2000-01-01T00:00:00Z'};
+    await direct('closed');
+    await page.getByRole('alert').filter({hasText:messages.verificacional.closed}).waitFor();
+    assert.equal(await page.locator('#institution-verify-email').count(),0);
+    checks.push({id:`institutional_direct_link_closed_${locale}_${width}`,ok:true});
+    detailResponse=events[1];holdDetail=true;
+    await direct('slow');
+    await page.getByRole('status').filter({hasText:messages.verificacional.loadingEvent}).waitFor();
+    assert.equal(await page.locator('#institution-verify-email').count(),0);
+    await waitForCount(()=>Number(!!releaseDetail),1);releaseDetail();holdDetail=false;
+    await page.locator('#institution-verify-email').waitFor();
+    checks.push({id:`institutional_direct_link_loading_no_form_${locale}_${width}`,ok:true});
+    await page.evaluate(saved=>{sessionStorage.clear();for(const [k,v] of Object.entries(saved))sessionStorage.setItem(k,v);},confirmedStorage);
+    detailStatus=404;detailResponse={error:'synthetic-not-found'};
+    await page.goto(`https://voiceprotest.org/?ux=receipt-missing#/verify-institucional/${INSTITUTION}`);
+    await page.locator('.suc-hash').waitFor();
+    assert.ok((await page.locator('.suc-hash').textContent()).includes('66666666-6666-4666-8666-666666666666'));
+    assert.equal(emailSends,beforeSends);assert.equal(emailChecks,beforeChecks);
+    checks.push({id:`institutional_saved_receipt_survives_missing_event_${locale}_${width}`,ok:true});
     await context.close();
   }
   assert.deepEqual(unexpected,[]);assert.deepEqual(errors,[]);
 } finally {
   await browser.close();
-  const report={status:checks.length===112&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,externalMutations:0};
+  const report={status:checks.length===160&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,externalMutations:0};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
+  if(report.status!=='PASS') process.exitCode=1;
 }

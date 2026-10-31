@@ -36,7 +36,7 @@
   },
   "auth": {
     "title": "Enter your mobile number to receive an SMS verification code and join the protest.",
-    "phoneHint": "Your number is transformed into a secret, undecipherable code.",
+    "phoneHint": "Your number is used to verify you by SMS and is turned into a pseudonymous identifier. This does not guarantee absolute anonymity.",
     "subtitle": "We send a 6-digit code. Your number is used for SMS verification and is then transformed into an irreversible mathematical fingerprint. The original number is not stored.",
     "prefixLabel": "Country prefix",
     "phoneLabel": "Phone number",
@@ -803,7 +803,15 @@
     "errOtp": "Enter the 6-digit code",
     "errOtpWrong": "Incorrect or expired code.",
     "yourInstitution": "your institution",
-    "errorSend": "Error sending the code. Please try again."
+    "errorSend": "Error sending the code. Please try again.",
+    "emailPlaceholder": "E.g. your.name{'@'}{domain}",
+    "loadingEvent": "Loading the campaign…",
+    "loadError": "The campaign could not be loaded.",
+    "retry": "Retry",
+    "notFound": "We could not find this campaign.",
+    "notInstitutional": "This campaign has no valid institutional domain, so it cannot be verified by email.",
+    "closed": "This campaign is closed. You can view its report.",
+    "contextChanged": "The campaign has changed. Request a new code."
   },
   "share": {
     "previewLabel": "🔥 Message that will be sent",

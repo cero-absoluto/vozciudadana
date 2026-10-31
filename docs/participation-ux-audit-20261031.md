@@ -61,3 +61,16 @@ La revisión añadió residuales sobre GPS local al abandonar, feedback si cambi
 UX-03/04/06/12 se publicaron en PR156, merge `1a3a315f0be50f3d1327d0971f3c7ececd692254`. La interrupción del chat dejó este inventario sin actualizar. Véase [evidencia](ux-03-04-06-12-publication-20261031.md). El árbol integrado coincide con el candidato `6e4baf50e230ca61a375735cc600c462955f5368`.
 
 UX-07/11 pasan a implementación mediante PR157. `countryName`, trim de correo y bloqueo de botones durante loading ya estaban corregidos: no se presentan como cambios nuevos. UX-08/09/10/13/14 y el ensayo móvil general permanecen abiertos.
+
+## Hallazgos concretos para el siguiente bloque UX-08/09/13
+
+Revisión de código de la base `1a3a315f`, sin proveedores ni mutaciones externas. No son correcciones ya publicadas:
+
+- **UX-13, destino de compartir:** ShareModal usa route.params.id o vc_last_joined; la ruta institucional usa protestId. Puede generar enlace/título del SMS anterior. Debe recibir destino explícito y conservarlo al abrir, especialmente desde recibo restaurado.
+- **UX-13, copia veraz:** copyLink no espera writeText e ignora el rechazo, cierra modal y anuncia éxito. Debe confirmar solo tras resolver, mantener texto accesible y explicar fallo si falta API/permiso.
+- **UX-13, consentimiento de notificaciones:** verify.notiInfo está traducido pero no se muestra junto al botón antes del permiso. Debe presentarse sin condicionar la confirmación del recibo.
+- **UX-08, carga inicial:** ActiveTab puede mostrar vacío/crear mientras store.loading=true. Separar carga, error y vacío confirmado.
+- **UX-10/14, teclado:** acciones de tarjeta de ActiveTab son div con click, sin teclado ni semántica. Comprobar botones/enlaces, foco y ausencia de doble disparo.
+- **UX-09, capacidad estimada:** cliente calcula saldo/0.05 y traducciones mencionan 20 verificaciones por euro; API usa coste configurable. No se ha demostrado discrepancia en producción. Presentar estimación o dato autorizado por servidor sin alterar cobros.
+
+El pie fijo de Detail coloca financiación antes de adhesión. Su impacto con texto largo/zoom queda para ensayo 360/390px; no se declara overflow sin medirlo. La ficha sí muestra título, destinatario si existe, descripción, demandas y tiempos, y explica saldo agotado.

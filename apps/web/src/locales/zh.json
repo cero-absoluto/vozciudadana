@@ -36,7 +36,7 @@
   },
   "auth": {
     "title": "输入手机号以接收短信验证码并参与抗议。",
-    "phoneHint": "您的号码会被转换为无法破解的秘密代码。",
+    "phoneHint": "您的号码用于短信验证，并会转换为化名标识符。这并不保证绝对匿名。",
     "subtitle": "我们会向您发送一个 6 位验证码。您的号码用于短信验证，随后会被转换为不可逆的数学指纹。原始号码不会被存储。",
     "prefixLabel": "国家区号",
     "phoneLabel": "手机号码",
@@ -803,7 +803,15 @@
     "errOtp": "请输入6位验证码",
     "errOtpWrong": "验证码错误或已过期。",
     "yourInstitution": "您的机构",
-    "errorSend": "发送验证码时出错。请重试。"
+    "errorSend": "发送验证码时出错。请重试。",
+    "emailPlaceholder": "例如：your.name{'@'}{domain}",
+    "loadingEvent": "正在加载活动…",
+    "loadError": "无法加载该活动。",
+    "retry": "重试",
+    "notFound": "未找到该活动。",
+    "notInstitutional": "该活动没有有效的机构域名，因此无法通过电子邮件验证。",
+    "closed": "该活动已结束。您可以查看其报告。",
+    "contextChanged": "活动已变更。请重新获取验证码。"
   },
   "share": {
     "previewLabel": "🔥 将要发送的消息",

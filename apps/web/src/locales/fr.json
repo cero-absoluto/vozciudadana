@@ -36,7 +36,7 @@
   },
   "auth": {
     "title": "Entrez votre numéro de mobile pour recevoir un code de vérification par SMS et rejoindre la protestation.",
-    "phoneHint": "Votre numéro est transformé en un code secret et indéchiffrable.",
+    "phoneHint": "Votre numéro sert à vous vérifier par SMS et devient un identifiant pseudonyme. Cela ne garantit pas un anonymat absolu.",
     "subtitle": "Nous envoyons un code à 6 chiffres. Votre numéro est utilisé pour la vérification par SMS, puis transformé en empreinte mathématique irréversible. Le numéro original n'est pas conservé.",
     "prefixLabel": "Indicatif du pays",
     "phoneLabel": "Numéro de téléphone",
@@ -803,7 +803,15 @@
     "errOtp": "Saisissez le code à 6 chiffres",
     "errOtpWrong": "Code incorrect ou expiré.",
     "yourInstitution": "votre institution",
-    "errorSend": "Erreur lors de l'envoi du code. Veuillez réessayer."
+    "errorSend": "Erreur lors de l'envoi du code. Veuillez réessayer.",
+    "emailPlaceholder": "Ex. : votre.nom{'@'}{domain}",
+    "loadingEvent": "Chargement de la convocation…",
+    "loadError": "La convocation n'a pas pu être chargée.",
+    "retry": "Réessayer",
+    "notFound": "Cette convocation est introuvable.",
+    "notInstitutional": "Cette convocation n'a pas de domaine institutionnel valide ; elle ne peut pas être vérifiée par e-mail.",
+    "closed": "La convocation est clôturée. Vous pouvez consulter son rapport.",
+    "contextChanged": "La convocation a changé. Demandez un nouveau code."
   },
   "share": {
     "previewLabel": "🔥 Message qui sera envoyé",

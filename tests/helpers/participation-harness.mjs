@@ -1,3 +1,4 @@
+import {createPushConsentController} from '../../apps/web/src/lib/pushConsent.js';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {participationGpsSnapshot} from '../../apps/web/src/lib/participationGps.js';
@@ -29,7 +30,7 @@ export function harness(name='AuthScreen', overrides={}, runtime={}) {
     sendEmailOtp:async()=>({sent:true,challenge_id:'33333333-3333-4333-8333-333333333333'}),verifyEmailOtp:async()=>({verified:true,receipt:'44444444-4444-4444-8444-444444444444'}),
     joinProtest:async()=>{calls.push(['join']);return {receipt:'44444444-4444-4444-8444-444444444444'};},...overrides};
   const device={gpsReady:false,getDeviceSecret:()=>null,getDeviceId:()=> 'synthetic-device'};
-  const context={participationGpsSnapshot,classifyJoinRejection,joinRejectionPath,markForceOtp,...outcomes,withClientDeadline,recaptchaToken,crypto:{randomUUID:()=> '55555555-5555-4555-8555-555555555555'},ref,computed,onMounted:fn=>mounted=fn,onUnmounted:fn=>unmounted.push(fn),watch(){},nextTick:fn=>Promise.resolve().then(fn),
+  const context={createPushConsentController,participationGpsSnapshot,classifyJoinRejection,joinRejectionPath,markForceOtp,...outcomes,withClientDeadline,recaptchaToken,crypto:{randomUUID:()=> '55555555-5555-4555-8555-555555555555'},ref,computed,onMounted:fn=>mounted=fn,onUnmounted:fn=>unmounted.push(fn),watch(){},nextTick:fn=>Promise.resolve().then(fn),
     useI18n:()=>({t:k=>k,locale:ref('es')}),useRouter:()=>({push:p=>navigation.push(p)}),
     useRoute:()=>({params:{protestId:'selected'}}),useProtestsStore:()=>store,
     useDeviceStore:()=>device,

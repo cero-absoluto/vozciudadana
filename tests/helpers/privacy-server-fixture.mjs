@@ -14,8 +14,8 @@ mock.module('../../apps/api/src/services/supabase.js',{namedExports:{supabase:{f
 mock.module('../../apps/api/src/services/twilio.js',{namedExports:{sendOtp(){providerCalls++;throw new Error('provider prohibited');},verifyOtp(){providerCalls++;throw new Error('provider prohibited');}}});
 const realInterval=globalThis.setInterval,realTimeout=globalThis.setTimeout;
 // The production push plugin schedules workers; this assembly test must never run them.
-mock.method(globalThis,'setInterval',(fn,delay,...args)=>fn.name==='hourlyJob'?{unref(){}}:realInterval(fn,delay,...args));
-mock.method(globalThis,'setTimeout',(fn,delay,...args)=>fn.name==='hourlyJob'?{unref(){}}:realTimeout(fn,delay,...args));
+mock.method(globalThis,'setInterval',(fn,delay,...args)=>['hourlyJob','runHourly'].includes(fn.name)?{unref(){}}:realInterval(fn,delay,...args));
+mock.method(globalThis,'setTimeout',(fn,delay,...args)=>['hourlyJob','runHourly'].includes(fn.name)?{unref(){}}:realTimeout(fn,delay,...args));
 mock.module('resend',{namedExports:{Resend:class {constructor(){this.emails={send(){providerCalls++;throw new Error('provider prohibited');}};}}}});
 await import('../../apps/api/src/server.js');
 return {app,lines,providerCalls:()=>providerCalls};

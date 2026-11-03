@@ -45,10 +45,8 @@
         <!-- Peldaño 1 — Notificación -->
 
         <p id="participation-notification-info" style="font-size:12px;color:var(--text2);line-height:1.6">{{ $t('verify.notiInfo') }}</p>
-        <button @click="activarNotificacion" :disabled="notiPending" :aria-busy="notiPending" aria-describedby="participation-notification-info"
-          style="width:100%;margin-bottom:10px;padding:12px;background:rgba(76,111,255,.12);border:.5px solid #4C6FFF;border-radius:var(--r);color:#4C6FFF;font-size:13px;font-weight:700;cursor:pointer">
-          {{ notiActivada ? $t('verify.notiOn') : $t('verify.notiOff') }}
-        </button>
+        <PushConsentControls information-id="participation-notification-info" :state="pushPreferenceState" :pending="notiPending" :can-manage="canManagePush"
+          @enable="activarNotificacion" @revoke="desactivarNotificacion" @refresh="consultarNotificaciones" />
 
         <!-- Peldaño 2 — VIRAL -->
         <button class="suc-share" style="width:100%;margin-bottom:10px" @click="shareProtest">
@@ -79,6 +77,8 @@ import { localizedCountry } from '@/constants.js';
 import {withClientDeadline} from '@/services/requestJson.js';
 import {validReceipt, readOutcome, writeOutcome, beginOutcome, uncertainOutcome, participationErrorKey} from '@/lib/participationOutcome.js';
 import {participationGpsSnapshot} from '@/lib/participationGps.js';
+import {createPushConsentController} from '@/lib/pushConsent.js';
+import PushConsentControls from '@/components/PushConsentControls.vue';
 
 const { t, locale } = useI18n();
 
@@ -132,74 +132,46 @@ function shareProtest() {
   return ui.openShare({id: confirmedProtestId.value, title: confirmedTitle.value});
 }
 
-async function activarNotificacion() {
-  if (!verificationActive || notiActivada.value || notiPending.value) return;
-  notiPending.value = true;
-  let ownsContext = () => false;
-  let acceptedContext = false;
+const pushPreferenceState = ref('loading');
+function pushConsentContext() {
+  if (!verificationActive || !success.value || !validReceipt(receipt.value)) return null;
   try {
-    const deviceId=confirmedIdentity.value;
-    const protestId=confirmedProtestId.value;
-    const deviceSecret=device.getDeviceSecret();
-    ownsContext=()=>{
-      try {
-        return verificationActive && !!deviceId && !!protestId && sessionStorage.getItem('vc_device_id')===deviceId && sessionStorage.getItem('vc_last_joined')===protestId && device.getDeviceId()===deviceId && device.getDeviceSecret()===deviceSecret;
-      } catch { return false; }
-    };
-    if (!deviceSecret || !ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
-    acceptedContext = true;
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return;
-    if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
-    const reg = await withClientDeadline(() => navigator.serviceWorker.ready);
-    if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
-    const {publicKey} = await withClientDeadline(async signal => {
-      const response=await fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/push/vapid-public-key`,{signal});
-      if (!response.ok) throw new Error('VAPID_UNAVAILABLE');
-      return response.json();
-    });
-    if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
-    const sub = await withClientDeadline(() => reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey),
-    }));
-    if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
-
-    // Get protest ends_at
-    const protestEndsAt = protests.protests.find(p => String(p.id) === protestId)?.ends_at || null;
-
-    const locale = localStorage.getItem('vc_lang') || navigator.language?.substring(0, 2) || 'en';
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
-
-    const save = subscription => withClientDeadline(async signal => {
-      if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
-      const response=await fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/push/subscribe`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal, body: JSON.stringify({
-        device_id:    deviceId,
-        device_secret: deviceSecret,
-        protest_id:   protestId,
-        ends_at:      protestEndsAt,
-        locale,
-        timezone,
-        subscription,
-      }),
-      });
-      const data=await response.json().catch(()=>null);
-      return {ok:response.ok,status:response.status,json:async()=>data};
-    });
-    // A conflicting endpoint may serve another identity or several events.
-    // Preserve the browser subscription; activation never revokes it implicitly.
-    const saved = await save(sub);
-    if (!ownsContext()) return;
-    if (!saved.ok) { ui.showToast(t('verify.notiError')); return; }
-    notiActivada.value = true;
-  } catch {
-    if (verificationActive && (!acceptedContext || ownsContext())) ui.showToast(t('verify.notiError'));
-  }
-  finally { notiPending.value = false; }
+    const device_id = confirmedIdentity.value, protest_id = confirmedProtestId.value;
+    const device_secret = device.getDeviceSecret();
+    if (!device_id || !protest_id || !device_secret || sessionStorage.getItem('vc_device_id') !== device_id || sessionStorage.getItem('vc_last_joined') !== protest_id || device.getDeviceId() !== device_id) return null;
+    return {device_id, device_secret, protest_id};
+  } catch { return null; }
 }
+const canManagePush = ref(false);
+const pushConsent = createPushConsentController({
+  getContext:pushConsentContext,
+  baseUrl:import.meta.env.VITE_API_URL ?? '',
+  fetchImpl:(...args) => fetch(...args),
+  deadline:withClientDeadline,
+  browser:{
+    requestPermission:() => Notification.requestPermission(),
+    ready:() => navigator.serviceWorker.ready,
+    getRegistration:() => navigator.serviceWorker?.getRegistration?.(),
+    decodeKey:urlBase64ToUint8Array,
+    locale:() => localStorage.getItem('vc_lang') || navigator.language?.substring(0,2) || 'en',
+    timezone:() => Intl.DateTimeFormat().resolvedOptions().timeZone || null,
+  },
+  onChange:current => {
+    canManagePush.value = !!pushConsentContext();
+    pushPreferenceState.value = current.state;
+    notiPending.value = current.pending;
+    notiActivada.value = current.state === 'enabled';
+  },
+});
+watch(() => JSON.stringify(pushConsentContext()), (current, previous) => {
+  if (current === previous) return;
+  pushConsent.invalidate();
+  if (pushConsentContext()) void pushConsent.refresh();
+}, {flush:'sync', immediate:true});
+onUnmounted(() => { pushConsent.dispose(); notiPending.value = false; });
+async function consultarNotificaciones() { await pushConsent.refresh(); }
+async function activarNotificacion() { await pushConsent.enable(); }
+async function desactivarNotificacion() { await pushConsent.revoke(); }
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);

@@ -19,10 +19,10 @@ async function fixture({owner=true,verified=true,dbError=false,rpcError=null}={}
       is(key,value){calls.push({table,key,value});return q;},in(){return Promise.resolve({data:table==='adhesions'?[{device_id:deviceId}]:[{endpoint:'https://127.0.0.1/internal',p256dh:'x',auth:'x'},{endpoint,p256dh:'x',auth:'x'}]});},
       maybeSingle:async()=>({data:{id:deviceId,verified_at:verified?'2026-01-01':null,device_secret_hash:hashDeviceSecret(secret)},error:dbError?{}:null}),then(resolve,reject){return Promise.resolve({data:table==='adhesions'?[{device_id:deviceId}]:null,error:null}).then(resolve,reject);}};
     return q;
-  },rpc:async(name,args)=>{calls.push({rpc:name,args});return {data:owner,error:rpcError};}};
+  },rpc(name,args){calls.push({rpc:name,args});return {abortSignal(signal){assert.ok(signal instanceof AbortSignal);const data=name==='list_scoped_push_subscriptions'?[{device_id:deviceId,endpoint:'https://127.0.0.1/internal',p256dh:'x',auth:'x'},{device_id:deviceId,endpoint,p256dh:'x',auth:'x'}]:name==='push_subscription_can_deliver'?true:owner;return Promise.resolve({data,error:rpcError});}};}};
   const context={supabase,isAllowedPushEndpoint,deviceSecretMatches,createHash,timingSafeEqual,console,process:{env:{ADMIN_SECRET:'synthetic-admin',VAPID_PUBLIC_KEY:'fake',VAPID_PRIVATE_KEY:'fake',VAPID_EMAIL:'mailto:test@example.invalid'}},
     webpush:{setVapidDetails(){},async sendNotification(sub,_payload,options){sent.push(sub);assert.equal(options.timeout,5000);}},
-    setInterval(){},setTimeout(){}};
+    AbortSignal,setInterval(){},setTimeout(){}};
   vm.createContext(context);vm.runInContext(source+';globalThis.register=pushRoutes;',context);
   const app=Fastify();await app.register(sensible);await app.register(context.register);await app.ready();
   return {app,calls,sent};
@@ -77,6 +77,6 @@ test('unsubscribe is authenticated and filters both device and endpoint',async()
 test('sender revalidates stored endpoints and never delivers to arbitrary historic URLs',async()=>{
   const f=await fixture();try{
     const r=await f.app.inject({method:'POST',url:'/notify',payload:{protest_id:'11111111-1111-1111-1111-111111111111',title:'synthetic',body:'synthetic',admin_secret:'synthetic-admin'}});
-    assert.equal(r.statusCode,200);assert.equal(f.sent.length,1);assert.equal(f.sent[0].endpoint,endpoint);assert.ok(f.calls.some(c=>c.table==='adhesions'&&c.key==='deleted_at'&&c.value===null));
+    assert.equal(r.statusCode,200);assert.equal(f.sent.length,1);assert.equal(f.sent[0].endpoint,endpoint);assert.ok(f.calls.some(c=>c.rpc==='list_scoped_push_subscriptions'&&c.args.p_protest_id==='11111111-1111-1111-1111-111111111111'));assert.ok(f.calls.some(c=>c.rpc==='push_subscription_can_deliver'&&c.args.p_device_id===deviceId&&c.args.p_endpoint===endpoint));
   }finally{await f.app.close();}
 });

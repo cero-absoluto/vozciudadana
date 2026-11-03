@@ -41,12 +41,23 @@ export default async function pushRoutes(app) {
 
 
   for(const [path,name] of [['/preferences','get_push_notification_preferences'],['/revoke','revoke_push_notification_preferences']]) {
-    app.post(path,{config:{rateLimit:{max:10,timeWindow:'5 minutes'}},schema:{body:preferenceSchema}},async(req,reply)=>{
+    const body=path==='/preferences'?{...preferenceSchema,properties:{...preferenceSchema.properties,subscription:{
+      type:'object',required:['endpoint','keys'],properties:{
+        endpoint:{type:'string',maxLength:2048},keys:{type:'object',required:['p256dh','auth'],properties:{
+          p256dh:{type:'string',pattern:'^[A-Za-z0-9_-]{87}={0,1}$'},auth:{type:'string',pattern:'^[A-Za-z0-9_-]{22}={0,2}$'},
+        }},
+      },
+    }}}:preferenceSchema;
+    app.post(path,{config:{rateLimit:{max:10,timeWindow:'5 minutes'}},schema:{body}},async(req,reply)=>{
       if(!await authenticatedDevice(req,reply))return;
-      const {data,error}=await rpc(name,{p_device_id:req.body.device_id,p_protest_id:req.body.protest_id});
+      const subscription=path==='/preferences'?req.body.subscription:null;
+      if(subscription && !isAllowedPushEndpoint(subscription.endpoint))return reply.code(400).send({error:'PUSH_ENDPOINT_INVALID'});
+      const {data,error}=await rpc(name,{p_device_id:req.body.device_id,p_protest_id:req.body.protest_id,
+        ...(subscription?{p_endpoint:subscription.endpoint,p_p256dh:subscription.keys.p256dh,p_auth:subscription.keys.auth}:{}),
+      });
       if(error)return preferenceError(error,reply);
       if(!validPreference(data) || (path==='/preferences' && !['present','missing'].includes(data.registration)) || (path==='/revoke' && (data.enabled!==false || data.revision<1)))throw new Error('PUSH_CONSENT_UNAVAILABLE');
-      return {ok:true,enabled:data.enabled,revision:data.revision,...(path==='/preferences'?{registration:data.registration}:{})};
+      return {ok:true,enabled:data.enabled,revision:data.revision,...(path==='/preferences'?{registration:subscription?data.registration:'missing'}:{})};
     });
   }
 

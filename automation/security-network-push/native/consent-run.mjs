@@ -26,13 +26,20 @@ try{
  await admin.query(readFileSync(new URL('../../../docs/proposals/push-security.sql',import.meta.url),'utf8'));
  await admin.query(readFileSync(new URL('../../../supabase/migrations/'+migrationFiles[0],import.meta.url),'utf8'));
  const a=await connect('service_role'),b=await connect('service_role');
- const status=(c,d,p)=>c.query('SELECT public.get_push_notification_preferences($1,$2) AS data',[d,p]).then(r=>r.rows[0].data);
+ const status=(c,d,p,sub)=>c.query(sub?'SELECT public.get_push_notification_preferences($1,$2,$3,$4,$5) AS data':'SELECT public.get_push_notification_preferences($1,$2) AS data',sub?[d,p,sub.endpoint,sub.p256dh,sub.auth]:[d,p]).then(r=>r.rows[0].data);
  const revoke=(c,d,p)=>c.query('SELECT public.revoke_push_notification_preferences($1,$2) AS data',[d,p]).then(r=>r.rows[0].data);
  const save=(c,d,p,revision,endpoint='synthetic:device-a')=>c.query("SELECT public.save_scoped_push_subscription($1,$2,'p256dh','auth',$3,'en','UTC',$4) AS data",[d,endpoint,p,revision]).then(r=>r.rows[0].data);
  const legacy=(c,d,p,endpoint='synthetic:device-a')=>c.query("SELECT public.save_owned_push_subscription($1,$2,'p256dh','auth',$3,'en','UTC') AS data",[d,endpoint,p]).then(r=>r.rows[0].data);
  const allowed=(c,d,p,endpoint='synthetic:device-a')=>c.query('SELECT public.push_subscription_can_deliver($1,$2,$3) AS data',[d,p,endpoint]).then(r=>r.rows[0].data);
  assert.deepEqual(await status(a,'device-a',A),{ok:true,enabled:false,revision:0,registration:'missing'});checks.push('new identity/event status does not invent consent or transport');
  assert.deepEqual(await save(a,'device-a',A,0),{ok:true,enabled:true,revision:1});assert.equal(await allowed(a,'device-a',A),true);assert.equal(await allowed(a,'device-a',B),false);checks.push('explicit scoped consent enables only its event');
+ assert.deepEqual(await status(a,'device-a',A),{ok:true,enabled:true,revision:1,registration:'missing'});checks.push('read without browser snapshot never certifies transport even with saved consent');
+ const knownTransport={endpoint:'synthetic:device-a',p256dh:'p256dh',auth:'auth'};
+ assert.equal((await status(a,'device-a',A,knownTransport)).registration,'present');checks.push('exact owner endpoint and key pair proves known browser transport');
+ for(const mismatch of [{endpoint:'synthetic:device-new'},{p256dh:'wrong-key'},{auth:'wrong-auth'},{auth:null}]){
+   const state=await status(a,'device-a',A,{...knownTransport,...mismatch});assert.equal(state.registration,'missing');assert.equal(state.enabled,true);assert.equal(state.revision,1);
+ }checks.push('another endpoint and either changed or absent key never borrows an old transport registration');
+ assert.deepEqual(await status(b,'device-b',A,knownTransport),{ok:true,enabled:false,revision:0,registration:'missing'});checks.push('another identity cannot claim a matching foreign endpoint/key snapshot');
  assert.deepEqual(await save(a,'device-a',B,0),{ok:true,enabled:true,revision:1});assert.equal(await allowed(a,'device-a',A),true);assert.equal(await allowed(a,'device-a',B),true);checks.push('one shared transport preserves both opted-in events despite legacy pointer update');
  assert.deepEqual(await revoke(a,'device-a',A),{ok:true,enabled:false,revision:2});assert.equal(await allowed(a,'device-a',A),false);assert.equal(await allowed(a,'device-a',B),true);assert.equal((await admin.query('SELECT count(*)::int AS n FROM public.push_subscriptions')).rows[0].n,1);checks.push('event revoke preserves the endpoint and other event');
  await assert.rejects(()=>save(a,'device-a',A,1),/VP_PUSH_CONSENT_STALE/);assert.equal(await allowed(a,'device-a',A),false);checks.push('delayed pre-revocation activation cannot restore consent');
@@ -52,7 +59,7 @@ try{
  const anon=await connect('anon'),authenticated=await connect('authenticated');for(const c of [anon,authenticated]){
   await assert.rejects(()=>status(c,'device-a',A),/permission denied/);await assert.rejects(()=>revoke(c,'device-a',A),/permission denied/);await assert.rejects(()=>c.query('SELECT * FROM public.push_notification_preferences'),/permission denied/);
  }checks.push('browser roles cannot read preferences or execute consent RPCs');
- assert.equal((await admin.query("SELECT count(*)::int AS n FROM pg_proc WHERE oid IN ('public.get_push_notification_preferences(text,uuid)'::regprocedure,'public.revoke_push_notification_preferences(text,uuid)'::regprocedure,'public.save_scoped_push_subscription(text,text,text,text,uuid,text,text,integer)'::regprocedure) AND prosecdef")).rows[0].n,0);checks.push('consent functions remain security invoker');
+ assert.equal((await admin.query("SELECT count(*)::int AS n FROM pg_proc WHERE oid IN ('public.get_push_notification_preferences(text,uuid,text,text,text)'::regprocedure,'public.revoke_push_notification_preferences(text,uuid)'::regprocedure,'public.save_scoped_push_subscription(text,text,text,text,uuid,text,text,integer)'::regprocedure) AND prosecdef")).rows[0].n,0);checks.push('consent functions remain security invoker');
  await admin.query("UPDATE public.push_subscriptions SET updated_at=now()-interval '3 days',protest_id=$1 WHERE device_id='device-a'",[C]);assert.equal((await a.query('SELECT public.prune_scoped_push_orphans() AS n')).rows[0].n,0);checks.push('cleanup preserves transport referenced by another active consent');
  await revoke(a,'device-a',B);assert.equal((await a.query('SELECT public.prune_scoped_push_orphans() AS n')).rows[0].n,1);checks.push('cleanup removes provably stale transport after its remaining consents stop');
  await admin.query("UPDATE public.push_subscriptions SET updated_at=now()-interval '3 days',protest_id=NULL WHERE device_id='device-b'");assert.equal((await a.query('SELECT public.prune_scoped_push_orphans() AS n')).rows[0].n,0);checks.push('unknown legacy provenance is retained, not guessed orphaned');

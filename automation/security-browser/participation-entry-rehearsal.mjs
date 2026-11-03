@@ -20,9 +20,9 @@ try {
     const context=await browser.newContext({serviceWorkers:'block',viewport:{width,height:844},isMobile:true,hasTouch:true,locale});
     await context.addInitScript(({locale})=>{localStorage.setItem('vc_lang',locale);localStorage.setItem('vc_map_seen','1');localStorage.setItem('vc_map_intro','1');}, {locale});
     await context.addInitScript(()=>{
-      window.__notificationRequests=0;window.__pushPermission='denied';window.__pushSubscriptions=0;window.__pushUnsubscribes=0;window.__pushProviderExisting=false;window.__pushLookups=0;
+      window.__notificationRequests=0;window.__pushPermission='denied';window.__pushSubscriptions=0;window.__pushUnsubscribes=0;window.__pushProviderExisting=sessionStorage.getItem('__synthetic_push_existing')==='1';window.__pushLookups=0;
       Notification.requestPermission=async()=>{window.__notificationRequests++;return window.__pushPermission;};
-      const subscription={endpoint:'https://fcm.googleapis.com/fcm/send/synthetic-shared',keys:{p256dh:'B'.repeat(87),auth:'a'.repeat(22)},unsubscribe:async()=>{window.__pushUnsubscribes++;return true;}};
+      const subscription={endpoint:sessionStorage.getItem('__synthetic_push_endpoint')||'https://fcm.googleapis.com/fcm/send/synthetic-shared',keys:{p256dh:'B'.repeat(87),auth:sessionStorage.getItem('__synthetic_push_auth')||'a'.repeat(22)},unsubscribe:async()=>{window.__pushUnsubscribes++;return true;}};
       const registration={pushManager:{getSubscription:async()=>{window.__pushLookups++;return window.__pushProviderExisting?subscription:null;},subscribe:async()=>{window.__pushSubscriptions++;window.__pushProviderExisting=true;return subscription;}}};
       Object.defineProperty(navigator.serviceWorker,'ready',{configurable:true,value:Promise.resolve(registration)});
       navigator.serviceWorker.getRegistration=async()=>registration;
@@ -41,6 +41,7 @@ try {
     let smsResponse={sent:true},smsStatus=200,holdSms=false,holdEmail=false,holdCheck=false;
     let gpsPatches=0,holdGpsPatch=false,releaseGpsPatch;
     let pushSaves=0,pushStatus=201,holdPushSave=false,releasePushSave;
+    let registeredPushTransport={endpoint:'https://fcm.googleapis.com/fcm/send/synthetic-shared',keys:{p256dh:'B'.repeat(87),auth:'a'.repeat(22)}};
     let pushRevokes=0,revokeStatus=200,pushPreference={enabled:false,revision:0,registration:'present'},otherPushPreference={enabled:true,revision:7,registration:'present'};
     let mobileDetail=null,groupAvailable=false,groupMode='auto',groupReads=0,holdGroup=false,releaseGroup;
     let holdList=false,releaseList,listStatus=200,listReads=0;
@@ -64,7 +65,11 @@ try {
         if(req.method()==='GET'&&u.pathname==='/api/push/vapid-public-key')return json({publicKey:'dGVzdA'});
         if(req.method()==='POST'&&['/api/push/preferences','/api/push/revoke'].includes(u.pathname)){
           const payload=req.postDataJSON();assert.equal(payload.device_id,'synthetic-device');assert.equal(payload.device_secret,'a'.repeat(64));assert.equal(payload.protest_id,ID);
-          if(u.pathname.endsWith('/preferences'))return json({ok:true,...pushPreference});
+          if(u.pathname.endsWith('/preferences')){
+            const local=payload.subscription,stored=registeredPushTransport;
+            const matches=pushPreference.registration==='present'&&!!local&&!!stored&&local.endpoint===stored.endpoint&&local.keys?.p256dh===stored.keys.p256dh&&local.keys?.auth===stored.keys.auth;
+            return json({ok:true,...pushPreference,registration:matches?'present':'missing'});
+          }
           pushRevokes++;pushPreference={...pushPreference,enabled:false,revision:pushPreference.revision+1};
           return json(revokeStatus===200?{ok:true,enabled:false,revision:pushPreference.revision}:{error:'synthetic uncertain revocation'},revokeStatus);
         }
@@ -72,7 +77,7 @@ try {
           const payload=req.postDataJSON();assert.equal(payload.device_id,'synthetic-device');assert.equal(payload.device_secret,'a'.repeat(64));assert.equal(payload.protest_id,ID);assert.equal(payload.subscription.endpoint,'https://fcm.googleapis.com/fcm/send/synthetic-shared');
           assert.ok(Number.isInteger(payload.consent_revision));pushSaves++;if(holdPushSave)await new Promise(r=>releasePushSave=r);
           if(payload.consent_revision!==pushPreference.revision)return json({error:'PUSH_CONSENT_STALE'},409);
-          if(pushStatus===201){pushPreference={enabled:true,revision:pushPreference.revision+1,registration:'present'};return json({ok:true,enabled:true,revision:pushPreference.revision},201);}
+          if(pushStatus===201){registeredPushTransport=payload.subscription;pushPreference={enabled:true,revision:pushPreference.revision+1,registration:'present'};return json({ok:true,enabled:true,revision:pushPreference.revision},201);}
           return json({error:pushStatus===409?'PUSH_ENDPOINT_OWNED':'synthetic push failure'},pushStatus);
         }
         if(req.method()==='GET'&&u.pathname==='/api/ipinfo')return json({country_code:'ES',country_name:'Spain',city:'Synthetic'});
@@ -421,7 +426,7 @@ try {
     // Scoped consent is authoritative; shared transport is never implicitly revoked.
     joinResponse={receipt:'44444444-4444-4444-8444-444444444444'};
     const pushPage=async(name,preference={enabled:false,revision:0,registration:'present'})=>{
-      pushPreference={...preference};
+      pushPreference={...preference};registeredPushTransport=preference.registration==='missing'?null:{endpoint:'https://fcm.googleapis.com/fcm/send/synthetic-shared',keys:{p256dh:'B'.repeat(87),auth:'a'.repeat(22)}};
       await page.evaluate(id=>{localStorage.clear();sessionStorage.clear();localStorage.setItem('vc_device_id','synthetic-device');localStorage.setItem('vc_device_secret','a'.repeat(64));sessionStorage.setItem('vc_last_joined',id);sessionStorage.setItem('vc_device_id','synthetic-device');sessionStorage.setItem('vc_participation_token','synthetic-token');},ID);
       await page.goto(`https://voiceprotest.org/?ux=push-${name}#/verify`);await page.locator('.success-scr').waitFor();await page.evaluate(()=>{window.__pushPermission='granted';});
       await page.getByText(preference.enabled?messages.verify.pushRepair:messages.verify.pushDisabled,{exact:true}).waitFor();
@@ -461,6 +466,15 @@ try {
     const staleResponse=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/push/subscribe');holdPushSave=false;releasePushSave();await (await staleResponse).finished();await refreshPush().waitFor();assert.equal(await notificationButton().count(),0);assert.equal(pushPreference.enabled,false);
     await refreshPush().click();await page.getByText(messages.verify.pushDisabled,{exact:true}).waitFor();assert.equal(await page.evaluate(()=>window.__pushUnsubscribes),0);
     checks.push({id:`push_stale_activation_cannot_undo_a_revocation_${locale}_${width}`,ok:true});
+    for(const transport of ['matching','different-endpoint','different-keys']){
+      await pushPage('exact-'+transport,{enabled:true,revision:10,registration:'present'});const beforeProbeJoins=joins;
+      await page.evaluate(transport=>{sessionStorage.setItem('__synthetic_push_existing','1');if(transport==='different-endpoint')sessionStorage.setItem('__synthetic_push_endpoint','https://fcm.googleapis.com/fcm/send/synthetic-unregistered');if(transport==='different-keys')sessionStorage.setItem('__synthetic_push_auth','b'.repeat(22));},transport);
+      await page.reload();await page.locator('.success-scr').waitFor();
+      await page.getByText(transport==='matching'?messages.verify.pushEnabled:messages.verify.pushRepair,{exact:true}).waitFor();
+      assert.equal(joins,beforeProbeJoins);assert.deepEqual(await page.evaluate(()=>[window.__notificationRequests,window.__pushSubscriptions,window.__pushUnsubscribes]),[0,0,0]);
+      if(transport!=='matching'){assert.equal(await page.getByText(messages.verify.pushEnabled,{exact:true}).count(),0);await notificationButton().waitFor();}
+      checks.push({id:`push_status_matches_exact_transport_${transport}_${locale}_${width}`,ok:true});
+    }
     // Measured baseline global cases plus institutional/census/closed/joined states.
     const detailCases=[];
     for(const height of [640,844])for(const risk of ['low','high'])for(const balance of [0,10])detailCases.push({height,risk,balance,variant:'global'});
@@ -505,7 +519,7 @@ try {
   const reflow=await runReflowDiagnostic();
   checks.push(...reflow.checks.map(row=>({id:`reflow_${row.state}_${row.textScale}_${row.locale}_${row.width}`,ok:row.ok})));
   requests.push(...reflow.requests);errors.push(...reflow.errors);unexpected.push(...reflow.unexpected);
-  const report={status:checks.length===752&&checks.every(c=>c.ok)&&reflow.status==='DIAGNOSTIC_COMPLETE'&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0,reflowMeasurements:reflow.detailMeasurements,reflowFindings:reflow.findings,reflowLimits:reflow.limits};
+  const report={status:checks.length===776&&checks.every(c=>c.ok)&&reflow.status==='DIAGNOSTIC_COMPLETE'&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0,reflowMeasurements:reflow.detailMeasurements,reflowFindings:reflow.findings,reflowLimits:reflow.limits};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
   if(report.status!=='PASS') process.exitCode=1;
 }

@@ -422,7 +422,7 @@
     "pushLoading": "Consultando tus avisos…",
     "pushEnabled": "Avisos registrados para esta convocatoria.",
     "pushDisabled": "Avisos desactivados para esta convocatoria.",
-    "pushRepair": "Falta registrar la conexión de notificaciones. Puedes volver a activarlas.",
+    "pushRepair": "No se ha podido confirmar la conexión de notificaciones. Puedes intentar activarlas de nuevo.",
     "pushError": "No se ha podido consultar o actualizar la preferencia.",
     "pushUncertain": "No se ha podido confirmar el resultado. Consulta el estado antes de volver a activarlos.",
     "pushUnavailable": "Este recibo no dispone del acceso necesario para gestionar avisos en este dispositivo.",

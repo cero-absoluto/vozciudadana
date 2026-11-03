@@ -422,7 +422,7 @@
     "pushLoading": "Vérification de vos notifications…",
     "pushEnabled": "Notifications enregistrées pour cette mobilisation.",
     "pushDisabled": "Notifications désactivées pour cette mobilisation.",
-    "pushRepair": "La connexion aux notifications doit être enregistrée. Vous pouvez les réactiver.",
+    "pushRepair": "Impossible de confirmer la connexion aux notifications. Vous pouvez essayer de les réactiver.",
     "pushError": "Impossible de consulter ou de modifier cette préférence.",
     "pushUncertain": "Le résultat n’a pas pu être confirmé. Consultez l’état avant de réactiver les notifications.",
     "pushUnavailable": "Ce reçu ne dispose pas de l’accès nécessaire pour gérer les notifications sur cet appareil.",

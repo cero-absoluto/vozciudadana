@@ -46,28 +46,42 @@ export function createPushConsentController(options) {
     else state = 'error';
     emit();
   }
+  function transportSnapshot(subscription) {
+    const data = typeof subscription?.toJSON === 'function' ? subscription.toJSON() : subscription;
+    if (typeof data?.endpoint !== 'string' || !data.endpoint || data.endpoint.length > 2048 || typeof data.keys?.p256dh !== 'string' || !/^[A-Za-z0-9_-]{87}={0,1}$/.test(data.keys.p256dh) || typeof data.keys?.auth !== 'string' || !/^[A-Za-z0-9_-]{22}={0,2}$/.test(data.keys.auth)) return null;
+    // Copy strings only: a mutable browser object must not change the metadata
+    // compared with the server response while that request is pending.
+    return {endpoint:data.endpoint, keys:{p256dh:data.keys.p256dh, auth:data.keys.auth}};
+  }
+  async function inspectTransport(request) {
+    // Read only. An unavailable provider must never prevent server revocation.
+    try {
+      const registration = await deadline(() => browser.getRegistration());
+      if (!owns(request) || !registration?.pushManager) return null;
+      const subscription = await deadline(() => registration.pushManager.getSubscription());
+      if (!owns(request)) return null;
+      return transportSnapshot(subscription);
+    } catch { return null; }
+  }
+  const sameTransport = (left, right) => !!left && !!right && left.endpoint === right.endpoint && left.keys.p256dh === right.keys.p256dh && left.keys.auth === right.keys.auth;
   async function refresh() {
     const request = begin(); if (!request) return;
     state = 'loading'; emit();
     try {
-      const data = await requestJson('/api/push/preferences', request.context, request);
+      const sentTransport = await inspectTransport(request);
+      if (!owns(request)) return;
+      const body = {...request.context, ...(sentTransport ? {subscription:sentTransport} : {})};
+      const data = await requestJson('/api/push/preferences', body, request);
       if (!owns(request)) return;
       if (data?.ok !== true || typeof data.enabled !== 'boolean' || !validRevision(data.revision) || !['present','missing'].includes(data.registration)) throw new Error('INVALID_PUSH_RESPONSE');
-      let localTransport = false;
-      if (data.enabled && data.registration === 'present') {
-        // Read-only inspection: no permission request, registration or subscribe.
-        try {
-          const registration = await deadline(() => browser.getRegistration());
-          if (!owns(request)) return;
-          const subscription = registration?.pushManager ? await deadline(() => registration.pushManager.getSubscription()) : null;
-          if (!owns(request)) return;
-          localTransport = typeof subscription?.endpoint === 'string' && subscription.endpoint.length > 0;
-        } catch {
-          if (!owns(request)) return;
-        }
+      let matchingTransport = false;
+      if (data.enabled && data.registration === 'present' && sentTransport) {
+        const currentTransport = await inspectTransport(request);
+        if (!owns(request)) return;
+        matchingTransport = sameTransport(sentTransport, currentTransport);
       }
       revision = data.revision;
-      state = data.enabled ? data.registration === 'present' && localTransport ? 'enabled' : 'repair' : 'disabled';
+      state = data.enabled ? data.registration === 'present' && matchingTransport ? 'enabled' : 'repair' : 'disabled';
       emit();
     } catch (error) { failed(error, request, false); }
     finally { finish(request); }

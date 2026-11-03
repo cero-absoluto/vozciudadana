@@ -55,7 +55,7 @@ BEGIN
   RETURN saved_id IS NOT NULL;
 END $$;
 
-CREATE FUNCTION public.get_push_notification_preferences(p_device_id text,p_protest_id uuid)
+CREATE FUNCTION public.get_push_notification_preferences(p_device_id text,p_protest_id uuid,p_endpoint text DEFAULT NULL,p_p256dh text DEFAULT NULL,p_auth text DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $$
 DECLARE pref public.push_notification_preferences%ROWTYPE; permitted boolean; registered boolean;
 BEGIN
@@ -66,7 +66,11 @@ BEGIN
   IF FOUND THEN permitted:=pref.enabled;
   ELSE permitted:=EXISTS(SELECT 1 FROM public.push_subscriptions WHERE device_id=p_device_id AND protest_id=p_protest_id);
   END IF;
-  registered:=EXISTS(SELECT 1 FROM public.push_subscriptions WHERE device_id=p_device_id);
+  -- Correspondence is only proved for the exact browser endpoint and keys.
+  -- Without a browser snapshot, consent remains readable but transport is unknown.
+  registered:=p_endpoint IS NOT NULL AND p_p256dh IS NOT NULL AND p_auth IS NOT NULL
+    AND EXISTS(SELECT 1 FROM public.push_subscriptions WHERE device_id=p_device_id
+      AND endpoint=p_endpoint AND p256dh=p_p256dh AND auth=p_auth);
   RETURN jsonb_build_object('ok',true,'enabled',permitted,'revision',coalesce(pref.revision,0),
     'registration',CASE WHEN registered THEN 'present' ELSE 'missing' END);
 END $$;
@@ -151,14 +155,14 @@ BEGIN
 END $$;
 
 REVOKE ALL ON FUNCTION public.save_owned_push_subscription(text,text,text,text,uuid,text,text) FROM PUBLIC,anon,authenticated;
-REVOKE ALL ON FUNCTION public.get_push_notification_preferences(text,uuid) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.get_push_notification_preferences(text,uuid,text,text,text) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.revoke_push_notification_preferences(text,uuid) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.save_scoped_push_subscription(text,text,text,text,uuid,text,text,integer) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.list_scoped_push_subscriptions(uuid) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.push_subscription_can_deliver(text,uuid,text) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.prune_scoped_push_orphans() FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.save_owned_push_subscription(text,text,text,text,uuid,text,text),
-  public.get_push_notification_preferences(text,uuid),public.revoke_push_notification_preferences(text,uuid),
+  public.get_push_notification_preferences(text,uuid,text,text,text),public.revoke_push_notification_preferences(text,uuid),
   public.save_scoped_push_subscription(text,text,text,text,uuid,text,text,integer),
   public.list_scoped_push_subscriptions(uuid),public.push_subscription_can_deliver(text,uuid,text),
   public.prune_scoped_push_orphans() TO service_role;

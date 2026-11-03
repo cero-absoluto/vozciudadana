@@ -5,21 +5,21 @@ import {withClientDeadline} from '../apps/web/src/services/requestJson.js';
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};};
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
 const endpoint={endpoint:'https://fcm.googleapis.com/fcm/send/synthetic',keys:{p256dh:'B'.repeat(87),auth:'a'.repeat(22)}};
-function fixture({enabled=false,registration='missing',existing=null}={}){
+function fixture({enabled=false,registration='missing',existing=null,stored=endpoint}={}){
   let context={device_id:'device-A',device_secret:'a'.repeat(64),protest_id:'11111111-1111-4111-8111-111111111111'},revision=0,consent=enabled,transport=registration;
-  let permissions=0,subscribes=0,unsubscribes=0,reads=0;
+  let permissions=0,subscribes=0,unsubscribes=0,reads=0,localTransport=existing,storedTransport=stored;
   const requests=[],states=[];
-  const browser={getRegistration:async()=>({pushManager:{getSubscription:async()=>existing}}),requestPermission:async()=>{permissions++;return 'granted';},ready:async()=>({pushManager:{getSubscription:async()=>existing,subscribe:async()=>{subscribes++;return {...endpoint,unsubscribe:async()=>{unsubscribes++;}};}}}),decodeKey:()=>new Uint8Array([1]),locale:()=> 'es',timezone:()=> 'Europe/Madrid'};
+  const browser={getRegistration:async()=>({pushManager:{getSubscription:async()=>localTransport}}),requestPermission:async()=>{permissions++;return 'granted';},ready:async()=>({pushManager:{getSubscription:async()=>localTransport,subscribe:async()=>{subscribes++;localTransport={...endpoint,unsubscribe:async()=>{unsubscribes++;}};return localTransport;}}}),decodeKey:()=>new Uint8Array([1]),locale:()=> 'es',timezone:()=> 'Europe/Madrid'};
   const f={fetch:async(url,opts)=>{
     const body=JSON.parse(opts.body||'{}');requests.push({url,body});
-    if(url.endsWith('/preferences')){reads++;return response({ok:true,enabled:consent,revision,registration:transport});}
+    if(url.endsWith('/preferences')){reads++;const value=body.subscription;const matches=transport==='present'&&value?.endpoint===storedTransport.endpoint&&value?.keys?.p256dh===storedTransport.keys.p256dh&&value?.keys?.auth===storedTransport.keys.auth;return response({ok:true,enabled:consent,revision,registration:matches?'present':'missing'});}
     if(url.endsWith('/revoke')){consent=false;return response({ok:true,enabled:false,revision:++revision});}
     if(url.endsWith('/vapid-public-key'))return response({publicKey:'synthetic'});
     if(body.consent_revision!==revision)return response({error:'PUSH_CONSENT_STALE'},409);
-    consent=true;transport='present';return response({ok:true,enabled:true,revision:++revision},201);
+    consent=true;transport='present';storedTransport=body.subscription;return response({ok:true,enabled:true,revision:++revision},201);
   }};
   const controller=createPushConsentController({getContext:()=>context,onChange:value=>states.push({...value}),deadline:fn=>withClientDeadline(fn,{timeoutMs:100}),fetchImpl:(...args)=>f.fetch(...args),baseUrl:'https://api.invalid',browser});
-  return {controller,browser,requests,states,setContext:value=>context=value,getContext:()=>context,permissions:()=>permissions,subscribes:()=>subscribes,unsubscribes:()=>unsubscribes,reads:()=>reads,setFetch:fn=>f.fetch=fn,getFetch:()=>f.fetch};
+  return {controller,browser,requests,states,setLocalTransport:value=>localTransport=value,setContext:value=>context=value,getContext:()=>context,permissions:()=>permissions,subscribes:()=>subscribes,unsubscribes:()=>unsubscribes,reads:()=>reads,setFetch:fn=>f.fetch=fn,getFetch:()=>f.fetch};
 }
 function response(data,status=200){return {ok:status>=200&&status<300,status,json:async()=>data};}
 test('activation requires an authoritative preference read and never runs on construction',async()=>{
@@ -78,4 +78,38 @@ test('server consent plus an existing local transport is registered without aski
 });
 test('a transport inspection that resolves after identity changed cannot confirm registration',async()=>{
  const f=fixture({enabled:true,registration:'present'}),wait=deferred();f.browser.getRegistration=()=>wait.promise;const pending=f.controller.refresh();await flush();f.setContext({...f.getContext(),device_id:'another-device'});wait.resolve({pushManager:{getSubscription:async()=>endpoint}});await pending;assert.equal(f.controller.snapshot().state,'unavailable');assert.equal(f.permissions(),0);
+});
+
+for(const mismatch of ['endpoint','p256dh','auth'])test('a different local '+mismatch+' is not confirmed by a transport stored for this identity',async()=>{
+ const other={endpoint:endpoint.endpoint,keys:{...endpoint.keys}};
+ if(mismatch==='endpoint')other.endpoint+='-another';else other.keys[mismatch]=(mismatch==='p256dh'?'C'.repeat(87):'b'.repeat(22));
+ const f=fixture({enabled:true,registration:'present',existing:other});await f.controller.refresh();
+ assert.equal(f.controller.snapshot().state,'repair');assert.equal(f.reads(),1);assert.deepEqual(f.requests[0].body.subscription,other);assert.equal(f.permissions(),0);assert.equal(f.subscribes(),0);assert.equal(f.unsubscribes(),0);
+});
+test("metadata from a foreign local transport cannot confirm the identity's different server transport",async()=>{
+ const foreign={endpoint:endpoint.endpoint+'-foreign',keys:{p256dh:'C'.repeat(87),auth:'b'.repeat(22)}};
+ const f=fixture({enabled:true,registration:'present',existing:foreign});await f.controller.refresh();assert.equal(f.controller.snapshot().state,'repair');assert.equal(f.requests[0].body.device_id,'device-A');assert.equal(f.reads(),1);assert.equal(f.unsubscribes(),0);
+});
+for(const rotation of ['endpoint','p256dh','auth'])test('local '+rotation+' rotation while the server read is pending prevents confirmation',async()=>{
+ const f=fixture({enabled:true,registration:'present',existing:endpoint}),wait=deferred(),fetch=f.getFetch();
+ f.setFetch(async(url,opts)=>{const res=await fetch(url,opts);if(url.endsWith('/preferences'))await wait.promise;return res;});
+ const pending=f.controller.refresh();await flush();const changed={endpoint:endpoint.endpoint,keys:{...endpoint.keys}};
+ if(rotation==='endpoint')changed.endpoint+='-rotated';else changed.keys[rotation]=rotation==='p256dh'?'D'.repeat(87):'c'.repeat(22);
+ f.setLocalTransport(changed);wait.resolve();await pending;assert.equal(f.controller.snapshot().state,'repair');assert.equal(f.reads(),1);assert.deepEqual(f.requests[0].body.subscription,endpoint);assert.equal(f.permissions(),0);assert.equal(f.unsubscribes(),0);
+});
+test('toJSON metadata is copied so later object mutation cannot rewrite the sent snapshot',async()=>{
+ const serialized={endpoint:endpoint.endpoint,keys:{...endpoint.keys}},subscription={toJSON:()=>serialized};
+ const f=fixture({enabled:true,registration:'present',existing:subscription}),wait=deferred(),fetch=f.getFetch();
+ f.setFetch(async(url,opts)=>{const res=await fetch(url,opts);if(url.endsWith('/preferences'))await wait.promise;return res;});
+ const pending=f.controller.refresh();await flush();serialized.keys.auth='d'.repeat(22);wait.resolve();await pending;
+ assert.equal(f.controller.snapshot().state,'repair');assert.equal(f.requests[0].body.subscription.keys.auth,endpoint.keys.auth);assert.equal(f.reads(),1);
+});
+for(const invalid of [null,{endpoint:endpoint.endpoint},{endpoint:endpoint.endpoint,keys:{p256dh:'',auth:'x'}},{endpoint:endpoint.endpoint,keys:{p256dh:'B'.repeat(86),auth:'a'.repeat(22)}},{endpoint:endpoint.endpoint,keys:{p256dh:'B'.repeat(87),auth:'a'.repeat(21)}},{toJSON(){throw Error('synthetic serialization failure');}}])test('unusable local metadata is omitted while server preference remains readable '+String(invalid),async()=>{
+ const f=fixture({enabled:true,registration:'present',existing:invalid});await f.controller.refresh();assert.equal(f.controller.snapshot().state,'repair');assert.equal(f.reads(),1);assert.equal('subscription' in f.requests[0].body,false);assert.equal(f.permissions(),0);assert.equal(f.subscribes(),0);await f.controller.revoke();assert.equal(f.controller.snapshot().state,'disabled');
+});
+test('identity invalidated during the post-response probe cannot receive a registered state',async()=>{
+ const f=fixture({enabled:true,registration:'present',existing:endpoint}),wait=deferred();let probes=0;
+ f.browser.getRegistration=async()=>{if(++probes===2)return wait.promise;return {pushManager:{getSubscription:async()=>endpoint}};};
+ const pending=f.controller.refresh();await flush();assert.equal(probes,2);f.setContext(null);wait.resolve({pushManager:{getSubscription:async()=>endpoint}});await pending;
+ assert.equal(f.controller.snapshot().state,'unavailable');assert.equal(f.reads(),1);assert.equal(f.permissions(),0);
 });

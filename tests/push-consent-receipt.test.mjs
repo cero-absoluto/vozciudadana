@@ -8,7 +8,7 @@ const receipt='44444444-4444-4444-8444-444444444444';
 function fixture(response=async()=>({ok:true,status:200,json:async()=>({ok:true,enabled:true,revision:3,registration:'present'})})){
  const scope=Vue.effectScope(),requests=[];
  const device={gpsReady:false,getDeviceId:()=> 'synthetic-device',getDeviceSecret:()=> 'a'.repeat(64)};
- const f=scope.run(()=>harness('VerifyScreen',{}, {reactive:Vue.reactive,ref:Vue.ref,computed:Vue.computed,watch:Vue.watch,globals:{useDeviceStore:()=>device,navigator:{serviceWorker:{getRegistration:async()=>({pushManager:{getSubscription:async()=>({endpoint:'https://fcm.googleapis.com/fcm/send/synthetic'})}})}},fetch:async(url,opts)=>{requests.push({url,body:JSON.parse(opts.body)});assert.ok(url.endsWith('/api/push/preferences'));return response();}}}));
+ const f=scope.run(()=>harness('VerifyScreen',{}, {reactive:Vue.reactive,ref:Vue.ref,computed:Vue.computed,watch:Vue.watch,globals:{useDeviceStore:()=>device,navigator:{serviceWorker:{getRegistration:async()=>({pushManager:{getSubscription:async()=>({endpoint:'https://fcm.googleapis.com/fcm/send/synthetic',keys:{p256dh:'B'.repeat(87),auth:'a'.repeat(22)}})}})}},fetch:async(url,opts)=>{requests.push({url,body:JSON.parse(opts.body)});assert.ok(url.endsWith('/api/push/preferences'));return response();}}}));
  const state=vm.runInContext('({pushPreferenceState,canManagePush,notiPending,notiActivada})',f.context);
  return {...f,...state,requests,cleanup(){f.unmount();scope.stop();}};
 }

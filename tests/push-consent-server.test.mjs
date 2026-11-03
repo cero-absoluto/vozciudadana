@@ -47,6 +47,33 @@ test('status reports missing transport without inventing activation and returns 
   const r=await post(f,'/preferences');assert.equal(r.statusCode,200);assert.deepEqual(r.json(),{ok:true,enabled:true,revision:2,registration:'missing'});assert.deepEqual(JSON.parse(JSON.stringify(f.calls.find(c=>c.rpc).args)),{p_device_id:id,p_protest_id:protest});
  }finally{await f.app.close();}
 });
+test('status without a browser snapshot cannot certify an unrelated stored transport',async()=>{
+ const f=await fixture({rpc:()=>({data:{ok:true,enabled:true,revision:3,registration:'present'},error:null})});try{
+  const r=await post(f,'/preferences');assert.equal(r.statusCode,200);assert.deepEqual(r.json(),{ok:true,enabled:true,revision:3,registration:'missing'});assert.equal('p_endpoint' in f.calls.find(c=>c.rpc).args,false);
+ }finally{await f.app.close();}
+});
+for(const [name,snapshot,expected] of [
+ ['matching snapshot',subscription,'present'],
+ ['another browser endpoint',{...subscription,endpoint:endpoint+'-new'},'missing'],
+ ['changed public key',{...subscription,keys:{...subscription.keys,p256dh:'C'.repeat(87)}},'missing'],
+ ['changed auth key',{...subscription,keys:{...subscription.keys,auth:'b'.repeat(22)}},'missing'],
+])test('status proves exact current browser transport: '+name,async()=>{
+ const f=await fixture({rpc:(name,args)=>({data:{ok:true,enabled:true,revision:2,registration:args.p_endpoint===endpoint&&args.p_p256dh===subscription.keys.p256dh&&args.p_auth===subscription.keys.auth?'present':'missing',privateField:'must-not-return'},error:null})});try{
+  const r=await post(f,'/preferences',{...proof,subscription:snapshot});assert.equal(r.statusCode,200);assert.deepEqual(r.json(),{ok:true,enabled:true,revision:2,registration:expected});
+  assert.deepEqual(JSON.parse(JSON.stringify(f.calls.find(c=>c.rpc).args)),{p_device_id:id,p_protest_id:protest,p_endpoint:snapshot.endpoint,p_p256dh:snapshot.keys.p256dh,p_auth:snapshot.keys.auth});
+  assert.ok(!r.body.includes('p256dh'));assert.ok(!r.body.includes('must-not-return'));
+ }finally{await f.app.close();}
+});
+test('status authenticates device proof before checking an unsupported provider URL',async()=>{
+ const f=await fixture();try{
+  const sub={...subscription,endpoint:'https://evil.invalid/'};
+  let r=await post(f,'/preferences',{...proof,device_secret:'b'.repeat(64),subscription:sub});assert.equal(r.statusCode,401);assert.equal(f.calls.some(c=>c.rpc),false);
+  r=await post(f,'/preferences',{...proof,subscription:sub});assert.equal(r.statusCode,400);assert.deepEqual(r.json(),{error:'PUSH_ENDPOINT_INVALID'});assert.equal(f.calls.some(c=>c.rpc),false);
+ }finally{await f.app.close();}
+});
+for(const sub of [{endpoint,keys:{p256dh:'short',auth:'a'.repeat(22)}},{endpoint,keys:{p256dh:'B'.repeat(87),auth:'short'}},{endpoint},null])test('status rejects malformed optional browser snapshot '+JSON.stringify(sub),async()=>{
+ const f=await fixture();try{const r=await post(f,'/preferences',{...proof,subscription:sub});assert.equal(r.statusCode,400);assert.equal(f.calls.some(c=>c.rpc),false);}finally{await f.app.close();}
+});
 test('revoke is event-specific, works without endpoint, and never deletes the shared transport',async()=>{
  const f=await fixture();try{const r=await post(f,'/revoke');assert.equal(r.statusCode,200);assert.deepEqual(r.json(),{ok:true,enabled:false,revision:1});assert.deepEqual(JSON.parse(JSON.stringify(f.calls.find(c=>c.rpc).args)),{p_device_id:id,p_protest_id:protest});assert.equal(f.calls.some(c=>c.delete),false);}finally{await f.app.close();}
 });

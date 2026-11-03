@@ -422,7 +422,7 @@
     "pushLoading": "Checking your notifications…",
     "pushEnabled": "Notifications registered for this event.",
     "pushDisabled": "Notifications disabled for this event.",
-    "pushRepair": "The notification connection needs to be registered. You can enable it again.",
+    "pushRepair": "The notification connection could not be confirmed. You can try enabling notifications again.",
     "pushError": "The preference could not be checked or updated.",
     "pushUncertain": "The result could not be confirmed. Check the status before enabling notifications again.",
     "pushUnavailable": "This receipt does not have the access needed to manage notifications on this device.",

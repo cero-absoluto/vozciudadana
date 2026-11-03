@@ -3,6 +3,7 @@
 import {readFileSync, existsSync, writeFileSync} from 'node:fs';
 import {resolve, extname} from 'node:path';
 import assert from 'node:assert/strict';
+import {runReflowDiagnostic} from './ux14-reflow-rehearsal.mjs';
 const {chromium}=await import(process.env.S16_PLAYWRIGHT_MODULE||'playwright');
 const root=resolve('apps/web/dist'),checks=[],requests=[],unexpected=[],errors=[],detailMeasurements=[];
 async function waitForCount(read,expected) {
@@ -405,7 +406,10 @@ try {
   assert.deepEqual(unexpected,[]);assert.deepEqual(errors,[]);
 } finally {
   await browser.close();
-  const report={status:checks.length===536&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0};
+  const reflow=await runReflowDiagnostic();
+  checks.push(...reflow.checks.map(row=>({id:`reflow_${row.state}_${row.textScale}_${row.locale}_${row.width}`,ok:row.ok})));
+  requests.push(...reflow.requests);errors.push(...reflow.errors);unexpected.push(...reflow.unexpected);
+  const report={status:checks.length===656&&checks.every(c=>c.ok)&&reflow.status==='DIAGNOSTIC_COMPLETE'&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0,reflowMeasurements:reflow.detailMeasurements,reflowFindings:reflow.findings,reflowLimits:reflow.limits};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
   if(report.status!=='PASS') process.exitCode=1;
 }

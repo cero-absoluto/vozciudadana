@@ -20,6 +20,10 @@ try {
     await context.addInitScript(({locale})=>{localStorage.setItem('vc_lang',locale);localStorage.setItem('vc_map_seen','1');localStorage.setItem('vc_map_intro','1');}, {locale});
     await context.addInitScript(()=>{window.__notificationRequests=0;Notification.requestPermission=async()=>{window.__notificationRequests++;return 'denied';};});
     await context.addInitScript(()=>{
+      window.__gpsRequests=0;window.__gpsSuccess=null;window.__gpsFailure=null;
+      Object.defineProperty(navigator,'geolocation',{configurable:true,value:{getCurrentPosition(success,failure){window.__gpsRequests++;window.__gpsSuccess=success;window.__gpsFailure=failure;}}});
+    });
+    await context.addInitScript(()=>{
       window.__copyMode='success';window.__copies=[];
       window.__syntheticClipboard={writeText:async text=>{window.__copies.push(text);if(window.__copyMode==='reject')throw new Error('Synthetic clipboard denial');if(window.__copyMode==='defer')await new Promise(r=>window.__releaseCopy=r);}};
       Object.defineProperty(navigator,'clipboard',{configurable:true,value:window.__syntheticClipboard});
@@ -315,6 +319,51 @@ try {
     assert.deepEqual([sms,joins,emailSends,emailChecks],beforeCensusWrites);assert.equal(new URL(page.url()).hash,`#/detail/${ID}`);
     checks.push({id:`census_retry_is_readonly_when_joined_unfunded_${locale}_${width}`,ok:true});
     groupMode='auto';holdGroup=false;
+    // GPS consent uses only a held synthetic callback, never the browser provider.
+    const gpsEvent={...events[0],scope:'local',risk_level:'low',title:'Synthetic optional GPS'};
+    listOverride=[gpsEvent];mobileDetail=gpsEvent;smsStatus=200;smsResponse={sent:true};
+    const gpsPage=async name=>{
+      await page.evaluate(id=>{localStorage.clear();sessionStorage.clear();sessionStorage.setItem('vc_last_joined',id);},ID);
+      await page.goto(`https://voiceprotest.org/?ux=gps-${name}#/auth`);
+      await page.locator('#phone-in').fill('600000001');
+      await page.getByRole('button',{name:messages.auth.sendCode,exact:true}).click();
+      await page.getByRole('dialog',{name:messages.auth.gpsTitle,exact:true}).waitFor();
+    };
+    const gpsDialog=()=>page.getByRole('dialog',{name:messages.auth.gpsTitle,exact:true});
+    const gpsDecline=()=>gpsDialog().getByRole('button',{name:messages.auth.gpsDecline,exact:true});
+    const gpsAccept=()=>gpsDialog().getByRole('button',{name:messages.auth.gpsAccept,exact:false});
+    await gpsPage('keyboard');
+    assert.equal(await gpsDialog().getAttribute('aria-modal'),'true');
+    assert.ok((await gpsDialog().textContent()).includes(messages.auth.gpsNote));
+    await page.waitForFunction(()=>document.activeElement?.textContent?.trim()===document.querySelector('[role="dialog"] button:last-child')?.textContent?.trim());
+    assert.equal(await gpsDecline().evaluate(el=>el===document.activeElement),true);
+    await page.keyboard.press('Tab');assert.equal(await gpsAccept().evaluate(el=>el===document.activeElement),true);
+    await page.keyboard.press('Shift+Tab');assert.equal(await gpsDecline().evaluate(el=>el===document.activeElement),true);
+    const gpsGeometry=await gpsDialog().evaluate(el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:innerWidth,height:innerHeight};});
+    assert.ok(gpsGeometry.left>=0&&gpsGeometry.right<=gpsGeometry.width&&gpsGeometry.top>=0&&gpsGeometry.bottom<=gpsGeometry.height);
+    assert.equal(await page.evaluate(()=>window.__gpsRequests),0);
+    checks.push({id:`gps_dialog_semantics_focus_keyboard_${locale}_${width}`,ok:true});
+    const beforeEscapeSms=sms;await page.keyboard.press('Escape');await page.locator('.otp-row').waitFor();
+    assert.equal(sms,beforeEscapeSms+1);assert.equal(await gpsDialog().count(),0);assert.equal(await page.evaluate(()=>window.__gpsRequests),0);
+    assert.equal(await page.evaluate(()=>localStorage.getItem('vc_gps_lat')),null);
+    checks.push({id:`gps_escape_continues_without_location_${locale}_${width}`,ok:true});
+    await gpsPage('late-unmount');const beforeLateSms=sms;await gpsAccept().click();
+    await page.waitForFunction(()=>window.__gpsRequests===1);
+    await page.evaluate(()=>{window.location.hash='#/';});await page.waitForURL(url=>url.hash==='#/');
+    await page.locator('#phone-in').waitFor({state:'detached'});
+    await page.evaluate(()=>window.__gpsSuccess({coords:{latitude:40,longitude:-3,accuracy:10}}));
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    assert.equal(sms,beforeLateSms);assert.equal(await page.evaluate(()=>localStorage.getItem('vc_gps_lat')),null);
+    checks.push({id:`gps_late_result_after_unmount_is_discarded_${locale}_${width}`,ok:true});
+    await gpsPage('late-target');const beforeTargetSms=sms;await gpsAccept().click();await page.waitForFunction(()=>window.__gpsRequests===1);
+    await page.evaluate(id=>{sessionStorage.setItem('vc_last_joined',id);window.__gpsSuccess({coords:{latitude:40,longitude:-3,accuracy:10}});},INSTITUTION);
+    await page.waitForFunction(()=>!document.querySelector('.auth-submit-btn')?.disabled);
+    assert.equal(sms,beforeTargetSms);assert.equal(await page.evaluate(()=>localStorage.getItem('vc_gps_lat')),null);
+    checks.push({id:`gps_late_result_for_changed_target_is_discarded_${locale}_${width}`,ok:true});
+    await gpsPage('accepted');const beforeAcceptedSms=sms;await gpsAccept().click();await page.waitForFunction(()=>window.__gpsRequests===1);
+    await page.evaluate(()=>window.__gpsSuccess({coords:{latitude:40,longitude:-3,accuracy:10}}));await page.locator('.otp-row').waitFor();
+    assert.equal(sms,beforeAcceptedSms+1);assert.equal(await page.evaluate(()=>localStorage.getItem('vc_gps_lat')),'40');
+    checks.push({id:`gps_explicit_acceptance_preserves_valid_flow_${locale}_${width}`,ok:true});
     // Measured baseline global cases plus institutional/census/closed/joined states.
     const detailCases=[];
     for(const height of [640,844])for(const risk of ['low','high'])for(const balance of [0,10])detailCases.push({height,risk,balance,variant:'global'});
@@ -356,7 +405,7 @@ try {
   assert.deepEqual(unexpected,[]);assert.deepEqual(errors,[]);
 } finally {
   await browser.close();
-  const report={status:checks.length===496&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0};
+  const report={status:checks.length===536&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
   if(report.status!=='PASS') process.exitCode=1;
 }

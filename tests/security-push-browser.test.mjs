@@ -10,12 +10,13 @@ const source=readFileSync(new URL('../apps/web/src/screens/VerifyScreen.vue',imp
 function fixture(statuses=[201],secret='a'.repeat(64),errorCode='PUSH_ENDPOINT_OWNED'){
   const requests=[],toasts=[],unmounted=[];let permissions=0,subscriptions=0,unsubscribed=0,globalId='local-device-id',currentSecret=secret;
   const memory=new Map([['vc_last_joined','11111111-1111-1111-1111-111111111111'],['vc_device_id','local-device-id']]);
-  const reg={pushManager:{getSubscription:async()=>null,subscribe:async()=>({endpoint:'https://fcm.googleapis.com/fcm/send/'+(++subscriptions),keys:{p256dh:'B'.repeat(87),auth:'a'.repeat(22)},unsubscribe:async()=>{unsubscribed++;return true;}})}};
+  let localSubscription=null;
+  const reg={pushManager:{getSubscription:async()=>localSubscription,subscribe:async()=>localSubscription={endpoint:'https://fcm.googleapis.com/fcm/send/'+(++subscriptions),keys:{p256dh:'B'.repeat(87),auth:'a'.repeat(22)},unsubscribe:async()=>{unsubscribed++;return true;}}}};
   const context={createPushConsentController,...outcomes,withClientDeadline:fn=>withClientDeadline(fn,{timeoutMs:30}),ref:value=>({value}),watch(){},onMounted(){},onUnmounted:fn=>unmounted.push(fn),useRouter:()=>({}),useI18n:()=>({t:key=>key,locale:{value:'en'}}),
     useDeviceStore:()=>({getDeviceId:()=>globalId,getDeviceSecret:()=>currentSecret}),
     useProtestsStore:()=>({protests:[]}),useUiStore:()=>({showToast:msg=>toasts.push(msg)}),
     sessionStorage:{getItem:key=>memory.get(key)??null},localStorage:{getItem:()=> 'en'},
-    navigator:{language:'en',serviceWorker:{ready:Promise.resolve(reg)}},Notification:{requestPermission:async()=>{permissions++;return 'granted';}},
+    navigator:{language:'en',serviceWorker:{ready:Promise.resolve(reg),getRegistration:async()=>reg}},Notification:{requestPermission:async()=>{permissions++;return 'granted';}},
     Intl,Uint8Array,window:{atob:globalThis.atob},fetch:async(url,opts)=>{
       if(url.endsWith('/preferences'))return {ok:true,status:200,json:async()=>({ok:true,enabled:false,revision:0,registration:'missing'})};
       if(url.endsWith('/revoke'))return {ok:true,status:200,json:async()=>({ok:true,enabled:false,revision:2})};

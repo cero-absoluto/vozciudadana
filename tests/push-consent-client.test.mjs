@@ -113,3 +113,26 @@ test('identity invalidated during the post-response probe cannot receive a regis
  const pending=f.controller.refresh();await flush();assert.equal(probes,2);f.setContext(null);wait.resolve({pushManager:{getSubscription:async()=>endpoint}});await pending;
  assert.equal(f.controller.snapshot().state,'unavailable');assert.equal(f.reads(),1);assert.equal(f.permissions(),0);
 });
+
+for(const change of ['endpoint','p256dh','auth','missing','failure','timeout'])test('activation acknowledgement rechecks local transport after '+change,async()=>{
+ const original={endpoint:endpoint.endpoint,keys:{...endpoint.keys}};
+ const f=fixture({existing:original}),wait=deferred(),fetch=f.getFetch();await f.controller.refresh();
+ f.setFetch(async(url,opts)=>{const result=await fetch(url,opts);if(url.endsWith('/subscribe'))await wait.promise;return result;});
+ const pending=f.controller.enable();await flush();
+ if(change==='endpoint')original.endpoint+='-rotated';
+ else if(change==='p256dh'||change==='auth')original.keys[change]=change==='p256dh'?'C'.repeat(87):'b'.repeat(22);
+ else if(change==='missing')f.setLocalTransport(null);
+ else if(change==='failure')f.browser.getRegistration=async()=>{throw Error('synthetic provider failure');};
+ else f.browser.getRegistration=()=>new Promise(()=>{});
+ wait.resolve();await pending;
+ assert.deepEqual(f.controller.snapshot(),{state:'repair',pending:false,revision:1});
+ assert.deepEqual(f.requests.find(r=>r.url.endsWith('/subscribe')).body.subscription,endpoint);
+ assert.equal(f.unsubscribes(),0);assert.equal(f.requests.filter(r=>r.url.endsWith('/subscribe')).length,1);
+});
+for(const change of ['identity','dispose','invalidate'])test('activation post-ack inspection respects '+change,async()=>{
+ const f=fixture({existing:endpoint}),wait=deferred();await f.controller.refresh();
+ f.browser.getRegistration=()=>wait.promise;const pending=f.controller.enable();await flush();
+ if(change==='identity')f.setContext({...f.getContext(),device_id:'changed'});else f.controller[change]();
+ const before=f.states.length;wait.resolve({pushManager:{getSubscription:async()=>endpoint}});await pending;
+ assert.notEqual(f.controller.snapshot().state,'enabled');if(change==='dispose')assert.equal(f.states.length,before);assert.equal(f.unsubscribes(),0);
+});

@@ -23,6 +23,7 @@ try {
       window.__notificationRequests=0;window.__pushPermission='denied';window.__pushSubscriptions=0;window.__pushUnsubscribes=0;window.__pushProviderExisting=sessionStorage.getItem('__synthetic_push_existing')==='1';window.__pushLookups=0;
       Notification.requestPermission=async()=>{window.__notificationRequests++;return window.__pushPermission;};
       const subscription={endpoint:sessionStorage.getItem('__synthetic_push_endpoint')||'https://fcm.googleapis.com/fcm/send/synthetic-shared',keys:{p256dh:'B'.repeat(87),auth:sessionStorage.getItem('__synthetic_push_auth')||'a'.repeat(22)},unsubscribe:async()=>{window.__pushUnsubscribes++;return true;}};
+      window.__pushTransport=subscription;
       const registration={pushManager:{getSubscription:async()=>{window.__pushLookups++;return window.__pushProviderExisting?subscription:null;},subscribe:async()=>{window.__pushSubscriptions++;window.__pushProviderExisting=true;return subscription;}}};
       Object.defineProperty(navigator.serviceWorker,'ready',{configurable:true,value:Promise.resolve(registration)});
       navigator.serviceWorker.getRegistration=async()=>registration;
@@ -442,6 +443,15 @@ try {
     await notificationButton().click();await page.keyboard.press('Enter');await waitForCount(()=>pushSaves,beforePushSave+1);await waitForCount(()=>Number(!!releasePushSave),1);
     holdPushSave=false;releasePushSave();await page.getByText(messages.verify.pushEnabled,{exact:true}).waitFor();assert.equal(pushSaves,beforePushSave+1);assert.deepEqual(await page.evaluate(()=>[window.__pushSubscriptions,window.__pushUnsubscribes]),[1,0]);
     checks.push({id:`push_valid_context_saves_once_and_confirms_${locale}_${width}`,ok:true});
+    for(const rotation of ['endpoint','p256dh','auth']){
+      holdPushSave=true;releasePushSave=undefined;await pushPage('activation-rotation-'+rotation);const beforeRotation=pushSaves;
+      await notificationButton().click();await waitForCount(()=>pushSaves,beforeRotation+1);await waitForCount(()=>Number(!!releasePushSave),1);
+      await page.evaluate(rotation=>{if(rotation==='endpoint')window.__pushTransport.endpoint+='-rotated';else window.__pushTransport.keys[rotation]=rotation==='p256dh'?'C'.repeat(87):'b'.repeat(22);},rotation);
+      const rotatedResponse=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/push/subscribe');holdPushSave=false;releasePushSave();await (await rotatedResponse).finished();
+      await page.getByText(messages.verify.pushRepair,{exact:true}).waitFor();assert.equal(await page.getByText(messages.verify.pushEnabled,{exact:true}).count(),0);assert.equal(await page.locator('.success-scr').count(),1);
+      assert.equal(pushPreference.enabled,true);assert.equal(pushPreference.revision,1);assert.equal(pushSaves,beforeRotation+1);assert.equal(await page.evaluate(()=>window.__pushUnsubscribes),0);
+      checks.push({id:`push_activation_rechecks_rotated_${rotation}_${locale}_${width}`,ok:true});
+    }
     holdPushSave=true;releasePushSave=undefined;await pushPage('late-success');const beforeLatePush=pushSaves;
     await notificationButton().click();await waitForCount(()=>pushSaves,beforeLatePush+1);await waitForCount(()=>Number(!!releasePushSave),1);await page.evaluate(()=>localStorage.setItem('vc_device_id','changed-identity'));
     const latePushSuccess=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/push/subscribe');holdPushSave=false;releasePushSave();await (await latePushSuccess).finished();await stablePaint();
@@ -519,7 +529,7 @@ try {
   const reflow=await runReflowDiagnostic();
   checks.push(...reflow.checks.map(row=>({id:`reflow_${row.state}_${row.textScale}_${row.locale}_${row.width}`,ok:row.ok})));
   requests.push(...reflow.requests);errors.push(...reflow.errors);unexpected.push(...reflow.unexpected);
-  const report={status:checks.length===776&&checks.every(c=>c.ok)&&reflow.status==='DIAGNOSTIC_COMPLETE'&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0,reflowMeasurements:reflow.detailMeasurements,reflowFindings:reflow.findings,reflowLimits:reflow.limits};
+  const report={status:checks.length===800&&checks.every(c=>c.ok)&&reflow.status==='DIAGNOSTIC_COMPLETE'&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0,reflowMeasurements:reflow.detailMeasurements,reflowFindings:reflow.findings,reflowLimits:reflow.limits};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
   if(report.status!=='PASS') process.exitCode=1;
 }

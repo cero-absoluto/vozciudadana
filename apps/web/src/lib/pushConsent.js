@@ -110,15 +110,19 @@ export function createPushConsentController(options) {
         subscription = await deadline(() => registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:browser.decodeKey(publicKey)}));
       }
       if (!owns(request)) return;
-      const subscriptionJson = typeof subscription?.toJSON === 'function' ? subscription.toJSON() : subscription;
-      if (!subscriptionJson || typeof subscriptionJson.endpoint !== 'string' || !subscriptionJson.endpoint || typeof subscriptionJson.keys?.p256dh !== 'string' || typeof subscriptionJson.keys?.auth !== 'string') throw new Error('INVALID_PUSH_SUBSCRIPTION');
-      const body = {...request.context, consent_revision:expectedRevision, subscription:subscriptionJson, locale:browser.locale(), timezone:browser.timezone()};
+      const sentTransport = transportSnapshot(subscription);
+      if (!sentTransport) throw new Error('INVALID_PUSH_SUBSCRIPTION');
+      const body = {...request.context, consent_revision:expectedRevision, subscription:sentTransport, locale:browser.locale(), timezone:browser.timezone()};
       if (!owns(request)) return;
       submitted = true;
       const data = await requestJson('/api/push/subscribe', body, request);
       if (!owns(request)) return;
       if (data?.ok !== true || data.enabled !== true || !validRevision(data.revision) || data.revision <= expectedRevision) throw new Error('INVALID_PUSH_RESPONSE');
-      revision = data.revision; state = 'enabled'; emit();
+      const currentTransport = await inspectTransport(request);
+      if (!owns(request)) return;
+      revision = data.revision;
+      state = sameTransport(sentTransport, currentTransport) ? 'enabled' : 'repair';
+      emit();
     } catch (error) { failed(error, request, submitted); }
     finally { finish(request); }
   }

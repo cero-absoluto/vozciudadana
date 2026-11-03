@@ -17,6 +17,19 @@ function initVapid() {
 }
 
 export default async function pushRoutes(app) {
+  const rpc = (name,args) => supabase.rpc(name,args).abortSignal(AbortSignal.timeout(8000));
+  const preferenceSchema = {
+    type:'object',required:['device_id','device_secret','protest_id'],additionalProperties:false,
+    properties:{device_id:{type:'string',minLength:8,maxLength:128},device_secret:{type:'string',minLength:32,maxLength:256},protest_id:{type:'string',format:'uuid'}},
+  };
+  const validPreference = data => data?.ok===true && typeof data.enabled==='boolean' && Number.isInteger(data.revision) && data.revision>=0 && data.revision<=2147483647;
+  function preferenceError(error,reply) {
+    const known={VP_PUSH_DEVICE_UNVERIFIED:[401,'PUSH_AUTH_REQUIRED'],VP_PUSH_PROTEST_NOT_FOUND:[404,'PUSH_PROTEST_NOT_FOUND'],VP_PUSH_PARTICIPATION_REQUIRED:[403,'PUSH_PARTICIPATION_REQUIRED'],VP_PUSH_CONSENT_STALE:[409,'PUSH_CONSENT_STALE']};
+    const mapped=typeof error?.message==='string' && Object.hasOwn(known,error.message)?known[error.message]:null;
+    if(mapped)return reply.code(mapped[0]).send({error:mapped[1]});
+    throw new Error('PUSH_CONSENT_UNAVAILABLE');
+  }
+
   async function authenticatedDevice(req, reply) {
     const {data,error}=await supabase.from('devices').select('id,verified_at,device_secret_hash').eq('id',req.body.device_id).maybeSingle();
     if(error)throw new Error('PUSH_AUTH_UNAVAILABLE');
@@ -27,6 +40,27 @@ export default async function pushRoutes(app) {
   }
 
 
+  for(const [path,name] of [['/preferences','get_push_notification_preferences'],['/revoke','revoke_push_notification_preferences']]) {
+    const body=path==='/preferences'?{...preferenceSchema,properties:{...preferenceSchema.properties,subscription:{
+      type:'object',required:['endpoint','keys'],properties:{
+        endpoint:{type:'string',maxLength:2048},keys:{type:'object',required:['p256dh','auth'],properties:{
+          p256dh:{type:'string',pattern:'^[A-Za-z0-9_-]{87}={0,1}$'},auth:{type:'string',pattern:'^[A-Za-z0-9_-]{22}={0,2}$'},
+        }},
+      },
+    }}}:preferenceSchema;
+    app.post(path,{config:{rateLimit:{max:10,timeWindow:'5 minutes'}},schema:{body}},async(req,reply)=>{
+      if(!await authenticatedDevice(req,reply))return;
+      const subscription=path==='/preferences'?req.body.subscription:null;
+      if(subscription && !isAllowedPushEndpoint(subscription.endpoint))return reply.code(400).send({error:'PUSH_ENDPOINT_INVALID'});
+      const {data,error}=await rpc(name,{p_device_id:req.body.device_id,p_protest_id:req.body.protest_id,
+        ...(subscription?{p_endpoint:subscription.endpoint,p_p256dh:subscription.keys.p256dh,p_auth:subscription.keys.auth}:{}),
+      });
+      if(error)return preferenceError(error,reply);
+      if(!validPreference(data) || (path==='/preferences' && !['present','missing'].includes(data.registration)) || (path==='/revoke' && (data.enabled!==false || data.revision<1)))throw new Error('PUSH_CONSENT_UNAVAILABLE');
+      return {ok:true,enabled:data.enabled,revision:data.revision,...(path==='/preferences'?{registration:subscription?data.registration:'missing'}:{})};
+    });
+  }
+
   // GET /api/push/vapid-public-key — frontend needs this to subscribe
   app.get('/vapid-public-key', async () => ({
     publicKey: process.env.VAPID_PUBLIC_KEY || null,
@@ -34,6 +68,10 @@ export default async function pushRoutes(app) {
 
   // POST /api/push/subscribe — save subscription
   app.post('/subscribe', {
+    preValidation:async(req,reply)=>{
+      // Fastify/Ajv otherwise coerces null, false or numeric strings to revision 0.
+      if(req.body && Object.hasOwn(req.body,'consent_revision') && !Number.isInteger(req.body.consent_revision))return reply.code(400).send({error:'PUSH_CONSENT_REVISION_INVALID'});
+    },
     config: {rateLimit:{max:10,timeWindow:'5 minutes'}},
     schema: {
       body: {
@@ -44,6 +82,7 @@ export default async function pushRoutes(app) {
           device_id:    { type: 'string', minLength: 8, maxLength: 128 },
           device_secret: { type: 'string', minLength: 32, maxLength: 256 },
           protest_id:   { type: 'string', format: 'uuid', nullable: true },
+          consent_revision: { type:'integer',minimum:0,maximum:2147483646 },
           ends_at:      { type: 'string', nullable: true },
           locale:       { type: 'string', maxLength: 16, nullable: true },
           timezone:     { type: 'string', maxLength: 100, nullable: true },
@@ -69,19 +108,22 @@ export default async function pushRoutes(app) {
     if(!await authenticatedDevice(req,reply))return;
     const {device_id,protest_id,locale,timezone,subscription}=req.body;
     if(!isAllowedPushEndpoint(subscription.endpoint))return reply.code(400).send({error:'PUSH_ENDPOINT_INVALID'});
-    const {data,error}=await supabase.rpc('save_owned_push_subscription',{
+    const scoped=Object.hasOwn(req.body,'consent_revision');
+    if(scoped && !protest_id)return reply.code(400).send({error:'PUSH_PROTEST_REQUIRED'});
+    const {data,error}=await rpc(scoped?'save_scoped_push_subscription':'save_owned_push_subscription',{
       p_device_id:device_id,p_endpoint:subscription.endpoint,p_p256dh:subscription.keys.p256dh,
       p_auth:subscription.keys.auth,p_protest_id:protest_id||null,
       p_locale:['es','en','fr','zh'].includes(locale)?locale:'en',p_timezone:timezone||null,
+      ...(scoped?{p_consent_revision:req.body.consent_revision}:{}),
     });
-    if(error){
-      if(error.message==='VP_PUSH_DEVICE_UNVERIFIED')return reply.code(401).send({error:'PUSH_AUTH_REQUIRED'});
-      if(error.message==='VP_PUSH_PROTEST_NOT_FOUND')return reply.code(404).send({error:'PUSH_PROTEST_NOT_FOUND'});
-      throw new Error('PUSH_SAVE_FAILED');
+    if(error)return preferenceError(error,reply);
+    if(scoped){
+      if(data?.ok===false && data.error==='PUSH_ENDPOINT_OWNED')return reply.code(409).send({error:'PUSH_ENDPOINT_OWNED'});
+      if(!validPreference(data) || data.enabled!==true || data.revision<1)throw new Error('PUSH_CONSENT_UNAVAILABLE');
+      return reply.code(201).send({ok:true,enabled:true,revision:data.revision});
     }
     if(data!==true)return reply.code(409).send({error:'PUSH_ENDPOINT_OWNED'});
-
-    return reply.code(201).send({ ok: true });
+    return reply.code(201).send({ok:true});
   });
 
   // POST /api/push/unsubscribe — remove subscription
@@ -105,6 +147,27 @@ export default async function pushRoutes(app) {
     if(error)throw new Error('PUSH_DELETE_FAILED');
     return { ok: true };
   });
+
+  async function deliveryTargets(protestId) {
+    const {data,error}=await rpc('list_scoped_push_subscriptions',{p_protest_id:protestId});
+    if(error || !Array.isArray(data))throw new Error('PUSH_DELIVERY_UNAVAILABLE');
+    return data;
+  }
+  async function canDeliver(sub,protestId) {
+    if(typeof sub.device_id!=='string')return false;
+    const {data,error}=await rpc('push_subscription_can_deliver',{p_device_id:sub.device_id,p_protest_id:protestId,p_endpoint:sub.endpoint});
+    // Recheck after loading a batch. A send already authorized/in flight cannot be recalled.
+    return !error && data===true;
+  }
+
+  async function removeDeadSubscriptions(dead) {
+    for(const sub of dead){
+      // A late provider failure must not delete a replacement owner/key pair.
+      const {error}=await supabase.from('push_subscriptions').delete().eq('device_id',sub.device_id)
+        .eq('endpoint',sub.endpoint).eq('p256dh',sub.p256dh).eq('auth',sub.auth);
+      if(error)throw new Error('PUSH_CLEANUP_UNAVAILABLE');
+    }
+  }
 
   // POST /api/push/notify — send notification to subscribers of a protest
   // Called internally when adhesion milestones are reached
@@ -130,25 +193,8 @@ export default async function pushRoutes(app) {
       return reply.status(401).send({ error: 'No autorizado' });
     }
 
-    // Get all device_ids that joined this protest
-    const { data: adhesions } = await supabase
-      .from('adhesions')
-      .select('device_id')
-      .eq('protest_id', protest_id)
-      .is('deleted_at', null)
-      .is('anonymized_at', null);
-
-    if (!adhesions?.length) return { sent: 0 };
-
-    const deviceIds = adhesions.map(a => a.device_id);
-
-    // Get their push subscriptions
-    const { data: subs } = await supabase
-      .from('push_subscriptions')
-      .select('endpoint, p256dh, auth')
-      .in('device_id', deviceIds);
-
-    if (!subs?.length) return { sent: 0 };
+    const subs=await deliveryTargets(protest_id);
+    if(!subs.length)return {sent:0};
 
     const payload = JSON.stringify({
       title,
@@ -165,6 +211,7 @@ export default async function pushRoutes(app) {
 
     await Promise.allSettled(subs.map(async sub => {
       if (!isAllowedPushEndpoint(sub.endpoint)) return;
+      if(!await canDeliver(sub,protest_id))return;
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
@@ -173,14 +220,14 @@ export default async function pushRoutes(app) {
         sent++;
       } catch (err) {
         if (err.statusCode === 410 || err.statusCode === 404) {
-          dead.push(sub.endpoint);
+          dead.push(sub);
         }
       }
     }));
 
     // Clean up expired subscriptions
     if (dead.length) {
-      await supabase.from('push_subscriptions').delete().in('endpoint', dead);
+      await removeDeadSubscriptions(dead);
     }
 
     return { sent, dead: dead.length };
@@ -209,22 +256,8 @@ export default async function pushRoutes(app) {
   };
 
   async function sendToProtest(protestId, type, protestTitle, url, count = 0, cities = 0) {
-    const { data: adhesions } = await supabase
-      .from('adhesions')
-      .select('device_id')
-      .eq('protest_id', protestId)
-      .is('deleted_at', null)
-      .is('anonymized_at', null);
-
-    if (!adhesions?.length) return 0;
-    const deviceIds = adhesions.map(a => a.device_id);
-
-    const { data: subs } = await supabase
-      .from('push_subscriptions')
-      .select('endpoint, p256dh, auth, locale, timezone')
-      .in('device_id', deviceIds);
-
-    if (!subs?.length || !initVapid()) return 0;
+    const subs=await deliveryTargets(protestId);
+    if(!subs.length || !initVapid())return 0;
 
     // Night filter — don't send 'closing' push between 23:00 and 07:00 local time
     function isNighttime(timezone) {
@@ -242,6 +275,7 @@ export default async function pushRoutes(app) {
     const dead = [];
     await Promise.allSettled(subs.map(async sub => {
       if (!isAllowedPushEndpoint(sub.endpoint)) return;
+      if(!await canDeliver(sub,protestId))return;
       if (type === 'closing' && isNighttime(sub.timezone)) return;
       try {
         const lang = (sub.locale || 'en').substring(0, 2);
@@ -259,12 +293,12 @@ export default async function pushRoutes(app) {
         );
         sent++;
       } catch (err) {
-        if (err.statusCode === 410 || err.statusCode === 404) dead.push(sub.endpoint);
+        if (err.statusCode === 410 || err.statusCode === 404) dead.push(sub);
       }
     }));
 
     if (dead.length) {
-      await supabase.from('push_subscriptions').delete().in('endpoint', dead);
+      await removeDeadSubscriptions(dead);
     }
     return sent;
   }
@@ -311,17 +345,19 @@ export default async function pushRoutes(app) {
       await sendToProtest(protest.id, 'closed', protest.title, `https://voiceprotest.org/#/informe/${protest.id}`, protest.count, protest.cities_count);
     }
 
-    // ── Cleanup: delete subscriptions for protests closed >24h ago ──────
-    const ago24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    await supabase
-      .from('push_subscriptions')
-      .delete()
-      .not('ends_at', 'is', null)
-      .lt('ends_at', ago24h.toISOString());
+    // Never delete a shared endpoint solely because its last legacy event expired.
+    // The SQL cleanup keeps active/unknown references and serializes registrations.
+    // Operational cleanup is prepared but disabled by default. Deployment and
+    // validation never enable deletion of existing rows implicitly.
+    if(process.env.PUSH_SCOPED_ORPHAN_CLEANUP_ENABLED==='true'){
+      const {error}=await rpc('prune_scoped_push_orphans',{});
+      if(error)throw new Error('PUSH_CLEANUP_UNAVAILABLE');
+    }
   }
 
   // Run every 60 minutes + once at startup
-  setInterval(hourlyJob, 60 * 60 * 1000);
-  setTimeout(hourlyJob, 5000);
+  const runHourly=()=>hourlyJob().catch(()=>app.log.warn('Push notification job unavailable'));
+  setInterval(runHourly,60*60*1000);
+  setTimeout(runHourly,5000);
 
 }

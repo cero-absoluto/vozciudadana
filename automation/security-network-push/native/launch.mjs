@@ -37,7 +37,7 @@ try{
  command(native.pg_ctl,['-D',data,'-l',log,'-o',"-c listen_addresses=127.0.0.1 -c unix_socket_directories='' -c port=55449 -c cluster_name=voiceprotest-push-rehearsal",'-w','start']);started=true;
  // The client never inherits the UID facade or any actual database credentials.
  const clientEnv={...process.env,CENSUS_NATIVE_PASSWORD:password};delete clientEnv.LD_PRELOAD;delete clientEnv.PGPASSWORD;delete clientEnv.DATABASE_URL;
- command(process.execPath,[join(here,'run.mjs')],{env:clientEnv,stdio:'inherit'});
+ command(process.execPath,[join(here,process.env.PUSH_CONSENT_NATIVE==='1'?'consent-run.mjs':'run.mjs')],{env:clientEnv,stdio:'inherit'});
 }finally{
  if(started){try{command(native.pg_ctl,['-D',data,'-m','fast','-w','stop']);}catch(e){console.error(e.message);console.error('Temporary instance requires attention:',work);throw e;}}
  rmSync(work,{recursive:true,force:true});

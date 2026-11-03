@@ -143,6 +143,8 @@
   color: var(--text) !important;
 }
 .phone-in-visible {
+  min-width: 0;
+  width: 0;
   border: 1.5px solid rgba(255,255,255,0.5) !important;
   color: var(--text) !important;
 }

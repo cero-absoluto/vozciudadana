@@ -511,6 +511,7 @@ function onJoin() {
 
 
 <style scoped>
+#s-detail .join-footer { max-height: 50dvh; overflow-y: auto; }
 #s-detail .d-scroll { min-height: 0; overflow-wrap: anywhere; }
 #s-detail .d-scroll > .detail-hdr { padding: 0 0 12px; margin-bottom: 12px; overflow-wrap: anywhere; }
 #s-detail .join-footer .btn-primary:focus-visible,

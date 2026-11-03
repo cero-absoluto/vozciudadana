@@ -133,14 +133,21 @@ function shareProtest() {
 }
 
 async function activarNotificacion() {
-  if (notiActivada.value || notiPending.value) return;
+  if (!verificationActive || notiActivada.value || notiPending.value) return;
   notiPending.value = true;
+  let ownsContext = () => false;
+  let acceptedContext = false;
   try {
     const deviceId=confirmedIdentity.value;
     const protestId=confirmedProtestId.value;
     const deviceSecret=device.getDeviceSecret();
-    const ownsContext=()=>verificationActive && !!deviceId && !!protestId && sessionStorage.getItem('vc_device_id')===deviceId && sessionStorage.getItem('vc_last_joined')===protestId && device.getDeviceId()===deviceId && device.getDeviceSecret()===deviceSecret;
+    ownsContext=()=>{
+      try {
+        return verificationActive && !!deviceId && !!protestId && sessionStorage.getItem('vc_device_id')===deviceId && sessionStorage.getItem('vc_last_joined')===protestId && device.getDeviceId()===deviceId && device.getDeviceSecret()===deviceSecret;
+      } catch { return false; }
+    };
     if (!deviceSecret || !ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
+    acceptedContext = true;
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') return;
     if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
@@ -152,7 +159,7 @@ async function activarNotificacion() {
       return response.json();
     });
     if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
-    let sub = await withClientDeadline(() => reg.pushManager.subscribe({
+    const sub = await withClientDeadline(() => reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(publicKey),
     }));
@@ -182,19 +189,15 @@ async function activarNotificacion() {
       const data=await response.json().catch(()=>null);
       return {ok:response.ok,status:response.status,json:async()=>data};
     });
-    let saved = await save(sub);
-    if (saved.status === 409 && (await saved.json().catch(() => null))?.error === 'PUSH_ENDPOINT_OWNED') {
-      // Clearing device storage can leave an old browser endpoint. Obtain a
-      // new provider subscription instead of transferring another owner's row.
-      if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
-      await withClientDeadline(() => sub.unsubscribe());
-      if (!ownsContext()) throw new Error('NOTIFICATION_CONTEXT_CHANGED');
-      sub = await withClientDeadline(() => reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(publicKey)}));
-      saved = await save(sub);
-    }
+    // A conflicting endpoint may serve another identity or several events.
+    // Preserve the browser subscription; activation never revokes it implicitly.
+    const saved = await save(sub);
+    if (!ownsContext()) return;
     if (!saved.ok) { ui.showToast(t('verify.notiError')); return; }
     notiActivada.value = true;
-  } catch { ui.showToast(t('verify.notiError')); }
+  } catch {
+    if (verificationActive && (!acceptedContext || ownsContext())) ui.showToast(t('verify.notiError'));
+  }
   finally { notiPending.value = false; }
 }
 

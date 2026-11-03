@@ -102,3 +102,14 @@ PR164 parte de una medición Chromium:38 de64 escenarios con CTA fuera del área
 Título, financiación opcional y secundarios de censo/contador pasan al scroll; CTA/compartir y avisos de riesgo/saldo permanecen en el footer. Se conservan condiciones en cerradas. Guardas de onJoin revalidan estado actual, las etiquetas de censo coinciden con sus rutas y se retira la capacidad basada en coste fijo del cliente. Véase [evidencia](ux-09-detail-publication-20261031.md).
 
 Residual preexistente confirmado y no corregido en este bloque: censoExiste=false puede indicar consulta pendiente o fallo503, además de inexistencia. No se puede presentar la etiqueta de iniciar como prueba de inexistencia. Distinguir esos estados con recuperación explícita es el siguiente trabajo del recorrido; no requiere cambiar reglas de censo/admisión ni declara cerrado S1/S2. El ensayo general UX-14, GPS/consentimiento, push compartido e IDV permanecen abiertos.
+
+
+## Actualización añadida — 03/11/2026: censo, GPS y avisos
+
+Los pendientes históricos anteriores se actualizan con PR166 (estados del censo), PR167/169 (consentimiento GPS y resultados tardíos), PR168 (reflujo medido), PR170 (conservación de suscripción compartida) y PR171/172 (preferencias y revocación de avisos por convocatoria, recuperación explícita sin borrar el transporte compartido).
+
+[La evidencia final de PR171](https://github.com/cero-absoluto/vozciudadana/pull/171#issuecomment-6613880629) registra 1.268 pruebas correctas, dos omitidas, Chromium800/800, 120 mediciones de reflujo sin hallazgos y salud/CSP11/11 para el árbol publicado `500d83aa`. No sustituye la revisión de cambios posteriores ni acredita proveedores reales o accesibilidad integral.
+
+UX-13 queda publicado en ese alcance: consulta sin pedir permisos, estado incierto sin reintento automático, revocación por convocatoria y reparación explícita con comprobación del transporte tras la respuesta. La purga automática de huérfanas sigue desactivada y no se garantiza borrado al cerrar una convocatoria. Un envío ya iniciado puede llegar después de revocar. UX-10/14 mantienen pendientes dispositivo físico/zoom nativo y proveedores reales; OTP real continúa aplazado.
+
+El ajuste documental corrige en cuatro idiomas la promesa anterior de borrado al cierre y la afirmación de que nunca se transmite el idioma. No cambia consentimiento, envíos ni retención efectiva; los demás compromisos de retención conservan su auditoría pendiente.

@@ -33,3 +33,17 @@ registros históricos. Las revisiones independientes son acotadas al código que
 reciben; sus límites y pruebas están en las propuestas y evidencias de publicación.
 El handoff de GitHub conserva su límite de implementación frontend/tests; esta
 coordinación de API y SQL no amplía sus permisos ni las tareas de vigilancia.
+
+
+## Actualización añadida — 03/11/2026
+
+Esta actualización complementa el inventario histórico anterior; no declara cerrada ninguna auditoría integral.
+
+| Punto | Estado actualizado y pendientes |
+|---|---|
+| 1 — Seguridad | Se conservan los pendientes expresos; los bloques posteriores no certifican todo el servicio. |
+| 2 — Identidad y verificación | IDV-05/10 y OTP real siguen pendientes en el alcance descrito arriba. La revocación de avisos no equivale a revocación externa de una credencial institucional. |
+| 3 — Participación | PR166 distingue estados del censo; PR167/169 corrigen consentimiento GPS y resultados tardíos; PR168 corrige reflujo medido; PR170 conserva la suscripción compartida; PR171/172 publican revocación de avisos por convocatoria y recuperación explícita. Permanecen proveedores reales, dispositivos físicos/zoom nativo y purga automática de huérfanas (OFF). |
+| 4 — Documentación pública | En curso: se corrige la promesa de borrado de suscripción/zona horaria al cierre y se declara el envío de idioma al activar avisos, en cuatro idiomas. No se declara alineada toda la documentación: las demás promesas de retención y los documentos históricos requieren su propia comprobación. |
+
+Evidencia publicada del bloque de avisos: [PR171, comprobación final](https://github.com/cero-absoluto/vozciudadana/pull/171#issuecomment-6613880629) y [PR172, servidor y migración](https://github.com/cero-absoluto/vozciudadana/pull/172#issuecomment-6613830226). Árbol publicado `500d83aa0d0c11a07ce3b1e406ef074e6e521a95`: 1.268 pruebas correctas, dos omitidas; Chromium800/800 y salud/CSP11/11. Son resultados de esa publicación, no de la corrección documental en curso.

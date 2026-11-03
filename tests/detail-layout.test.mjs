@@ -26,7 +26,7 @@ async function mountDetail(extra={},options={}){
   let clock=1000,nextTimer=0;const timers=new Map(),clearedTimers=[];
   const router={push:p=>navigation.push(p),back(){}};
   const detailCalls=[];
-  const store=Vue.reactive({protests:options.directLookup?[]:[event(extra)],canJoin:p=>options.decision??(p.joined?{ok:false,joined:true}:{ok:true}),scopeBadge:()=>({cls:'sb-global',icon:'',label:'Global'}),fetchProtestById:async id=>{detailCalls.push(id);const selected=event(extra);store.protests.push(selected);return selected;}});
+  const store=Vue.reactive({protests:options.directLookup?[]:[event(extra)],canJoin:p=>options.decision??(p.joined?{ok:false,joined:true}:{ok:true}),scopeBadge:()=>({cls:'sb-global',icon:'',label:'Global'}),fetchProtestById:async id=>{detailCalls.push(id);const selected=event(extra);store.protests.push(selected);if(options.newerDuringLookup)queueMicrotask(()=>{store.protests=[{...selected,...options.newerDuringLookup}];});return selected;}});
   const censusCalls=[];
   const api={fetchGrupoPorConvocatoria:async id=>{censusCalls.push(id);if(options.censusLookup)return options.censusLookup(id);if(options.censusExists)return {group_id:'33333333-3333-4333-8333-333333333333',name:'Existing group'};throw {status:404};}};
   const {descriptor}=parse(fs.readFileSync('apps/web/src/screens/DetailScreen.vue','utf8'));
@@ -213,4 +213,17 @@ test('activation after suspended local ticking updates the retained detail to cl
 
 test('detail snapshot clock has one lifecycle interval and clears it on unmount',async()=>{
   const f=await mountDetail();assert.equal(f.timers.size,1);f.unmount();assert.equal(f.timers.size,0);assert.equal(f.clearedTimers.length,1);
+});
+
+
+test('an older direct lookup return cannot overwrite a newer live version captured before await resumes',async()=>{
+  const f=await mountDetail({title:'Older lookup',saldo_euros:2},{directLookup:true,newerDuringLookup:{title:'Newer live version',saldo_euros:0}});
+  try{
+    assert.ok(text(f.byClass('detail-hdr')).includes('Newer live version'));
+    f.store.protests=[];await f.flush();
+    assert.ok(text(f.byClass('detail-hdr')).includes('Newer live version'));
+    assert.equal(text(f.cta()).trim(),f.t('detail.joinSinSaldo'));assert.equal(f.cta().props.disabled,true);
+    await f.click(f.cta());assert.deepEqual(f.navigation,[]);assert.deepEqual(f.writes,[]);
+    assert.equal(f.store.protests.length,0);
+  }finally{f.unmount();}
 });

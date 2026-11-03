@@ -403,7 +403,10 @@ async function loadDetail() {
       const found = await store.fetchProtestById(detailId);
       if (!ownsDetail()) return;
       if (!found) { notFound.value = true; return; }
-      if (!rememberSelected(found)) { loadError.value = true; return; }
+      if (String(found.id) !== detailId) { loadError.value = true; return; }
+      // The live watcher may already have observed a newer version while awaiting
+      // this lookup. Never overwrite that snapshot with the older return value.
+      if (!protest.value && !rememberSelected(found)) { loadError.value = true; return; }
     }
   } catch {
     if (ownsDetail()) loadError.value = true;

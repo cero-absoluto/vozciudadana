@@ -80,7 +80,11 @@ try {
         await control.scrollIntoViewIfNeeded();
         row.controls.push(await control.evaluate(el=>{const r=el.getBoundingClientRect();const x=Math.max(0,Math.min(innerWidth-1,r.left+r.width/2)),y=Math.max(0,Math.min(innerHeight-1,r.top+r.height/2));const hit=document.elementFromPoint(x,y);return {name:el.getAttribute('aria-label')||el.textContent?.trim().slice(0,80)||el.id,withinViewport:r.left>=-1&&r.right<=innerWidth+1&&r.top>=-1&&r.bottom<=innerHeight+1,reachable:!!hit&&(el===hit||el.contains(hit)),width:r.width,height:r.height};}));
       }
-      if(state==='detail')row.scrollBody=await page.locator('#s-detail .d-scroll').evaluate(el=>el.clientHeight);
+      if(state==='detail'){
+        row.scrollBody=await page.locator('#s-detail .d-scroll').evaluate(el=>el.clientHeight);
+        row.screenHeight=await page.locator('#s-detail').evaluate(el=>el.clientHeight);
+        row.footerHeight=await page.locator('#s-detail .join-footer').evaluate(el=>el.clientHeight);
+      }
       row.ok=!row.overflowX&&row.controls.length>0&&row.controls.every(c=>c.withinViewport&&c.reachable)&&(state!=='detail'||row.scrollBody>=100);
       checks.push(row);detailMeasurements.push(row);
     };

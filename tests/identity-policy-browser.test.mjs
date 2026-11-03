@@ -18,7 +18,7 @@ const verify=read('VerifyScreen').match(/<script setup>([\s\S]*?)<\/script>/)[1]
 for(const risk of ['high','critical','low'])test('IDV-02 final join '+risk+' handles cached GPS according to current target',async()=>{
  let mounted;const payloads=[],target={id:'synthetic',scope:'local',risk_level:risk};
  const memory=new Map([['vc_last_joined','synthetic'],['vc_device_id','synthetic-device'],['vc_participation_token','synthetic-token']]);
- const context={participationGpsSnapshot,...outcomes,withClientDeadline,ref:value=>({value}),onMounted:fn=>{mounted=fn;},onUnmounted(){},useRouter:()=>({push(){}}),useI18n:()=>({t:key=>key,locale:{value:'en'}}),
+ const context={participationGpsSnapshot,...outcomes,withClientDeadline,ref:value=>({value}),watch(){},onMounted:fn=>{mounted=fn;},onUnmounted(){},useRouter:()=>({push(){}}),useI18n:()=>({t:key=>key,locale:{value:'en'}}),
  useProtestsStore:()=>({protests:[target],loadProtests:async()=>{},joinProtest(){}}),useDeviceStore:()=>({getDeviceId:()=> 'synthetic-device',gpsReady:true,gpsLat:43,gpsLng:-3,gpsAccuracy:5}),
  useUiStore:()=>({clearGps(){this.gpsLat=null;this.gpsLng=null;this.gpsAccuracy=null;},gpsLat:43,gpsLng:-3,gpsAccuracy:5,showToast(){},revealInstallBanner(){}}),
  sessionStorage:{getItem:key=>memory.get(key)??null,setItem:(key,value)=>memory.set(key,String(value))},localStorage:{getItem:()=> '43',removeItem(){}},setTimeout(){},

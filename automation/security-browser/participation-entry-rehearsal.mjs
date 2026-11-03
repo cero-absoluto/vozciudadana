@@ -20,11 +20,13 @@ try {
     const context=await browser.newContext({serviceWorkers:'block',viewport:{width,height:844},isMobile:true,hasTouch:true,locale});
     await context.addInitScript(({locale})=>{localStorage.setItem('vc_lang',locale);localStorage.setItem('vc_map_seen','1');localStorage.setItem('vc_map_intro','1');}, {locale});
     await context.addInitScript(()=>{
-      window.__notificationRequests=0;window.__pushPermission='denied';window.__pushSubscriptions=0;window.__pushUnsubscribes=0;
+      window.__notificationRequests=0;window.__pushPermission='denied';window.__pushSubscriptions=0;window.__pushUnsubscribes=0;window.__pushProviderExisting=sessionStorage.getItem('__synthetic_push_existing')==='1';window.__pushLookups=0;
       Notification.requestPermission=async()=>{window.__notificationRequests++;return window.__pushPermission;};
-      const subscription={endpoint:'https://fcm.googleapis.com/fcm/send/synthetic-shared',keys:{p256dh:'B'.repeat(87),auth:'a'.repeat(22)},unsubscribe:async()=>{window.__pushUnsubscribes++;return true;}};
-      const registration={pushManager:{subscribe:async()=>{window.__pushSubscriptions++;return subscription;}}};
+      const subscription={endpoint:sessionStorage.getItem('__synthetic_push_endpoint')||'https://fcm.googleapis.com/fcm/send/synthetic-shared',keys:{p256dh:'B'.repeat(87),auth:sessionStorage.getItem('__synthetic_push_auth')||'a'.repeat(22)},unsubscribe:async()=>{window.__pushUnsubscribes++;return true;}};
+      window.__pushTransport=subscription;
+      const registration={pushManager:{getSubscription:async()=>{window.__pushLookups++;return window.__pushProviderExisting?subscription:null;},subscribe:async()=>{window.__pushSubscriptions++;window.__pushProviderExisting=true;return subscription;}}};
       Object.defineProperty(navigator.serviceWorker,'ready',{configurable:true,value:Promise.resolve(registration)});
+      navigator.serviceWorker.getRegistration=async()=>registration;
     });
     await context.addInitScript(()=>{
       window.__gpsRequests=0;window.__gpsSuccess=null;window.__gpsFailure=null;
@@ -40,6 +42,8 @@ try {
     let smsResponse={sent:true},smsStatus=200,holdSms=false,holdEmail=false,holdCheck=false;
     let gpsPatches=0,holdGpsPatch=false,releaseGpsPatch;
     let pushSaves=0,pushStatus=201,holdPushSave=false,releasePushSave;
+    let registeredPushTransport={endpoint:'https://fcm.googleapis.com/fcm/send/synthetic-shared',keys:{p256dh:'B'.repeat(87),auth:'a'.repeat(22)}};
+    let pushRevokes=0,revokeStatus=200,pushPreference={enabled:false,revision:0,registration:'present'},otherPushPreference={enabled:true,revision:7,registration:'present'};
     let mobileDetail=null,groupAvailable=false,groupMode='auto',groupReads=0,holdGroup=false,releaseGroup;
     let holdList=false,releaseList,listStatus=200,listReads=0;
     let listOverride=null,detailStatus=200,detailResponse=events[1],holdDetail=false,releaseDetail;
@@ -60,9 +64,22 @@ try {
         if(req.method()==='GET'&&u.pathname===`/api/protests/${ID}/informe`)return json({error:'synthetic report unavailable'},503);
         if(req.method()==='GET'&&u.pathname===`/api/protests/${INSTITUTION}`) {if(holdDetail)await new Promise(r=>releaseDetail=r);return json(detailResponse,detailStatus);}
         if(req.method()==='GET'&&u.pathname==='/api/push/vapid-public-key')return json({publicKey:'dGVzdA'});
+        if(req.method()==='POST'&&['/api/push/preferences','/api/push/revoke'].includes(u.pathname)){
+          const payload=req.postDataJSON();assert.equal(payload.device_id,'synthetic-device');assert.equal(payload.device_secret,'a'.repeat(64));assert.equal(payload.protest_id,ID);
+          if(u.pathname.endsWith('/preferences')){
+            const local=payload.subscription,stored=registeredPushTransport;
+            const matches=pushPreference.registration==='present'&&!!local&&!!stored&&local.endpoint===stored.endpoint&&local.keys?.p256dh===stored.keys.p256dh&&local.keys?.auth===stored.keys.auth;
+            return json({ok:true,...pushPreference,registration:matches?'present':'missing'});
+          }
+          pushRevokes++;pushPreference={...pushPreference,enabled:false,revision:pushPreference.revision+1};
+          return json(revokeStatus===200?{ok:true,enabled:false,revision:pushPreference.revision}:{error:'synthetic uncertain revocation'},revokeStatus);
+        }
         if(req.method()==='POST'&&u.pathname==='/api/push/subscribe'){
           const payload=req.postDataJSON();assert.equal(payload.device_id,'synthetic-device');assert.equal(payload.device_secret,'a'.repeat(64));assert.equal(payload.protest_id,ID);assert.equal(payload.subscription.endpoint,'https://fcm.googleapis.com/fcm/send/synthetic-shared');
-          pushSaves++;if(holdPushSave)await new Promise(r=>releasePushSave=r);return json(pushStatus===201?{ok:true}:{error:pushStatus===409?'PUSH_ENDPOINT_OWNED':'synthetic push failure'},pushStatus);
+          assert.ok(Number.isInteger(payload.consent_revision));pushSaves++;if(holdPushSave)await new Promise(r=>releasePushSave=r);
+          if(payload.consent_revision!==pushPreference.revision)return json({error:'PUSH_CONSENT_STALE'},409);
+          if(pushStatus===201){registeredPushTransport=payload.subscription;pushPreference={enabled:true,revision:pushPreference.revision+1,registration:'present'};return json({ok:true,enabled:true,revision:pushPreference.revision},201);}
+          return json({error:pushStatus===409?'PUSH_ENDPOINT_OWNED':'synthetic push failure'},pushStatus);
         }
         if(req.method()==='GET'&&u.pathname==='/api/ipinfo')return json({country_code:'ES',country_name:'Spain',city:'Synthetic'});
         if(req.method()==='GET'&&u.pathname==='/api/country-codes')return json([{iso2:'ES',dial_code:'34',flag:'ES'}]);
@@ -153,7 +170,7 @@ try {
     checks.push({id:`selected_event_success_${locale}_${width}`,ok:true});
     assert.ok((await page.locator('#s-verify').textContent()).includes(messages.verify.notiInfo));
     assert.equal(await page.evaluate(()=>window.__notificationRequests),0);
-    assert.equal(await page.getByRole('button',{name:messages.verify.notiOff,exact:true}).getAttribute('aria-describedby'),'participation-notification-info');
+    await page.locator('.push-consent-controls').waitFor();assert.equal(await page.getByRole('button',{name:messages.verify.pushEnable,exact:true}).count(),0);
     checks.push({id:`notification_explained_before_permission_${locale}_${width}`,ok:true});
     const openShare=async()=>{await page.locator('#s-verify .suc-share').click();await page.locator('.modal-overlay.open').waitFor();};
     const copyButton=()=>page.locator('.modal-overlay.open').getByRole('button').filter({hasText:messages.share.copy}).first();
@@ -195,7 +212,7 @@ try {
     await page.reload();await page.locator('.participation-receipt').waitFor();assert.equal(joins,1);
     assert.ok((await page.locator('.participation-receipt').textContent()).includes(messages.participation.savedConfirmation));
     checks.push({id:`confirmed_reload_ignores_other_tab_identity_${locale}_${width}`,ok:true});
-    await page.getByRole('button',{name:messages.verify.notiOff,exact:true}).click();
+    assert.equal(await page.getByRole('button',{name:messages.verify.pushEnable,exact:true}).count(),0);
     assert.equal(await page.evaluate(()=>window.__notificationRequests),0);
     checks.push({id:`notification_refuses_other_identity_before_permission_${locale}_${width}`,ok:true});
     await page.goto('https://voiceprotest.org/#/verify-institucional/'+INSTITUTION);
@@ -407,30 +424,67 @@ try {
     await page.getByRole('button',{name:messages.verify.gpsReinforceAccept,exact:true}).click();await page.keyboard.press('Enter');await page.waitForFunction(()=>window.__gpsRequests===1);
     await releaseCoordinates();await waitForCount(()=>gpsPatches,beforeValidPatch+1);await page.getByText(messages.verify.gpsReinforceSuccess,{exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:messages.verify.gpsReinforceAccept,exact:true}).count(),0);
     checks.push({id:`reinforce_valid_context_sends_once_and_confirms_${locale}_${width}`,ok:true});
-    // Shared endpoints must never be revoked as automatic conflict recovery.
+    // Scoped consent is authoritative; shared transport is never implicitly revoked.
     joinResponse={receipt:'44444444-4444-4444-8444-444444444444'};
-    const pushPage=async name=>{
+    const pushPage=async(name,preference={enabled:false,revision:0,registration:'present'})=>{
+      pushPreference={...preference};registeredPushTransport=preference.registration==='missing'?null:{endpoint:'https://fcm.googleapis.com/fcm/send/synthetic-shared',keys:{p256dh:'B'.repeat(87),auth:'a'.repeat(22)}};
       await page.evaluate(id=>{localStorage.clear();sessionStorage.clear();localStorage.setItem('vc_device_id','synthetic-device');localStorage.setItem('vc_device_secret','a'.repeat(64));sessionStorage.setItem('vc_last_joined',id);sessionStorage.setItem('vc_device_id','synthetic-device');sessionStorage.setItem('vc_participation_token','synthetic-token');},ID);
       await page.goto(`https://voiceprotest.org/?ux=push-${name}#/verify`);await page.locator('.success-scr').waitFor();await page.evaluate(()=>{window.__pushPermission='granted';});
+      await page.getByText(preference.enabled?messages.verify.pushRepair:messages.verify.pushDisabled,{exact:true}).waitFor();
     };
-    const notificationButton=()=>page.getByRole('button',{name:messages.verify.notiOff,exact:true});
+    const notificationButton=()=>page.getByRole('button',{name:messages.verify.pushEnable,exact:true});
+    const revokeButton=()=>page.getByRole('button',{name:messages.verify.pushRevoke,exact:true});
+    const refreshPush=()=>page.getByRole('button',{name:messages.verify.pushRefresh,exact:true});
     pushStatus=409;await pushPage('owned');const beforeOwnedSave=pushSaves;
-    await notificationButton().click();await page.getByText(messages.verify.notiError,{exact:true}).waitFor();
-    assert.equal(pushSaves,beforeOwnedSave+1);assert.deepEqual(await page.evaluate(()=>[window.__pushSubscriptions,window.__pushUnsubscribes]),[1,0]);assert.equal(await page.getByRole('button',{name:messages.verify.notiOn,exact:true}).count(),0);assert.equal(await page.locator('.success-scr').count(),1);
+    await notificationButton().click();await page.getByText(messages.verify.pushError,{exact:true}).waitFor();
+    assert.equal(pushSaves,beforeOwnedSave+1);assert.deepEqual(await page.evaluate(()=>[window.__pushSubscriptions,window.__pushUnsubscribes]),[1,0]);assert.equal(await page.getByText(messages.verify.pushEnabled,{exact:true}).count(),0);assert.equal(await page.locator('.success-scr').count(),1);
     checks.push({id:`push_owned_endpoint_is_preserved_without_automatic_retry_${locale}_${width}`,ok:true});
     pushStatus=201;holdPushSave=true;releasePushSave=undefined;await pushPage('valid');const beforePushSave=pushSaves;
     await notificationButton().click();await page.keyboard.press('Enter');await waitForCount(()=>pushSaves,beforePushSave+1);await waitForCount(()=>Number(!!releasePushSave),1);
-    holdPushSave=false;releasePushSave();await page.getByRole('button',{name:messages.verify.notiOn,exact:true}).waitFor();assert.equal(pushSaves,beforePushSave+1);assert.deepEqual(await page.evaluate(()=>[window.__pushSubscriptions,window.__pushUnsubscribes]),[1,0]);
+    holdPushSave=false;releasePushSave();await page.getByText(messages.verify.pushEnabled,{exact:true}).waitFor();assert.equal(pushSaves,beforePushSave+1);assert.deepEqual(await page.evaluate(()=>[window.__pushSubscriptions,window.__pushUnsubscribes]),[1,0]);
     checks.push({id:`push_valid_context_saves_once_and_confirms_${locale}_${width}`,ok:true});
+    for(const rotation of ['endpoint','p256dh','auth']){
+      holdPushSave=true;releasePushSave=undefined;await pushPage('activation-rotation-'+rotation);const beforeRotation=pushSaves;
+      await notificationButton().click();await waitForCount(()=>pushSaves,beforeRotation+1);await waitForCount(()=>Number(!!releasePushSave),1);
+      await page.evaluate(rotation=>{if(rotation==='endpoint')window.__pushTransport.endpoint+='-rotated';else window.__pushTransport.keys[rotation]=rotation==='p256dh'?'C'.repeat(87):'b'.repeat(22);},rotation);
+      const rotatedResponse=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/push/subscribe');holdPushSave=false;releasePushSave();await (await rotatedResponse).finished();
+      await page.getByText(messages.verify.pushRepair,{exact:true}).waitFor();assert.equal(await page.getByText(messages.verify.pushEnabled,{exact:true}).count(),0);assert.equal(await page.locator('.success-scr').count(),1);
+      assert.equal(pushPreference.enabled,true);assert.equal(pushPreference.revision,1);assert.equal(pushSaves,beforeRotation+1);assert.equal(await page.evaluate(()=>window.__pushUnsubscribes),0);
+      checks.push({id:`push_activation_rechecks_rotated_${rotation}_${locale}_${width}`,ok:true});
+    }
     holdPushSave=true;releasePushSave=undefined;await pushPage('late-success');const beforeLatePush=pushSaves;
     await notificationButton().click();await waitForCount(()=>pushSaves,beforeLatePush+1);await waitForCount(()=>Number(!!releasePushSave),1);await page.evaluate(()=>localStorage.setItem('vc_device_id','changed-identity'));
     const latePushSuccess=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/push/subscribe');holdPushSave=false;releasePushSave();await (await latePushSuccess).finished();await stablePaint();
-    assert.equal(await page.getByRole('button',{name:messages.verify.notiOn,exact:true}).count(),0);assert.equal(await page.getByText(messages.verify.notiError,{exact:true}).count(),0);assert.equal(await page.locator('.success-scr').count(),1);
+    assert.equal(await page.getByText(messages.verify.pushEnabled,{exact:true}).count(),0);assert.equal(await page.getByText(messages.verify.pushError,{exact:true}).count(),0);assert.equal(await page.locator('.success-scr').count(),1);
     checks.push({id:`push_late_success_does_not_confirm_for_changed_identity_${locale}_${width}`,ok:true});
     pushStatus=503;holdPushSave=true;releasePushSave=undefined;await pushPage('late-failure');const beforeFailedPush=pushSaves;
     await notificationButton().click();await waitForCount(()=>pushSaves,beforeFailedPush+1);await waitForCount(()=>Number(!!releasePushSave),1);await page.evaluate(()=>{window.location.hash='#/';});await page.waitForURL(url=>url.hash==='#/');await page.locator('.success-scr').waitFor({state:'detached'});
-    const latePushFailure=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/push/subscribe');holdPushSave=false;releasePushSave();await (await latePushFailure).finished();await stablePaint();assert.equal(await page.getByText(messages.verify.notiError,{exact:true}).count(),0);
+    const latePushFailure=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/push/subscribe');holdPushSave=false;releasePushSave();await (await latePushFailure).finished();await stablePaint();assert.equal(await page.getByText(messages.verify.pushError,{exact:true}).count(),0);
     checks.push({id:`push_late_failure_is_silent_after_unmount_${locale}_${width}`,ok:true});
+    pushStatus=201;await pushPage('revoke',{enabled:true,revision:3,registration:'present'});const beforeRevoke=pushRevokes;const otherBefore=JSON.stringify(otherPushPreference);
+    await revokeButton().click();await page.getByText(messages.verify.pushDisabled,{exact:true}).waitFor();assert.equal(pushRevokes,beforeRevoke+1);assert.equal(JSON.stringify(otherPushPreference),otherBefore);assert.deepEqual(await page.evaluate(()=>[window.__notificationRequests,window.__pushUnsubscribes]),[0,0]);assert.equal(await page.locator('.success-scr').count(),1);
+    checks.push({id:`push_revoke_is_scoped_and_needs_no_browser_permission_${locale}_${width}`,ok:true});
+    await pushPage('repair',{enabled:true,revision:5,registration:'missing'});await page.evaluate(()=>{window.__pushProviderExisting=true;});
+    await notificationButton().click();await page.getByText(messages.verify.pushEnabled,{exact:true}).waitFor();assert.deepEqual(await page.evaluate(()=>[window.__pushSubscriptions,window.__pushUnsubscribes]),[0,0]);assert.equal(pushPreference.registration,'present');
+    checks.push({id:`push_orphan_transport_repairs_by_reusing_existing_subscription_${locale}_${width}`,ok:true});
+    await pushPage('uncertain-revoke',{enabled:true,revision:8,registration:'present'});revokeStatus=503;
+    await revokeButton().click();await page.getByText(messages.verify.pushUncertain,{exact:true}).waitFor();assert.equal(await page.getByText(messages.verify.pushDisabled,{exact:true}).count(),0);assert.equal(await notificationButton().count(),0);
+    await refreshPush().click();await page.getByText(messages.verify.pushDisabled,{exact:true}).waitFor();revokeStatus=200;
+    checks.push({id:`push_uncertain_revoke_requires_authoritative_refresh_${locale}_${width}`,ok:true});
+    await pushPage('stale-enable');holdPushSave=true;releasePushSave=undefined;const beforeStale=pushSaves;
+    await notificationButton().click();await waitForCount(()=>pushSaves,beforeStale+1);await waitForCount(()=>Number(!!releasePushSave),1);pushPreference={...pushPreference,enabled:false,revision:pushPreference.revision+1};
+    const staleResponse=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/push/subscribe');holdPushSave=false;releasePushSave();await (await staleResponse).finished();await refreshPush().waitFor();assert.equal(await notificationButton().count(),0);assert.equal(pushPreference.enabled,false);
+    await refreshPush().click();await page.getByText(messages.verify.pushDisabled,{exact:true}).waitFor();assert.equal(await page.evaluate(()=>window.__pushUnsubscribes),0);
+    checks.push({id:`push_stale_activation_cannot_undo_a_revocation_${locale}_${width}`,ok:true});
+    for(const transport of ['matching','different-endpoint','different-keys']){
+      await pushPage('exact-'+transport,{enabled:true,revision:10,registration:'present'});const beforeProbeJoins=joins;
+      await page.evaluate(transport=>{sessionStorage.setItem('__synthetic_push_existing','1');if(transport==='different-endpoint')sessionStorage.setItem('__synthetic_push_endpoint','https://fcm.googleapis.com/fcm/send/synthetic-unregistered');if(transport==='different-keys')sessionStorage.setItem('__synthetic_push_auth','b'.repeat(22));},transport);
+      await page.reload();await page.locator('.success-scr').waitFor();
+      await page.getByText(transport==='matching'?messages.verify.pushEnabled:messages.verify.pushRepair,{exact:true}).waitFor();
+      assert.equal(joins,beforeProbeJoins);assert.deepEqual(await page.evaluate(()=>[window.__notificationRequests,window.__pushSubscriptions,window.__pushUnsubscribes]),[0,0,0]);
+      if(transport!=='matching'){assert.equal(await page.getByText(messages.verify.pushEnabled,{exact:true}).count(),0);await notificationButton().waitFor();}
+      checks.push({id:`push_status_matches_exact_transport_${transport}_${locale}_${width}`,ok:true});
+    }
     // Measured baseline global cases plus institutional/census/closed/joined states.
     const detailCases=[];
     for(const height of [640,844])for(const risk of ['low','high'])for(const balance of [0,10])detailCases.push({height,risk,balance,variant:'global'});
@@ -475,7 +529,7 @@ try {
   const reflow=await runReflowDiagnostic();
   checks.push(...reflow.checks.map(row=>({id:`reflow_${row.state}_${row.textScale}_${row.locale}_${row.width}`,ok:row.ok})));
   requests.push(...reflow.requests);errors.push(...reflow.errors);unexpected.push(...reflow.unexpected);
-  const report={status:checks.length===720&&checks.every(c=>c.ok)&&reflow.status==='DIAGNOSTIC_COMPLETE'&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0,reflowMeasurements:reflow.detailMeasurements,reflowFindings:reflow.findings,reflowLimits:reflow.limits};
+  const report={status:checks.length===800&&checks.every(c=>c.ok)&&reflow.status==='DIAGNOSTIC_COMPLETE'&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0,reflowMeasurements:reflow.detailMeasurements,reflowFindings:reflow.findings,reflowLimits:reflow.limits};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
   if(report.status!=='PASS') process.exitCode=1;
 }

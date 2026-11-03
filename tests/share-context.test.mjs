@@ -87,8 +87,9 @@ test('notification consent information is visible before the action and is its a
   const source=read('VerifyScreen');const template=source.split('</template>')[0];
   const info=template.match(/<p\b[^>]*id="([^"]+)"[^>]*>\{\{ \$t\('verify\.notiInfo'\) \}\}<\/p>/);
   assert.ok(info,'existing translated privacy and optionality explanation is rendered');
-  const action=template.match(/<button\b[^>]*@click="activarNotificacion"[^>]*>/)[0];
-  assert.ok(action.includes('aria-describedby="'+info[1]+'"'));
+  const action=template.match(/<PushConsentControls\b[\s\S]*?\/>/)[0];
+  assert.ok(action.includes('@enable="activarNotificacion"'));
+  assert.ok(action.includes('information-id="'+info[1]+'"'));
   assert.ok(template.indexOf(info[0])<template.indexOf(action));
   assert.doesNotMatch(template,/@click="activarNotificacion\(\)"/);
 });

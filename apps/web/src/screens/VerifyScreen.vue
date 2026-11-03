@@ -67,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useProtestsStore } from '@/stores/protests.js';
 import { useDeviceStore }   from '@/stores/device.js';
@@ -97,13 +97,32 @@ const receiptNotSaved = ref(false);
 const confirmedProtestId = ref('');
 const confirmedIdentity = ref('');
 let verificationActive = true;
-onUnmounted(() => { verificationActive = false; });
+onUnmounted(() => { verificationActive = false; gpsReinforcementEpoch += 1; });
 const notiActivada = ref(false);
 const notiPending = ref(false);
 const gpsUpdateToken  = ref(null);
 const hadGpsAtJoin    = ref(false);
 const showGpsReinforce = ref(false);
 const gpsReinforceDone = ref(false);
+let gpsReinforcementEpoch = 0;
+function gpsReinforcementContext() {
+  if (!verificationActive || !success.value || !showGpsReinforce.value || gpsReinforceDone.value) return null;
+  const id = confirmedProtestId.value;
+  const identity = confirmedIdentity.value;
+  const token = gpsUpdateToken.value;
+  if (!id || !identity || typeof token !== 'string' || !token) return null;
+  try {
+    if (sessionStorage.getItem('vc_last_joined') !== id || sessionStorage.getItem('vc_device_id') !== identity) return null;
+  } catch { return null; }
+  const target = protests.protests.find(p => String(p.id) === String(id));
+  // Preserve the existing offer policy; scope is bound for freshness, not restricted.
+  if (!target || target.dominio_email || ['high', 'critical'].includes(target.risk_level)) return null;
+  return JSON.stringify([id, identity, token, target.scope, target.risk_level, target.dominio_email ?? null]);
+}
+watch(gpsReinforcementContext, (current, previous) => {
+  if (current !== previous) gpsReinforcementEpoch += 1;
+}, {flush: 'sync'});
+
 
 // Local scope GPS reinforce
 
@@ -306,29 +325,33 @@ onMounted(async () => {
 const reinforcing = ref(false);
 async function reinforceGps() {
   if (reinforcing.value) return;
+  const context = gpsReinforcementContext();
+  if (!context) return;
+  const epoch = gpsReinforcementEpoch;
   const id = confirmedProtestId.value;
-  if (!verificationActive || sessionStorage.getItem('vc_last_joined') !== id || sessionStorage.getItem('vc_device_id') !== confirmedIdentity.value) return;
-  const target = protests.protests.find(p => String(p.id) === String(id));
-  if (!target || target.dominio_email || ['high', 'critical'].includes(target.risk_level)) return;
+  const token = gpsUpdateToken.value;
+  const ownsRequest = () => verificationActive && epoch === gpsReinforcementEpoch && gpsReinforcementContext() === context;
   reinforcing.value = true;
   try {
     const pos = await new Promise((resolve, reject) =>
       navigator.geolocation.getCurrentPosition(resolve, reject,
         { enableHighAccuracy: true, timeout: 10000 })
     );
-    const res = await import('@/services/api.js').then(api => {
-      if (!verificationActive || sessionStorage.getItem('vc_last_joined') !== id || sessionStorage.getItem('vc_device_id') !== confirmedIdentity.value) throw new Error('GPS_CONTEXT_CHANGED');
-      return api.patchAdhesionGps(id, {
-        gps_update_token: gpsUpdateToken.value,
-        gps_lat:          pos.coords.latitude,
-        gps_lng:          pos.coords.longitude,
-        gps_accuracy:     pos.coords.accuracy,
-      });
+    if (!ownsRequest()) return;
+    const api = await import('@/services/api.js');
+    if (!ownsRequest()) return;
+    await api.patchAdhesionGps(id, {
+      gps_update_token: token,
+      gps_lat:          pos.coords.latitude,
+      gps_lng:          pos.coords.longitude,
+      gps_accuracy:     pos.coords.accuracy,
     });
+    if (!ownsRequest()) return;
     showGpsReinforce.value = false;
     gpsReinforceDone.value = true;
     ui.showToast(t('verify.gpsReinforceSuccess'));
   } catch (err) {
+    if (!ownsRequest()) return;
     // Same honest-error treatment as Capa 0 (AuthScreen.vue) — a failure
     // here must never again disappear silently.
     if (err?.status === 409 || err?.status === 410 || err?.status === 404) {
@@ -344,7 +367,7 @@ async function reinforceGps() {
       ui.showToast(t(key));
     }
   } finally {
-    reinforcing.value = false;
+    if (verificationActive) reinforcing.value = false;
   }
 }
 

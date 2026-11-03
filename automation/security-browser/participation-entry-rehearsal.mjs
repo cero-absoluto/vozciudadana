@@ -32,6 +32,7 @@ try {
     });
     let sms=0,joins=0,emailSends=0,emailChecks=0,releaseSms,releaseEmail,releaseCheck;
     let smsResponse={sent:true},smsStatus=200,holdSms=false,holdEmail=false,holdCheck=false;
+    let gpsPatches=0,holdGpsPatch=false,releaseGpsPatch;
     let mobileDetail=null,groupAvailable=false,groupMode='auto',groupReads=0,holdGroup=false,releaseGroup;
     let holdList=false,releaseList,listStatus=200,listReads=0;
     let listOverride=null,detailStatus=200,detailResponse=events[1],holdDetail=false,releaseDetail;
@@ -45,7 +46,7 @@ try {
         return route.fulfill({path:file,contentType:({'.html':'text/html','.js':'application/javascript','.css':'text/css','.json':'application/json','.ttf':'font/ttf','.png':'image/png','.svg':'image/svg+xml'})[extname(file)]||'application/octet-stream'});
       }
       if(u.hostname==='api.voiceprotest.org') {
-        if(req.method()==='OPTIONS')return route.fulfill({status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST','Access-Control-Allow-Headers':'Content-Type'}});
+        if(req.method()==='OPTIONS')return route.fulfill({status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,PATCH','Access-Control-Allow-Headers':'Content-Type'}});
         if(req.method()==='GET'&&u.pathname==='/api/protests') {listReads++;if(holdList)await new Promise(r=>releaseList=r);return json(listOverride ?? events,listStatus);}
         if(req.method()==='GET'&&u.pathname===`/api/grupos/convocatoria/${ID}`){groupReads++;if(holdGroup)await new Promise(r=>releaseGroup=r);if(groupMode==='network')return route.abort('connectionfailed');if(groupMode==='503')return json({error:'synthetic private failure'},503);if(groupMode==='invalid')return json({});return json(groupAvailable?{group_id:'33333333-3333-4333-8333-333333333333',name:'Synthetic census'}:{error:'synthetic absent'},groupAvailable?200:404);}
         if(req.method()==='GET'&&u.pathname===`/api/protests/${ID}`)return json(mobileDetail ?? events[0]);
@@ -60,6 +61,7 @@ try {
         }
         if(req.method()==='POST'&&u.pathname==='/api/users/verify-otp')return json({verified:true,device_id:'synthetic-device',participation_token:'synthetic-token'});
         if(req.method()==='POST'&&u.pathname===`/api/protests/${ID}/join`) {joins++;return json(joinResponse,joinStatus);}
+        if(req.method()==='PATCH'&&u.pathname===`/api/protests/${ID}/adhesion`){gpsPatches++;assert.deepEqual(req.postDataJSON(),{gps_update_token:'synthetic-gps-token',gps_lat:40,gps_lng:-3,gps_accuracy:10});if(holdGpsPatch)await new Promise(r=>releaseGpsPatch=r);return json({ok:true});}
         if(req.method()==='POST'&&u.pathname==='/api/institucional/send-otp') {emailSends++;if(holdEmail)await new Promise(r=>releaseEmail=r);return json({sent:true,challenge_id:'33333333-3333-4333-8333-333333333333'});}
         if(req.method()==='POST'&&u.pathname==='/api/institucional/verify-otp') {emailChecks++;if(holdCheck)await new Promise(r=>releaseCheck=r);return json(emailStatus===200?{verified:true,receipt:'66666666-6666-4666-8666-666666666666',census_session:'v1.synthetic'}:{error:'synthetic'},emailStatus);}
       }
@@ -365,6 +367,34 @@ try {
     await page.evaluate(()=>window.__gpsSuccess({coords:{latitude:40,longitude:-3,accuracy:10}}));await page.locator('.otp-row').waitFor();
     assert.equal(sms,beforeAcceptedSms+1);assert.equal(await page.evaluate(()=>localStorage.getItem('vc_gps_lat')),'40');
     checks.push({id:`gps_explicit_acceptance_preserves_valid_flow_${locale}_${width}`,ok:true});
+    // Post-receipt GPS is bound to the confirmed context at each asynchronous boundary.
+    listOverride=[events[0]];mobileDetail=events[0];joinStatus=201;joinResponse={receipt:'44444444-4444-4444-8444-444444444444',gps_update_token:'synthetic-gps-token'};
+    const reinforcePage=async name=>{
+      await page.evaluate(id=>{localStorage.clear();sessionStorage.clear();sessionStorage.setItem('vc_last_joined',id);sessionStorage.setItem('vc_device_id','synthetic-device');sessionStorage.setItem('vc_participation_token','synthetic-token');},ID);
+      await page.goto(`https://voiceprotest.org/?ux=reinforce-${name}#/verify`);
+      await page.locator('.success-scr').waitFor();
+      await page.getByRole('button',{name:messages.verify.gpsReinforceAccept,exact:true}).waitFor();
+    };
+    const releaseCoordinates=()=>page.evaluate(()=>window.__gpsSuccess({coords:{latitude:40,longitude:-3,accuracy:10}}));
+    const stablePaint=()=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    await reinforcePage('changed-target');const beforeChangedPatch=gpsPatches;
+    await page.getByRole('button',{name:messages.verify.gpsReinforceAccept,exact:true}).click();await page.waitForFunction(()=>window.__gpsRequests===1);
+    await page.evaluate(id=>sessionStorage.setItem('vc_last_joined',id),INSTITUTION);await releaseCoordinates();await stablePaint();
+    assert.equal(gpsPatches,beforeChangedPatch);assert.equal(await page.getByText(messages.auth.gpsErrorUnavailable,{exact:true}).count(),0);assert.equal(await page.getByText(messages.verify.gpsReinforceSuccess,{exact:true}).count(),0);assert.equal(await page.locator('.success-scr').count(),1);
+    checks.push({id:`reinforce_changed_target_discards_coordinates_without_false_error_${locale}_${width}`,ok:true});
+    await reinforcePage('withdraw');const beforeWithdrawPatch=gpsPatches;
+    await page.getByRole('button',{name:messages.verify.gpsReinforceAccept,exact:true}).click();await page.waitForFunction(()=>window.__gpsRequests===1);
+    await page.getByRole('button',{name:messages.verify.gpsReinforceDecline,exact:true}).click();await releaseCoordinates();await stablePaint();assert.equal(gpsPatches,beforeWithdrawPatch);assert.equal(await page.getByText(messages.verify.gpsReinforceSuccess,{exact:true}).count(),0);
+    checks.push({id:`reinforce_withdrawal_before_coordinates_prevents_patch_${locale}_${width}`,ok:true});
+    await reinforcePage('late-patch');holdGpsPatch=true;releaseGpsPatch=undefined;const beforeLatePatch=gpsPatches;
+    await page.getByRole('button',{name:messages.verify.gpsReinforceAccept,exact:true}).click();await page.waitForFunction(()=>window.__gpsRequests===1);await releaseCoordinates();await waitForCount(()=>gpsPatches,beforeLatePatch+1);await waitForCount(()=>Number(!!releaseGpsPatch),1);
+    await page.evaluate(()=>{window.location.hash='#/';});await page.waitForURL(url=>url.hash==='#/');await page.locator('.success-scr').waitFor({state:'detached'});
+    const latePatchResponse=page.waitForResponse(response=>response.request().method()==='PATCH'&&new URL(response.url()).pathname===`/api/protests/${ID}/adhesion`);holdGpsPatch=false;releaseGpsPatch();await (await latePatchResponse).finished();await stablePaint();assert.equal(await page.getByText(messages.verify.gpsReinforceSuccess,{exact:true}).count(),0);
+    checks.push({id:`reinforce_late_patch_cannot_show_success_after_unmount_${locale}_${width}`,ok:true});
+    await reinforcePage('valid');const beforeValidPatch=gpsPatches;
+    await page.getByRole('button',{name:messages.verify.gpsReinforceAccept,exact:true}).click();await page.keyboard.press('Enter');await page.waitForFunction(()=>window.__gpsRequests===1);
+    await releaseCoordinates();await waitForCount(()=>gpsPatches,beforeValidPatch+1);await page.getByText(messages.verify.gpsReinforceSuccess,{exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:messages.verify.gpsReinforceAccept,exact:true}).count(),0);
+    checks.push({id:`reinforce_valid_context_sends_once_and_confirms_${locale}_${width}`,ok:true});
     // Measured baseline global cases plus institutional/census/closed/joined states.
     const detailCases=[];
     for(const height of [640,844])for(const risk of ['low','high'])for(const balance of [0,10])detailCases.push({height,risk,balance,variant:'global'});
@@ -409,7 +439,7 @@ try {
   const reflow=await runReflowDiagnostic();
   checks.push(...reflow.checks.map(row=>({id:`reflow_${row.state}_${row.textScale}_${row.locale}_${row.width}`,ok:row.ok})));
   requests.push(...reflow.requests);errors.push(...reflow.errors);unexpected.push(...reflow.unexpected);
-  const report={status:checks.length===656&&checks.every(c=>c.ok)&&reflow.status==='DIAGNOSTIC_COMPLETE'&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0,reflowMeasurements:reflow.detailMeasurements,reflowFindings:reflow.findings,reflowLimits:reflow.limits};
+  const report={status:checks.length===688&&checks.every(c=>c.ok)&&reflow.status==='DIAGNOSTIC_COMPLETE'&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0,reflowMeasurements:reflow.detailMeasurements,reflowFindings:reflow.findings,reflowLimits:reflow.limits};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
   if(report.status!=='PASS') process.exitCode=1;
 }

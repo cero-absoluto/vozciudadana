@@ -272,11 +272,19 @@ try {
     const censusPage=async(name,{joined=false}={})=>{await page.evaluate(({id,joined})=>{localStorage.clear();sessionStorage.clear();if(joined)localStorage.setItem('vc_locks',JSON.stringify({[id]:Date.now()}));},{id:ID,joined});await page.goto(`https://voiceprotest.org/?ux=census-${name}#/detail/${ID}`);};
     const censusCta=()=>page.locator('#s-detail .join-footer .btn-primary');
     const beforeCensusWrites=[sms,joins,emailSends,emailChecks];
-    groupMode='auto';groupAvailable=false;holdGroup=true;releaseGroup=undefined;const beforeGroupReads=groupReads;
+    groupMode='auto';groupAvailable=false;holdGroup=true;releaseGroup=undefined;holdList=true;releaseList=undefined;const beforeGroupReads=groupReads;
     await censusPage('pending');await page.locator('#detail-census-status').filter({hasText:messages.detail.censusLoading}).waitFor();
     assert.equal(await censusCta().isDisabled(),true);assert.ok(!(await censusCta().textContent()).includes(messages.detail.joinInitCensus));
     await page.keyboard.press('Enter');await waitForCount(()=>groupReads,beforeGroupReads+1);
     checks.push({id:`census_pending_cannot_start_${locale}_${width}`,ok:true});
+    // A limited/filtered list can legitimately omit a directly loaded open event.
+    await waitForCount(()=>Number(!!releaseList),1);
+    const omittedList=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/protests');
+    holdList=false;releaseList();await (await omittedList).finished();
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    await page.locator('#detail-census-status').filter({hasText:messages.detail.censusLoading}).waitFor();
+    assert.equal(await censusCta().isDisabled(),true);assert.equal(new URL(page.url()).hash,`#/detail/${ID}`);
+    checks.push({id:`census_direct_detail_survives_list_omission_${locale}_${width}`,ok:true});
     await waitForCount(()=>Number(!!releaseGroup),1);holdGroup=false;releaseGroup();await page.locator('#detail-census-status').filter({hasText:messages.detail.censusAbsent}).waitFor();
     assert.ok((await censusCta().textContent()).includes(messages.detail.joinInitCensus));assert.equal(await censusCta().isDisabled(),false);
     checks.push({id:`census_only_404_offers_start_${locale}_${width}`,ok:true});
@@ -348,7 +356,7 @@ try {
   assert.deepEqual(unexpected,[]);assert.deepEqual(errors,[]);
 } finally {
   await browser.close();
-  const report={status:checks.length===488&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0};
+  const report={status:checks.length===496&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
   if(report.status!=='PASS') process.exitCode=1;
 }

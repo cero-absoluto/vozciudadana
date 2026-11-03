@@ -23,19 +23,21 @@ async function mountDetail(extra={},options={}){
     patchProp:(n,k,prev,next)=>n.props[k]=next,setScopeId(){},
   });
   const navigation=[],writes=[],shares=[];const memory=new Map();
+  let clock=1000,nextTimer=0;const timers=new Map(),clearedTimers=[];
   const router={push:p=>navigation.push(p),back(){}};
-  const store=Vue.reactive({protests:[event(extra)],canJoin:p=>options.decision??(p.joined?{ok:false,joined:true}:{ok:true}),scopeBadge:()=>({cls:'sb-global',icon:'',label:'Global'})});
+  const detailCalls=[];
+  const store=Vue.reactive({protests:options.directLookup?[]:[event(extra)],canJoin:p=>options.decision??(p.joined?{ok:false,joined:true}:{ok:true}),scopeBadge:()=>({cls:'sb-global',icon:'',label:'Global'}),fetchProtestById:async id=>{detailCalls.push(id);const selected=event(extra);store.protests.push(selected);return selected;}});
   const censusCalls=[];
   const api={fetchGrupoPorConvocatoria:async id=>{censusCalls.push(id);if(options.censusLookup)return options.censusLookup(id);if(options.censusExists)return {group_id:'33333333-3333-4333-8333-333333333333',name:'Existing group'};throw {status:404};}};
   const {descriptor}=parse(fs.readFileSync('apps/web/src/screens/DetailScreen.vue','utf8'));
   let source=compileScript(descriptor,{id:'detail-layout-test',inlineTemplate:true}).content;
   source=source.replace(/import\s+\{([^}]+)\}\s+from\s+['"]vue['"];?/g,(_,names)=>`const { ${names.replace(/\bas\b/g,':')} }=Vue;`).replace(/^import[^\n]+from[^\n]+\n/gm,'').replace('import.meta.env.VITE_API_URL',"'https://synthetic.invalid'").replace('export default','const Component=');
-  const context={Vue,useI18n:()=>i18n.global,useRoute:()=>({params:{id:'selected'}}),useRouter:()=>router,useProtestsStore:()=>store,useDeviceStore:()=>({}),useUiStore:()=>({openShare:c=>shares.push(c)}),localizedCountry:()=>'',fmt:String,fmtTime:()=> '01:00',inRegion:()=>true,api,Date:{parse:Date.parse,now:()=>1000},sessionStorage:{getItem:k=>memory.get(k)??null,setItem:(k,v)=>{writes.push([k,v]);memory.set(k,String(v));}},fetch:async()=>({json:async()=>({})}),ProtestTiming:Vue.defineComponent({setup:()=>()=>null})};
+  const context={Vue,useI18n:()=>i18n.global,useRoute:()=>({params:{id:'selected'}}),useRouter:()=>router,useProtestsStore:()=>store,useDeviceStore:()=>({}),useUiStore:()=>({openShare:c=>shares.push(c)}),localizedCountry:()=>'',fmt:String,fmtTime:options.fmtTime??(()=> '01:00'),inRegion:()=>true,api,Date:{parse:Date.parse,now:()=>clock},setInterval:(fn,ms)=>{timers.set(++nextTimer,{fn,ms});return nextTimer;},clearInterval:id=>{clearedTimers.push(id);timers.delete(id);},sessionStorage:{getItem:k=>memory.get(k)??null,setItem:(k,v)=>{writes.push([k,v]);memory.set(k,String(v));}},fetch:async()=>({json:async()=>({})}),ProtestTiming:Vue.defineComponent({setup:()=>()=>null})};
   vm.createContext(context);const Component=vm.runInContext(source+';Component;',context);
   const root=make('root');const app=renderer.createApp(Component);app.config.globalProperties.$t=i18n.global.t;app.config.globalProperties.$router=router;app.mount(root);
   const flush=async()=>{await new Promise(r=>setImmediate(r));await Vue.nextTick();};await flush();
   const nodes=()=>all(root);const byClass=c=>nodes().find(n=>hasClass(n,c));
-  return {store,navigation,writes,memory,shares,censusCalls,t:i18n.global.t,nodes,byClass,flush,unmount:()=>app.unmount(),cta:()=>byClass('join-footer')?.children.flatMap(all).find(n=>n.tag==='button'&&hasClass(n,'btn-primary')),click:async n=>{n.props.onClick?.({target:n,currentTarget:n});await flush();}};
+  return {store,navigation,writes,memory,shares,censusCalls,detailCalls,timers,clearedTimers,setClock:next=>clock=next,tick:async()=>{for(const {fn} of timers.values())fn();await flush();},t:i18n.global.t,nodes,byClass,flush,unmount:()=>app.unmount(),cta:()=>byClass('join-footer')?.children.flatMap(all).find(n=>n.tag==='button'&&hasClass(n,'btn-primary')),click:async n=>{n.props.onClick?.({target:n,currentTarget:n});await flush();}};
 }
 
 test('detail header and optional financing belong to the scrollable body while only one primary CTA remains in footer',async()=>{
@@ -162,4 +164,53 @@ for(const data of [{},{group_id:'unverified-short-id'}])test('malformed census 2
     assert.equal(text(f.cta()).trim(),f.t('detail.censusRetry'));assert.ok(!f.nodes().some(n=>text(n).trim()===f.t('detail.joinInitCensus')));
     await f.click(f.cta());assert.equal(f.censusCalls.length,2);assert.deepEqual(f.navigation,[]);assert.deepEqual(f.writes,[]);
   }finally{f.unmount();}
+});
+
+
+test('a late empty list preserves a direct-linked event and its pending census lookup without polluting the global list',async()=>{
+  const wait=deferredCensus();const f=await mountDetail(censusEvent,{directLookup:true,censusLookup:()=>wait.promise});
+  try{
+    assert.deepEqual(f.detailCalls,['selected']);assert.equal(f.censusCalls.length,1);
+    assert.ok(f.byClass('d-scroll'));assert.ok(f.nodes().some(n=>n.props.id==='detail-census-status'));
+    f.store.protests=[];await f.flush();
+    assert.ok(f.byClass('d-scroll'));assert.ok(f.byClass('join-footer'));
+    const status=f.nodes().find(n=>n.props.id==='detail-census-status');assert.ok(text(status).includes(f.t('detail.censusLoading')));
+    wait.resolve({group_id:'33333333-3333-4333-8333-333333333333',name:'Group'});await f.flush();
+    assert.ok(f.nodes().some(n=>n.props.id==='s-detail'));assert.equal(text(f.cta()).trim(),f.t('detail.joinCensus'));
+    assert.equal(f.detailCalls.length,1);assert.equal(f.censusCalls.length,1);assert.equal(f.store.protests.length,0);
+    await f.click(f.cta());assert.deepEqual(f.navigation,['/grupo/selected']);
+  }finally{f.unmount();}
+});
+
+
+test('detail snapshot retains the latest in-place live title and balance before list omission',async()=>{
+  const f=await mountDetail();try{
+    f.store.protests[0].title='Latest known live title';f.store.protests[0].saldo_euros=0;await f.flush();
+    f.store.protests=[];await f.flush();
+    assert.ok(text(f.byClass('detail-hdr')).includes('Latest known live title'));
+    assert.equal(text(f.cta()).trim(),f.t('detail.joinSinSaldo'));assert.equal(f.cta().props.disabled,true);
+    await f.click(f.cta());assert.deepEqual(f.navigation,[]);assert.deepEqual(f.writes,[]);assert.equal(f.store.protests.length,0);
+  }finally{f.unmount();}
+});
+
+test('a retained snapshot counts down by absolute time, closes and never resurrects after a backwards clock jump',async()=>{
+  const f=await mountDetail({endsAtMs:10000,timer:9},{fmtTime:seconds=>'seconds-'+seconds});try{
+    f.store.protests=[];await f.flush();assert.ok(text(f.byClass('stats-row')).includes('seconds-9'));
+    assert.equal(f.timers.size,1);assert.equal([...f.timers.values()][0].ms,1000);
+    f.setClock(4000);await f.tick();assert.ok(text(f.byClass('stats-row')).includes('seconds-6'));
+    f.setClock(11000);await f.tick();assert.equal(text(f.cta()).trim(),f.t('detail.closedInformeBtn'));assert.equal(f.byClass('detail-funding'),undefined);
+    f.setClock(1000);await f.tick();assert.equal(text(f.cta()).trim(),f.t('detail.closedInformeBtn'));assert.equal(f.store.protests.length,0);
+  }finally{f.unmount();}
+});
+
+test('activation after suspended local ticking updates the retained detail to closed without writing or navigating',async()=>{
+  const f=await mountDetail({endsAtMs:10000,timer:9});try{
+    f.store.protests=[];await f.flush();const before=f.cta();assert.equal(text(before).trim(),f.t('detail.joinAnon'));
+    f.setClock(11000);await f.click(before);
+    assert.equal(text(f.cta()).trim(),f.t('detail.closedInformeBtn'));assert.deepEqual(f.navigation,[]);assert.deepEqual(f.writes,[]);
+  }finally{f.unmount();}
+});
+
+test('detail snapshot clock has one lifecycle interval and clears it on unmount',async()=>{
+  const f=await mountDetail();assert.equal(f.timers.size,1);f.unmount();assert.equal(f.timers.size,0);assert.equal(f.clearedTimers.length,1);
 });

@@ -200,13 +200,51 @@ const store    = useProtestsStore();
 const device   = useDeviceStore();
 const ui       = useUiStore();
 
-const protest = computed(() => store.protests.find(p => String(p.id) === route.params.id));
-const cj      = computed(() => protest.value ? store.canJoin(protest.value) : { ok: false });
+const selectedProtest = ref(null);
+const detailClock = ref(Date.now());
+const closedEventId = ref(null);
+let detailClockTimer = null;
+let detailActive = true;
+const liveProtest = computed(() => store.protests.find(p => String(p.id) === String(route.params.id)));
+function selectedSource() {
+  return liveProtest.value || (selectedProtest.value && String(selectedProtest.value.id) === String(route.params.id) ? selectedProtest.value : null);
+}
+function absoluteEnd(target) {
+  const value = target?.endsAtMs ?? Date.parse(target?.ends_at);
+  return Number.isFinite(value) ? value : null;
+}
+function refreshDetailClock() {
+  if (!detailActive) return;
+  detailClock.value = Date.now();
+  const target = selectedSource();
+  if (!target) return;
+  const end = absoluteEnd(target);
+  if (Number.isFinite(target.timer) && (target.timer <= 0 || end !== null && Math.floor((end - detailClock.value) / 1000) <= 0)) closedEventId.value = String(target.id);
+}
+function rememberSelected(target) {
+  if (!target || String(target.id) !== String(route.params.id)) return false;
+  // Public event metadata only. Never insert the detail snapshot into the home list.
+  selectedProtest.value = {...target};
+  refreshDetailClock();
+  return true;
+}
+// Preserve the latest live version, including in-place updates, before omission
+// from a filtered/limited list. An omitted event is not a negative ID lookup.
+watch(liveProtest, target => { if (target) rememberSelected(target); }, {deep: true, immediate: true, flush: 'sync'});
+const protest = computed(() => {
+  const target = selectedSource();
+  if (!target) return null;
+  const end = absoluteEnd(target);
+  let timer = target.timer;
+  if (closedEventId.value === String(target.id)) timer = 0;
+  else if (Number.isFinite(timer) && timer > 0 && end !== null) timer = Math.max(0, Math.floor((end - detailClock.value) / 1000));
+  return {...target, timer};
+});
+const cj = computed(() => protest.value ? store.canJoin(protest.value) : { ok: false });
 
 const grupoId = ref(null);
 const censusStatus = ref('loading');
 const censusContext = ref(null);
-let detailActive = true;
 let censusEpoch = 0;
 let censusRequest = null;
 const GROUP_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -315,7 +353,12 @@ watch(() => [route.params.id, protest.value?.dominio_email, protest.value?.scope
     loadError.value = false;
   }
 }, {flush: 'sync'});
-onUnmounted(() => { detailActive = false; invalidateCensus(); });
+onUnmounted(() => {
+  detailActive = false;
+  if (detailClockTimer !== null) clearInterval(detailClockTimer);
+  detailClockTimer = null;
+  invalidateCensus();
+});
 
 async function loadCensus() {
   const expected = currentCensusContext();
@@ -360,6 +403,7 @@ async function loadDetail() {
       const found = await store.fetchProtestById(detailId);
       if (!ownsDetail()) return;
       if (!found) { notFound.value = true; return; }
+      if (!rememberSelected(found)) { loadError.value = true; return; }
     }
   } catch {
     if (ownsDetail()) loadError.value = true;
@@ -381,7 +425,11 @@ async function loadDetail() {
   } catch { /* silencioso */ }
 }
 
-onMounted(loadDetail);
+onMounted(() => {
+  refreshDetailClock();
+  detailClockTimer = setInterval(refreshDetailClock, 1000);
+  return loadDetail();
+});
 
 const simOk = computed(() => {
   if (!protest.value) return false;
@@ -429,6 +477,9 @@ function closedForJoin(target) {
 }
 
 function onJoin() {
+  if (!detailActive) return;
+  // An activation after suspension updates the closed UI before deciding.
+  refreshDetailClock();
   const target = protest.value;
   // Recheck current state at activation; hidden/disabled UI is not a handler guard.
   if (!detailActive || !target || target.joined || closedForJoin(target) || (target.saldo_euros ?? 0) <= 0 || !store.canJoin(target).ok) return;

@@ -8,17 +8,18 @@ const UUID_B='22222222-2222-4222-8222-222222222222';
 const defer=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return{promise,resolve,reject};};
 const flush=()=>new Promise(r=>setImmediate(r));
 const event=id=>({id,title:'Event '+id,scope:'regional',dominio_email:'example.invalid',requiere_censo:true,joined:false,timer:3600,endsAtMs:100000,saldo_euros:2});
-function fixture(){
+function fixture(options={}){
   let mounted;const unmounted=[],stops=[],calls=[],navigation=[],writes=[];const memory=new Map([['vc_group_id','unrelated-session-group']]);
-  const route=reactive({params:{id:'A'}});const store=reactive({protests:[event('A'),event('B')],canJoin:p=>p.joined?{ok:false,joined:true}:{ok:true},fetchProtestById:async id=>store.protests.find(p=>p.id===id)});
+  const route=reactive({params:{id:'A'}});const store=reactive({protests:options.empty?[]:[event('A'),event('B')],canJoin:p=>p.joined?{ok:false,joined:true}:{ok:true},fetchProtestById:async id=>store.protests.find(p=>p.id===id)});
   let lookup=async()=>({group_id:UUID_A,name:'Group A'});
   const api={fetchGrupoPorConvocatoria:id=>{calls.push(id);return lookup(id);}};
-  const context={ref,computed,watch:(...args)=>{const stop=watch(...args);stops.push(stop);return stop;},onMounted:fn=>mounted=fn,onUnmounted:fn=>unmounted.push(fn),
+  const timers=new Map();let nextTimer=0;
+  const context={ref,computed,setInterval:fn=>{timers.set(++nextTimer,fn);return nextTimer;},clearInterval:id=>timers.delete(id),watch:(...args)=>{const stop=watch(...args);stops.push(stop);return stop;},onMounted:fn=>mounted=fn,onUnmounted:fn=>unmounted.push(fn),
     useI18n:()=>({t:k=>k,locale:ref('es')}),useRoute:()=>route,useRouter:()=>({push:p=>navigation.push(p)}),useProtestsStore:()=>store,useDeviceStore:()=>({}),useUiStore:()=>({}),api,
     Date:{parse:Date.parse,now:()=>1000},sessionStorage:{getItem:k=>memory.get(k)??null,setItem:(k,v)=>{writes.push([k,v]);memory.set(k,String(v));}},fetch:async()=>({json:async()=>({})})};
   vm.createContext(context);const source=fs.readFileSync('apps/web/src/screens/DetailScreen.vue','utf8').match(/<script setup>([\s\S]*?)<\/script>/)[1].replace(/^import .*;\n/gm,'').replaceAll('import.meta.env.VITE_API_URL',"'https://synthetic.invalid'");
-  vm.runInContext(source+'\nglobalThis.state={needsCensus,censusStatus,censusBlocked,censoExiste,grupoId,loadCensus,loadDetail,onJoin,joinLabel,velocidadHoy,loadingFallback,loadError,notFound};',context);
-  return{state:context.state,context,store,route,calls,navigation,writes,setLookup:fn=>lookup=fn,mount:()=>mounted(),unmount:()=>{unmounted.forEach(fn=>fn());stops.forEach(stop=>stop());}};
+  vm.runInContext(source+'\nglobalThis.state={needsCensus,censusStatus,censusBlocked,censoExiste,grupoId,loadCensus,loadDetail,onJoin,joinLabel,velocidadHoy,loadingFallback,loadError,notFound,protest,detailClock};',context);
+  return{state:context.state,context,store,route,calls,navigation,writes,timers,setLookup:fn=>lookup=fn,mount:()=>mounted(),unmount:()=>{unmounted.forEach(fn=>fn());stops.forEach(stop=>stop());}};
 }
 function assertNoJoin(f){f.state.onJoin();assert.deepEqual(f.navigation,[]);assert.deepEqual(f.writes,[]);}
 
@@ -103,7 +104,7 @@ test('the secondary report cannot delay or override a confirmed census result',a
 });
 
 test('loadDetail missing-event recovery starts the census lookup only after the exact event exists',async()=>{
-  const f=fixture();try{
+  const f=fixture({empty:true});try{
     const detail=defer();f.store.protests=[];f.store.fetchProtestById=()=>detail.promise;const loading=f.mount();assert.equal(f.calls.length,0);
     f.store.protests.push(event('A'));detail.resolve(f.store.protests[0]);await loading;assert.deepEqual(f.calls,['A']);assert.equal(f.state.censusStatus.value,'present');
   }finally{f.unmount();}
@@ -115,7 +116,7 @@ test('initial load and a manual census request cannot overlap or invent absence'
 });
 
 test('a late detail lookup failure cannot update the error state of a newer route',async()=>{
-  const f=fixture();try{
+  const f=fixture({empty:true});try{
     const old=defer();f.store.protests=[];f.store.fetchProtestById=()=>old.promise;const mounting=f.mount();assert.equal(f.state.loadingFallback.value,true);
     f.route.params.id='B';f.store.protests.push(event('B'));assert.equal(f.state.loadingFallback.value,false);
     await f.state.loadDetail();assert.equal(f.state.censusStatus.value,'present');
@@ -125,7 +126,7 @@ test('a late detail lookup failure cannot update the error state of a newer rout
 });
 
 test('an unmounted detail lookup cannot start a census query or claim a missing event',async()=>{
-  const f=fixture();const wait=defer();f.store.protests=[];f.store.fetchProtestById=()=>wait.promise;
+  const f=fixture({empty:true});const wait=defer();f.store.protests=[];f.store.fetchProtestById=()=>wait.promise;
   const mounting=f.mount();f.unmount();wait.resolve(null);await mounting;
   assert.equal(f.calls.length,0);assert.equal(f.state.notFound.value,false);assert.equal(f.state.grupoId.value,null);
 });
@@ -142,4 +143,33 @@ test('a pending lookup survives a list replacement with identical context withou
   const f=fixture();try{const wait=defer();f.setLookup(()=>wait.promise);const pending=f.state.loadCensus();f.store.protests=[{...event('A'),title:'Refreshed title'},event('B')];
     assert.equal(f.state.censusStatus.value,'loading');wait.resolve({group_id:UUID_A,name:'Group A'});await pending;assert.equal(f.state.censusStatus.value,'present');assert.equal(f.calls.length,1);
   }finally{f.unmount();}
+});
+
+
+test('the retained detail always uses the latest live context and never inserts it back into the list',async()=>{
+  const f=fixture();try{
+    f.store.protests[0].title='Latest live title';f.store.protests[0].dominio_email='latest.invalid';f.store.protests[0].saldo_euros=0;
+    f.store.protests=[];
+    assert.equal(f.state.protest.value.title,'Latest live title');assert.equal(f.state.protest.value.dominio_email,'latest.invalid');assert.equal(f.state.protest.value.saldo_euros,0);
+    assert.equal(f.store.protests.length,0);assertNoJoin(f);
+  }finally{f.unmount();}
+});
+
+test('a snapshot from a previous route is never used as another event or as evidence that a missing ID exists',async()=>{
+  const f=fixture();try{
+    f.store.protests=[];assert.equal(f.state.protest.value.id,'A');f.route.params.id='missing';
+    assert.equal(f.state.protest.value,null);assert.equal(f.state.censoExiste.value,false);assert.equal(f.state.grupoId.value,null);
+    f.store.fetchProtestById=async()=>null;await f.state.loadDetail();assert.equal(f.state.notFound.value,true);assert.equal(f.state.protest.value,null);assertNoJoin(f);
+  }finally{f.unmount();}
+});
+
+test('an ID lookup with a mismatched result never becomes a snapshot or starts a census query',async()=>{
+  const f=fixture({empty:true});try{
+    f.store.fetchProtestById=async()=>event('B');await f.mount();assert.equal(f.state.protest.value,null);assert.equal(f.state.loadError.value,true);assert.equal(f.calls.length,0);assertNoJoin(f);
+  }finally{f.unmount();}
+});
+
+test('a queued local clock callback cannot update an unmounted detail',async()=>{
+  const f=fixture();await f.mount();assert.equal(f.timers.size,1);const queued=[...f.timers.values()][0];const before=f.state.detailClock.value;
+  f.unmount();assert.equal(f.timers.size,0);f.context.Date.now=()=>200000;queued();assert.equal(f.state.detailClock.value,before);
 });

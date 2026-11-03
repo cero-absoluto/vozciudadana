@@ -10,7 +10,7 @@ function fixture(extra={},lang='es'){
   let clock=1000,decision={ok:true};const navigation=[],writes=[],checks=[],memory=new Map([['vc_last_joined','previous']]);
   const messages=JSON.parse(fs.readFileSync('apps/web/src/locales/'+lang+'.json','utf8'));
   const i18n=createI18n({legacy:false,locale:lang,messages:{[lang]:messages}});
-  const store=reactive({protests:[event(extra)],canJoin:p=>{checks.push(p.id);return decision;}});
+  const store=reactive({protests:extra===null?[]:[event(extra)],canJoin:p=>{checks.push(p.id);return decision;}});
   const api={fetchGrupoPorConvocatoria:async()=>{throw {status:404};}};
   const context={ref,computed,watch,onMounted(){},onUnmounted(){},api,useRoute:()=>({params:{id:'selected'}}),useRouter:()=>({push:p=>navigation.push(p)}),useProtestsStore:()=>store,useDeviceStore:()=>({}),useUiStore:()=>({openShare(){}}),useI18n:()=>i18n.global,
     Date:{parse:Date.parse,now:()=>clock},sessionStorage:{getItem:k=>memory.get(k)??null,setItem:(k,v)=>{writes.push([k,v]);memory.set(k,String(v));}}};
@@ -28,7 +28,7 @@ test('join activation rechecks a balance that changed after the UI was rendered'
 });
 
 test('join activation refuses a missing event rather than using a previous destination',()=>{
-  const f=fixture();assert.equal(f.state.cj.value.ok,true);f.store.protests=[];noDispatch(f);
+  const f=fixture(null);assert.equal(f.state.cj.value.ok,false);noDispatch(f);
 });
 
 test('an already joined event cannot dispatch even if a stale policy response says ok',()=>{

@@ -1,5 +1,5 @@
 <template>
-  <div class="screen active" id="s-auth">
+  <div class="screen active" id="s-auth" ref="authRoot" tabindex="-1">
     <div class="auth-wrap">
 
       <!-- Contexto de la convocatoria — título, destinatario, demandas -->
@@ -64,16 +64,16 @@
 
       <!-- Modal GPS -->
       <div v-if="showGpsModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px">
-        <div style="background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r2);padding:24px;max-width:340px;width:100%">
+        <div ref="gpsDialog" role="dialog" aria-modal="true" aria-labelledby="auth-gps-title" aria-describedby="auth-gps-note" tabindex="-1" @keydown="onGpsKeydown" style="background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--r2);padding:24px;max-width:340px;width:100%;max-height:calc(100dvh - 48px);overflow-y:auto">
           <div style="font-size:24px;text-align:center;margin-bottom:12px">📍</div>
-          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-bottom:10px;text-align:center">{{ $t('auth.gpsTitle') }}</div>
-          <div style="font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:20px;text-align:center">
+          <div id="auth-gps-title" style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-bottom:10px;text-align:center">{{ $t('auth.gpsTitle') }}</div>
+          <div id="auth-gps-note" style="font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:20px;text-align:center">
             {{ $t('auth.gpsNote') }}
           </div>
-          <button class="btn-primary" style="width:100%;margin-bottom:8px" @click="aceptarGps">
+          <button ref="gpsAccept" type="button" class="btn-primary" style="width:100%;margin-bottom:8px" @click="aceptarGps">
             📍 {{ $t('auth.gpsAccept') }}
           </button>
-          <button @click="rechazarGps"
+          <button ref="gpsDecline" type="button" @click="rechazarGps"
             style="width:100%;padding:10px;background:transparent;border:.5px solid var(--border2);border-radius:var(--r);color:var(--text2);font-size:13px;cursor:pointer">
             {{ $t('auth.gpsDecline') }}
           </button>
@@ -195,7 +195,7 @@ import { useProtestsStore } from '@/stores/protests.js';
 import {recaptchaToken} from '@/services/requestJson.js';
 import {uncertainOutcome} from '@/lib/participationOutcome.js';
 import { shouldSkipFastPath, clearForceOtp, preSmsRejectionKey } from '@/lib/nationalPreCheck.js';
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUiStore } from '@/stores/ui.js';
 import { useI18n } from 'vue-i18n';
@@ -226,16 +226,62 @@ const requestedOtp = ref(null);
 let authActive = true;
 const showGpsModal = ref(false);
 let gpsResolve = null;
-
-function aceptarGps() {
-  showGpsModal.value = false;
-  if (gpsResolve) gpsResolve(true);
+let gpsEpoch = 0;
+let gpsFocusOrigin = null;
+const authRoot = ref(null);
+const gpsDialog = ref(null);
+const gpsAccept = ref(null);
+const gpsDecline = ref(null);
+function gpsContextKey() {
+  // Read the selected ID afresh: sessionStorage itself is not reactive.
+  const id = sessionStorage.getItem('vc_last_joined');
+  const target = protestsStoreRef.protests.find(p => String(p.id) === String(id));
+  return target ? JSON.stringify([String(id), target.scope, target.risk_level, target.dominio_email ?? null]) : null;
 }
-
-function rechazarGps() {
-  showGpsModal.value = false;
-  if (gpsResolve) gpsResolve(false);
+function restoreGpsFocus() {
+  const previous = gpsFocusOrigin;
+  gpsFocusOrigin = null;
+  nextTick(() => {
+    if (!authActive || showGpsModal.value) return;
+    if (previous?.isConnected && !previous.disabled) previous.focus();
+    else authRoot.value?.focus();
+  });
 }
+function settleGps(accepted, restore = true) {
+  const resolve = gpsResolve;
+  gpsResolve = null;
+  showGpsModal.value = false;
+  if (resolve) resolve(accepted);
+  if (restore) restoreGpsFocus();
+}
+function aceptarGps() { settleGps(true); }
+function rechazarGps() { settleGps(false); }
+function onGpsKeydown(event) {
+  if (!showGpsModal.value) return;
+  if (event.key === 'Escape') {
+    event.preventDefault(); event.stopPropagation(); rechazarGps();
+  } else if (event.key === 'Tab') {
+    event.preventDefault();
+    const active = typeof document !== 'undefined' ? document.activeElement : null;
+    (active === gpsAccept.value ? gpsDecline.value : active === gpsDecline.value ? gpsAccept.value : event.shiftKey ? gpsDecline.value : gpsAccept.value)?.focus();
+  }
+}
+function keepGpsFocus(event) {
+  if (showGpsModal.value && gpsDialog.value && !gpsDialog.value.contains(event.target)) gpsDecline.value?.focus();
+}
+watch(gpsContextKey, (current, previous) => {
+  if (current === previous) return;
+  gpsEpoch += 1;
+  if (showGpsModal.value) settleGps(false);
+}, {flush: 'sync'});
+watch(showGpsModal, open => {
+  if (typeof document === 'undefined') return;
+  if (open) {
+    gpsFocusOrigin = document.activeElement;
+    document.addEventListener('focusin', keepGpsFocus);
+    nextTick(() => { if (authActive && showGpsModal.value) gpsDecline.value?.focus(); });
+  } else document.removeEventListener('focusin', keepGpsFocus);
+}, {flush: 'sync'});
 
 const captchaStatusClass = ref('verif-loading');
 const captchaIco         = ref('⏳');
@@ -277,32 +323,39 @@ onMounted(async () => {
 // pre-adhesión: el dato viaja en la misma llamada de adhesión que hace
 // VerifyScreen, solo cambia el instante dentro de este flujo.
 async function requestGpsFlow() {
-  const target = joiningProtest.value;
-  if (!target || target.dominio_email) return;
+  const expected = gpsContextKey();
+  const epoch = gpsEpoch;
+  const ownsGps = () => authActive && epoch === gpsEpoch && expected !== null && gpsContextKey() === expected;
+  const selectedId = sessionStorage.getItem('vc_last_joined');
+  const target = protestsStoreRef.protests.find(p => String(p.id) === String(selectedId));
+  if (!ownsGps()) return false;
+  if (!target || target.dominio_email) return true;
   const riskLevel = target.risk_level;
   const scope = target.scope;
   if (!((scope === 'regional' || scope === 'local') &&
         (riskLevel === 'low' || riskLevel === 'med') &&
         !device.gpsReady)) {
-    return;
+    return true;
   }
   const accepted = await new Promise(resolve => {
     gpsResolve = resolve;
     showGpsModal.value = true;
   });
+  if (!ownsGps()) return false;
   if (accepted) {
     try {
       const pos = await new Promise((resolve, reject) =>
         navigator.geolocation.getCurrentPosition(resolve, reject,
           { enableHighAccuracy: true, timeout: 10000 })
       );
-      if (!authActive) return;
+      if (!ownsGps()) return false;
       ui.setGps(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
       localStorage.setItem('vc_gps_lat', pos.coords.latitude);
       localStorage.setItem('vc_gps_lng', pos.coords.longitude);
       localStorage.setItem('vc_gps_accuracy', pos.coords.accuracy);
       localStorage.setItem('vc_gps_ts', Date.now());
     } catch (err) {
+      if (!ownsGps()) return false;
       // Previously silent — a real production convocatoria (Las Llamas,
       // 16-19 July 2026) showed two participants who tapped "Activar
       // localización" with no visible failure of any kind: no OS
@@ -327,6 +380,7 @@ async function requestGpsFlow() {
       ui.showToast(t(key));
     }
   }
+  return ownsGps();
 }
 
 async function sendSMS() {
@@ -350,7 +404,7 @@ async function sendSMS() {
   }
   sending.value = true;
   try {
-    await requestGpsFlow();
+    if (!await requestGpsFlow()) return;
     if (!authActive || sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
     // Returning-device proof remains an existing shortcut on initial entry only.
     // An explicit resend always requests a code, without reauth or another GPS prompt.
@@ -473,7 +527,10 @@ function startWebOtpListener() {
 onUnmounted(() => {
   authActive = false;
   otpAbortController?.abort();
-  if (gpsResolve) gpsResolve(false);
+  gpsEpoch += 1;
+  settleGps(false, false);
+  if (typeof document !== 'undefined') document.removeEventListener('focusin', keepGpsFocus);
+  gpsFocusOrigin = null;
 });
 
 async function verifyOTP() {

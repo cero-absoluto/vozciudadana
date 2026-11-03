@@ -29,7 +29,7 @@ export function harness(name='AuthScreen', overrides={}, runtime={}) {
     sendEmailOtp:async()=>({sent:true,challenge_id:'33333333-3333-4333-8333-333333333333'}),verifyEmailOtp:async()=>({verified:true,receipt:'44444444-4444-4444-8444-444444444444'}),
     joinProtest:async()=>{calls.push(['join']);return {receipt:'44444444-4444-4444-8444-444444444444'};},...overrides};
   const device={gpsReady:false,getDeviceSecret:()=>null,getDeviceId:()=> 'synthetic-device'};
-  const context={participationGpsSnapshot,classifyJoinRejection,joinRejectionPath,markForceOtp,...outcomes,withClientDeadline,recaptchaToken,crypto:{randomUUID:()=> '55555555-5555-4555-8555-555555555555'},ref,computed,onMounted:fn=>mounted=fn,onUnmounted:fn=>unmounted.push(fn),watch(){},
+  const context={participationGpsSnapshot,classifyJoinRejection,joinRejectionPath,markForceOtp,...outcomes,withClientDeadline,recaptchaToken,crypto:{randomUUID:()=> '55555555-5555-4555-8555-555555555555'},ref,computed,onMounted:fn=>mounted=fn,onUnmounted:fn=>unmounted.push(fn),watch(){},nextTick:fn=>Promise.resolve().then(fn),
     useI18n:()=>({t:k=>k,locale:ref('es')}),useRouter:()=>({push:p=>navigation.push(p)}),
     useRoute:()=>({params:{protestId:'selected'}}),useProtestsStore:()=>store,
     useDeviceStore:()=>device,
@@ -38,11 +38,12 @@ export function harness(name='AuthScreen', overrides={}, runtime={}) {
     localStorage:{getItem:()=>null,setItem(){},removeItem(){}},api,apiFixture:api,
     window:{grecaptcha:{ready:fn=>fn(),execute:async()=> 'synthetic-captcha'}},navigator:{},setTimeout(){},
   };
+  if(runtime.watch)context.watch=runtime.watch;
   if(runtime.ref)context.ref=runtime.ref;
   if(runtime.computed)context.computed=runtime.computed;
   if(runtime.globals)Object.assign(context,runtime.globals);
   vm.createContext(context);
-  const exports=name==='AuthScreen'?'sendSMS,resendSMS,verifyOTP,changeNumber,phone,countryCode,countryCodes,otpDigits,otpVisible,requestedOtp,sending':name==='VerifyInstitucionalScreen'?'sendOtp,verifyOtp,email,otp,emailError,otpError,loading,step,activeContext,outcomeMessage,receiptHash,censusNotSaved,receiptNotSaved,sentContext,availability,loadState,loadProtest,changeEmail,dominio,newInstitutionalVerification,confirmedTitle,savedConfirmation,shareProtest':'success,outcomeMessage,receipt,confirmedTitle,savedConfirmation,receiptNotSaved,reinforceGps,shareProtest';
+  const exports=name==='AuthScreen'?'sendSMS,resendSMS,verifyOTP,changeNumber,phone,countryCode,countryCodes,otpDigits,otpVisible,requestedOtp,sending,showGpsModal,aceptarGps,rechazarGps,onGpsKeydown,authRoot,gpsDialog,gpsAccept,gpsDecline':name==='VerifyInstitucionalScreen'?'sendOtp,verifyOtp,email,otp,emailError,otpError,loading,step,activeContext,outcomeMessage,receiptHash,censusNotSaved,receiptNotSaved,sentContext,availability,loadState,loadProtest,changeEmail,dominio,newInstitutionalVerification,confirmedTitle,savedConfirmation,shareProtest':'success,outcomeMessage,receipt,confirmedTitle,savedConfirmation,receiptNotSaved,reinforceGps,shareProtest';
   vm.runInContext(script(name)+'\nglobalThis.state={'+exports+'};',context);
   const state=context.state;
   if(name==='AuthScreen'){state.phone.value='600000001';state.countryCodes.value=[{iso2:'ES',dial_code:'34'}];}

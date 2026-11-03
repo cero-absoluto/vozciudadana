@@ -8,10 +8,11 @@ import {withClientDeadline} from '../apps/web/src/services/requestJson.js';
 import * as outcomes from '../apps/web/src/lib/participationOutcome.js';
 const read=name=>readFileSync(new URL('../apps/web/src/screens/'+name+'.vue',import.meta.url),'utf8');
 const auth=read('AuthScreen');
+const gpsContextHandler=auth.slice(auth.indexOf('function gpsContextKey()'),auth.indexOf('function restoreGpsFocus()'));
 const gpsHandler=auth.slice(auth.indexOf('async function requestGpsFlow()'),auth.indexOf('async function sendSMS()'));
 for(const target of [{scope:'local',risk_level:'high'},{scope:'regional',risk_level:'critical'},{scope:'local',risk_level:'low',dominio_email:'synthetic.invalid'}])test('IDV-02 auth does not request location for '+JSON.stringify(target),async()=>{
- let reads=0;const context={joiningProtest:{value:target},sessionStorage:{getItem:()=>{reads++;return 'low';}},device:{gpsReady:false},showGpsModal:{value:false},navigator:{geolocation:{getCurrentPosition(){throw Error('must not request GPS');}}}};
- vm.createContext(context);vm.runInContext(gpsHandler+';globalThis.run=requestGpsFlow;',context);await context.run();assert.equal(context.showGpsModal.value,false);assert.equal(reads,0,'cached risk is not trusted');
+ const reads=[];const context={authActive:true,gpsEpoch:0,protestsStoreRef:{protests:[{id:'selected',...target}]},sessionStorage:{getItem:key=>{reads.push(key);return key==='vc_last_joined'?'selected':'low';}},device:{gpsReady:false},showGpsModal:{value:false},navigator:{geolocation:{getCurrentPosition(){throw Error('must not request GPS');}}}};
+ vm.createContext(context);vm.runInContext(gpsContextHandler+gpsHandler+';globalThis.run=requestGpsFlow;',context);await context.run();assert.equal(context.showGpsModal.value,false);assert.ok(reads.length>0);assert.ok(reads.every(key=>key==='vc_last_joined'),'only selection is read; cached risk is not trusted');
 });
 const verify=read('VerifyScreen').match(/<script setup>([\s\S]*?)<\/script>/)[1].replace(/^import .*;\n/gm,'').replaceAll('import.meta.env.VITE_API_URL',"'https://api.invalid'").replaceAll('import.meta.env.VITE_RECAPTCHA_KEY',"'synthetic'").replaceAll("import('@/services/api.js')",'Promise.resolve(apiFixture)');
 for(const risk of ['high','critical','low'])test('IDV-02 final join '+risk+' handles cached GPS according to current target',async()=>{

@@ -90,6 +90,7 @@ try {
       const hash=state==='home'?'#/':state==='detail'?`#/detail/${ID}`:'#/auth';
       await page.goto(`https://voiceprotest.org/?ux=reflow-${state}-${scale}${hash}`);
       if(state==='home'){
+        await page.locator('.filter-row button').first().click();
         await page.locator('article.p-item').first().waitFor();await amplify(scale);await measure(state,scale,page.locator('article.p-item').first().getByRole('button'));
       }else if(state==='detail'){
         await page.locator('#s-detail .d-title').waitFor();await amplify(scale);await measure(state,scale,page.locator('#s-detail .join-footer .btn-primary'));

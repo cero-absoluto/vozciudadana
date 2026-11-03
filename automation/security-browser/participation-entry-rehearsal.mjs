@@ -32,6 +32,7 @@ try {
     });
     let sms=0,joins=0,emailSends=0,emailChecks=0,releaseSms,releaseEmail,releaseCheck;
     let smsResponse={sent:true},smsStatus=200,holdSms=false,holdEmail=false,holdCheck=false;
+    let gpsPatches=0,holdGpsPatch=false,releaseGpsPatch;
     let mobileDetail=null,groupAvailable=false,groupMode='auto',groupReads=0,holdGroup=false,releaseGroup;
     let holdList=false,releaseList,listStatus=200,listReads=0;
     let listOverride=null,detailStatus=200,detailResponse=events[1],holdDetail=false,releaseDetail;

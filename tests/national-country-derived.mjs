@@ -7,6 +7,8 @@ import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 
 process.env.PHONE_HASH_SECRET = 'test-phone-secret';
+process.env.SMS_CONFIRMED_ADHESION_BILLING_ENABLED='true';
+process.env.SMS_COST_EUR='0.05';
 process.env.NULLIFIER_SECRET = 'test-nullifier-secret';
 process.env.PARTICIPATION_TOKEN_SECRET = 'test-token-secret';
 process.env.DEVICE_SECRET_PEPPER = 'test-pepper';
@@ -15,6 +17,8 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = 'test';
 delete process.env.RECAPTCHA_SECRET;
 delete process.env.NODE_ENV;
 
+const syntheticSid='VE'+'a'.repeat(32);
+const {providerVerificationHash}=await import('../apps/api/src/lib/smsChargeEvidence.js');
 const P = (n) => `22222222-2222-4222-8222-${String(n).padStart(12, '0')}`;
 const PROTESTS = {
   [P(1)]: { id: P(1), scope: 'national', country: 'ES' },
@@ -68,16 +72,21 @@ const from = (table) => {
   return b;
 };
 const rpc = async (name, args) => {
+  if(name==='get_sms_billing_status')return {data:{ok:true,enabled:true,proof_ttl_seconds:1800}};
+  if(name==='record_sms_provider_acceptance')return {data:{ok:true,request_id:args.p_request_id,provider_hash:args.p_provider_hash,protest_id:args.p_protest_id,requested_device_id:args.p_requested_device_id}};
+  if(name==='begin_sms_verification_check')return {data:{ok:true,check_id:P(90),provider_hash:providerVerificationHash(syntheticSid),request_id:args.p_request_id,protest_id:args.p_protest_id,requested_device_id:args.p_requested_device_id}};
+  if(name==='resolve_sms_verification_check')return {data:{ok:true,check_id:args.p_check_id,outcome:args.p_outcome}};
+  if(name==='approve_sms_verification_check')return {data:{ok:true,check_id:args.p_check_id,provider_hash:args.p_provider_hash,canonical_device_id:args.p_canonical_device_id,protest_id:GLOBAL}};
   if(name==='reserve_sms_otp'){calls.otpLog++;return {data:{allowed:true,request_id:'11111111-1111-4111-8111-111111111111'},error:null};}
   if (name === 'get_otp_cooldown') return { data: 0, error: null };
   if (name === 'check_otp_rate_limit') return { data: { allowed: true }, error: null };
-  if (name === 'create_verified_adhesion') { db.adhesions.push(args); return { data: { id: 'adh-1', created_at: '2026-01-01T00:00:00Z', ciudad: null, region: null, pais: null, adhesion_osm_id: null }, error: null }; }
+  if (name === 'create_verified_adhesion_with_sms_charge') { db.adhesions.push(args); return { data: { id: P(91), created_at: '2026-01-01T00:00:00Z', ciudad: null, region: null, pais: null, adhesion_osm_id: null }, error: null }; }
   return { data: null, error: null };
 };
 mock.module('../apps/api/src/services/supabase.js', { namedExports: { supabase: { from, rpc:(...args)=>Object.assign(rpc(...args),{abortSignal(){return this;}}) } } });
 mock.module('../apps/api/src/services/twilio.js', { namedExports: {
-  sendOtp: async () => { calls.sendOtp++; },
-  verifyOtp: async (_p, code) => { calls.verifyOtp++; return code === OTP; },
+  sendOtp: async () => { calls.sendOtp++;return {status:'pending',sid:syntheticSid}; },
+  verifyOtp: async (_p, code) => { calls.verifyOtp++; return code === OTP?{approved:true,sid:syntheticSid}:false; },
 } });
 globalThis.fetch = async () => { throw new Error('no network in tests'); };
 
@@ -93,7 +102,7 @@ await app.register(protestRoutes, { prefix: '/api/protests' });
 await app.ready();
 
 const verify = (phone, deviceId, declared) => app.inject({ method: 'POST', url: '/api/users/verify-otp',
-  payload: { phone, otp: OTP, device_id: deviceId, ...(declared ? { country_code: declared } : {}) } });
+  payload: { phone, otp: OTP, device_id: deviceId, request_id:P(91),protest_id:GLOBAL, ...(declared ? { country_code: declared } : {}) } });
 const join = (protestId, token) => app.inject({ method: 'POST', url: `/api/protests/${protestId}/join`,
   payload: { participation_token: token, recaptcha_token: 'dev' } });
 const reauth = (deviceId, secret) => app.inject({ method: 'POST', url: `/api/users/device/${deviceId}/reauth`, payload: { device_secret: secret } });
@@ -215,13 +224,14 @@ test('6c. aviso ANTES del SMS (request-otp): país no establecido en convocatori
     assert.match(body(r).error, /does not mean the number belongs to another country/);
   }
   assert.equal(calls.sendOtp, 0, 'ningún SMS'); assert.equal(calls.otpLog, 0, 'nada registrado'); assert.equal(calls.adhesionReads, 0, 'no consulta participación: no revela nada de ella');
-  // siguen enviándose: resuelto (incluso plan compartido), distinto país (decide /join), global, sin convocatoria, convocatoria desconocida
+  // Se envía para resuelto (incluso plan compartido), distinto país (decide /join), global y local.
+  // Sin convocatoria exige contexto explícito; una convocatoria desconocida devuelve 404.
   for (const [phone, protest] of [[PH.ES, NAT_ES], [PH.CA, NAT_CA], [PH.GB, NAT_GB], [PH.FR, NAT_ES], [PH.IT_MOBILE, GLOBAL], [PH.NONE, LOCAL], [PH.IT_MOBILE, null], [PH.IT_MOBILE, P(99)]]) {
     const before = calls.sendOtp;
     const r = await req(phone, protest);
-    assert.equal(r.statusCode, protest===P(99)?404:200, `${phone} ${protest}`);
-    if(protest!==P(99)) assert.equal(body(r).sent,true);
-    assert.equal(calls.sendOtp, before + (protest===P(99)?0:1));
+    assert.equal(r.statusCode, !protest?422:protest===P(99)?404:200, `${phone} ${protest}`);
+    if(protest&&protest!==P(99)) assert.equal(body(r).sent,true);
+    assert.equal(calls.sendOtp, before + (!protest||protest===P(99)?0:1));
   }
 });
 

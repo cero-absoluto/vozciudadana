@@ -1,3 +1,4 @@
+import {smsBillingEnabled,smsCostCents} from './smsChargeEvidence.js';
 // ── AdhesionService (VP-SEC-008 fix, Fase 2 — Despliegue A, 23 July 2026) ──
 //
 // The single, conceptually authorised place in the application allowed to
@@ -93,6 +94,7 @@ const RPC_ERROR_MAP = {
 };
 
 function throwMappedRpcError(error) {
+  if (['SMS_BILLING_PAUSED','SMS_BILLING_CONFIGURATION_INVALID','SMS_BALANCE_REVIEW_REQUIRED','SMS_EVIDENCE_UNAVAILABLE','SMS_VERIFIED_DEVICE_REQUIRED'].includes(error.message)) throw new AdhesionError(error.message);
   const mapped = RPC_ERROR_MAP[error.message];
   if (mapped) throw new mapped();
   if (error.code === '23505') throw new AlreadyJoinedError();
@@ -224,6 +226,11 @@ export async function createVerifiedAdhesion(input) {
     throw new AdhesionError('INSTITUTIONAL_DOMAIN_MISMATCH', 'Institutional domain does not match this convocatoria');
   }
 
+  if (identity.method==='phone_otp' && !smsBillingEnabled()) throw new AdhesionError('SMS_BILLING_PAUSED');
+  let cost;
+  try { if (identity.method==='phone_otp') cost=smsCostCents(); }
+  catch { throw new AdhesionError('SMS_BILLING_CONFIGURATION_INVALID'); }
+
   // Location resolution happens here, before the transaction — depends on
   // external services (Nominatim, ipapi.co) that must never hold a
   // PostgreSQL transaction open while they respond.
@@ -248,7 +255,7 @@ export async function createVerifiedAdhesion(input) {
 
   const nullifier = computeNullifier({ method: identity.method, subjectHash: identity.subjectHash, protestId });
 
-  const { data, error } = await supabase.rpc('create_verified_adhesion', {
+  const { data, error } = await supabase.rpc(identity.method==='phone_otp'?'create_verified_adhesion_with_sms_charge':'create_verified_adhesion', {
     p_protest_id:               protestId,
     p_identity_subject_hash:    identity.subjectHash,
     p_verification_method:      identity.method,
@@ -266,9 +273,11 @@ export async function createVerifiedAdhesion(input) {
     p_senales:                  senalesArr.join(','),
     p_institutional_email_hash: institutionalMembership?.emailHash ?? null,
     p_institutional_expires_at: institutionalMembership?.expiresAt ?? null,
+    ...(identity.method==='phone_otp'?{p_sms_cost_cents:cost}:{}),
   });
 
   if (error) throwMappedRpcError(error);
+  if (identity.method==='phone_otp' && (typeof data?.id!=='string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.id) || typeof data.created_at!=='string' || !Number.isFinite(Date.parse(data.created_at)))) throw new AdhesionError('SMS_EVIDENCE_UNAVAILABLE');
 
   // Carry the evidence actually resolved by this service to the receipt route.
   return { ...data, gps_confirmed: evidence.gps_confirmed, pais_code: evidence.pais_code, ciudad: evidence.ciudad, region: evidence.region };

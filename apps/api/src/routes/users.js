@@ -1,3 +1,4 @@
+import {smsBillingEnabled,evidenceUuid,providerVerificationHash,smsEvidenceRpc,assertSmsEvidenceReady,assertSmsEvidenceAck} from '../lib/smsChargeEvidence.js';
 import {otpProviderFailure} from '../lib/otpProvider.js';
 import {reserveSmsOtp} from '../lib/otpQuotas.js';
 import {consumeOtpDeliveryQuota,consumeOtpVerificationQuota} from '../lib/requestQuotas.js';
@@ -58,9 +59,13 @@ export default async function userRoutes(app) {
     },
   }, async (req, reply) => {
     const { phone, recaptcha_token, device_id, protest_id } = req.body;
+    if (!smsBillingEnabled()) return reply.code(503).send({error:'SMS_BILLING_PAUSED',code:'otp_temporarily_unavailable'});
+    if (!device_id || !evidenceUuid(protest_id)) return reply.code(422).send({error:'SMS_CONTEXT_REQUIRED'});
 
     // ── 1. Verify reCAPTCHA first ──────────────────────────────────────────
     await verifyRecaptcha(recaptcha_token, 'request_otp', req, reply);
+    try { await assertSmsEvidenceReady(supabase); } catch { return databaseUnavailable(reply); }
+
 
     const phone_hash = hashPhone(phone);
     const ip_hash    = hashIp(req.ip);
@@ -118,8 +123,15 @@ export default async function userRoutes(app) {
     if(typeof reservation.data.request_id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(reservation.data.request_id)) return databaseUnavailable(reply);
 
     // ── 6. Send SMS ───────────────────────────────────────────────────────
-    try { await sendOtp(phone); } catch (error) { return otpProviderFailure(reply, error, 'DELIVERY'); }
-    return { sent: true };
+    let accepted;
+    try { accepted = await sendOtp(phone,{evidence:true}); } catch (error) { return otpProviderFailure(reply,error,'DELIVERY'); }
+    try {
+      if (accepted?.status!=='pending') throw new Error('SMS_PROVIDER_EVIDENCE_INVALID');
+      const provider_hash=providerVerificationHash(accepted.sid);
+      const acceptedAck=await smsEvidenceRpc(supabase,'record_sms_provider_acceptance',{p_request_id:reservation.data.request_id,p_phone_hash:phone_hash,p_requested_device_id:device_id,p_protest_id:protest_id,p_provider_hash:provider_hash});
+      assertSmsEvidenceAck(acceptedAck,{request_id:reservation.data.request_id,provider_hash,protest_id,requested_device_id:device_id});
+    } catch { return databaseUnavailable(reply); }
+    return {sent:true,request_id:reservation.data.request_id};
   });
 
   // POST /api/users/verify-otp
@@ -144,19 +156,46 @@ export default async function userRoutes(app) {
           phone:        { type: 'string', minLength: 8, maxLength: 16, pattern: '^\\+[1-9]\\d{7,14}$' },
           otp:          { type: 'string', minLength: 6, maxLength: 6, pattern: '^[0-9]{6}$' },
           device_id:    { type: 'string', minLength: 8, maxLength: 128 },
+          request_id:   {type:'string',format:'uuid',nullable:true},
+          protest_id:   {type:'string',format:'uuid',nullable:true},
           country_code: { type: 'string', minLength: 2, maxLength: 2, pattern: '^[A-Z]{2}$', nullable: true },
         },
         additionalProperties: false,
       },
     },
   }, async (req, reply) => {
-    const { phone, otp, device_id, country_code } = req.body;
+    const { phone, otp, device_id, country_code,request_id,protest_id } = req.body;
+    const billing=smsBillingEnabled();
+    if (billing && (!evidenceUuid(request_id) || !evidenceUuid(protest_id))) return reply.code(422).send({error:'SMS_CONTEXT_REQUIRED'});
 
     const phone_hash = hashPhone(phone);
     if(!await consumeOtpVerificationQuota(req,reply,phone_hash))return;
-    let approved;
-    try { approved = await verifyOtp(phone, otp, {onMaxAttempts:()=>req.log.warn({code:'otp_provider_max_attempts'},'OTP provider attempt limit reached')}); }
-    catch (error) { return otpProviderFailure(reply, error, 'VERIFY'); }
+    let approved,checkEvidence;
+    if (billing) {
+      try {
+        await assertSmsEvidenceReady(supabase);
+        checkEvidence=await smsEvidenceRpc(supabase,'begin_sms_verification_check',{p_request_id:request_id,p_phone_hash:phone_hash,p_requested_device_id:device_id,p_protest_id:protest_id});
+        assertSmsEvidenceAck(checkEvidence,{request_id,protest_id,requested_device_id:device_id});
+        if (!evidenceUuid(checkEvidence.check_id) || !/^[0-9a-f]{64}$/.test(checkEvidence.provider_hash)) throw new Error('SMS_EVIDENCE_UNAVAILABLE');
+      } catch { return databaseUnavailable(reply); }
+    }
+    const resolveCheck=async outcome=>{
+      if (billing && checkEvidence) {
+        const ack=await smsEvidenceRpc(supabase,'resolve_sms_verification_check',{p_check_id:checkEvidence.check_id,p_outcome:outcome});
+        assertSmsEvidenceAck(ack,{check_id:checkEvidence.check_id,outcome});
+      }
+    };
+    try {
+      const result=await verifyOtp(phone,otp,{evidence:billing,onMaxAttempts:()=>req.log.warn({code:'otp_provider_max_attempts'},'OTP provider attempt limit reached')});
+      approved=billing ? result?.approved===true : result===true;
+      if (billing && approved && providerVerificationHash(result.sid)!==checkEvidence.provider_hash) {
+        await resolveCheck('mismatch');return databaseUnavailable(reply);
+      }
+    } catch (error) {
+      try { await resolveCheck('uncertain'); } catch { /* durable check intent remains unresolved, never a billing proof */ }
+      return otpProviderFailure(reply,error,'VERIFY');
+    }
+    if (billing && !approved) { try { await resolveCheck('rejected'); } catch { return databaseUnavailable(reply); } }
     // A wrong attempt does not expire other requests. Twilio owns challenge
     // expiry/attempt counting; the local table is conservative quota history.
     if (approved !== true) return reply.code(401).send({error:'OTP_INVALID'});
@@ -172,6 +211,7 @@ export default async function userRoutes(app) {
       numbering_meta_version: numbering.metaVersion,
     };
 
+    if (!billing) {
     // Mark OTP as completed
     const {error: completionError} = await supabase
       .from('otp_requests')
@@ -181,6 +221,18 @@ export default async function userRoutes(app) {
       .eq('status', 'sent');
 
     if (completionError) return databaseUnavailable(reply);
+
+    }
+    const verifiedResponse=async (id,device_secret)=>{
+      if (billing) {
+        try {
+          const ack=await smsEvidenceRpc(supabase,'approve_sms_verification_check',{p_check_id:checkEvidence.check_id,p_provider_hash:checkEvidence.provider_hash,p_canonical_device_id:id});
+          assertSmsEvidenceAck(ack,{check_id:checkEvidence.check_id,provider_hash:checkEvidence.provider_hash,canonical_device_id:id,protest_id});
+        }
+        catch { return databaseUnavailable(reply); }
+      }
+      return {verified:true,device_id:id,participation_token:signParticipationToken({device_id:id,phone_hash,purpose:'join_protest'}),...(device_secret?{device_secret}:{})};
+    };
 
     // If phone already verified on another device, return it — a fresh
     // participation_token is still issued (a real OTP was just completed,
@@ -202,8 +254,7 @@ export default async function userRoutes(app) {
         .update(numberingColumns)
         .eq('id', existing.id);
       if (provErr) return databaseUnavailable(reply);
-      const participation_token = signParticipationToken({ device_id: existing.id, phone_hash, purpose: 'join_protest' });
-      return { verified: true, device_id: existing.id, participation_token };
+      return verifiedResponse(existing.id);
     }
 
     const { secret: device_secret, hash: device_secret_hash } = generateDeviceSecret();
@@ -228,19 +279,18 @@ export default async function userRoutes(app) {
         // Give the new identity a fresh id; never mutate the old identity.
         ({data,error} = await insertDevice(randomUUID()));
         if (error || !data?.id) return databaseUnavailable(reply);
-        return {verified:true,device_id:data.id,device_secret,participation_token:signParticipationToken({device_id:data.id,phone_hash,purpose:'join_protest'})};
+        return verifiedResponse(data.id,device_secret);
       }
       const {error: provenanceError} = await supabase.from('devices').update(numberingColumns).eq('id',canonical.id);
       if (provenanceError) return databaseUnavailable(reply);
-      return {verified:true,device_id:canonical.id,participation_token:signParticipationToken({device_id:canonical.id,phone_hash,purpose:'join_protest'})};
+      return verifiedResponse(canonical.id);
     }
     if (error || !data?.id) return databaseUnavailable(reply);
 
-    const participation_token = signParticipationToken({ device_id: data.id, phone_hash, purpose: 'join_protest' });
     // device_secret is returned exactly once, here, at the moment it is
     // generated. It is never stored in recoverable form server-side (only
     // its HMAC is) and this endpoint never returns it again after this call.
-    return { verified: true, device_id: data.id, participation_token, device_secret };
+    return verifiedResponse(data.id,device_secret);
   });
 
   // POST /api/users/device/:id/reauth

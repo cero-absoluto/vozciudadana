@@ -25,7 +25,7 @@ test('verify refuses a destination changed while reCAPTCHA was pending',async()=
   assert.equal(f.calls.filter(x=>x[0]==='join').length,0);assert.equal(f.state.success.value,false);assert.deepEqual(f.navigation,['/']);
 });
 test('resend waits for the real result, sends once, skips reauth and preserves the request destination',async()=>{
-  const f=harness();await f.state.sendSMS();f.calls.length=0;f.state.phone.value='999999999';f.state.countryCode.value='FR';
+  const f=harness();await f.state.sendSMS();f.calls.length=0;
   const wait=deferred();f.api.requestOtp=async payload=>{f.calls.push(['request',payload]);return wait.promise;};
   const first=f.state.resendSMS();await f.state.resendSMS();await flush();
   assert.equal(f.calls.length,1);assert.equal(f.calls[0][1].phone,'+34600000001');assert.deepEqual(f.toasts,[]);assert.equal(f.state.sending.value,true);
@@ -59,4 +59,50 @@ for(const handler of ['sendOtp','verifyOtp'])for(const fail of [false,true])test
 test('resend and change-number are native buttons; confirmation exposes pending state',()=>{
   const source=read('AuthScreen');assert.match(source,/<button[^>]*@click="resendSMS"/);assert.match(source,/<button[^>]*@click="changeNumber"/);assert.match(source,/:aria-busy="sending" @click="verifyOTP"/);
   for(const lang of ['es','en','fr','zh']){const auth=JSON.parse(readFileSync(new URL('../apps/web/src/locales/'+lang+'.json',import.meta.url),'utf8')).auth;for(const key of ['working','changeNumber','resendToast'])assert.ok(auth[key]);}
+});
+const proofId='22222222-2222-4222-8222-222222222222';
+test('SMS proof is bound to the accepted request and replacement resend',async()=>{
+  const f=harness();await f.state.sendSMS();assert.equal(f.calls[0][1].device_id,'synthetic-device');
+  const old=f.state.requestedOtp.value.requestId,wait=deferred();f.api.requestOtp=()=>wait.promise;
+  const pending=f.state.resendSMS();await flush();assert.equal(f.state.requestedOtp.value.requestId,old);
+  f.state.otpDigits.value=['1','2','3','4','5','6'];await f.state.verifyOTP();assert.equal(f.calls.some(c=>c[0]==='verify'),false);
+  wait.resolve({sent:true,request_id:proofId});await pending;assert.equal(f.state.requestedOtp.value.requestId,proofId);
+  f.state.otpDigits.value=['1','2','3','4','5','6'];await f.state.verifyOTP();
+  assert.deepEqual({...f.calls.find(c=>c[0]==='verify')[1]},{phone:'+34600000001',otp:'123456',device_id:'synthetic-device',country_code:'ES',protest_id:'selected',request_id:proofId});
+});
+for(const request_id of [null,'',42,'invalid'])test('malformed SMS proof cannot enable confirmation '+request_id,async()=>{
+  const f=harness('AuthScreen',{requestOtp:async()=>({sent:true,request_id})});await f.state.sendSMS();assert.equal(f.state.requestedOtp.value,null);assert.equal(f.state.otpVisible.value,false);
+});
+test('legacy confirmed send omits proof rather than inventing one',async()=>{
+  const f=harness('AuthScreen',{requestOtp:async()=>({sent:true})});await f.state.sendSMS();f.state.otpDigits.value=['1','2','3','4','5','6'];await f.state.verifyOTP();assert.equal(Object.hasOwn(f.calls.find(c=>c[0]==='verify')[1],'request_id'),false);
+});
+const changeOtpContext={phone:f=>f.state.phone.value='600000002',country:f=>f.state.countryCode.value='FR',device:f=>f.device.getDeviceId=()=> 'different-device',destination:f=>f.memory.set('vc_last_joined','another'),target:f=>f.store.protests[0].country='FR',unmount:f=>f.unmount()};
+for(const [name,change] of Object.entries(changeOtpContext))for(const stage of ['recaptcha','request','verify'])test('changed '+name+' discards pending '+stage,async()=>{
+  const wait=deferred(),f=harness();
+  if(stage==='verify')await f.state.sendSMS();
+  if(stage==='recaptcha')f.context.window.grecaptcha.execute=()=>wait.promise;
+  if(stage==='request')f.api.requestOtp=()=>wait.promise;
+  if(stage==='verify'){f.state.otpDigits.value=['1','2','3','4','5','6'];f.api.verifyOtp=()=>wait.promise;}
+  const pending=stage==='verify'?f.state.verifyOTP():f.state.sendSMS();await flush();change(f);
+  wait.resolve(stage==='recaptcha'?'captcha':stage==='request'?{sent:true,request_id:proofId}:{verified:true,device_id:'canonical-device',participation_token:'replacement-token'});await pending;
+  assert.equal(f.navigation.includes('/verify'),false);assert.equal(f.memory.get('vc_participation_token'),'synthetic-token');
+  if(stage!=='verify')assert.equal(f.state.requestedOtp.value,null);
+  if(stage==='recaptcha')assert.equal(f.calls.some(c=>c[0]==='request'),false);
+});
+test('client billing flags are absent from both screens and join payload',async()=>{
+  for(const name of ['AuthScreen','VerifyScreen'])assert.doesNotMatch(read(name),/vc_sms_sent|sms_sent/);
+  const f=harness('VerifyScreen');f.memory.set('vc_sms_sent','true');await f.mount();assert.equal(Object.hasOwn(f.calls.find(c=>c[0]==='join')[2],'sms_sent'),false);
+});
+for(const [name,change] of Object.entries(changeOtpContext).filter(([name])=>name!=='unmount'))test('changed '+name+' blocks verification before the API call',async()=>{
+  const f=harness();await f.state.sendSMS();f.calls.length=0;f.state.otpDigits.value=['1','2','3','4','5','6'];change(f);await f.state.verifyOTP();assert.equal(f.calls.length,0);assert.equal(f.navigation.includes('/verify'),false);
+});
+test('late resend proof is discarded after device changes',async()=>{
+  const f=harness();await f.state.sendSMS();const original=f.state.requestedOtp.value,wait=deferred();f.api.requestOtp=()=>wait.promise;
+  const pending=f.state.resendSMS();await flush();f.device.getDeviceId=()=> 'changed-device';wait.resolve({sent:true,request_id:proofId});await pending;
+  assert.equal(f.state.requestedOtp.value,original);assert.equal(f.toasts.includes('auth.resendToast'),false);
+});
+test('canonical identity is adopted only after verification of the captured request device',async()=>{
+  const f=harness('AuthScreen',{verifyOtp:async payload=>{assert.equal(payload.device_id,'synthetic-device');return {verified:true,device_id:'canonical-device',participation_token:'canonical-token'};}});
+  let adopted;f.device.setDeviceId=id=>{adopted=id;};await f.state.sendSMS();f.state.otpDigits.value=['1','2','3','4','5','6'];await f.state.verifyOTP();
+  assert.equal(adopted,'canonical-device');assert.equal(f.memory.get('vc_participation_token'),'canonical-token');assert.equal(f.navigation.at(-1),'/verify');
 });

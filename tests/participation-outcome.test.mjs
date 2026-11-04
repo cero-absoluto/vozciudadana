@@ -27,12 +27,12 @@ test('another tab’s global identity cannot move A’s token/receipt into B’s
   const b=harness('VerifyScreen');copySession(f,b);b.memory.set('vc_device_id','identity-B');b.memory.set('vc_participation_token','token-for-B');b.device.getDeviceId=()=> 'identity-B';await b.mount();
   assert.equal(b.calls.filter(x=>x[0]==='join').length,1);assert.equal(b.state.savedConfirmation.value,false);
 });
-test('returning-device proof and session identity remain paired if another tab switches global identity mid-request',async()=>{
-  const wait=deferred(),f=harness();let id='identity-A';f.device.getDeviceId=()=>id;f.device.getDeviceSecret=()=> 'synthetic-secret';
+test('returning-device proof is discarded if another tab switches global identity mid-request',async()=>{
+  const wait=deferred(),f=harness();f.memory.set('vc_device_id','identity-A');f.memory.set('vc_participation_token','previous-token-for-A');let id='identity-A';f.device.getDeviceId=()=>id;f.device.getDeviceSecret=()=> 'synthetic-secret';
   f.api.fetchDeviceLocks=async current=>{assert.equal(current,'identity-A');return ['lock'];};
   f.api.reauthDevice=async current=>{assert.equal(current,'identity-A');return wait.promise;};
   const pending=f.state.sendSMS();await flush();id='identity-B';wait.resolve({authenticated:true,participation_token:'token-for-A'});await pending;
-  assert.equal(f.memory.get('vc_device_id'),'identity-A');assert.equal(f.memory.get('vc_participation_token'),'token-for-A');assert.equal(f.calls.some(x=>x[0]==='request'),false);
+  assert.equal(id,'identity-B');assert.equal(f.memory.get('vc_device_id'),'identity-A');assert.equal(f.memory.get('vc_participation_token'),'previous-token-for-A');assert.deepEqual(f.navigation,[]);assert.equal(f.calls.some(x=>x[0]==='request'),false);
 });
 test('a refused late failure remains uncertain and cannot force a new OTP or navigate',async()=>{
   const wait=deferred(),f=harness('VerifyScreen',{joinProtest:()=>wait.promise});const mounting=f.mount();await flush();

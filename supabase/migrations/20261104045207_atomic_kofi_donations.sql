@@ -65,7 +65,7 @@ BEGIN
   END IF;
   -- Match closure's lock order: campaign first, then platform singleton.
   SELECT * INTO target FROM public.protests WHERE id=p_protest_id FOR UPDATE;
-  IF NOT FOUND OR target.ends_at IS NULL OR target.ends_at<=clock_timestamp() OR target.hash_integridad IS NOT NULL THEN
+  IF NOT FOUND OR target.ends_at IS NULL OR target.ends_at<=clock_timestamp() OR target.hash_integridad IS NOT NULL OR target.status='closed' THEN
     RAISE EXCEPTION 'KOFI_TARGET_REVIEW_REQUIRED';
   END IF;
   SELECT * INTO fund FROM public.platform_fund WHERE id=1 FOR UPDATE;

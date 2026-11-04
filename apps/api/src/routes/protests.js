@@ -351,7 +351,6 @@ async function verifyTargetBackend(wikidataId) {
 // ── Configurable costs and fees (set via Railway env vars) ──────────────
 const SMS_COST_EUR      = parseFloat(process.env.SMS_COST_EUR      || '0.05');
 const EMAIL_COST_EUR    = parseFloat(process.env.EMAIL_COST_EUR     || '0.01');
-const PLATFORM_FEE_PCT  = parseFloat(process.env.PLATFORM_FEE_PERCENT || '10') / 100;
 const MAX_DONATION_EUR  = parseFloat(process.env.MAX_DONATION_EUR   || '10');
 
 const defaultAdmissionRules = validateAdmissionRules;
@@ -957,82 +956,42 @@ export default async function protestRoutes(app, opts = {}) {
         properties: {
           importe:      { type: 'number', minimum: 0.50, maximum: 100 },
           mensaje:      { type: 'string', maxLength: 200, nullable: true },
+          idempotency_key: { type: 'string', maxLength: 128 },
           admin_secret: { type: 'string', minLength: 1 },
         },
         additionalProperties: false,
       },
     },
   }, async (req, reply) => {
-    const { importe, mensaje, admin_secret } = req.body;
-
-    if (!credentialMatches(admin_secret,process.env.ADMIN_SECRET)) {
-      return reply.status(401).send({ error: 'No autorizado' });
+    const { importe, mensaje, admin_secret, idempotency_key } = req.body;
+    if (!credentialMatches(admin_secret,process.env.ADMIN_SECRET)) return reply.status(401).send({error:'No autorizado'});
+    if (typeof idempotency_key !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idempotency_key)) return reply.status(422).send({error:'MANUAL_IDEMPOTENCY_KEY_REQUIRED'});
+    // Kept disabled until the Owner approves the accounting boundary and the
+    // operator workflow for creating/reusing one UUID per external donation.
+    if (process.env.MANUAL_DONATIONS_ATOMIC_ENABLED !== 'true') return reply.status(503).send({error:'MANUAL_DONATIONS_DISABLED'});
+    const hundredths = value => {
+      if (!['string','number'].includes(typeof value) || !/^\d{1,8}(?:\.\d{1,2})?$/.test(String(value))) return null;
+      const [whole,fraction=''] = String(value).split('.');
+      return Number(whole)*100+Number(fraction.padEnd(2,'0'));
+    };
+    const amount = hundredths(importe), fee = hundredths(process.env.PLATFORM_FEE_PERCENT ?? '10'), smsCost = hundredths(process.env.SMS_COST_EUR ?? '0.05');
+    if (amount === null || amount < 50 || amount > 10000) return reply.status(400).send({error:'MANUAL_AMOUNT_INVALID'});
+    if (fee === null || fee > 10000 || smsCost === null || smsCost <= 0) return reply.status(503).send({error:'MANUAL_CONFIGURATION_INVALID'});
+    try {
+      const {data,error} = await withRequestDeadline(8000, signal => supabase.rpc('record_manual_donation_atomic',{
+        p_operation_id:idempotency_key,p_protest_id:req.params.id,p_amount_cents:amount,p_fee_bps:fee,p_message:mensaje || null,p_sms_cost_cents:smsCost,
+      }).abortSignal(signal));
+      if (error) {
+        if (typeof error.message === 'string' && error.message.includes('MANUAL_TARGET_NOT_FOUND')) return reply.status(404).send({error:'Convocatoria no encontrada'});
+        const code=['MANUAL_TRANSACTION_CONFLICT','MANUAL_TARGET_REVIEW_REQUIRED','MANUAL_FUND_REVIEW_REQUIRED'].find(code => typeof error.message === 'string' && error.message.includes(code));
+        if (code) return reply.status(409).send({error:code});
+        throw new Error('MANUAL_STORAGE_FAILED');
+      }
+      if (data?.ok !== true || typeof data.duplicate !== 'boolean' || typeof data.saldo_nuevo !== 'number' || !Number.isFinite(data.saldo_nuevo) || data.saldo_nuevo < 0 || !Number.isSafeInteger(data.adhesiones_posibles) || data.adhesiones_posibles < 0) throw new Error('MANUAL_RESPONSE_INVALID');
+      return {ok:true,duplicate:data.duplicate,saldo_nuevo:data.saldo_nuevo,adhesiones_posibles:data.adhesiones_posibles};
+    } catch {
+      return reply.status(503).send({error:'MANUAL_DONATION_UNCERTAIN'});
     }
-
-    const { data: protest } = await supabase
-      .from('protests')
-      .select('saldo_euros, donaciones_count, donaciones_total')
-      .eq('id', req.params.id)
-      .single();
-
-    if (!protest) return reply.notFound('Convocatoria no encontrada');
-
-    // 90/10 split — configurable via PLATFORM_FEE_PERCENT env var
-    const fee_percent         = Math.round(PLATFORM_FEE_PCT * 100);
-    const importe_plataforma  = parseFloat((importe * PLATFORM_FEE_PCT).toFixed(2));
-    const importe_convocatoria = parseFloat((importe - importe_plataforma).toFixed(2));
-
-    const nuevo_saldo   = (protest.saldo_euros || 0) + importe_convocatoria;
-    const nuevo_count   = (protest.donaciones_count || 0) + 1;
-    const nuevo_total   = (protest.donaciones_total || 0) + importe;
-
-    await supabase.from('protests').update({
-      saldo_euros:      nuevo_saldo,
-      donaciones_count: nuevo_count,
-      donaciones_total: nuevo_total,
-      ultima_donacion:  new Date().toISOString(),
-    }).eq('id', req.params.id);
-
-    // Record donation with split
-    const { data: donacion } = await supabase.from('donaciones').insert({
-      protest_id:            req.params.id,
-      importe,
-      importe_convocatoria,
-      importe_plataforma,
-      fee_percent,
-      mensaje: mensaje || null,
-    }).select().single();
-
-    // Record platform fund income
-    await supabase.from('platform_fund').insert({
-      type:        'income',
-      amount:      importe_plataforma,
-      source:      'donation_fee',
-      protest_id:  req.params.id,
-      description: `${fee_percent}% platform fee from donation of €${importe}`,
-    });
-
-    // Record financial movements
-    await supabase.from('financial_movements').insert([
-      {
-        type:        'donation_protest',
-        protest_id:  req.params.id,
-        donation_id: donacion?.id || null,
-        amount:      importe_convocatoria,
-        destination: 'protest_balance',
-        description: `Donation credited to protest (${100 - fee_percent}%)`,
-      },
-      {
-        type:        'donation_platform',
-        protest_id:  req.params.id,
-        donation_id: donacion?.id || null,
-        amount:      importe_plataforma,
-        destination: 'platform_fund',
-        description: `Platform fee from donation (${fee_percent}%)`,
-      },
-    ]);
-
-    return { ok: true, saldo_nuevo: nuevo_saldo, adhesiones_posibles: Math.floor(nuevo_saldo / SMS_COST_EUR) };
   });
 
   // GET /api/protests/archivo — convocatorias cerradas

@@ -36,17 +36,17 @@ export default async function kofiWebhookRoutes(app) {
 
     // Read no donor name/email/message/processor identity; hash the technical
     // transaction reference before crossing the persistence boundary.
+    const amount = decimalHundredths(payload.amount);
+    if (amount === null || amount <= 0 || amount > 9999999999) return reply.status(400).send({error:'Invalid amount'});
     // Proposed cutover contract: keep disabled until the Owner approves a
     // provider timestamp sample and an explicit UTC activation boundary.
     const cutover = utcTimestamp(process.env.KOFI_ATOMIC_CUTOVER_UTC, 3);
     if (!cutover || cutover.getTime() > Date.now()) return reply.status(503).send({error:'KOFI_CUTOVER_REQUIRED'});
     const paidAt = utcTimestamp(payload.timestamp);
     if (!paidAt || paidAt < cutover || paidAt.getTime() > Date.now()) return reply.status(422).send({error:'KOFI_TIMESTAMP_REVIEW_REQUIRED'});
-    const amount = decimalHundredths(payload.amount);
     const cap = decimalHundredths(process.env.MAX_DONATION_EUR ?? '100');
     const feeBps = decimalHundredths(process.env.PLATFORM_FEE_PERCENT ?? '10');
     if (cap === null || cap <= 0 || cap > 9999999999 || feeBps === null || feeBps < 0 || feeBps > 10000) return reply.status(503).send({error:'KOFI_CONFIGURATION_INVALID'});
-    if (amount === null || amount <= 0 || amount > 9999999999) return reply.status(400).send({error:'KOFI_AMOUNT_INVALID'});
     if (typeof payload.currency !== 'string' || payload.currency.toUpperCase() !== 'EUR') return reply.status(422).send({error:'KOFI_CURRENCY_REVIEW_REQUIRED'});
     // A delivery/message ID is not assumed to identify a stable payment.
     const txId = payload.kofi_transaction_id;

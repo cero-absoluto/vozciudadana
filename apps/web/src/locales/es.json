@@ -341,7 +341,7 @@
     "secOne": "Un número verificado · una adhesión por ámbito",
     "aboutTitle": "Sobre este evento",
     "demandsTitle": "⚡ Qué exigimos",
-    "riskHigh": "🕵️ Régimen de alto riesgo. Tu adhesión es pseudónima. No se recogen datos de ubicación. Tu número de teléfono no se almacena — solo su hash criptográfico.",
+    "riskHigh": "🕵️ Alto riesgo. Tu adhesión es pseudónima, no anónima. No pedimos GPS, pero consultamos tu IP a un proveedor externo y podemos guardar país, región y ciudad aproximados.",
     "riskGlobal": "🌍 Protesta global. Tu participación se verificará como proveniente de un participante único. Tu identidad no es visible para otros participantes.",
     "riskCensus": "👥 Evento basado en censo. Tu adhesión se verifica mediante tu email institucional + aval entre pares.",
     "riskEmail": "📧 Verificación institucional. Verificarás tu identidad a través de tu email institucional.",

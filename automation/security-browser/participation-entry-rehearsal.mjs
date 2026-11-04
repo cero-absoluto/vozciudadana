@@ -39,6 +39,7 @@ try {
       window.__shares=[];window.open=(...args)=>{window.__shares.push(args);return {};};
     });
     let sms=0,joins=0,emailSends=0,emailChecks=0,releaseSms,releaseEmail,releaseCheck;
+    let smsProof=null;
     let smsResponse={sent:true},smsStatus=200,holdSms=false,holdEmail=false,holdCheck=false;
     let gpsPatches=0,holdGpsPatch=false,releaseGpsPatch;
     let pushSaves=0,pushStatus=201,holdPushSave=false,releasePushSave;
@@ -84,12 +85,14 @@ try {
         if(req.method()==='GET'&&u.pathname==='/api/ipinfo')return json({country_code:'ES',country_name:'Spain',city:'Synthetic'});
         if(req.method()==='GET'&&u.pathname==='/api/country-codes')return json([{iso2:'ES',dial_code:'34',flag:'ES'}]);
         if(req.method()==='POST'&&u.pathname==='/api/users/request-otp') {
-          sms++;assert.deepEqual(req.postDataJSON(),{phone:'+34600000001',recaptcha_token:'synthetic-no-provider',protest_id:ID});
+          sms++;const payload=req.postDataJSON();assert.equal(typeof payload.device_id,'string');assert.ok(payload.device_id.length>=8);assert.deepEqual(payload,{phone:'+34600000001',recaptcha_token:'synthetic-no-provider',protest_id:ID,device_id:payload.device_id});
+          const proof={...payload,request_id:`11111111-1111-4111-8111-${String(sms).padStart(12,'0')}`};
           if(holdSms)await new Promise(r=>releaseSms=r);
+          if(smsStatus===200&&smsResponse.sent===true){smsProof=proof;return json({...smsResponse,request_id:proof.request_id},smsStatus);}
           return json(smsResponse,smsStatus);
         }
-        if(req.method()==='POST'&&u.pathname==='/api/users/verify-otp')return json({verified:true,device_id:'synthetic-device',participation_token:'synthetic-token'});
-        if(req.method()==='POST'&&u.pathname===`/api/protests/${ID}/join`) {joins++;return json(joinResponse,joinStatus);}
+        if(req.method()==='POST'&&u.pathname==='/api/users/verify-otp'){assert.ok(smsProof);assert.deepEqual(req.postDataJSON(),{phone:smsProof.phone,otp:'123456',device_id:smsProof.device_id,country_code:'ES',protest_id:smsProof.protest_id,request_id:smsProof.request_id});return json({verified:true,device_id:'synthetic-device',participation_token:'synthetic-token'});}
+        if(req.method()==='POST'&&u.pathname===`/api/protests/${ID}/join`) {joins++;assert.equal(Object.hasOwn(req.postDataJSON(),'sms_sent'),false);return json(joinResponse,joinStatus);}
         if(req.method()==='PATCH'&&u.pathname===`/api/protests/${ID}/adhesion`){gpsPatches++;assert.deepEqual(req.postDataJSON(),{gps_update_token:'synthetic-gps-token',gps_lat:40,gps_lng:-3,gps_accuracy:10});if(holdGpsPatch)await new Promise(r=>releaseGpsPatch=r);return json({ok:true});}
         if(req.method()==='POST'&&u.pathname==='/api/institucional/send-otp') {emailSends++;if(holdEmail)await new Promise(r=>releaseEmail=r);return json({sent:true,challenge_id:'33333333-3333-4333-8333-333333333333'});}
         if(req.method()==='POST'&&u.pathname==='/api/institucional/verify-otp') {emailChecks++;if(holdCheck)await new Promise(r=>releaseCheck=r);return json(emailStatus===200?{verified:true,receipt:'66666666-6666-4666-8666-666666666666',census_session:'v1.synthetic'}:{error:'synthetic'},emailStatus);}
@@ -155,10 +158,11 @@ try {
     await page.getByRole('button',{name:messages.auth.sendCode,exact:true}).click();await page.locator('.otp-row').waitFor();assert.equal(sms,1);
     assert.ok((await page.locator('.auth-protest-title').textContent()).includes(events[0].title));
     const resend=page.getByRole('button',{name:messages.auth.resend,exact:true});
-    holdSms=true;await resend.focus();await page.keyboard.press('Enter');
+    const initialSmsProof=smsProof.request_id;holdSms=true;await resend.focus();await page.keyboard.press('Enter');
     await page.waitForFunction(()=>document.querySelector('.auth-resend button')?.disabled===true);
     await waitForCount(()=>sms,2);await page.keyboard.press('Enter');assert.equal(sms,2);assert.equal(joins,0);
     releaseSms();holdSms=false;await resend.waitFor({state:'visible'});await page.waitForFunction(()=>!document.querySelector('.auth-resend button')?.disabled);
+    assert.notEqual(smsProof.request_id,initialSmsProof);assert.equal(smsProof.request_id,'11111111-1111-4111-8111-000000000002');
     checks.push({id:`real_resend_keyboard_single_request_${locale}_${width}`,ok:true});
     smsStatus=429;smsResponse={code:'otp_rate_limited'};await resend.click();await page.waitForFunction(()=>!document.querySelector('.auth-resend button')?.disabled);assert.equal(sms,3);assert.equal(await page.locator('.otp-row').count(),1);assert.equal(joins,0);
     checks.push({id:`resend_quota_recovers_${locale}_${width}`,ok:true});

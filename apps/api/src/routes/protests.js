@@ -1,3 +1,4 @@
+import {smsBillingEnabled} from '../lib/smsChargeEvidence.js';
 import { summarizeStoredIndex } from '../lib/storedIndex.js';
 import { summarizeRecordedMethods } from '../lib/recordedMethods.js';
 import { readReportAdhesions } from '../lib/reportAdhesions.js';
@@ -616,7 +617,7 @@ export default async function protestRoutes(app, opts = {}) {
     },
   }, async (req, reply) => {
     const { participation_token, doc_hash, recaptcha_token,
-      gps_lat, gps_lng, gps_accuracy, sms_sent } = req.body;
+      gps_lat, gps_lng, gps_accuracy } = req.body;
     await verifyRecaptcha(recaptcha_token, 'join_protest', req, reply);
 
     const tokenPayload = verifyParticipationToken(participation_token, { expectedPurpose: 'join_protest' });
@@ -624,6 +625,7 @@ export default async function protestRoutes(app, opts = {}) {
       return reply.code(401).send({ error: 'VERIFICATION_REQUIRED', reason: 'Missing, invalid, or expired verification. Please verify your phone number again.' });
     }
     const { device_id, phone_hash } = tokenPayload;
+    if (!smsBillingEnabled()) return reply.code(503).send({error:'SMS_BILLING_PAUSED'});
 
     // Auditor's explicit requirement: never trust the token's payload blindly
     // for identity — re-check the device it names against the database.
@@ -671,6 +673,8 @@ export default async function protestRoutes(app, opts = {}) {
         institutionalMembership: null,
       });
     } catch (err) {
+      if (err.code==='SMS_VERIFIED_DEVICE_REQUIRED') return reply.code(401).send({error:'VERIFICATION_REQUIRED'});
+      if (['SMS_BILLING_PAUSED','SMS_BILLING_CONFIGURATION_INVALID','SMS_BALANCE_REVIEW_REQUIRED','SMS_EVIDENCE_UNAVAILABLE'].includes(err.code)) return reply.code(503).send({error:err.code});
       if (['INSTITUTIONAL_VERIFICATION_REQUIRED', 'GPS_NOT_ALLOWED'].includes(err.code)) return reply.code(403).send({ code: err.code, error: err.code });
       if (err instanceof AlreadyJoinedError) return reply.code(409).send({ error: err.code, reason: err.message });
       if (err instanceof ProtestNotFoundError) return reply.notFound(err.message);
@@ -684,23 +688,8 @@ export default async function protestRoutes(app, opts = {}) {
       throw err;
     }
 
-    // Descontar saldo por adhesion — solo si se envió SMS real (sms_sent !== false)
-    if (protest.saldo_euros !== null && protest.saldo_euros > 0 && sms_sent !== false) {
-      await supabase.from('protests')
-        .update({ saldo_euros: Math.max(0, protest.saldo_euros - SMS_COST_EUR) })
-        .eq('id', req.params.id);
-
-      // Audit trail — register verification cost in financial_movements
-      await supabase.from('financial_movements').insert({
-        type:        'verification_sms',
-        protest_id:  req.params.id,
-        adhesion_id: data.id,
-        amount:      SMS_COST_EUR,
-        currency:    'EUR',
-        destination: 'verification_cost',
-        description: `SMS verification cost for adhesion ${data.id}`,
-      });
-    }
+    // SMS billing and its append-only receipt are committed with the adhesion
+    // inside the verified-adhesion RPC. The legacy client flag is ignored.
 
     // Fire push notification on milestones
     try {

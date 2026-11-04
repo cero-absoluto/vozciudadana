@@ -2,11 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
-const source=readFileSync(new URL('../apps/web/src/screens/AuthScreen.vue',import.meta.url),'utf8').match(/async function verifyOTP\(\) \{[\s\S]*?\n\}/)[0];
+const authSource=readFileSync(new URL('../apps/web/src/screens/AuthScreen.vue',import.meta.url),'utf8');
+const source=authSource.match(/function otpContextCurrent\(request\) \{[\s\S]*?\n\}/)[0]+'\n'+authSource.match(/async function verifyOTP\(\) \{[\s\S]*?\n\}/)[0];
 async function run({response,error,doubleSubmit=false}={}){
  let apiCalls=0;
  const store=new Map([['vc_device_secret','old-secret']]),session=new Map(),toasts=[],nav=[];
- const context={authActive:true,otpAbortController:null,otpDigits:{value:['1','2','3','4','5','6']},requestedOtp:{value:{phone:'+34600000001',countryCode:'ES',protestId:'synthetic'}},sending:{value:false},
+ const context={phone:{value:'600000001'},countryCode:{value:'ES'},dialCode:{value:'34'},joiningProtest:{value:{id:'synthetic',scope:'global'}},authActive:true,otpAbortController:null,otpDigits:{value:['1','2','3','4','5','6']},requestedOtp:{value:{phone:'+34600000001',countryCode:'ES',protestId:'synthetic',requestedDeviceId:'old-device',targetScope:'global'}},sending:{value:false},
   device:{getDeviceId:()=> 'old-device',setDeviceId:id=>store.set('id',id),setDeviceSecret:secret=>store.set('vc_device_secret',secret)},
   api:{verifyOtp:async()=>{apiCalls++;if(error)throw error;return response;}},sessionStorage:{getItem:k=>k==='vc_last_joined'?'synthetic':null,setItem:(k,v)=>session.set(k,v)},localStorage:{removeItem:k=>store.delete(k)},
   clearForceOtp(){},ui:{showToast:x=>toasts.push(x)},t:x=>x,router:{push:x=>nav.push(x)}};

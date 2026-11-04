@@ -23,11 +23,15 @@ function getClient() {
  * Send an OTP via Twilio Verify.
  * @param {string} phoneE164 - Phone number in E.164 format, e.g. +34612345678
  */
-export async function sendOtp(phoneE164) {
+export async function sendOtp(phoneE164, {evidence=false} = {}) {
   return runOtpProvider(async () => {
     try {
       const result = await getClient().verifications.create({ to: phoneE164, channel: 'sms' });
       if (result?.status !== 'pending') throw new OtpProviderError();
+      if (evidence) {
+        if (typeof result.sid!=='string' || !/^VE[0-9a-f]{32}$/i.test(result.sid)) throw new OtpProviderError();
+        return {status:'pending',sid:result.sid};
+      }
     } catch (error) {
       if ([60203, 60207, 60212].includes(error?.code) || error?.status === 429) throw new OtpProviderError('limited');
       throw new OtpProviderError();
@@ -41,14 +45,18 @@ export async function sendOtp(phoneE164) {
  * @param {string} code      - 6-digit code entered by the user
  * @returns {boolean} true if approved
  */
-export async function verifyOtp(phoneE164, code, {onMaxAttempts} = {}) {
+export async function verifyOtp(phoneE164, code, {onMaxAttempts,evidence=false} = {}) {
   // Operational signal only, with no identity/code/provider details. A broken
   // telemetry callback must not change the authentication decision.
   const exhausted = () => { try { onMaxAttempts?.(); } catch {} };
   return runOtpProvider(async () => {
     try {
       const check = await getClient().verificationChecks.create({ to: phoneE164, code });
-      if (check?.status === 'approved') return true;
+      if (check?.status === 'approved') {
+        if (!evidence) return true;
+        if (typeof check.sid!=='string' || !/^VE[0-9a-f]{32}$/i.test(check.sid)) throw new OtpProviderError();
+        return {approved:true,sid:check.sid};
+      }
       if (check?.status === 'max_attempts_reached') { exhausted(); return false; }
       if (['pending', 'canceled', 'max_attempts_reached', 'deleted', 'failed', 'expired'].includes(check?.status)) return false;
       throw new OtpProviderError();

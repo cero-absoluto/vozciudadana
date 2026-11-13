@@ -24,11 +24,11 @@ export function harness(name='AuthScreen', overrides={}, runtime={}) {
     fetchProtestById:async id=>{calls.push(['fetchById',id]);return store.protests.find(p=>String(p.id)===String(id))??null;},
     loadProtests:async()=>{calls.push(['load']);},joinProtest:()=>calls.push(['localJoin'])};
   const store=runtime.reactive ? runtime.reactive(rawStore) : rawStore;
-  const api={requestOtp:async payload=>{calls.push(['request',payload]);return {sent:true};},
+  const api={requestOtp:async payload=>{calls.push(['request',payload]);return {sent:true,request_id:'11111111-1111-4111-8111-111111111111'};},
     verifyOtp:async payload=>{calls.push(['verify',payload]);return {verified:true,participation_token:'synthetic-token',device_id:'synthetic-device'};},
     fetchDeviceLocks:async()=>{calls.push(['locks']);return [];},fetchCountryCodes:async()=>[],
     sendEmailOtp:async()=>({sent:true,challenge_id:'33333333-3333-4333-8333-333333333333'}),verifyEmailOtp:async()=>({verified:true,receipt:'44444444-4444-4444-8444-444444444444'}),
-    joinProtest:async()=>{calls.push(['join']);return {receipt:'44444444-4444-4444-8444-444444444444'};},...overrides};
+    joinProtest:async(...args)=>{calls.push(['join',...args]);return {receipt:'44444444-4444-4444-8444-444444444444'};},...overrides};
   const device={gpsReady:false,getDeviceSecret:()=>null,getDeviceId:()=> 'synthetic-device'};
   const context={createPushConsentController,participationGpsSnapshot,classifyJoinRejection,joinRejectionPath,markForceOtp,...outcomes,withClientDeadline,recaptchaToken,crypto:{randomUUID:()=> '55555555-5555-4555-8555-555555555555'},ref,computed,onMounted:fn=>mounted=fn,onUnmounted:fn=>unmounted.push(fn),watch(){},nextTick:fn=>Promise.resolve().then(fn),
     useI18n:()=>({t:k=>k,locale:ref('es')}),useRouter:()=>({push:p=>navigation.push(p)}),

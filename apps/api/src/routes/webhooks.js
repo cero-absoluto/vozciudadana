@@ -1,226 +1,86 @@
 import {credentialMatches} from '../lib/credentialMatches.js';
-import { supabase } from '../services/supabase.js';
-import { createHash } from 'crypto';
+import {supabase} from '../services/supabase.js';
+import {withRequestDeadline} from '../lib/requestDeadline.js';
+import {createHash} from 'node:crypto';
 
-// ── Configurable costs and fees (shared with protests.js — set via Railway env vars) ──
-const PLATFORM_FEE_PCT = parseFloat(process.env.PLATFORM_FEE_PERCENT || '10') / 100;
-const MAX_DONATION_EUR = parseFloat(process.env.MAX_DONATION_EUR || '100');
+// Integer cents/basis points throughout; reject partial parses, infinities and
+// sub-cent amounts instead of silently changing a payment's financial meaning.
+const decimalHundredths = value => {
+  if (!['string','number'].includes(typeof value)) return null;
+  const text = String(value);
+  if (!/^\d{1,8}(?:\.\d{1,2})?$/.test(text)) return null;
+  const [whole, fraction = ''] = text.split('.');
+  const cents = Number(whole) * 100 + Number(fraction.padEnd(2, '0'));
+  return Number.isSafeInteger(cents) ? cents : null;
+};
+const utcTimestamp = (value, precision = 7) => {
+  if (typeof value !== 'string' || !new RegExp('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,' + precision + '})?Z$').test(value)) return null;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0,19) !== value.slice(0,19)) return null;
+  return date;
+};
+const uuid = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 
-/**
- * Ko-fi webhook handler.
- *
- * DESIGN PRINCIPLE — strict minimization at the donation boundary:
- * Ko-fi/PayPal act as third-party payment processors and may know the donor's
- * identity (name, email, message). Voice Protest does not. This handler reads
- * only the fields needed to update aggregate financial state and immediately
- * discards everything else. No donor name, email, message, or PayPal account
- * is ever written to the database — this mirrors the same minimization
- * principle already applied to phone numbers in the adhesion flow.
- *
- * Ko-fi sends the payload as a single 'data' form field containing a JSON string.
- * See: https://ko-fi.com/manage/webhooks
- *
- * @param {import('fastify').FastifyInstance} app
- */
 export default async function kofiWebhookRoutes(app) {
-  // Ko-fi sends webhooks as application/x-www-form-urlencoded with a single
-  // 'data' field containing a JSON string. Fastify needs an explicit parser
-  // for this content type — without it, the server returns 415.
-  app.addContentTypeParser(
-    'application/x-www-form-urlencoded',
-    { parseAs: 'string' },
-    (req, body, done) => {
-      try {
-        const parsed = Object.fromEntries(new URLSearchParams(body));
-        done(null, parsed);
-      } catch (err) {
-        done(err);
-      }
-    }
-  );
-
-  app.post('/kofi', {
-    schema: {
-      body: {
-        type: 'object',
-        required: ['data'],
-        properties: {
-          data: { type: 'string' },
-        },
-        additionalProperties: true,
-      },
-    },
-  }, async (req, reply) => {
+  app.addContentTypeParser('application/x-www-form-urlencoded', {parseAs:'string'}, (_req, body, done) => {
+    try { done(null, Object.fromEntries(new URLSearchParams(body))); }
+    catch (error) { done(error); }
+  });
+  app.post('/kofi', {schema:{body:{type:'object',required:['data'],properties:{data:{type:'string'}},additionalProperties:true}}}, async (req, reply) => {
     let payload;
-    try {
-      payload = JSON.parse(req.body.data);
-    } catch {
-      return reply.status(400).send({ error: 'Invalid payload' });
-    }
-
-    // ── Verify the request is genuinely from Ko-fi ──────────────────────
+    try { payload = JSON.parse(req.body.data); }
+    catch { return reply.status(400).send({error:'Invalid payload'}); }
     const expectedToken = process.env.KOFI_VERIFICATION_TOKEN;
-    if (!expectedToken) {
-      app.log.error({code:'kofi_unconfigured'});
-      return reply.status(500).send({ error: 'Webhook not configured' });
-    }
-    if (!payload || typeof payload!=='object' || Array.isArray(payload) || !credentialMatches(payload.verification_token,expectedToken)) {
-      return reply.status(401).send({ error: 'Invalid verification token' });
-    }
+    if (!expectedToken) return reply.status(503).send({error:'KOFI_UNAVAILABLE'});
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload) || !credentialMatches(payload.verification_token, expectedToken)) return reply.status(401).send({error:'Invalid verification token'});
 
-    // ── Extract ONLY the non-identifying fields we need ─────────────────
-    // Everything else in `payload` (from_name, email, message, paypal info,
-    // etc.) is intentionally never read past this point and is discarded
-    // when this function returns.
-    const importe = parseFloat(payload.amount);
-    const moneda  = (payload.currency || 'EUR').toUpperCase();
-    const txId    = payload.kofi_transaction_id || payload.message_id || '';
+    // Read no donor name/email/message/processor identity; hash the technical
+    // transaction reference before crossing the persistence boundary.
+    const amount = decimalHundredths(payload.amount);
+    if (amount === null || amount <= 0 || amount > 9999999999) return reply.status(400).send({error:'Invalid amount'});
+    // Proposed cutover contract: keep disabled until the Owner approves a
+    // provider timestamp sample and an explicit UTC activation boundary.
+    const cutover = utcTimestamp(process.env.KOFI_ATOMIC_CUTOVER_UTC, 3);
+    if (!cutover || cutover.getTime() > Date.now()) return reply.status(503).send({error:'KOFI_CUTOVER_REQUIRED'});
+    const paidAt = utcTimestamp(payload.timestamp);
+    if (!paidAt || paidAt < cutover || paidAt.getTime() > Date.now()) return reply.status(422).send({error:'KOFI_TIMESTAMP_REVIEW_REQUIRED'});
+    const cap = decimalHundredths(process.env.MAX_DONATION_EUR ?? '100');
+    const feeBps = decimalHundredths(process.env.PLATFORM_FEE_PERCENT ?? '10');
+    if (cap === null || cap <= 0 || cap > 9999999999 || feeBps === null || feeBps < 0 || feeBps > 10000) return reply.status(503).send({error:'KOFI_CONFIGURATION_INVALID'});
+    if (typeof payload.currency !== 'string' || payload.currency.toUpperCase() !== 'EUR') return reply.status(422).send({error:'KOFI_CURRENCY_REVIEW_REQUIRED'});
+    // A delivery/message ID is not assumed to identify a stable payment.
+    const txId = payload.kofi_transaction_id;
+    if (typeof txId !== 'string' || !txId.trim() || txId.length > 512) return reply.status(422).send({error:'KOFI_TRANSACTION_ID_REQUIRED'});
+    if (payload.shop_items != null && !Array.isArray(payload.shop_items)) return reply.status(400).send({error:'KOFI_TARGET_INVALID'});
+    const directLink = payload.shop_items?.[0]?.direct_link_code;
+    if (directLink != null && (typeof directLink !== 'string' || !directLink || directLink.length > 512)) return reply.status(400).send({error:'KOFI_TARGET_INVALID'});
 
-    if (!importe || importe <= 0) {
-      return reply.status(400).send({ error: 'Invalid amount' });
-    }
-
-    // ── Policy limit: €100 per contribution (Funding Policy) ─────────────
-    // The payment has already been processed by Ko-fi/PayPal before this
-    // webhook fires. Returning 400 would leave the donor in an absurd
-    // situation: they paid but Voice Protest didn't register it.
-    //
-    // Instead: accept the webhook (always return 200 for authentic payments),
-    // but cap the computable amount at MAX_DONATION_EUR. Any excess is recorded
-    // as 'over_limit_pending_review' and does NOT flow automatically to either
-    // the protest balance or the platform fund. A human reviews it.
-    const over_limit = importe > MAX_DONATION_EUR;
-    const importe_computable = over_limit ? MAX_DONATION_EUR : importe;
-    const importe_excedente  = over_limit ? parseFloat((importe - MAX_DONATION_EUR).toFixed(2)) : 0;
-
-    if (over_limit) {
-      app.log.warn({code:'kofi_over_limit'});
-    }
-
-    // protest_id resolution — three-step lookup in priority order:
-    //
-    // 1. Ko-fi "Direct Link" code embedded in the shop item (set per-protest
-    //    in the Ko-fi dashboard when creating a dedicated donation button).
-    // 2. A mapping table in Supabase (kofi_protest_map) keyed on the same
-    //    direct_link_code — allows managing mappings without redeploying.
-    // 3. Environment variable fallback for single-protest beta deployments.
-    //
-    // This three-step approach lets the platform scale to multiple concurrent
-    // fundraising protests without code changes: add a row to kofi_protest_map
-    // and configure the Ko-fi button to match.
-    const directLinkCode = payload.shop_items?.[0]?.direct_link_code || null;
-    let protestId = null;
-
-    if (directLinkCode) {
-      const { data: mapping } = await supabase
-        .from('kofi_protest_map')
-        .select('protest_id')
-        .eq('kofi_code', directLinkCode)
-        .eq('active', true)
-        .maybeSingle();
-      if (mapping) protestId = mapping.protest_id;
-    }
-
-    // Fallback to env default (beta: only one protest accepts donations at a time)
-    if (!protestId) protestId = process.env.KOFI_DEFAULT_PROTEST_ID || null;
-
-    if (!protestId) {
-      app.log.warn({code:'kofi_target_unresolved'});
-    }
-
-    // Non-identifying technical reference: hash the Ko-fi transaction id so
-    // we can de-duplicate retried webhooks without storing anything that
-    // could be correlated back to the donor by a third party.
-    const txRef = txId
-      ? createHash('sha256').update(txId).digest('hex').slice(0, 16)
-      : null;
-
-    // ── De-duplication: Ko-fi may retry the same webhook ─────────────────
-    if (txRef) {
-      const { data: existing } = await supabase
-        .from('financial_movements')
-        .select('id')
-        .eq('tx_ref', txRef)
-        .maybeSingle();
-      if (existing) {
-        return { ok: true, duplicate: true };
+    try {
+      let protestId = process.env.KOFI_DEFAULT_PROTEST_ID || null;
+      if (directLink != null) {
+        const {data, error} = await withRequestDeadline(8000, signal => supabase.from('kofi_protest_map').select('protest_id').eq('kofi_code', directLink).eq('active', true).maybeSingle().abortSignal(signal));
+        if (error) throw new Error('KOFI_STORAGE_FAILED');
+        // A supplied but unmapped code must not silently credit the default.
+        protestId = data?.protest_id ?? null;
       }
-    }
-
-    const importe_plataforma   = parseFloat((importe_computable * PLATFORM_FEE_PCT).toFixed(2));
-    const importe_convocatoria = parseFloat((importe_computable - importe_plataforma).toFixed(2));
-
-    if (protestId) {
-      const { data: protest } = await supabase
-        .from('protests')
-        .select('saldo_euros, donaciones_count, donaciones_total')
-        .eq('id', protestId)
-        .maybeSingle();
-
-      if (protest) {
-        await supabase.from('protests').update({
-          saldo_euros:      (protest.saldo_euros || 0) + importe_convocatoria,
-          donaciones_count: (protest.donaciones_count || 0) + 1,
-          donaciones_total: (protest.donaciones_total || 0) + importe_computable,
-          ultima_donacion:  new Date().toISOString(),
-        }).eq('id', protestId);
-
-        await supabase.from('donaciones').insert({
-          protest_id:            protestId,
-          importe:               importe_computable,
-          importe_original:      importe,
-          importe_convocatoria,
-          importe_plataforma,
-          importe_excedente,
-          fee_percent:           Math.round(PLATFORM_FEE_PCT * 100),
-          proveedor:             'kofi',
-          moneda,
-          over_limit,
-        });
-      } else {
-        app.log.warn({code:'kofi_target_missing'});
+      if (!uuid(protestId)) return reply.status(422).send({error:'KOFI_TARGET_REVIEW_REQUIRED'});
+      const txHash = createHash('sha256').update(txId).digest('hex');
+      const {data, error} = await withRequestDeadline(8000, signal => supabase.rpc('record_kofi_donation_atomic', {
+        p_tx_hash:txHash, p_amount_cents:amount, p_currency:'EUR', p_protest_id:protestId,
+        p_cap_cents:cap, p_fee_bps:feeBps, p_paid_at:paidAt.toISOString(), p_cutover_at:cutover.toISOString(),
+      }).abortSignal(signal));
+      if (error) {
+        const code = ['KOFI_LEGACY_REVIEW_REQUIRED','KOFI_TRANSACTION_CONFLICT','KOFI_TARGET_REVIEW_REQUIRED','KOFI_FUND_REVIEW_REQUIRED'].find(code => typeof error.message === 'string' && error.message.includes(code));
+        if (code) return reply.status(409).send({error:code});
+        throw new Error('KOFI_STORAGE_FAILED');
       }
+      const computable = Math.min(amount, cap), excess = amount - computable;
+      if (data?.ok !== true || typeof data.duplicate !== 'boolean' || data.over_limit !== (excess > 0) || data.importe_computable !== computable / 100 || data.importe_excedente !== excess / 100) throw new Error('KOFI_RESPONSE_INVALID');
+      return {ok:true,duplicate:data.duplicate,over_limit:data.over_limit,importe_computable:data.importe_computable,importe_excedente:data.importe_excedente};
+    } catch {
+      // A lost response can follow a committed transaction. Never claim success
+      // or retry here: the provider's next delivery reconciles by the receipt.
+      return reply.status(503).send({error:'KOFI_UNAVAILABLE'});
     }
-
-    // Platform fee from the computable amount only — excess is never
-    // automatically credited to anyone.
-    await supabase.from('platform_fund').insert({
-      type:        'income',
-      amount:      importe_plataforma,
-      source:      'donation_fee',
-      protest_id:  protestId,
-      description: `${Math.round(PLATFORM_FEE_PCT * 100)}% platform fee from Ko-fi donation of ${moneda} ${importe_computable}${over_limit ? ` (original: ${importe}, excess ${importe_excedente} pending review)` : ''}`,
-    });
-
-    await supabase.from('financial_movements').insert([
-      {
-        type:        'donation_protest',
-        protest_id:  protestId,
-        amount:      importe_computable,
-        destination: 'protest_balance',
-        description: `Ko-fi donation credited to protest (${100 - Math.round(PLATFORM_FEE_PCT * 100)}%)`,
-        tx_ref:      txRef,
-      },
-      {
-        type:        'donation_platform',
-        protest_id:  protestId,
-        amount:      importe_plataforma,
-        destination: 'platform_fund',
-        description: `Platform fee from Ko-fi donation (${Math.round(PLATFORM_FEE_PCT * 100)}%)`,
-        tx_ref:      txRef,
-      },
-      // If over the limit, record the excess separately for manual review.
-      // It is intentionally NOT credited to protest_balance or platform_fund.
-      ...(over_limit ? [{
-        type:        'over_limit_pending_review',
-        protest_id:  protestId,
-        amount:      importe_excedente,
-        destination: 'pending_review',
-        description: `Excess above €${MAX_DONATION_EUR} policy limit — requires manual review before any allocation`,
-        tx_ref:      txRef ? txRef + '_excess' : null,
-      }] : []),
-    ]);
-
-    return { ok: true, over_limit, importe_computable, importe_excedente };
   });
 }

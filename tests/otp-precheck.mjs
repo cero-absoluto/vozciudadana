@@ -5,12 +5,15 @@ import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 
 process.env.PHONE_HASH_SECRET = 'test-phone-secret';
+process.env.SMS_CONFIRMED_ADHESION_BILLING_ENABLED='true';
+process.env.SMS_COST_EUR='0.05';
 process.env.NULLIFIER_SECRET = 'test-nullifier-secret';
 process.env.SUPABASE_URL = 'http://supabase.invalid';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test';
 delete process.env.RECAPTCHA_SECRET;
 delete process.env.NODE_ENV;
 
+const syntheticSid='VE'+'a'.repeat(32);
 const PROTEST = '11111111-1111-4111-8111-111111111111';
 const JOINED = '+34600000001';   // synthetic number that already adhered to PROTEST
 const FRESH = '+34600000002';    // synthetic number that did not
@@ -38,13 +41,13 @@ mock.module('../apps/api/src/services/supabase.js', {
   namedExports: {
     supabase: {
       from: fakeQuery,
-      rpc: () => Object.assign(Promise.resolve({data:{allowed:true,request_id:'11111111-1111-4111-8111-111111111111'}}),{abortSignal(){return this;}}),
+      rpc: (name,args) => Object.assign(Promise.resolve({data:name==='get_sms_billing_status'?{ok:true,enabled:true,proof_ttl_seconds:1800}:name==='record_sms_provider_acceptance'?{ok:true,request_id:args.p_request_id,provider_hash:args.p_provider_hash,protest_id:args.p_protest_id,requested_device_id:args.p_requested_device_id}:{allowed:true,request_id:'11111111-1111-4111-8111-111111111111'}}),{abortSignal(){return this;}}),
     },
   },
 });
 mock.module('../apps/api/src/services/twilio.js', {
   namedExports: {
-    sendOtp: async (phone) => { calls.smsSentTo.push(phone); },
+    sendOtp: async (phone) => { calls.smsSentTo.push(phone); return {status:'pending',sid:syntheticSid}; },
     verifyOtp: async () => false,
   },
 });
@@ -77,7 +80,7 @@ test('request-otp gives the SAME status and body for a number that already joine
   const b = await requestOtp(FRESH);
   assert.equal(a.statusCode, b.statusCode);
   assert.equal(a.body, b.body);
-  assert.deepEqual(JSON.parse(a.body), { sent: true });
+  assert.deepEqual(JSON.parse(a.body), { sent: true,request_id:'11111111-1111-4111-8111-111111111111' });
 });
 
 test('request-otp does not reveal participation: it never queries adhesions and sends the SMS in both cases', async () => {

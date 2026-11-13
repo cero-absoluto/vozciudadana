@@ -262,7 +262,6 @@ onMounted(async () => {
   try {
     joinRes = await api.joinProtest(target.id, {
       participation_token: participationToken,
-      sms_sent: sessionStorage.getItem('vc_sms_sent') === 'true',
       recaptcha_token: token,
       gps_lat: gpsAllowed ? gpsSnapshot.lat : null,
       gps_lng: gpsAllowed ? gpsSnapshot.lng : null,

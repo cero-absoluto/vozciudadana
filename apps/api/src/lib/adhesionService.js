@@ -1,3 +1,4 @@
+import {phoneParticipationPaused} from './phoneParticipationPause.js';
 // ── AdhesionService (VP-SEC-008 fix, Fase 2 — Despliegue A, 23 July 2026) ──
 //
 // The single, conceptually authorised place in the application allowed to
@@ -188,6 +189,7 @@ function identitySignalLabel(method) {
  */
 export async function createVerifiedAdhesion(input) {
   const { protestId, identity, location, documentHash, institutionalMembership } = input;
+  if (identity?.method === 'phone_otp' && phoneParticipationPaused()) throw new AdhesionError('PHONE_PARTICIPATION_PAUSED');
 
   // Convocatoria admission policy that depends on BOTH the convocatoria and
   // the verification method lives here, not in the route — per the

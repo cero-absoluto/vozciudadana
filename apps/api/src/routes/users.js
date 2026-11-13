@@ -1,3 +1,4 @@
+import {phoneParticipationPaused} from '../lib/phoneParticipationPause.js';
 import {otpProviderFailure} from '../lib/otpProvider.js';
 import {reserveSmsOtp} from '../lib/otpQuotas.js';
 import {consumeOtpDeliveryQuota,consumeOtpVerificationQuota} from '../lib/requestQuotas.js';
@@ -58,6 +59,7 @@ export default async function userRoutes(app) {
     },
   }, async (req, reply) => {
     const { phone, recaptcha_token, device_id, protest_id } = req.body;
+    if (phoneParticipationPaused()) return reply.code(503).send({error:'PHONE_PARTICIPATION_PAUSED',code:'otp_temporarily_unavailable'});
 
     // ── 1. Verify reCAPTCHA first ──────────────────────────────────────────
     await verifyRecaptcha(recaptcha_token, 'request_otp', req, reply);
@@ -151,6 +153,7 @@ export default async function userRoutes(app) {
     },
   }, async (req, reply) => {
     const { phone, otp, device_id, country_code } = req.body;
+    if (phoneParticipationPaused()) return reply.code(503).send({error:'PHONE_PARTICIPATION_PAUSED',code:'otp_temporarily_unavailable'});
 
     const phone_hash = hashPhone(phone);
     if(!await consumeOtpVerificationQuota(req,reply,phone_hash))return;

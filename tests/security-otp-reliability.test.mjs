@@ -33,7 +33,8 @@ async function fixture(options={}) {
   }
   const q={select(){return q;},eq(k,v){state.filters[k]=v;return q;},update(p){state.op='update';state.payload=p;return q;},insert(p){state.op='insert';state.payload=p;return q;},maybeSingle:run,single:run,then(a,b){return run().then(a,b);}};return q;
  },async rpc(name){calls.push({rpc:name});return options.rpcError?{error:{message:'private db'}}:name==='get_otp_cooldown'?{data:options.cooldown??0}:{data:options.limit??{allowed:true}};}};
- const context={createHash,createHmac,randomUUID,otpProviderFailure,supabase:db,ipQuotaKey:x=>x,process:{env:{PHONE_HASH_SECRET:'synthetic-key'}},console,
+ // The VM strips imports: this explicit stub covers underlying disabled phone logic, not the real production pause.
+ const context={phoneParticipationPaused:()=>false,createHash,createHmac,randomUUID,otpProviderFailure,supabase:db,ipQuotaKey:x=>x,process:{env:{PHONE_HASH_SECRET:'synthetic-key'}},console,
   reserveSmsOtp:async(_db,args)=>{calls.push({reservation:true,args});return options.rpcError||options.reservationError||options.errorAt==='otp_requests:insert'?{error:{message:'private database'}}:{data:options.reservation??(options.cooldown>0||options.limit?.allowed===false?{allowed:false,retry_after:120}:{allowed:true,request_id:'11111111-1111-4111-8111-111111111111'})};},
   consumeOtpVerificationQuota:verificationGuard,consumeOtpDeliveryQuota:async()=>true,verifyRecaptcha:async()=>{},deriveNumberingCountry:()=>({country:'ES',resolution:'resolved_unshared',metaVersion:'synthetic'}),
   sendOtp:async()=>{calls.push({send:true});if(options.providerError)throw options.providerError;},verifyOtp:async()=>{calls.push({verify:true});if(options.providerError)throw options.providerError;return options.providerResults?.shift()??options.approved??true;},

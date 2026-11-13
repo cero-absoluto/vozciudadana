@@ -166,6 +166,17 @@ try {
     smsStatus=200;smsResponse={};await page.getByRole('button',{name:messages.auth.sendCode,exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.auth-submit-btn')?.disabled);assert.equal(await page.locator('.otp-row').count(),0);
     smsResponse={sent:true};await page.getByRole('button',{name:messages.auth.sendCode,exact:true}).click();await page.locator('.otp-row').waitFor();
     for(let i=0;i<6;i++)await page.locator('.otp-box').nth(i).fill(String(i+1));
+    const pasteCode=async text=>page.locator('.otp-box').nth(3).evaluate((el,text)=>{
+      const clipboardData=new DataTransfer();clipboardData.setData('text/plain',text);
+      el.dispatchEvent(new ClipboardEvent('paste',{clipboardData,bubbles:true,cancelable:true}));
+    },text);
+    await pasteCode('987');
+    assert.equal(await page.locator('.otp-box').evaluateAll(es=>es.map(el=>el.value).join('')),'123456');
+    checks.push({id:`otp_incomplete_paste_preserves_code_${locale}_${width}`,ok:true});
+    await pasteCode('654 321');
+    assert.equal(await page.locator('.otp-box').evaluateAll(es=>es.map(el=>el.value).join('')),'654321');
+    assert.equal(joins,0);assert.equal(await page.locator('.otp-box').last().evaluate(el=>el===document.activeElement),true);
+    checks.push({id:`otp_full_paste_requires_confirmation_${locale}_${width}`,ok:true});
     await page.getByRole('button',{name:messages.auth.verify,exact:true}).click();await page.locator('.success-scr').waitFor();assert.equal(joins,1);
     checks.push({id:`selected_event_success_${locale}_${width}`,ok:true});
     assert.ok((await page.locator('#s-verify').textContent()).includes(messages.verify.notiInfo));
@@ -529,7 +540,7 @@ try {
   const reflow=await runReflowDiagnostic();
   checks.push(...reflow.checks.map(row=>({id:`reflow_${row.state}_${row.textScale}_${row.locale}_${row.width}`,ok:row.ok})));
   requests.push(...reflow.requests);errors.push(...reflow.errors);unexpected.push(...reflow.unexpected);
-  const report={status:checks.length===800&&checks.every(c=>c.ok)&&reflow.status==='DIAGNOSTIC_COMPLETE'&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0,reflowMeasurements:reflow.detailMeasurements,reflowFindings:reflow.findings,reflowLimits:reflow.limits};
+  const report={status:checks.length===816&&checks.every(c=>c.ok)&&reflow.status==='DIAGNOSTIC_COMPLETE'&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0,reflowMeasurements:reflow.detailMeasurements,reflowFindings:reflow.findings,reflowLimits:reflow.limits};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
   if(report.status!=='PASS') process.exitCode=1;
 }

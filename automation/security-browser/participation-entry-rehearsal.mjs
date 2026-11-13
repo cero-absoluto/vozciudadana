@@ -310,11 +310,25 @@ try {
     assert.equal(await page.evaluate(()=>window.__notificationRequests),0);
     checks.push({id:`notification_refuses_other_identity_before_permission_${locale}_${width}`,ok:true});
     await page.goto('https://voiceprotest.org/#/verify-institucional/'+INSTITUTION);
+    await page.locator('#institution-verify-email').fill('invalid');
+    await page.getByRole('button',{name:messages.verificacional.sendCode,exact:true}).click();
+    await page.locator('#institution-email-error').waitFor();
+    assert.equal(await page.locator('#institution-verify-email').getAttribute('aria-describedby'),'institution-email-error');
+    assert.equal(await page.locator('#institution-email-error').getAttribute('role'),'alert');
+    assert.equal(emailSends,0);
+    checks.push({id:`institutional_email_error_associated_${locale}_${width}`,ok:true});
     await page.locator('#institution-verify-email').fill('synthetic@example.invalid');
     holdEmail=true;await page.locator('#institution-verify-email').press('Enter');
     await page.waitForFunction(()=>document.querySelector('#s-verify-institucional .btn-primary')?.disabled===true);
     await page.keyboard.press('Enter');await waitForCount(()=>emailSends,1);releaseEmail();holdEmail=false;
-    await page.locator('#institution-verify-code').waitFor();await page.locator('#institution-verify-code').fill('123456');
+    await page.locator('#institution-verify-code').waitFor();
+    await page.getByRole('button',{name:messages.verificacional.verifyCode,exact:true}).click();
+    await page.locator('#institution-otp-error').waitFor();
+    assert.equal(await page.locator('#institution-verify-code').getAttribute('aria-describedby'),'institution-otp-error');
+    assert.equal(await page.locator('#institution-otp-error').getAttribute('role'),'alert');
+    assert.equal(emailChecks,0);
+    checks.push({id:`institutional_code_error_associated_${locale}_${width}`,ok:true});
+    await page.locator('#institution-verify-code').fill('123456');
     await page.evaluate(()=>{const set=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k.startsWith('vc_census_session:'))throw new DOMException('Synthetic storage failure','QuotaExceededError');return set.call(this,k,v);};});
     holdCheck=true;await page.locator('#institution-verify-code').press('Enter');
     await page.waitForFunction(()=>document.querySelector('#s-verify-institucional .btn-primary')?.disabled===true);
@@ -623,7 +637,7 @@ try {
   const reflow=await runReflowDiagnostic();
   checks.push(...reflow.checks.map(row=>({id:`reflow_${row.state}_${row.textScale}_${row.locale}_${row.width}`,ok:row.ok})));
   requests.push(...reflow.requests);errors.push(...reflow.errors);unexpected.push(...reflow.unexpected);
-  const report={status:checks.length===880&&checks.every(c=>c.ok)&&reflow.status==='DIAGNOSTIC_COMPLETE'&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0,reflowMeasurements:reflow.detailMeasurements,reflowFindings:reflow.findings,reflowLimits:reflow.limits};
+  const report={status:checks.length===896&&checks.every(c=>c.ok)&&reflow.status==='DIAGNOSTIC_COMPLETE'&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0,reflowMeasurements:reflow.detailMeasurements,reflowFindings:reflow.findings,reflowLimits:reflow.limits};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
   if(report.status!=='PASS') process.exitCode=1;
 }

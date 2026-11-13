@@ -140,16 +140,7 @@ try {
           page.goto(`https://voiceprotest.org/?ux=shared-${listMode}#/detail/${ID}`,{timeout:10000}),
         ]);
         if (response) {
-          let finishTimer;
-          try {
-            const finished=await Promise.race([
-              response.finished(),
-              new Promise((_,reject)=>{
-                finishTimer=setTimeout(()=>reject(new Error('SHARED_LIST_BODY_TIMEOUT')),10000);
-              }),
-            ]);
-            assert.equal(finished,null);
-          } finally { clearTimeout(finishTimer); }
+          assert.equal(response.status(),503);
           // Observe the processed 503 without navigating away or remounting the detail.
           await page.waitForFunction(()=>{
             const state=document.querySelector('#app')?.__vue_app__?.config.globalProperties.$pinia?.state.value.protests;

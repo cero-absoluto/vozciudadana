@@ -142,7 +142,7 @@ const { t } = useI18n();
 const costItems = computed(() => [
   { key: 'railway',  name: 'Railway',  role: t('funding.costRailway'),  cost: '~€10/mo' },
   { key: 'supabase', name: 'Supabase', role: t('funding.costSupabase'), cost: 'Free tier' },
-  { key: 'twilio',   name: 'Twilio',   role: t('funding.costTwilio'),   cost: '€0.05/SMS' },
+  { key: 'twilio',   name: 'Twilio',   role: t('funding.costTwilio'),   cost: t('funding.variableCost') },
   { key: 'resend',   name: 'Resend',   role: t('funding.costResend'),   cost: 'Free tier' },
   { key: 'domain',   name: 'Domain',   role: t('funding.costDomain'),   cost: '~€15/yr' },
 ]);

@@ -6,6 +6,9 @@ import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 
+// Exercise the underlying disabled phone logic only; production pause is tested separately with its real module.
+mock.module('../apps/api/src/lib/phoneParticipationPause.js', { namedExports: { phoneParticipationPaused: () => false } });
+
 process.env.PHONE_HASH_SECRET = 'test-phone-secret';
 process.env.NULLIFIER_SECRET = 'test-nullifier-secret';
 process.env.PARTICIPATION_TOKEN_SECRET = 'test-token-secret';

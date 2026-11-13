@@ -20,9 +20,10 @@
       <div class="fg" style="margin-top:24px">
         <label for="institution-verify-email">{{ $t('verificacional.emailLabel') }}</label>
         <input id="institution-verify-email" type="email" v-model="email" :disabled="loading"
+          :aria-describedby="emailError ? 'institution-email-error' : null"
           :placeholder="$t('verificacional.emailPlaceholder', { domain: dominio })"
           @keyup.enter="sendOtp">
-        <div v-if="emailError" class="verify-error" role="alert">{{ emailError }}</div>
+        <div v-if="emailError" id="institution-email-error" class="verify-error" role="alert">{{ emailError }}</div>
       </div>
       <button class="btn-primary" style="width:100%;margin-top:16px"
         :disabled="loading" @click="sendOtp">
@@ -39,9 +40,10 @@
       <div class="fg" style="margin-top:24px">
         <label for="institution-verify-code">{{ $t('verificacional.otpLabel') }}</label>
         <input id="institution-verify-code" type="text" v-model="otp" maxlength="6" :disabled="loading" inputmode="numeric" autocomplete="one-time-code"
+          :aria-describedby="otpError ? 'institution-otp-error' : null"
           placeholder="000000" @keyup.enter="verifyOtp"
           style="letter-spacing:8px;font-size:22px;text-align:center">
-        <div v-if="otpError" class="verify-error" role="alert">{{ otpError }}</div>
+        <div v-if="otpError" id="institution-otp-error" class="verify-error" role="alert">{{ otpError }}</div>
       </div>
       <button class="btn-primary" style="width:100%;margin-top:16px"
         :disabled="loading" @click="verifyOtp">

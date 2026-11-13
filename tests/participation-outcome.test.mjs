@@ -181,3 +181,20 @@ test('journal has no phone/email/OTP/credential/GPS data and locales have matchi
   const locales=['es','en','fr','zh'].map(l=>JSON.parse(readFileSync(new URL('../apps/web/src/locales/'+l+'.json',import.meta.url),'utf8')).participation);
   for(const locale of locales){assert.deepEqual(Object.keys(locale).sort(),Object.keys(locales[0]).sort());for(const value of Object.values(locale))assert.ok(value.trim().length>2);}
 });
+
+test('late OTP failure after leaving the view cannot publish a persistent error',async()=>{
+  const f=harness(),wait=deferred();await f.state.sendSMS();
+  f.state.otpDigits.value=['1','2','3','4','5','6'];f.api.verifyOtp=()=>wait.promise;
+  const pending=f.state.verifyOTP();await flush();f.unmount();
+  wait.reject({status:503});await pending;
+  assert.equal(f.state.otpError.value,'');assert.deepEqual(f.toasts,[]);
+});
+test('confirmed resend and change number clear the previous OTP error',async()=>{
+  const f=harness();await f.state.sendSMS();
+  f.state.otpDigits.value=['1','2','3','4','5','6'];
+  f.api.verifyOtp=async()=>{throw {status:401};};await f.state.verifyOTP();
+  assert.equal(f.state.otpError.value,'auth.otpIncorrect');
+  await f.state.resendSMS();assert.equal(f.state.otpError.value,'');
+  f.state.otpError.value='auth.otpUnavailable';f.state.changeNumber();
+  assert.equal(f.state.otpError.value,'');assert.equal(f.state.otpVisible.value,false);
+});

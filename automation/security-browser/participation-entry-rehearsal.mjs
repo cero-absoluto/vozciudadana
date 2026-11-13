@@ -43,6 +43,7 @@ try {
       Object.defineProperty(navigator,'clipboard',{configurable:true,value:window.__syntheticClipboard});
       window.__shares=[];window.open=(...args)=>{window.__shares.push(args);return {};};
     });
+    let otpChecks=0,otpStatus=200;
     let sms=0,joins=0,emailSends=0,emailChecks=0,releaseSms,releaseEmail,releaseCheck;
     let smsResponse={sent:true},smsStatus=200,holdSms=false,holdEmail=false,holdCheck=false;
     let gpsPatches=0,holdGpsPatch=false,releaseGpsPatch;
@@ -93,7 +94,7 @@ try {
           if(holdSms)await new Promise(r=>releaseSms=r);
           return json(smsResponse,smsStatus);
         }
-        if(req.method()==='POST'&&u.pathname==='/api/users/verify-otp')return json({verified:true,device_id:'synthetic-device',participation_token:'synthetic-token'});
+        if(req.method()==='POST'&&u.pathname==='/api/users/verify-otp'){otpChecks++;return json(otpStatus===200?{verified:true,device_id:'synthetic-device',participation_token:'synthetic-token'}:{error:'synthetic'},otpStatus);}
         if(req.method()==='POST'&&u.pathname===`/api/protests/${ID}/join`) {joins++;return json(joinResponse,joinStatus);}
         if(req.method()==='PATCH'&&u.pathname===`/api/protests/${ID}/adhesion`){gpsPatches++;assert.deepEqual(req.postDataJSON(),{gps_update_token:'synthetic-gps-token',gps_lat:40,gps_lng:-3,gps_accuracy:10});if(holdGpsPatch)await new Promise(r=>releaseGpsPatch=r);return json({ok:true});}
         if(req.method()==='POST'&&u.pathname==='/api/institucional/send-otp') {emailSends++;if(holdEmail)await new Promise(r=>releaseEmail=r);return json({sent:true,challenge_id:'33333333-3333-4333-8333-333333333333'});}
@@ -245,6 +246,20 @@ try {
     assert.equal(await page.locator('.otp-box').evaluateAll(es=>es.map(el=>el.value).join('')),'654321');
     assert.equal(joins,0);assert.equal(await page.locator('.otp-box').last().evaluate(el=>el===document.activeElement),true);
     checks.push({id:`otp_full_paste_requires_confirmation_${locale}_${width}`,ok:true});
+    for(const [status,key] of [[400,'otpIncorrect'],[429,'otpRateLimited'],[503,'otpUnavailable']]) {
+      otpStatus=status;
+      const beforeChecks=otpChecks,beforeSms=sms;
+      await page.getByRole('button',{name:messages.auth.verify,exact:true}).click();
+      const error=page.locator('#auth-otp-error');
+      await error.filter({hasText:messages.auth[key]}).waitFor();
+      if(status===503)await page.waitForTimeout(3000);
+      assert.equal(await error.isVisible(),true);
+      assert.equal(await error.getAttribute('role'),'alert');
+      assert.equal(await page.locator('.otp-box').evaluateAll(es=>es.every(el=>el.getAttribute('aria-describedby')==='auth-otp-error')),true);
+      assert.equal(otpChecks,beforeChecks+1);assert.equal(sms,beforeSms);assert.equal(joins,0);
+      checks.push({id:`otp_error_persistent_no_retry_${status}_${locale}_${width}`,ok:true});
+    }
+    otpStatus=200;
     await page.getByRole('button',{name:messages.auth.verify,exact:true}).click();await page.locator('.success-scr').waitFor();assert.equal(joins,1);
     checks.push({id:`selected_event_success_${locale}_${width}`,ok:true});
     assert.ok((await page.locator('#s-verify').textContent()).includes(messages.verify.notiInfo));
@@ -608,7 +623,7 @@ try {
   const reflow=await runReflowDiagnostic();
   checks.push(...reflow.checks.map(row=>({id:`reflow_${row.state}_${row.textScale}_${row.locale}_${row.width}`,ok:row.ok})));
   requests.push(...reflow.requests);errors.push(...reflow.errors);unexpected.push(...reflow.unexpected);
-  const report={status:checks.length===856&&checks.every(c=>c.ok)&&reflow.status==='DIAGNOSTIC_COMPLETE'&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0,reflowMeasurements:reflow.detailMeasurements,reflowFindings:reflow.findings,reflowLimits:reflow.limits};
+  const report={status:checks.length===880&&checks.every(c=>c.ok)&&reflow.status==='DIAGNOSTIC_COMPLETE'&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0,reflowMeasurements:reflow.detailMeasurements,reflowFindings:reflow.findings,reflowLimits:reflow.limits};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
   if(report.status!=='PASS') process.exitCode=1;
 }

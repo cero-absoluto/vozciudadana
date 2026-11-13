@@ -18,7 +18,12 @@ try {
   for(const locale of ['es','en','fr','zh'])for(const width of [360,390]) {
     const messages=JSON.parse(readFileSync(resolve('apps/web/src/locales',locale+'.json'),'utf8'));
     const context=await browser.newContext({serviceWorkers:'block',viewport:{width,height:844},isMobile:true,hasTouch:true,locale});
-    await context.addInitScript(({locale})=>{localStorage.setItem('vc_lang',locale);localStorage.setItem('vc_map_seen','1');localStorage.setItem('vc_map_intro','1');}, {locale});
+    await context.addInitScript(({locale})=>{
+      localStorage.setItem('vc_lang',locale);
+      localStorage.setItem('vc_map_seen','1');
+      if (new URL(location.href).searchParams.get('ux') === 'first-visit') localStorage.removeItem('vc_map_intro');
+      else localStorage.setItem('vc_map_intro','1');
+    }, {locale});
     await context.addInitScript(()=>{
       window.__notificationRequests=0;window.__pushPermission='denied';window.__pushSubscriptions=0;window.__pushUnsubscribes=0;window.__pushProviderExisting=sessionStorage.getItem('__synthetic_push_existing')==='1';window.__pushLookups=0;
       Notification.requestPermission=async()=>{window.__notificationRequests++;return window.__pushPermission;};
@@ -101,6 +106,69 @@ try {
       unexpected.push({host:u.host,path:u.pathname,method:req.method()});return route.abort();
     });
     const page=await context.newPage();page.on('pageerror',e=>errors.push({locale,width,message:e.message}));
+    // Exercise the welcome overlay without pre-marking it dismissed.
+    for (const activation of ['Enter','Space','touch']) {
+      await page.goto(`https://voiceprotest.org/?ux=first-visit&activation=${activation}#/`);
+      const welcome=page.getByRole('button',{name:messages.home.overlayTap,exact:true});
+      await welcome.waitFor();
+      assert.equal(await page.evaluate(()=>localStorage.getItem('vc_map_intro')),null);
+      if (activation === 'touch') await welcome.tap();
+      else { await welcome.focus(); await page.keyboard.press(activation); }
+      await welcome.waitFor({state:'hidden'});
+      assert.equal(await page.evaluate(()=>localStorage.getItem('vc_map_intro')),'1');
+      const globalFilter=page.locator('.filter-row button').first();
+      await globalFilter.click();
+      await page.locator('article.p-item').filter({hasText:events[0].title}).first().getByRole('button').first().click();
+      await page.locator('#s-detail .d-title').filter({hasText:events[0].title}).waitFor();
+      await page.locator('#s-detail .back').click();
+      await page.locator('article.p-item').filter({hasText:events[0].title}).waitFor();
+      assert.equal(await globalFilter.getAttribute('aria-pressed'),'true');
+      assert.equal(sms,0);assert.equal(joins,0);
+      checks.push({id:`first_visit_discover_open_return_${activation}_${locale}_${width}`,ok:true});
+    }
+    // Shared detail links remain usable while the home list is pending or fails.
+    for (const listMode of ['pending','failed']) {
+      holdList=listMode==='pending';releaseList=undefined;listStatus=listMode==='failed'?503:200;
+      const failedListResponse=listMode==='failed'
+        ? page.waitForResponse(response=>response.request().method()==='GET'
+          && new URL(response.url()).pathname==='/api/protests' && response.status()===503,
+          {timeout:10000})
+        : null;
+      try {
+        const [response]=await Promise.all([
+          failedListResponse,
+          page.goto(`https://voiceprotest.org/?ux=shared-${listMode}#/detail/${ID}`,{timeout:10000}),
+        ]);
+        if (response) {
+          assert.equal(response.status(),503);
+          // Observe the processed 503 without navigating away or remounting the detail.
+          await page.waitForFunction(()=>{
+            const state=document.querySelector('#app')?.__vue_app__?.config.globalProperties.$pinia?.state.value.protests;
+            return state?.error==='API error 503' && state.loading===false;
+          },null,{timeout:10000});
+        }
+      } catch (error) {
+        const state=await page.evaluate(()=>{
+          const app=document.querySelector('#app')?.__vue_app__;
+          const pinia=app?.config.globalProperties.$pinia;
+          const store=pinia?.state.value.protests;
+          return {appPresent:!!app,piniaPresent:!!pinia,storePresent:!!store,
+            error:store?.error??null,loading:store?.loading??null};
+        });
+        console.error(JSON.stringify({scenario:'shared-detail',listMode,locale,width,
+          url:page.url(),listReads,state}));
+        throw error;
+      }
+      await page.locator('#s-detail .d-title').filter({hasText:events[0].title}).waitFor();
+      assert.equal(await page.locator('#s-detail .join-footer .btn-primary').isEnabled(),true);
+      assert.equal(sms,0);assert.equal(joins,0);
+      if (holdList) {
+        await waitForCount(()=>Number(!!releaseList),1);
+        holdList=false;releaseList();
+      }
+      checks.push({id:`shared_detail_without_home_list_${listMode}_${locale}_${width}`,ok:true});
+    }
+    listStatus=200;
     // First list response is held: a selected filter must not announce an empty list.
     holdList=true;listOverride=[];
     await page.goto('https://voiceprotest.org/?ux=initial-loading#/');
@@ -540,7 +608,7 @@ try {
   const reflow=await runReflowDiagnostic();
   checks.push(...reflow.checks.map(row=>({id:`reflow_${row.state}_${row.textScale}_${row.locale}_${row.width}`,ok:row.ok})));
   requests.push(...reflow.requests);errors.push(...reflow.errors);unexpected.push(...reflow.unexpected);
-  const report={status:checks.length===816&&checks.every(c=>c.ok)&&reflow.status==='DIAGNOSTIC_COMPLETE'&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0,reflowMeasurements:reflow.detailMeasurements,reflowFindings:reflow.findings,reflowLimits:reflow.limits};
+  const report={status:checks.length===856&&checks.every(c=>c.ok)&&reflow.status==='DIAGNOSTIC_COMPLETE'&&!errors.length&&!unexpected.length?'PASS':'FAIL',checks,requests,unexpected,errors,detailMeasurements,externalMutations:0,reflowMeasurements:reflow.detailMeasurements,reflowFindings:reflow.findings,reflowLimits:reflow.limits};
   writeFileSync(process.env.UX_REPORT||'/tmp/participation-entry-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
   if(report.status!=='PASS') process.exitCode=1;
 }

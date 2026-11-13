@@ -131,17 +131,42 @@ try {
       holdList=listMode==='pending';releaseList=undefined;listStatus=listMode==='failed'?503:200;
       const failedListResponse=listMode==='failed'
         ? page.waitForResponse(response=>response.request().method()==='GET'
-          && new URL(response.url()).pathname==='/api/protests' && response.status()===503)
+          && new URL(response.url()).pathname==='/api/protests' && response.status()===503,
+          {timeout:10000})
         : null;
-      await page.goto(`https://voiceprotest.org/?ux=shared-${listMode}#/detail/${ID}`);
-      if (failedListResponse) {
-        const response=await failedListResponse;
-        assert.equal(await response.finished(),null);
-        // Observe Pinia state without navigating away or remounting the detail.
-        await page.waitForFunction(()=>{
-          const state=document.querySelector('#app')?.__vue_app__?.config.globalProperties.$pinia?.state.value.protests;
-          return typeof state?.error==='string' && state.error.length>0 && state.loading===false;
+      try {
+        const [response]=await Promise.all([
+          failedListResponse,
+          page.goto(`https://voiceprotest.org/?ux=shared-${listMode}#/detail/${ID}`,{timeout:10000}),
+        ]);
+        if (response) {
+          let finishTimer;
+          try {
+            const finished=await Promise.race([
+              response.finished(),
+              new Promise((_,reject)=>{
+                finishTimer=setTimeout(()=>reject(new Error('SHARED_LIST_BODY_TIMEOUT')),10000);
+              }),
+            ]);
+            assert.equal(finished,null);
+          } finally { clearTimeout(finishTimer); }
+          // Observe the processed 503 without navigating away or remounting the detail.
+          await page.waitForFunction(()=>{
+            const state=document.querySelector('#app')?.__vue_app__?.config.globalProperties.$pinia?.state.value.protests;
+            return state?.error==='API error 503' && state.loading===false;
+          },null,{timeout:10000});
+        }
+      } catch (error) {
+        const state=await page.evaluate(()=>{
+          const app=document.querySelector('#app')?.__vue_app__;
+          const pinia=app?.config.globalProperties.$pinia;
+          const store=pinia?.state.value.protests;
+          return {appPresent:!!app,piniaPresent:!!pinia,storePresent:!!store,
+            error:store?.error??null,loading:store?.loading??null};
         });
+        console.error(JSON.stringify({scenario:'shared-detail',listMode,locale,width,
+          url:page.url(),listReads,state}));
+        throw error;
       }
       await page.locator('#s-detail .d-title').filter({hasText:events[0].title}).waitFor();
       assert.equal(await page.locator('#s-detail .join-footer .btn-primary').isEnabled(),true);

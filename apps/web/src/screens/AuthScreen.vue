@@ -50,6 +50,7 @@
             :ref="el => { if (el) otpRefs[i] = el }"
             v-model="otpDigits[i]"
             @input="onOtpInput(i)"
+            @paste.prevent="onOtpPaste"
             inputmode="numeric"
             :autocomplete="i === 0 ? 'one-time-code' : 'off'"
             :aria-label="$t('auth.otpDigit', { n: i + 1 })">
@@ -485,6 +486,13 @@ function changeNumber() {
   otpVisible.value = false;
 }
 
+function onOtpPaste(event) {
+  if (!authActive || sending.value) return;
+  const code = event.clipboardData?.getData('text')?.replace(/\s/g, '') ?? '';
+  if (!/^[0-9]{6}$/.test(code)) return;
+  fillOtpDigits(code, false);
+}
+
 function onOtpInput(i) {
   // iOS Safari doesn't implement the WebOTP JS API at all — its only
   // autofill mechanism is the passive `autocomplete="one-time-code"`
@@ -503,12 +511,12 @@ function onOtpInput(i) {
 // WebOTP API result on Android/Chrome) across the 6 boxes, focuses the
 // last one, and auto-submits — the person never has to open the SMS app
 // or type anything by hand.
-function fillOtpDigits(codeStr) {
+function fillOtpDigits(codeStr, submit = true) {
   const digits = (codeStr || '').replace(/\D/g, '').slice(0, 6).split('');
   if (digits.length < 6) return;
   digits.forEach((d, idx) => { otpDigits.value[idx] = d; });
   otpRefs.value[5]?.focus();
-  verifyOTP();
+  if (submit) verifyOTP();
 }
 
 let otpAbortController = null;

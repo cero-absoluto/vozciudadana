@@ -33,3 +33,40 @@ for(const [status,key] of [[401,'otpIncorrect'],[429,'otpRateLimited'],[503,'otp
 test('temporary OTP failure message exists in all four languages',()=>{
  for(const lang of ['es','en','fr','zh'])assert.ok(JSON.parse(readFileSync(new URL('../apps/web/src/locales/'+lang+'.json',import.meta.url),'utf8')).auth.otpUnavailable);
 });
+
+function pasteHarness({ active = true, sending = false } = {}) {
+  const component = readFileSync(new URL('../apps/web/src/screens/AuthScreen.vue', import.meta.url), 'utf8');
+  assert.ok(component.includes('@paste.prevent="onOtpPaste"'));
+  const handlers = ['onOtpPaste', 'fillOtpDigits'].map(name => component.match(new RegExp('function ' + name + '\\([^]*?\\n}'))[0]).join('\n');
+  let checks = 0, focus = 0;
+  const context = { authActive: active, sending: { value: sending }, otpDigits: { value: ['9','','','','',''] }, otpRefs: { value: Array.from({ length: 6 }, () => ({ focus() { focus++; } })) }, verifyOTP() { checks++; } };
+  vm.createContext(context);
+  vm.runInContext(handlers + ';globalThis.paste=onOtpPaste;globalThis.fill=fillOtpDigits;', context);
+  return { context, paste(text) { context.paste({ clipboardData: { getData: () => text } }); }, checks: () => checks, focus: () => focus };
+}
+test('complete OTP paste fills six boxes without submitting, including whitespace', () => {
+  for (const text of ['123456', '123 456', ' 123456\n']) {
+    const f = pasteHarness(); f.paste(text);
+    assert.equal(f.context.otpDigits.value.join(''), '123456');
+    assert.equal(f.checks(), 0); assert.equal(f.focus(), 1);
+  }
+});
+test('invalid or incomplete OTP paste preserves the existing code', () => {
+  for (const text of ['123', '1234567', 'abc123456', '１２３４５６', '']) {
+    const f = pasteHarness(); f.paste(text);
+    assert.equal(f.context.otpDigits.value.join(''), '9');
+    assert.equal(f.checks(), 0); assert.equal(f.focus(), 0);
+  }
+});
+test('paste cannot alter a pending verification or an abandoned view', () => {
+  for (const state of [{ sending: true }, { active: false }]) {
+    const f = pasteHarness(state); f.paste('123456');
+    assert.equal(f.context.otpDigits.value.join(''), '9');
+    assert.equal(f.checks(), 0); assert.equal(f.focus(), 0);
+  }
+});
+test('existing autofill still submits once after distributing the code', () => {
+  const f = pasteHarness(); f.context.fill('123456');
+  assert.equal(f.context.otpDigits.value.join(''), '123456');
+  assert.equal(f.checks(), 1);
+});

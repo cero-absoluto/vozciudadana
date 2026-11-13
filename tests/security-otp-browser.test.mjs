@@ -6,7 +6,7 @@ const source=readFileSync(new URL('../apps/web/src/screens/AuthScreen.vue',impor
 async function run({response,error,doubleSubmit=false}={}){
  let apiCalls=0;
  const store=new Map([['vc_device_secret','old-secret']]),session=new Map(),toasts=[],nav=[];
- const context={authActive:true,otpAbortController:null,otpDigits:{value:['1','2','3','4','5','6']},requestedOtp:{value:{phone:'+34600000001',countryCode:'ES',protestId:'synthetic'}},sending:{value:false},
+ const context={otpError:{value:''},authActive:true,otpAbortController:null,otpDigits:{value:['1','2','3','4','5','6']},requestedOtp:{value:{phone:'+34600000001',countryCode:'ES',protestId:'synthetic'}},sending:{value:false},
   device:{getDeviceId:()=> 'old-device',setDeviceId:id=>store.set('id',id),setDeviceSecret:secret=>store.set('vc_device_secret',secret)},
   api:{verifyOtp:async()=>{apiCalls++;if(error)throw error;return response;}},sessionStorage:{getItem:k=>k==='vc_last_joined'?'synthetic':null,setItem:(k,v)=>session.set(k,v)},localStorage:{removeItem:k=>store.delete(k)},
   clearForceOtp(){},ui:{showToast:x=>toasts.push(x)},t:x=>x,router:{push:x=>nav.push(x)}};
@@ -25,10 +25,10 @@ test('new identity keeps its newly minted proof',async()=>{
  const f=await run({response:{verified:true,device_id:'new-device',participation_token:'token',device_secret:'new-proof'}});assert.equal(f.store.get('vc_device_secret'),'new-proof');assert.equal(f.store.get('id'),'new-device');
 });
 test('a success without its canonical identity cannot reuse the previous identity context',async()=>{
- const f=await run({response:{verified:true,participation_token:'synthetic-token'}});assert.equal(f.session.size,0);assert.deepEqual(f.nav,[]);assert.deepEqual(f.toasts,['auth.otpUnavailable']);
+ const f=await run({response:{verified:true,participation_token:'synthetic-token'}});assert.equal(f.session.size,0);assert.deepEqual(f.nav,[]);assert.equal(f.context.otpError.value,'auth.otpUnavailable');assert.deepEqual(f.toasts,[]);
 });
 for(const [status,key] of [[401,'otpIncorrect'],[429,'otpRateLimited'],[503,'otpUnavailable'],[undefined,'otpUnavailable']])test('browser handles OTP failure '+status,async()=>{
- const f=await run({error:{status}});assert.deepEqual(f.toasts,['auth.'+key]);assert.equal(f.nav.length,0);assert.equal(f.session.size,0);assert.equal(f.context.sending.value,false);assert.equal(f.store.get('vc_device_secret'),'old-secret');
+ const f=await run({error:{status}});assert.equal(f.context.otpError.value,'auth.'+key);assert.deepEqual(f.toasts,[]);assert.equal(f.nav.length,0);assert.equal(f.session.size,0);assert.equal(f.context.sending.value,false);assert.equal(f.store.get('vc_device_secret'),'old-secret');
 });
 test('temporary OTP failure message exists in all four languages',()=>{
  for(const lang of ['es','en','fr','zh'])assert.ok(JSON.parse(readFileSync(new URL('../apps/web/src/locales/'+lang+'.json',import.meta.url),'utf8')).auth.otpUnavailable);
@@ -69,4 +69,11 @@ test('existing autofill still submits once after distributing the code', () => {
   const f = pasteHarness(); f.context.fill('123456');
   assert.equal(f.context.otpDigits.value.join(''), '123456');
   assert.equal(f.checks(), 1);
+});
+
+test('OTP errors are persistently rendered and associated with every code input', () => {
+  const component = readFileSync(new URL('../apps/web/src/screens/AuthScreen.vue', import.meta.url), 'utf8');
+  assert.match(component, /<p v-if="otpError" id="auth-otp-error" role="alert"[^>]*>{{ otpError }}<\/p>/);
+  assert.ok(component.includes(':aria-describedby="otpError ? \'auth-otp-error\' : null"'));
+  assert.ok(!source.includes('setTimeout'));
 });

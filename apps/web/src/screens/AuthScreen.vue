@@ -52,9 +52,11 @@
             @input="onOtpInput(i)"
             @paste.prevent="onOtpPaste"
             inputmode="numeric"
+            :aria-describedby="otpError ? 'auth-otp-error' : null"
             :autocomplete="i === 0 ? 'one-time-code' : 'off'"
             :aria-label="$t('auth.otpDigit', { n: i + 1 })">
         </div>
+        <p v-if="otpError" id="auth-otp-error" role="alert" style="color:var(--accent3);font-size:14px;line-height:1.5">{{ otpError }}</p>
         <div class="auth-resend">
           {{ $t('auth.resendQuestion') }}
           <button type="button" class="auth-resend-link" :disabled="sending" @click="resendSMS">{{ $t('auth.resend') }}</button>
@@ -224,6 +226,7 @@ const sending      = ref(false);
 const otpVisible   = ref(false);
 const otpDigits    = ref(['', '', '', '', '', '']);
 const otpRefs      = ref([]);
+const otpError     = ref('');
 // Bind resends/checks to the request that was actually accepted, not editable refs.
 const requestedOtp = ref(null);
 let authActive = true;
@@ -448,6 +451,7 @@ async function requestSmsCode(request, resend = false) {
       ui.showToast(t('auth.verificationCannotContinue'));
       return;
     }
+    otpError.value = '';
     requestedOtp.value = request;
     otpDigits.value = ['', '', '', '', '', ''];
     otpVisible.value = true;
@@ -480,6 +484,7 @@ async function resendSMS() {
 
 function changeNumber() {
   if (sending.value) return;
+  otpError.value = '';
   otpAbortController?.abort();
   requestedOtp.value = null;
   otpDigits.value = ['', '', '', '', '', ''];
@@ -553,7 +558,8 @@ async function verifyOTP() {
     return;
   }
   const code = otpDigits.value.join('');
-  if (code.length < 6) { ui.showToast(t('auth.otpError')); return; }
+  otpError.value = '';
+  if (code.length < 6) { otpError.value = t('auth.otpError'); return; }
   sending.value = true;
   try {
     const deviceId = device.getDeviceId();
@@ -578,7 +584,8 @@ async function verifyOTP() {
     }
     router.push('/verify');
   } catch (err) {
-    ui.showToast(t(err.status === 429 ? 'auth.otpRateLimited' : (!err.status || err.status >= 500) ? 'auth.otpUnavailable' : 'auth.otpIncorrect'));
+    if (!authActive || sessionStorage.getItem('vc_last_joined') !== request.protestId) return;
+    otpError.value = t(err.status === 429 ? 'auth.otpRateLimited' : (!err.status || err.status >= 500) ? 'auth.otpUnavailable' : 'auth.otpIncorrect');
   } finally {
     sending.value = false;
   }

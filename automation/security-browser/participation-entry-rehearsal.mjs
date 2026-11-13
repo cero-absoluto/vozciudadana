@@ -129,8 +129,22 @@ try {
     // Shared detail links remain usable while the home list is pending or fails.
     for (const listMode of ['pending','failed']) {
       holdList=listMode==='pending';releaseList=undefined;listStatus=listMode==='failed'?503:200;
+      const failedListResponse=listMode==='failed'
+        ? page.waitForResponse(response=>response.request().method()==='GET'
+          && new URL(response.url()).pathname==='/api/protests' && response.status()===503)
+        : null;
       await page.goto(`https://voiceprotest.org/?ux=shared-${listMode}#/detail/${ID}`);
+      if (failedListResponse) {
+        const response=await failedListResponse;
+        assert.equal(await response.finished(),null);
+        // Observe Pinia state without navigating away or remounting the detail.
+        await page.waitForFunction(()=>{
+          const state=document.querySelector('#app')?.__vue_app__?.config.globalProperties.$pinia?.state.value.protests;
+          return typeof state?.error==='string' && state.error.length>0 && state.loading===false;
+        });
+      }
       await page.locator('#s-detail .d-title').filter({hasText:events[0].title}).waitFor();
+      assert.equal(await page.locator('#s-detail .join-footer .btn-primary').isEnabled(),true);
       assert.equal(sms,0);assert.equal(joins,0);
       if (holdList) {
         await waitForCount(()=>Number(!!releaseList),1);

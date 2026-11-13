@@ -108,7 +108,7 @@ try {
     const page=await context.newPage();page.on('pageerror',e=>errors.push({locale,width,message:e.message}));
     // Exercise the welcome overlay without pre-marking it dismissed.
     for (const activation of ['Enter','Space','touch']) {
-      await page.goto('https://voiceprotest.org/?ux=first-visit#/');
+      await page.goto(`https://voiceprotest.org/?ux=first-visit&activation=${activation}#/`);
       const welcome=page.getByRole('button',{name:messages.home.overlayTap,exact:true});
       await welcome.waitFor();
       assert.equal(await page.evaluate(()=>localStorage.getItem('vc_map_intro')),null);

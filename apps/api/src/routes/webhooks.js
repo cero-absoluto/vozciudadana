@@ -135,91 +135,44 @@ export default async function kofiWebhookRoutes(app) {
       ? createHash('sha256').update(txId).digest('hex').slice(0, 16)
       : null;
 
-    // ── De-duplication: Ko-fi may retry the same webhook ─────────────────
-    if (txRef) {
-      const { data: existing } = await supabase
-        .from('financial_movements')
-        .select('id')
-        .eq('tx_ref', txRef)
-        .maybeSingle();
-      if (existing) {
-        return { ok: true, duplicate: true };
-      }
-    }
-
     const importe_plataforma   = parseFloat((importe_computable * PLATFORM_FEE_PCT).toFixed(2));
     const importe_convocatoria = parseFloat((importe_computable - importe_plataforma).toFixed(2));
 
-    if (protestId) {
-      const { data: protest } = await supabase
-        .from('protests')
-        .select('saldo_euros, donaciones_count, donaciones_total')
-        .eq('id', protestId)
-        .maybeSingle();
-
-      if (protest) {
-        await supabase.from('protests').update({
-          saldo_euros:      (protest.saldo_euros || 0) + importe_convocatoria,
-          donaciones_count: (protest.donaciones_count || 0) + 1,
-          donaciones_total: (protest.donaciones_total || 0) + importe_computable,
-          ultima_donacion:  new Date().toISOString(),
-        }).eq('id', protestId);
-
-        await supabase.from('donaciones').insert({
-          protest_id:            protestId,
-          importe:               importe_computable,
-          importe_original:      importe,
-          importe_convocatoria,
-          importe_plataforma,
-          importe_excedente,
-          fee_percent:           Math.round(PLATFORM_FEE_PCT * 100),
-          proveedor:             'kofi',
-          moneda,
-          over_limit,
-        });
-      } else {
-        app.log.warn({code:'kofi_target_missing'});
-      }
-    }
-
-    // Platform fee from the computable amount only — excess is never
-    // automatically credited to anyone.
-    await supabase.from('platform_fund').insert({
-      type:        'income',
-      amount:      importe_plataforma,
-      source:      'donation_fee',
-      protest_id:  protestId,
-      description: `${Math.round(PLATFORM_FEE_PCT * 100)}% platform fee from Ko-fi donation of ${moneda} ${importe_computable}${over_limit ? ` (original: ${importe}, excess ${importe_excedente} pending review)` : ''}`,
+    // All of this — the tx_ref idempotency gate, the protest balance
+    // increment, and the donaciones/platform_fund/financial_movements rows —
+    // happens in one Postgres transaction (credit_kofi_donation, VP-FIN-001
+    // fix, 22 Nov 2026). Previously this was several independent Supabase
+    // round trips with no transaction, and the final financial_movements
+    // insert self-conflicted on tx_ref for every donation (two rows, same
+    // tx_ref, one statement) — by the time that insert failed, the protest
+    // balance had already been credited, so every Ko-fi retry re-credited
+    // it again with nothing recorded in the audit trail. See the migration
+    // for the full history.
+    const { data: result, error: creditError } = await supabase.rpc('credit_kofi_donation', {
+      p_tx_ref:               txRef,
+      p_protest_id:           protestId,
+      p_moneda:               moneda,
+      p_importe_original:     importe,
+      p_importe_computable:   importe_computable,
+      p_importe_convocatoria: importe_convocatoria,
+      p_importe_plataforma:   importe_plataforma,
+      p_importe_excedente:    importe_excedente,
+      p_fee_percent:          Math.round(PLATFORM_FEE_PCT * 100),
+      p_over_limit:           over_limit,
     });
 
-    await supabase.from('financial_movements').insert([
-      {
-        type:        'donation_protest',
-        protest_id:  protestId,
-        amount:      importe_computable,
-        destination: 'protest_balance',
-        description: `Ko-fi donation credited to protest (${100 - Math.round(PLATFORM_FEE_PCT * 100)}%)`,
-        tx_ref:      txRef,
-      },
-      {
-        type:        'donation_platform',
-        protest_id:  protestId,
-        amount:      importe_plataforma,
-        destination: 'platform_fund',
-        description: `Platform fee from Ko-fi donation (${Math.round(PLATFORM_FEE_PCT * 100)}%)`,
-        tx_ref:      txRef,
-      },
-      // If over the limit, record the excess separately for manual review.
-      // It is intentionally NOT credited to protest_balance or platform_fund.
-      ...(over_limit ? [{
-        type:        'over_limit_pending_review',
-        protest_id:  protestId,
-        amount:      importe_excedente,
-        destination: 'pending_review',
-        description: `Excess above €${MAX_DONATION_EUR} policy limit — requires manual review before any allocation`,
-        tx_ref:      txRef ? txRef + '_excess' : null,
-      }] : []),
-    ]);
+    if (creditError) {
+      app.log.error({code: 'kofi_credit_failed'});
+      return reply.status(500).send({ error: 'Failed to record donation' });
+    }
+
+    if (result?.duplicate) {
+      return { ok: true, duplicate: true };
+    }
+
+    if (protestId && !result?.protest_found) {
+      app.log.warn({code:'kofi_target_missing'});
+    }
 
     return { ok: true, over_limit, importe_computable, importe_excedente };
   });

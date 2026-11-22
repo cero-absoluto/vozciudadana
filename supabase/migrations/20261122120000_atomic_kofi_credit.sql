@@ -18,6 +18,16 @@
 --    read-in-JS-then-write, not an atomic SQL increment, and the write was
 --    spread across several independent Supabase round trips with no
 --    transaction — a lost-update window independent of (1).
+-- 4. (Found by Codex review on this PR, not by the original review — see
+--    20260809_fix_platform_fund_schema.sql's own account.) platform_fund is
+--    not the ledger table phase1 (20260610) described: the REAL production
+--    table is a single running balance row (id, currency, balance,
+--    updated_at), id=1, created some other way than that migration's text.
+--    The webhook's ledger-shaped `INSERT INTO platform_fund (type, amount,
+--    source, ...)` therefore fails every time against the real table —
+--    this was already true of the ORIGINAL code, just masked by (1)/(2)
+--    failing first. The fix below correctly updates the real balance
+--    column instead.
 --
 -- Fix: do the whole credit in one Postgres function, so it is one
 -- transaction (atomic) and the FIRST statement is the idempotency gate
@@ -87,8 +97,8 @@ BEGIN
   -- what the unique index actually protects. Nothing below this point runs
   -- if a row for this tx_ref already exists (a genuine Ko-fi retry).
   IF p_tx_ref IS NOT NULL THEN
-    INSERT INTO financial_movements (type, protest_id, amount, destination, description, tx_ref)
-    VALUES ('donation_protest', v_fk_protest_id, p_importe_computable, 'protest_balance',
+    INSERT INTO financial_movements (type, protest_id, amount, currency, destination, description, tx_ref)
+    VALUES ('donation_protest', v_fk_protest_id, p_importe_computable, p_moneda, 'protest_balance',
             format('Ko-fi donation credited to protest (%s%%)', 100 - p_fee_percent), p_tx_ref)
     ON CONFLICT (tx_ref) WHERE tx_ref IS NOT NULL DO NOTHING
     RETURNING id INTO v_gate_id;
@@ -99,19 +109,19 @@ BEGIN
   ELSE
     -- No transaction id to dedupe on (shouldn't happen for a real Ko-fi
     -- payload, but the original code tolerated it) — just record it.
-    INSERT INTO financial_movements (type, protest_id, amount, destination, description, tx_ref)
-    VALUES ('donation_protest', v_fk_protest_id, p_importe_computable, 'protest_balance',
+    INSERT INTO financial_movements (type, protest_id, amount, currency, destination, description, tx_ref)
+    VALUES ('donation_protest', v_fk_protest_id, p_importe_computable, p_moneda, 'protest_balance',
             format('Ko-fi donation credited to protest (%s%%)', 100 - p_fee_percent), NULL);
   END IF;
 
-  INSERT INTO financial_movements (type, protest_id, amount, destination, description, tx_ref)
-  VALUES ('donation_platform', v_fk_protest_id, p_importe_plataforma, 'platform_fund',
+  INSERT INTO financial_movements (type, protest_id, amount, currency, destination, description, tx_ref)
+  VALUES ('donation_platform', v_fk_protest_id, p_importe_plataforma, p_moneda, 'platform_fund',
           format('Platform fee from Ko-fi donation (%s%%)', p_fee_percent),
           CASE WHEN p_tx_ref IS NOT NULL THEN p_tx_ref || ':platform' ELSE NULL END);
 
   IF p_over_limit THEN
-    INSERT INTO financial_movements (type, protest_id, amount, destination, description, tx_ref)
-    VALUES ('over_limit_pending_review', v_fk_protest_id, p_importe_excedente, 'pending_review',
+    INSERT INTO financial_movements (type, protest_id, amount, currency, destination, description, tx_ref)
+    VALUES ('over_limit_pending_review', v_fk_protest_id, p_importe_excedente, p_moneda, 'pending_review',
             format('Excess above policy limit — requires manual review before any allocation (original %s %s)',
                    p_moneda, p_importe_original),
             CASE WHEN p_tx_ref IS NOT NULL THEN p_tx_ref || ':excess' ELSE NULL END);
@@ -136,13 +146,22 @@ BEGIN
     RETURNING id INTO v_donation_id;
   END IF;
 
-  INSERT INTO platform_fund (type, amount, source, protest_id, description)
-  VALUES ('income', p_importe_plataforma, 'donation_fee', v_fk_protest_id,
-          format('%s%% platform fee from Ko-fi donation of %s %s%s',
-                 p_fee_percent, p_moneda, p_importe_computable,
-                 CASE WHEN p_over_limit
-                      THEN format(' (original: %s, excess %s pending review)', p_importe_original, p_importe_excedente)
-                      ELSE '' END));
+  -- platform_fund is NOT the ledger table phase1 (20260610) described — per
+  -- 20260809_fix_platform_fund_schema.sql, the REAL production table is a
+  -- single running balance row: (id, currency, balance, updated_at), id=1.
+  -- That migration already moved the surplus-transfer cron job off the
+  -- ledger-shaped INSERT for exactly this reason. The original webhook code
+  -- (and the first version of this function) still did the ledger-shaped
+  -- insert here, which fails against the real table — found by Codex review
+  -- on this PR, confirmed against 20260809's own comments. Previously that
+  -- failure was "merely" one more independent round trip erroring out after
+  -- the balance was already credited (same shape as the original bug this
+  -- migration fixes); inside this function it would have been worse — an
+  -- unconditional failure on every single call, rolling back the
+  -- idempotency gate along with it, so no donation could ever be credited.
+  -- financial_movements (below) is the actual per-donation ledger entry for
+  -- the platform fee, matching 20260809's own division of responsibility.
+  UPDATE platform_fund SET balance = balance + p_importe_plataforma, updated_at = NOW() WHERE id = 1;
 
   RETURN jsonb_build_object(
     'ok', true, 'duplicate', false,

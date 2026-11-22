@@ -179,8 +179,4 @@ GRANT EXECUTE ON FUNCTION public.credit_kofi_donation(
 ) TO service_role;
 
 COMMENT ON FUNCTION public.credit_kofi_donation IS
-  'Atomically credits one Ko-fi donation: idempotency gate on tx_ref (first '
-  'statement, before any balance mutation), then donaciones/platform_fund/'
-  'financial_movements rows and the protests balance increment, all in one '
-  'transaction. Replaces the non-atomic, self-conflicting version previously '
-  'inlined in routes/webhooks.js (fixed 22 Nov 2026).';
+  'Atomically credits one Ko-fi donation: idempotency gate on tx_ref (first statement, before any balance mutation), then donaciones/platform_fund/financial_movements rows and the protests balance increment, all in one transaction. Replaces the non-atomic, self-conflicting version previously inlined in routes/webhooks.js (fixed 22 Nov 2026).';
